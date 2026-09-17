@@ -1,0 +1,12 @@
+{
+  "name": "@launchpp-internal/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@launchpp/api-client": "workspace:*",
+    "@launchpp/plugin-protocol": "workspace:*",
+    "@launchpp/ui": "workspace:*",
+    "@launchpp/ui-tokens": "workspace:*"
+  }
+}

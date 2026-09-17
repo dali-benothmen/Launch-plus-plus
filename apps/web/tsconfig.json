@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    { "path": "../../packages/api-client" },
+    { "path": "../../packages/plugin-protocol" },
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/ui-tokens" }
+  ]
+}

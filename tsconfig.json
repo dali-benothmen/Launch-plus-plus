@@ -2,5 +2,18 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "files": [],
-  "references": []
+  "references": [
+    { "path": "./apps/web" },
+    { "path": "./apps/server" },
+    { "path": "./packages/core" },
+    { "path": "./packages/database" },
+    { "path": "./packages/api-contracts" },
+    { "path": "./packages/api-client" },
+    { "path": "./packages/authorization" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/ui-tokens" },
+    { "path": "./packages/plugin-protocol" },
+    { "path": "./packages/plugin-runtime" },
+    { "path": "./packages/plugin-testkit" }
+  ]
 }

@@ -3,7 +3,7 @@
   "$id": "https://launchpp.dev/schemas/internal/architecture-boundaries.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["workspaceRoots", "packageNamePattern", "rules"],
+  "required": ["workspaceRoots", "packageNamePattern", "packages", "rules"],
   "properties": {
     "$schema": { "type": "string" },
     "workspaceRoots": {
@@ -13,6 +13,25 @@
       "uniqueItems": true
     },
     "packageNamePattern": { "type": "string", "minLength": 1 },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "owner", "visibility", "allowWorkspaceDependencies"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "visibility": { "enum": ["internal", "public"] },
+          "allowWorkspaceDependencies": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
     "rules": {
       "type": "array",
       "items": {

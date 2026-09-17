@@ -24,6 +24,89 @@ importers:
         specifier: 5.0.1
         version: 5.0.1(@types/node@24.13.5)(vite@8.3.0(@types/node@24.13.5))
 
+  apps/server:
+    dependencies:
+      '@launchpp/api-contracts':
+        specifier: workspace:*
+        version: link:../../packages/api-contracts
+      '@launchpp/authorization':
+        specifier: workspace:*
+        version: link:../../packages/authorization
+      '@launchpp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@launchpp/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@launchpp/plugin-protocol':
+        specifier: workspace:*
+        version: link:../../packages/plugin-protocol
+      '@launchpp/plugin-runtime':
+        specifier: workspace:*
+        version: link:../../packages/plugin-runtime
+
+  apps/web:
+    dependencies:
+      '@launchpp/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@launchpp/plugin-protocol':
+        specifier: workspace:*
+        version: link:../../packages/plugin-protocol
+      '@launchpp/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@launchpp/ui-tokens':
+        specifier: workspace:*
+        version: link:../../packages/ui-tokens
+
+  packages/api-client:
+    dependencies:
+      '@launchpp/api-contracts':
+        specifier: workspace:*
+        version: link:../api-contracts
+
+  packages/api-contracts: {}
+
+  packages/authorization:
+    dependencies:
+      '@launchpp/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/core: {}
+
+  packages/database:
+    dependencies:
+      '@launchpp/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-protocol: {}
+
+  packages/plugin-runtime:
+    dependencies:
+      '@launchpp/plugin-protocol':
+        specifier: workspace:*
+        version: link:../plugin-protocol
+
+  packages/plugin-testkit:
+    dependencies:
+      '@launchpp/plugin-protocol':
+        specifier: workspace:*
+        version: link:../plugin-protocol
+      '@launchpp/plugin-runtime':
+        specifier: workspace:*
+        version: link:../plugin-runtime
+
+  packages/ui:
+    dependencies:
+      '@launchpp/ui-tokens':
+        specifier: workspace:*
+        version: link:../ui-tokens
+
+  packages/ui-tokens: {}
+
 packages:
 
   '@biomejs/biome@2.5.14':

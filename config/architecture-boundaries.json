@@ -2,6 +2,104 @@
   "$schema": "./architecture-boundaries.schema.json",
   "workspaceRoots": ["apps", "packages"],
   "packageNamePattern": "^@launchpp(?:-internal)?/[a-z0-9-]+$",
+  "packages": [
+    {
+      "name": "@launchpp-internal/web",
+      "path": "apps/web",
+      "owner": "web",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": [
+        "@launchpp/api-client",
+        "@launchpp/plugin-protocol",
+        "@launchpp/ui",
+        "@launchpp/ui-tokens"
+      ]
+    },
+    {
+      "name": "@launchpp-internal/server",
+      "path": "apps/server",
+      "owner": "server",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": [
+        "@launchpp/api-contracts",
+        "@launchpp/authorization",
+        "@launchpp/core",
+        "@launchpp/database",
+        "@launchpp/plugin-protocol",
+        "@launchpp/plugin-runtime"
+      ]
+    },
+    {
+      "name": "@launchpp/core",
+      "path": "packages/core",
+      "owner": "core",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/database",
+      "path": "packages/database",
+      "owner": "persistence",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/core"]
+    },
+    {
+      "name": "@launchpp/api-contracts",
+      "path": "packages/api-contracts",
+      "owner": "api",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/api-client",
+      "path": "packages/api-client",
+      "owner": "api",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/api-contracts"]
+    },
+    {
+      "name": "@launchpp/authorization",
+      "path": "packages/authorization",
+      "owner": "core",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/core"]
+    },
+    {
+      "name": "@launchpp/ui",
+      "path": "packages/ui",
+      "owner": "design-system",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/ui-tokens"]
+    },
+    {
+      "name": "@launchpp/ui-tokens",
+      "path": "packages/ui-tokens",
+      "owner": "design-system",
+      "visibility": "public",
+      "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/plugin-protocol",
+      "path": "packages/plugin-protocol",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/plugin-runtime",
+      "path": "packages/plugin-runtime",
+      "owner": "plugin-platform",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
+      "name": "@launchpp/plugin-testkit",
+      "path": "packages/plugin-testkit",
+      "owner": "plugin-platform",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol", "@launchpp/plugin-runtime"]
+    }
+  ],
   "rules": [
     {
       "from": "@launchpp/core",

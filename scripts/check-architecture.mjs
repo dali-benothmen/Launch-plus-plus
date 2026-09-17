@@ -2,7 +2,12 @@ import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-const root = process.cwd();
+const rootFlagIndex = process.argv.indexOf("--root");
+const root = path.resolve(
+  rootFlagIndex >= 0 && process.argv[rootFlagIndex + 1]
+    ? process.argv[rootFlagIndex + 1]
+    : process.cwd(),
+);
 const configPath = path.join(root, "config", "architecture-boundaries.json");
 const config = JSON.parse(await readFile(configPath, "utf8"));
 const packageNamePattern = new RegExp(config.packageNamePattern);
@@ -15,6 +20,14 @@ const dependencyFields = [
 ];
 const runtimeDependencyFields = ["dependencies", "optionalDependencies", "peerDependencies"];
 const errors = [];
+const packagePolicies = new Map();
+
+for (const policy of config.packages) {
+  if (packagePolicies.has(policy.name)) {
+    errors.push(`Duplicate architecture policy for ${policy.name}`);
+  }
+  packagePolicies.set(policy.name, policy);
+}
 
 function toPatternRegex(pattern) {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*");
@@ -140,7 +153,46 @@ for (const workspacePackage of packages) {
   }
   packagesByName.set(manifest.name, workspacePackage);
 
+  const policy = packagePolicies.get(manifest.name);
+  if (!policy) {
+    errors.push(`${relativeManifest}: ${manifest.name} has no architecture ownership policy`);
+    continue;
+  }
+
+  const actualDirectory = path.relative(root, directory).split(path.sep).join("/");
+  if (policy.path !== actualDirectory) {
+    errors.push(
+      `${relativeManifest}: ${manifest.name} must live at ${policy.path}, not ${actualDirectory}`,
+    );
+  }
+
+  if (policy.visibility === "internal" && manifest.private !== true) {
+    errors.push(`${relativeManifest}: internal package ${manifest.name} must set private: true`);
+  }
+  if (policy.visibility === "public" && manifest.private === true) {
+    errors.push(`${relativeManifest}: public package ${manifest.name} must not set private: true`);
+  }
+
+  if (actualDirectory.startsWith("packages/")) {
+    const rootExport = manifest.exports?.["."];
+    if (!rootExport) {
+      errors.push(
+        `${relativeManifest}: library package ${manifest.name} must define a root export`,
+      );
+    } else if (JSON.stringify(rootExport).includes("/src/")) {
+      errors.push(`${relativeManifest}: package exports must not expose private source paths`);
+    }
+  }
+
   const declaredDependencies = dependencyNames(manifest);
+  const allowedWorkspaceDependencies = new Set(policy.allowWorkspaceDependencies);
+  for (const dependency of declaredDependencies) {
+    if (packagePolicies.has(dependency) && !allowedWorkspaceDependencies.has(dependency)) {
+      errors.push(
+        `${relativeManifest}: ${manifest.name} is not allowed to depend on workspace package ${dependency}`,
+      );
+    }
+  }
   for (const rule of config.rules) {
     if (!matches(rule.from, manifest.name)) continue;
     for (const deniedPattern of rule.deny) {
@@ -190,14 +242,21 @@ for (const workspacePackage of packages) {
   }
 }
 
+for (const policy of packagePolicies.values()) {
+  if (!packagesByName.has(policy.name)) {
+    errors.push(`Architecture policy references missing package ${policy.name} at ${policy.path}`);
+  }
+}
+
 detectCycles(packagesByName);
 
 if (errors.length > 0) {
-  console.error("Architecture boundary check failed:\n");
-  for (const error of errors) console.error(`- ${error}`);
+  process.stderr.write(
+    `Architecture boundary check failed:\n\n${errors.map((error) => `- ${error}`).join("\n")}\n`,
+  );
   process.exitCode = 1;
 } else {
-  console.log(
-    `Architecture boundary check passed (${packages.length} packages, ${sourceFileCount} source files).`,
+  process.stdout.write(
+    `Architecture boundary check passed (${packages.length} packages, ${sourceFileCount} source files).\n`,
   );
 }
