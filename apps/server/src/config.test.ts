@@ -8,6 +8,7 @@ describe("server configuration", () => {
     expect(config).toMatchObject({
       baseUrl: "http://127.0.0.1:3000",
       bindAddress: "127.0.0.1",
+      databasePath: "data/launchpp.sqlite",
       environment: "test",
       port: 3000,
     });
@@ -38,5 +39,17 @@ describe("server configuration", () => {
     expect(() =>
       loadServerConfig({ NODE_ENV: "production", LAUNCHPP_BASE_URL: "http://example.com" }),
     ).toThrowError(/must use HTTPS in production/);
+    expect(() =>
+      loadServerConfig({ NODE_ENV: "production", LAUNCHPP_BASE_URL: "https://example.com" }),
+    ).toThrowError(/LAUNCHPP_AUTH_SECRET is required/);
+  });
+
+  it("rejects ephemeral persistence and weak authentication secrets", () => {
+    expect(() =>
+      loadServerConfig({ NODE_ENV: "test", LAUNCHPP_DATABASE_PATH: ":memory:" }),
+    ).toThrowError(/file-backed/);
+    expect(() =>
+      loadServerConfig({ NODE_ENV: "test", LAUNCHPP_AUTH_SECRET: "too-short" }),
+    ).toThrowError(/at least 32 characters/);
   });
 });

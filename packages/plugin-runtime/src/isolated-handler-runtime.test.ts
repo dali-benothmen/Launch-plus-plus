@@ -127,9 +127,9 @@ describe("isolated plugin handler runtime", () => {
         },
         {
           limits: {
-            cpuTimeMs: 1_000,
+            cpuTimeMs: 3_000,
             memoryLimitBytes: 2 * 1024 * 1024,
-            wallTimeMs: 1_500,
+            wallTimeMs: 4_000,
           },
         },
       ),

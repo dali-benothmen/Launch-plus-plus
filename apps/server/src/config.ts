@@ -5,8 +5,10 @@ type EnvironmentName = (typeof environmentNames)[number];
 type LogLevel = (typeof logLevels)[number];
 
 interface LaunchEnvironment extends NodeJS.ProcessEnv {
+  LAUNCHPP_AUTH_SECRET?: string;
   LAUNCHPP_BASE_URL?: string;
   LAUNCHPP_BIND_ADDRESS?: string;
+  LAUNCHPP_DATABASE_PATH?: string;
   LAUNCHPP_LOG_LEVEL?: string;
   LAUNCHPP_PORT?: string;
   LAUNCHPP_RATE_LIMIT_MAX?: string;
@@ -17,8 +19,10 @@ interface LaunchEnvironment extends NodeJS.ProcessEnv {
 }
 
 const launchEnvironmentKeys = new Set([
+  "LAUNCHPP_AUTH_SECRET",
   "LAUNCHPP_BASE_URL",
   "LAUNCHPP_BIND_ADDRESS",
+  "LAUNCHPP_DATABASE_PATH",
   "LAUNCHPP_LOG_LEVEL",
   "LAUNCHPP_PORT",
   "LAUNCHPP_RATE_LIMIT_MAX",
@@ -28,8 +32,10 @@ const launchEnvironmentKeys = new Set([
 ]);
 
 export interface ServerConfig {
+  readonly authSecret: string;
   readonly baseUrl: string;
   readonly bindAddress: string;
+  readonly databasePath: string;
   readonly environment: EnvironmentName;
   readonly logLevel: LogLevel;
   readonly port: number;
@@ -109,6 +115,19 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     throw new ConfigurationError("LAUNCHPP_BASE_URL must use HTTPS in production");
   }
 
+  const databasePath = variables.LAUNCHPP_DATABASE_PATH?.trim() || "data/launchpp.sqlite";
+  if (databasePath === ":memory:" || databasePath.includes("\0")) {
+    throw new ConfigurationError("LAUNCHPP_DATABASE_PATH must be a file-backed database path");
+  }
+  const configuredAuthSecret = variables.LAUNCHPP_AUTH_SECRET?.trim();
+  if (mode === "production" && !configuredAuthSecret) {
+    throw new ConfigurationError("LAUNCHPP_AUTH_SECRET is required in production");
+  }
+  const authSecret = configuredAuthSecret ?? "development-only-secret-change-before-production";
+  if (authSecret.length < 32) {
+    throw new ConfigurationError("LAUNCHPP_AUTH_SECRET must contain at least 32 characters");
+  }
+
   const trustedProxies = Object.freeze(
     (variables.LAUNCHPP_TRUSTED_PROXIES ?? "")
       .split(",")
@@ -117,8 +136,10 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
   );
 
   return Object.freeze({
+    authSecret,
     baseUrl,
     bindAddress,
+    databasePath,
     environment: mode,
     logLevel: parseEnum("LAUNCHPP_LOG_LEVEL", variables.LAUNCHPP_LOG_LEVEL ?? "info", logLevels),
     port,

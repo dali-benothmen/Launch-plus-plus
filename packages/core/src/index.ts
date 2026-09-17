@@ -2,6 +2,11 @@ export type {
   Installation,
   InstallationRepository,
 } from "./installations/installation.js";
+export {
+  type CreateInstallationDependencies,
+  type CreateInstallationInput,
+  CreateInstallationService,
+} from "./installations/create-installation.js";
 export type {
   AuthenticatedIdentity,
   IdentityProvider,

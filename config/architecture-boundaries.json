@@ -22,6 +22,7 @@
       "visibility": "internal",
       "allowWorkspaceDependencies": [
         "@launchpp/api-contracts",
+        "@launchpp/auth-adapter",
         "@launchpp/authorization",
         "@launchpp/core",
         "@launchpp/database",

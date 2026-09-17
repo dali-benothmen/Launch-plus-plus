@@ -35,6 +35,9 @@ importers:
       '@launchpp/api-contracts':
         specifier: workspace:*
         version: link:../../packages/api-contracts
+      '@launchpp/auth-adapter':
+        specifier: workspace:*
+        version: link:../../packages/auth-adapter
       '@launchpp/authorization':
         specifier: workspace:*
         version: link:../../packages/authorization

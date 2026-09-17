@@ -322,6 +322,7 @@ Representative settings:
 
 | Variable | Purpose |
 | --- | --- |
+| `LAUNCHPP_AUTH_SECRET` | Better Auth signing secret; explicit and at least 32 characters in production |
 | `LAUNCHPP_BASE_URL` | Canonical external origin |
 | `LAUNCHPP_BIND_ADDRESS` | Listen address; defaults safely for local mode |
 | `LAUNCHPP_PORT` | HTTP port |

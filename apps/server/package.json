@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@launchpp/api-contracts": "workspace:*",
+    "@launchpp/auth-adapter": "workspace:*",
     "@launchpp/authorization": "workspace:*",
     "@launchpp/core": "workspace:*",
     "@launchpp/database": "workspace:*",

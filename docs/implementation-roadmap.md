@@ -94,12 +94,12 @@ The architecture decisions in `docs/` are accepted as the implementation baselin
 
 ### Exit gate
 
-- [ ] A production-like process starts and stops safely with SQLite.
-- [ ] One authenticated request crosses HTTP → application service → repository → outbox.
-- [ ] Packed React and vanilla surfaces communicate only through the validated bridge.
-- [ ] The server-runtime prototype has an explicit supported or reduced-scope decision.
-- [ ] The archive validator rejects known malicious fixtures without executing package code.
-- [ ] CI enforces the foundational package boundaries.
+- [x] A production-like process starts and stops safely with SQLite.
+- [x] One authenticated request crosses HTTP → application service → repository → outbox.
+- [x] Packed React and vanilla surfaces communicate only through the validated bridge.
+- [x] The server-runtime prototype has an explicit supported or reduced-scope decision.
+- [x] The archive validator rejects known malicious fixtures without executing package code.
+- [x] CI enforces the foundational package boundaries.
 
 ## Phase 1 — minimal solo vertical slice
 

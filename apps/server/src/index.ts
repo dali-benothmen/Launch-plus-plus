@@ -1,4 +1,9 @@
 export {
+  type ApplicationResources,
+  buildApplicationServer,
+  type BuildApplicationServerOptions,
+} from "./application-server.js";
+export {
   ConfigurationError,
   loadServerConfig,
   type ServerConfig,

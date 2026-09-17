@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+data/
 .cache/
 .turbo/
 
@@ -17,4 +18,3 @@ blob-report/
 .DS_Store
 
 plans/**/.plan-url
-

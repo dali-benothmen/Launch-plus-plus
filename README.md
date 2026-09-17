@@ -4,7 +4,7 @@ Launch++ is an open-source, modern, minimalist project management tool that grow
 
 > Adapt it to your work, not the other way around.
 
-The project is currently in the architecture phase. No runnable application, supported SDK, installer, or migration path exists yet. The repository documentation defines the target product and implementation boundaries before development begins.
+The architecture and technical-foundation phase is complete. A runnable server/web shell and feasibility implementations now prove the persistence, identity, plugin protocol, browser isolation, constrained server runtime, deterministic package intake, CI, and measurement boundaries. This is not yet a supported product release, public SDK, or installer.
 
 ## Product direction
 
@@ -63,7 +63,7 @@ pnpm start:server
 pnpm dev:web
 ```
 
-The root checks cover formatting, linting, TypeScript project references, unit tests, and workspace architecture boundaries. Browser tests are available separately through `pnpm test:browser`; feature packages and application entry points are added in subsequent Phase 0 tasks.
+The root checks cover formatting, linting, TypeScript project references, unit and contract tests, migrations, and workspace architecture boundaries. Browser isolation tests are available through `pnpm test:browser`; the focused abuse suite uses `pnpm test:adversarial`, and the reproducible foundation budgets use `pnpm measure:foundation -- --check`.
 
 The server defaults to `http://127.0.0.1:3000`; see the [server workspace guide](./apps/server/README.md) for configuration and health endpoints.
 

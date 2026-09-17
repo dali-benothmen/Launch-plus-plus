@@ -4,6 +4,7 @@ Status: proposed repository, engineering rules, quality strategy, and implementa
 
 The enforced pull-request checks and supply-chain rules are documented in the [continuous integration and supply-chain baseline](./ci-security-baseline.md).
 Reference hardware, browser targets, datasets, hard limits, and measurement gates are documented in [reference environments and budgets](./reference-environments-and-budgets.md).
+The executable evidence for completing the technical foundation is mapped in [foundation exit verification](./foundation-verification.md).
 
 ## Engineering goals
 

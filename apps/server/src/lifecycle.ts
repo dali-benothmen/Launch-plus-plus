@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { buildApplicationServer } from "./application-server.js";
 import { loadServerConfig, type ServerConfig } from "./config.js";
 import { createReadiness, type Readiness } from "./readiness.js";
-import { buildServer, type BuildServerOptions } from "./server.js";
+import type { BuildServerOptions } from "./server.js";
 
 export interface RunningServer {
   readonly app: FastifyInstance;
@@ -36,7 +37,7 @@ async function closeWithin(app: FastifyInstance, timeoutMs: number): Promise<voi
 export async function startServer(options: StartServerOptions = {}): Promise<RunningServer> {
   const config = loadServerConfig(options.environment);
   const readiness = createReadiness();
-  const app = await (options.build ?? buildServer)({ config, readiness });
+  const app = await (options.build ?? buildApplicationServer)({ config, readiness });
   try {
     await app.listen({ host: config.bindAddress, port: config.port });
   } catch (error) {
