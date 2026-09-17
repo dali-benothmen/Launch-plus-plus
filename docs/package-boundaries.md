@@ -15,6 +15,7 @@ Launch++ keeps application composition, product policy, infrastructure, public e
 | `packages/api-contracts` | API | Internal | Versioned HTTP schemas and transport types |
 | `packages/api-client` | API | Internal | Typed HTTP client used by browser consumers |
 | `packages/authorization` | Core | Internal | Product policy evaluation, independent of identity providers |
+| `packages/auth-adapter` | Identity | Internal | Better Auth integration, session resolution, and transport adapter |
 | `packages/ui` | Design system | Public | Supported React component contract for core and plugin UI |
 | `packages/ui-tokens` | Design system | Public | Framework-neutral tokens, CSS variables, icons, and base styles |
 | `packages/plugin-protocol` | Plugin platform | Public | Versioned manifests, messages, permissions, and contribution schemas |

@@ -10,6 +10,7 @@
     { "path": "./packages/api-contracts" },
     { "path": "./packages/api-client" },
     { "path": "./packages/authorization" },
+    { "path": "./packages/auth-adapter" },
     { "path": "./packages/ui" },
     { "path": "./packages/ui-tokens" },
     { "path": "./packages/plugin-protocol" },

@@ -65,6 +65,13 @@
       "allowWorkspaceDependencies": ["@launchpp/core"]
     },
     {
+      "name": "@launchpp/auth-adapter",
+      "path": "packages/auth-adapter",
+      "owner": "identity",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/core", "@launchpp/database"]
+    },
+    {
       "name": "@launchpp/ui",
       "path": "packages/ui",
       "owner": "design-system",

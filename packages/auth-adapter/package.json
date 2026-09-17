@@ -1,0 +1,23 @@
+{
+  "name": "@launchpp/auth-adapter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@launchpp/core": "workspace:*",
+    "better-auth": "1.7.5",
+    "better-sqlite3": "13.0.3",
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@launchpp/database": "workspace:*",
+    "@types/better-sqlite3": "9.6.0"
+  }
+}

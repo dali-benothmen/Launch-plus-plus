@@ -17,6 +17,8 @@ This package owns the physical SQLite schema, reviewed Drizzle migrations, conne
 
 The schema source is `src/schema.ts`. Ordered SQL in `migrations/` is the runtime artifact and must be reviewed like application code.
 
+The identity tables are physically owned here even though Better Auth is isolated in `@launchpp/auth-adapter`. This keeps all production schema changes in one reviewed migration chain; the auth library does not mutate the production schema at request time.
+
 ```bash
 pnpm --filter @launchpp/database db:generate --name <descriptive-name>
 pnpm test:migrations
