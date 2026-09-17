@@ -1,0 +1,75 @@
+import { Typography } from "@launchpp/ui";
+import type { PluginContext } from "@launchpp/plugin-protocol";
+
+import type { BrowserCapabilityHandler } from "./browser-bridge.js";
+import { PluginSurface } from "./plugin-surface.js";
+
+const context: PluginContext = {
+  actor: { id: "actor_proof" },
+  grantedPermissions: ["projects:read"],
+  installationId: "installation_proof",
+  locale: "en-US",
+  pluginId: "launchpp.react-proof",
+  project: { id: "project_proof" },
+  surfaceId: "proof",
+  theme: {
+    id: "launchpp.dark",
+    mode: "dark",
+    tokens: {
+      "--launch-color-surface": "#141414",
+      "--launch-color-text-primary": "#f5f5f5",
+    },
+  },
+  workspace: { id: "workspace_proof" },
+};
+
+const capabilities: Readonly<Record<string, BrowserCapabilityHandler>> = {
+  "proof.echo": (input) => ({ input, servedBy: "launchpp-host" }),
+  "proof.wait": (_input, { signal }) =>
+    new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => resolve({ completed: true }), 10_000);
+      signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timeout);
+          reject(signal.reason);
+        },
+        { once: true },
+      );
+    }),
+};
+
+function isolatedSurfaceUrl(path: string): string {
+  const pluginHostname = window.location.hostname === "localhost" ? "127.0.0.1" : "localhost";
+  const pluginOrigin = `${window.location.protocol}//${pluginHostname}:${window.location.port}`;
+  const url = new URL(path, pluginOrigin);
+  url.searchParams.set("hostOrigin", window.location.origin);
+  return url.href;
+}
+
+export function PluginSurfaceProofPage() {
+  return (
+    <section aria-labelledby="plugin-proof-title" className="page-stack plugin-proof-page">
+      <Typography.Title id="plugin-proof-title" level={1}>
+        Browser isolation proof
+      </Typography.Title>
+      <Typography.Text type="secondary">
+        React and vanilla artifacts use the same versioned bridge.
+      </Typography.Text>
+      <div className="plugin-proof-grid">
+        <PluginSurface
+          capabilities={capabilities}
+          context={context}
+          source={isolatedSurfaceUrl("/plugin-fixtures/react/index.html")}
+          title="Packed React surface"
+        />
+        <PluginSurface
+          capabilities={capabilities}
+          context={{ ...context, pluginId: "launchpp.vanilla-proof" }}
+          source={isolatedSurfaceUrl("/plugin-fixtures/vanilla/index.html")}
+          title="Packed vanilla surface"
+        />
+      </div>
+    </section>
+  );
+}

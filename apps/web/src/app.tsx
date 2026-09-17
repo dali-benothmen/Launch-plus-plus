@@ -21,6 +21,17 @@ export const appRoutes: RouteObject[] = [
       { index: true, element: <MyWorkPage /> },
       { path: "members", element: <MembersPage /> },
       { path: "settings", element: <SettingsPage /> },
+      ...(import.meta.env.VITE_ENABLE_PLUGIN_PROOF === "true"
+        ? [
+            {
+              path: "__proofs/plugin-surfaces",
+              lazy: async () => {
+                const { PluginSurfaceProofPage } = await import("./plugin-host/proof-page.js");
+                return { Component: PluginSurfaceProofPage };
+              },
+            },
+          ]
+        : []),
     ],
   },
 ];

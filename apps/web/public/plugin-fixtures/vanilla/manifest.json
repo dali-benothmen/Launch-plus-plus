@@ -1,0 +1,23 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "proof": { "document": "./plugin-fixtures/vanilla/index.html" }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "proof",
+        "path": "proof",
+        "scope": "project",
+        "surface": "proof",
+        "title": "Vanilla proof"
+      }
+    ]
+  },
+  "id": "launchpp.vanilla-proof",
+  "name": "Vanilla Browser Proof",
+  "permissions": ["projects:read"],
+  "version": "0.0.1"
+}

@@ -211,7 +211,19 @@ export const RequestMessageSchema = StrictObject(
 
 export const PluginErrorSchema = StrictObject(
   {
-    code: Type.Union(Object.values(PLUGIN_ERROR_CODES).map((code) => Type.Literal(code))),
+    code: Type.Union([
+      Type.Literal(PLUGIN_ERROR_CODES.aborted),
+      Type.Literal(PLUGIN_ERROR_CODES.capabilityNotFound),
+      Type.Literal(PLUGIN_ERROR_CODES.conflict),
+      Type.Literal(PLUGIN_ERROR_CODES.forbidden),
+      Type.Literal(PLUGIN_ERROR_CODES.internal),
+      Type.Literal(PLUGIN_ERROR_CODES.invalidRequest),
+      Type.Literal(PLUGIN_ERROR_CODES.payloadTooLarge),
+      Type.Literal(PLUGIN_ERROR_CODES.timeout),
+      Type.Literal(PLUGIN_ERROR_CODES.unauthorized),
+      Type.Literal(PLUGIN_ERROR_CODES.unavailable),
+      Type.Literal(PLUGIN_ERROR_CODES.unsupportedProtocol),
+    ]),
     details: Type.Optional(Type.Unknown()),
     message: Type.String({ maxLength: 500, minLength: 1 }),
     retryable: Type.Boolean(),

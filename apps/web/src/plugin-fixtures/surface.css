@@ -1,0 +1,43 @@
+:root {
+  color: var(--launch-color-text-primary, #172033);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: var(--launch-color-surface, #fff);
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+.badge {
+  color: #6d5dfc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+button {
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid currentcolor;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+output {
+  display: block;
+  min-height: 20px;
+}

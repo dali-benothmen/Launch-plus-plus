@@ -1,0 +1,23 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "proof": { "document": "./plugin-fixtures/react/index.html" }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "proof",
+        "path": "proof",
+        "scope": "project",
+        "surface": "proof",
+        "title": "React proof"
+      }
+    ]
+  },
+  "id": "launchpp.react-proof",
+  "name": "React Browser Proof",
+  "permissions": ["projects:read"],
+  "version": "0.0.1"
+}
