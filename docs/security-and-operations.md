@@ -208,7 +208,7 @@ Archive integrity proves that bytes did not change; it does not prove that a pub
 
 ### Server execution
 
-- The prototype is QuickJS/WASM inside supervised Node workers with fresh invocation contexts.
+- The feasibility harness is QuickJS/WASM inside a fresh Node worker per invocation; it is not approved as the sole boundary for untrusted packages.
 - Expose only serialized broker capabilities; no Node globals, process, filesystem, sockets, environment, native modules, or database handle.
 - Enforce wall-clock deadline, instruction/interruption budget, memory budget, bridge-call count, request/response size, and log quotas.
 - Terminate and replace a worker after timeout, memory violation, protocol violation, or uncertain state.
@@ -216,7 +216,7 @@ Archive integrity proves that bytes did not change; it does not prove that a pub
 - Record grants and effective actor/scope with the invocation.
 - Repeated failures trip a circuit breaker and pause the plugin.
 
-A Node worker thread is a supervisor mechanism, not the sole security boundary. If the isolation prototype cannot demonstrate containment, public untrusted executable packages do not ship; operator-trusted execution remains clearly labeled.
+A Node worker thread is a supervisor mechanism, not the sole security boundary. The Phase 0 decision is therefore no-ship for public untrusted executable packages in the application process; operator-trusted execution remains clearly labeled. A supervised OS-process/container boundary and async broker must pass the same adversarial suite before the decision changes. See [Server plugin runtime feasibility decision](./server-plugin-runtime-decision.md).
 
 ### Browser execution
 

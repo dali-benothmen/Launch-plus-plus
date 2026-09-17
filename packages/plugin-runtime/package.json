@@ -11,6 +11,8 @@
     }
   },
   "dependencies": {
-    "@launchpp/plugin-protocol": "workspace:*"
+    "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
+    "@launchpp/plugin-protocol": "workspace:*",
+    "quickjs-emscripten-core": "0.32.0"
   }
 }

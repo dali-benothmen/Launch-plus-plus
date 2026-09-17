@@ -264,7 +264,7 @@ The public React design-system contract is `@launchpp/ui`, not application inter
 | --- | --- | --- |
 | Plugin browser build | Vite-based React/TypeScript and vanilla adapters | Focused supported authoring with normalized self-contained HTML surfaces and deterministic assets |
 | Browser isolation | Sandboxed iframe + strict CSP + validated `postMessage` bridge | Separates custom UI from shell origin and internals |
-| Server isolation prototype | QuickJS compiled to WASM in supervised Node workers | Narrow JavaScript environment with explicit host capabilities |
+| Server isolation prototype | QuickJS/WASM in a fresh Node worker per invocation | Useful language sandbox and quota harness; explicitly not the sole boundary for untrusted publisher code |
 | Package format | Deterministic ZIP-compatible `.launch-plugin` archive | Uploadable, hashable, signable, and inspectable |
 | Live development | Disposable host or operator-enabled authenticated dev channel | Fast feedback without making framework dev output the install contract |
 | Manifest/theme validation | Versioned JSON Schema | Static inspection and editor completion |
@@ -414,7 +414,7 @@ The [plugin system design](./plugin-system-design.md) is the detailed runtime co
 
 Plugins never become Fastify route modules and never receive a database handle. Browser surfaces always arrive as normalized HTML/CSS/JavaScript documents; framework-specific compilation remains on the author's machine. Authors declare collections in `data/schema.ts`; the CLI emits a static schema and generated clients, and the host owns storage/index changes. Plugin packages contain no SQL or author-maintained migration files. Core mutations reached through a plugin use the same authorization, validation, activity, outbox, and idempotency paths as first-party UI.
 
-The exact QuickJS/WASM wrapper and browser confinement are feasibility decisions. Until adversarial fixtures pass, third-party executable plugins must be labeled operator-trusted or remain disabled; declaration-only plugins and themes do not need that runtime claim.
+The browser confinement proof is accepted. The QuickJS/WASM spike passed its synchronous abuse fixtures but produced a no-ship decision for untrusted executable plugins inside the application process. Third-party executable server plugins remain operator-trusted or disabled until a supervised OS-process boundary, async capability bridge, and repeated adversarial suite pass. Declaration-only plugins, browser surfaces, and themes do not depend on that claim. See [Server plugin runtime feasibility decision](./server-plugin-runtime-decision.md).
 
 ## Theme subsystem integration
 
