@@ -25,6 +25,7 @@
     "test": "pnpm test:unit",
     "test:unit": "vitest run --passWithNoTests",
     "test:unit:watch": "vitest",
+    "test:adversarial": "vitest run apps/web/src/plugin-host/browser-bridge.test.ts packages/plugin-runtime/src/isolated-handler-runtime.test.ts packages/plugin-testkit/src/package-intake.test.ts",
     "test:browser": "playwright test --pass-with-no-tests",
     "test:arch": "node ./scripts/check-architecture.mjs",
     "test:migrations": "pnpm --filter @launchpp/database db:check"

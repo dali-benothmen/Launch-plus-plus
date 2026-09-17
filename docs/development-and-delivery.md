@@ -2,6 +2,8 @@
 
 Status: proposed repository, engineering rules, quality strategy, and implementation sequence. Commands and directories described here do not exist yet unless already present in the repository.
 
+The enforced pull-request checks and supply-chain rules are documented in the [continuous integration and supply-chain baseline](./ci-security-baseline.md).
+
 ## Engineering goals
 
 - Make the correct module boundary the easy path.
