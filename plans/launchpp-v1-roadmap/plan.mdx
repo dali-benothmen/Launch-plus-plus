@@ -1,0 +1,97 @@
+---
+title: Launch++ v1 implementation roadmap
+brief: Build the minimal project manager and prove the plugin platform early, reaching an author preview in Phase 2, the Launch++ MVP in Phase 3, and a supported v1 in Phase 4.
+status: review
+kind: plan
+localOnly: true
+---
+
+# Launch++ v1 implementation roadmap
+
+The detailed, source-controlled task plan is [`docs/implementation-roadmap.md`](../../docs/implementation-roadmap.md). This review surface summarizes its delivery boundaries, dependencies, and phase gates.
+
+<Callout id="roadmap-mvp-decision" tone="decision">
+
+**Phase 3 is the Launch++ MVP boundary.** Phase 2 proves the complete React/vanilla author loop under a preview contract. Phase 3 adds the capabilities serious plugins and small teams require: private durable collections, safe schema evolution, commands, inter-plugin dependencies, events/jobs, invitations, and roles. Marketplace and hosted-scale work remain post-v1.
+
+</Callout>
+
+## Delivery sequence
+
+<Mermaid
+  id="roadmap-sequence"
+  source={"flowchart TB\n  P0[Phase 0 · Foundation and feasibility]\n  P1[Phase 1 · Minimal solo vertical slice]\n  P2[Phase 2 · Plugin author preview]\n  P3[Phase 3 · Launch++ MVP / team beta]\n  P4[Phase 4 · Supported extension platform / v1]\n  P5[Phase 5 · Ecosystem and scale when justified]\n  P0 --> P1\n  P0 --> P2\n  P1 --> P2\n  P2 --> P3\n  P3 --> P4\n  P4 -. evidence .-> P5"}
+  caption="Plugin feasibility starts in Phase 0; it is not postponed until after the core application."
+/>
+
+## Release boundaries
+
+<Table
+  id="roadmap-release-boundaries"
+  columns={["Milestone", "Phase", "Release condition"]}
+  rows={[
+    ["Technical foundation", "0", "Risky runtime, sandbox, storage, auth, and packaging assumptions have explicit results."],
+    ["Core alpha", "1", "A solo user can manage daily project work and restore a backup."],
+    ["Plugin author preview", "2", "An external author can build, preview, package, upload, and run React or vanilla plugins under a preview contract."],
+    ["Launch++ MVP / team beta", "3", "Invited teams and durable plugin data, commands, events, and jobs are qualified."],
+    ["Supported v1", "4", "Compatibility, isolation, recovery, accessibility, performance, and operations gates pass."],
+  ]}
+/>
+
+## Phase gates
+
+<Checklist
+  id="roadmap-phase-gates"
+  items={[
+    {
+      id: "phase-0-gate",
+      label: "Phase 0 — foundation and feasibility",
+      note: "Prove SQLite/outbox, identity adapter, iframe bridge, isolated server runtime, deterministic archive, and CI boundaries.",
+    },
+    {
+      id: "phase-1-gate",
+      label: "Phase 1 — minimal solo vertical slice",
+      note: "Ship first-owner setup, projects, Board/List, task detail, search/activity, themes, and backup/restore.",
+    },
+    {
+      id: "phase-2-gate",
+      label: "Phase 2 — plugin author preview",
+      note: "Ship manifest, upload/install, registry, broker, SDK, Ant-powered UI, React/vanilla scaffolds, dev mode, pack/inspect, and reference plugins.",
+    },
+    {
+      id: "phase-3-gate",
+      label: "Phase 3 — Launch++ MVP: collaboration and durable behavior",
+      note: "Ship invitations/roles, plugin collections, schema evolution, commands, events/jobs, integrations, and portable export/import.",
+    },
+    {
+      id: "phase-4-gate",
+      label: "Phase 4 — supported extension platform and v1",
+      note: "Complete lifecycle, provenance, compatibility, security, accessibility, performance, deployment, recovery, documentation, and release qualification.",
+    },
+    {
+      id: "phase-5-gate",
+      label: "Phase 5 — ecosystem and scale when justified",
+      note: "Require evidence before marketplace, billing, hosted control plane, PostgreSQL, native installers, or more UI frameworks.",
+    },
+  ]}
+/>
+
+## Critical plugin path
+
+<Mermaid
+  id="roadmap-plugin-critical-path"
+  source={"flowchart TB\n  Protocol[Protocol fixtures]\n  Sandbox[Browser sandbox]\n  Archive[Deterministic archive]\n  CoreCaps[Public project/task capabilities]\n  Broker[Capability broker]\n  SDK[SDK + React bindings]\n  Scaffold[React + vanilla scaffolds]\n  Dev[Live development]\n  Pack[Pack + inspect]\n  Install[Upload + staged install]\n  Qualify[Story Points + external fixtures]\n  Protocol --> Sandbox --> Archive --> CoreCaps --> Broker --> SDK --> Scaffold --> Dev --> Pack --> Install --> Qualify"}
+  caption="This controls the author-preview date; Phase 3 storage and behavior tasks control the Launch++ MVP date."
+/>
+
+## Scope guardrails
+
+<Callout id="roadmap-scope-guardrails" tone="warning">
+
+Do not pull marketplace billing, hosted scale, PostgreSQL, official Vue/Svelte/Angular tooling, microservices, Kubernetes-first deployment, arbitrary plugin SQL/Node access, or advanced project-management suites into v1. A deferred item needs measured demand or a demonstrated architectural limit before becoming committed work.
+
+</Callout>
+
+## Approval gate
+
+Approve the phase boundaries, task order, Phase 2 author-preview boundary, and Phase 3 MVP definition before implementation begins. Execution should start with Phase 0 tasks in [`docs/implementation-roadmap.md`](../../docs/implementation-roadmap.md); completing documentation does not authorize skipping a feasibility or exit gate.
