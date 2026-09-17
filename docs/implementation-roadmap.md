@@ -90,7 +90,7 @@ The architecture decisions in `docs/` are accepted as the implementation baselin
 - [x] **P0-09 — Prove isolated server handlers.** Evaluate the QuickJS/WASM worker approach with CPU, memory, wall-time, output, import, filesystem, process, and network abuse fixtures. Record a ship/no-ship decision; if it fails, constrain executable server plugins rather than weakening the capability broker.
 - [x] **P0-10 — Prove deterministic packaging and intake.** Build a minimal `launchpp pack` prototype and upload validator for a ZIP-compatible `.launch-plugin` archive. Verify identical inputs produce identical hashes, traversal is rejected, no install scripts run, and the server installs without a compiler or package manager.
 - [x] **P0-11 — Establish CI and security baselines.** Add pull-request checks for types, lint, unit tests, architecture boundaries, migrations, package fixtures, secret scanning, dependency review, and minimal browser/adversarial suites.
-- [ ] **P0-12 — Record reference environments and budgets.** Define supported browsers, local/VPS reference hardware, test datasets, plugin archive limits, payload limits, and initial latency/memory measurement methods. Treat numbers as measured gates, not marketing claims.
+- [x] **P0-12 — Record reference environments and budgets.** Define supported browsers, local/VPS reference hardware, test datasets, plugin archive limits, payload limits, and initial latency/memory measurement methods. Treat numbers as measured gates, not marketing claims.
 
 ### Exit gate
 

@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "maximums": {
+    "database.indexedInstallationRead.p95Ms": 1,
+    "database.openAndMigrate.p95Ms": 100,
+    "database.transactionalInstallationAndOutboxWrite.p95Ms": 3,
+    "memory.maxRssBytes": 402653184,
+    "pluginHandler.freshWorkerInvocation.p95Ms": 150,
+    "pluginPackage.inspect.p95Ms": 5,
+    "pluginPackage.pack.p95Ms": 40,
+    "server.composeAndReady.p95Ms": 150,
+    "server.readinessInject.p95Ms": 2,
+    "webDistribution.gzipBytes": 262144,
+    "webDistribution.rawBytes": 819200
+  }
+}

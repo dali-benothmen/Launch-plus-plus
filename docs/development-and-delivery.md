@@ -3,6 +3,7 @@
 Status: proposed repository, engineering rules, quality strategy, and implementation sequence. Commands and directories described here do not exist yet unless already present in the repository.
 
 The enforced pull-request checks and supply-chain rules are documented in the [continuous integration and supply-chain baseline](./ci-security-baseline.md).
+Reference hardware, browser targets, datasets, hard limits, and measurement gates are documented in [reference environments and budgets](./reference-environments-and-budgets.md).
 
 ## Engineering goals
 

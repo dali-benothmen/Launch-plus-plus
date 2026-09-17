@@ -1,0 +1,26 @@
+{
+  "environment": {
+    "architecture": "x64",
+    "cpu": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+    "logicalCpuCount": 12,
+    "memoryBytes": 16683020288,
+    "node": "v24.14.1",
+    "os": "Linux 6.8.0-138-generic"
+  },
+  "formatVersion": 1,
+  "measuredAt": "2026-09-17T23:09:11.798Z",
+  "observed": {
+    "databaseIndexedReadP95Ms": 0.069,
+    "databaseOpenAndMigrateP95Ms": 87.278,
+    "databaseTransactionalWriteP95Ms": 0.34,
+    "maximumRssBytes": 305049600,
+    "pluginFreshWorkerInvocationP95Ms": 72.626,
+    "pluginPackageInspectP95Ms": 0.605,
+    "pluginPackagePackP95Ms": 12.118,
+    "serverComposeAndReadyP95Ms": 70.066,
+    "serverReadinessInjectP95Ms": 0.32,
+    "webDistributionGzipBytes": 201453,
+    "webDistributionRawBytes": 624082
+  },
+  "passed": true
+}
