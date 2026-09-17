@@ -1,2 +1,4 @@
-// Adversarial host and runtime fixtures live behind this test-only boundary.
-export {};
+export {
+  packPluginDirectory,
+  type PackedPlugin,
+} from "./package-builder.js";

@@ -10,6 +10,7 @@ const protocolVersionPattern = "^[0-9]+\\.[0-9]+$";
 const semverPattern =
   "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$";
 const relativeArchivePathPattern = "^\\./(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$";
+const packageFilePathPattern = "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$";
 const routePathPattern = "^[a-z0-9]+(?:[/-][a-z0-9]+)*$";
 
 const StrictObject = <const Properties extends Type.TProperties>(
@@ -44,6 +45,12 @@ export const ArchivePathSchema = Type.String({
   maxLength: 240,
   minLength: 3,
   pattern: relativeArchivePathPattern,
+});
+
+export const PackageFilePathSchema = Type.String({
+  maxLength: 240,
+  minLength: 1,
+  pattern: packageFilePathPattern,
 });
 
 export const BrowserSurfaceSchema = StrictObject(
@@ -281,5 +288,16 @@ export type RequestMessage = Type.Static<typeof RequestMessageSchema>;
 export type ResponseMessage = Type.Static<typeof ResponseMessageSchema>;
 export type CancellationMessage = Type.Static<typeof CancellationMessageSchema>;
 export type PluginMessage = Type.Static<typeof PluginMessageSchema>;
+
+export const PluginIntegritySchema = StrictObject(
+  {
+    algorithm: Type.Literal("sha256"),
+    files: Type.Record(PackageFilePathSchema, Type.String({ pattern: "^[a-f0-9]{64}$" })),
+    formatVersion: Type.Literal("0"),
+  },
+  { $id: "LaunchppPluginIntegrityV0" },
+);
+
+export type PluginIntegrity = Type.Static<typeof PluginIntegritySchema>;
 
 export const CURRENT_PLUGIN_API_VERSION = PLUGIN_API_VERSION;

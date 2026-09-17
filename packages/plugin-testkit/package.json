@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
+  "bin": {
+    "launchpp-pack": "./dist/pack-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,6 +15,13 @@
   },
   "dependencies": {
     "@launchpp/plugin-protocol": "workspace:*",
-    "@launchpp/plugin-runtime": "workspace:*"
+    "@launchpp/plugin-runtime": "workspace:*",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5"
+  },
+  "scripts": {
+    "launchpp:pack": "tsc -b && node ./dist/pack-cli.js"
   }
 }

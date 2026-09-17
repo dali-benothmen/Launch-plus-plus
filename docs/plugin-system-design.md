@@ -292,6 +292,8 @@ license.txt
 
 The exact optional files depend on declared capabilities. All browser documents and their referenced assets must remain inside the archive. Installation validates paths, sizes, manifest shape, compatibility and hashes, then stores the package immutably. It never runs npm, pnpm, a framework build, TypeScript, install scripts or plugin source code.
 
+The Phase 0 implementation fixes the deterministic ZIP, SHA-256 integrity, traversal/resource-limit, and atomic content-addressed staging behavior described in [Plugin packaging and intake proof](./plugin-package-proof.md). The author-facing CLI and upload review UI build on that single intake boundary later.
+
 ### Developer Mode and the live development channel
 
 The pack-and-upload loop is for release validation, not every edit. Launch++ includes an operator-controlled **Settings → Developer → Developer Mode** switch and the CLI supports two development paths:

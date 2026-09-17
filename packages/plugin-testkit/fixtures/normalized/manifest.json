@@ -1,0 +1,25 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "overview": {
+        "document": "./browser/surfaces/overview/index.html"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "overview",
+        "path": "overview",
+        "scope": "project",
+        "surface": "overview",
+        "title": "Package proof"
+      }
+    ]
+  },
+  "id": "launchpp.package-proof",
+  "name": "Package Proof",
+  "permissions": ["projects:read"],
+  "version": "0.0.1"
+}

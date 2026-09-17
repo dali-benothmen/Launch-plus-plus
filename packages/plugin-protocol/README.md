@@ -15,6 +15,8 @@ Fastify, a database, or application internals.
 - Contribution IDs are unique across a package, and every custom UI
   contribution references a declared browser surface.
 - Archive paths are relative, remain inside the package, and reject traversal.
+- `integrity.json` v0 uses SHA-256 and covers every archive file except itself;
+  package intake additionally requires an exact path set and matching digests.
 - Context is created by the host. Plugins cannot add actor, workspace, project,
   installation, or grant fields to a request.
 - Unknown request inputs, successful outputs, error details, and theme values

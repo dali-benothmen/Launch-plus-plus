@@ -5,6 +5,8 @@ import { PLUGIN_API_VERSION, PLUGIN_PROTOCOL_VERSION } from "./constants.js";
 import {
   type InstalledPluginManifest,
   InstalledPluginManifestSchema,
+  type PluginIntegrity,
+  PluginIntegritySchema,
   type PluginMessage,
   PluginMessageSchema,
 } from "./schemas.js";
@@ -119,4 +121,8 @@ export function validatePluginMessage(value: unknown): ValidationResult<PluginMe
   }
 
   return structural;
+}
+
+export function validatePluginIntegrity(value: unknown): ValidationResult<PluginIntegrity> {
+  return validateSchema(PluginIntegritySchema, value);
 }

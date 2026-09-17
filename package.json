@@ -17,6 +17,7 @@
     "format:check": "biome format .",
     "lint": "biome lint .",
     "lint:fix": "biome check --write .",
+    "plugin:pack": "pnpm --filter @launchpp/plugin-testkit exec tsc -b && node ./packages/plugin-testkit/dist/pack-cli.js",
     "runtime:check": "node ./scripts/check-runtime.mjs",
     "dev:web": "pnpm --filter @launchpp-internal/web dev",
     "start:server": "pnpm --filter @launchpp-internal/server start",
