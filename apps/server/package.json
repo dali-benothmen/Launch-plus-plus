@@ -3,12 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "start": "node ./dist/main.js"
+  },
   "dependencies": {
     "@launchpp/api-contracts": "workspace:*",
     "@launchpp/authorization": "workspace:*",
     "@launchpp/core": "workspace:*",
     "@launchpp/database": "workspace:*",
     "@launchpp/plugin-protocol": "workspace:*",
-    "@launchpp/plugin-runtime": "workspace:*"
+    "@launchpp/plugin-runtime": "workspace:*",
+    "@fastify/helmet": "13.1.1",
+    "@fastify/rate-limit": "11.2.0",
+    "fastify": "5.12.5"
   }
 }
