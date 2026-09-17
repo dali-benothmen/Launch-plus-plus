@@ -16,6 +16,18 @@
     "access": "public"
   },
   "dependencies": {
-    "@launchpp/ui-tokens": "workspace:*"
+    "@ant-design/icons": "6.3.4",
+    "@launchpp/ui-tokens": "workspace:*",
+    "antd": "6.6.4"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0 <20",
+    "react-dom": ">=19.0.0 <20"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   }
 }

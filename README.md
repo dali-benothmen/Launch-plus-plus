@@ -60,8 +60,11 @@ pnpm install --frozen-lockfile
 pnpm check
 pnpm build
 pnpm start:server
+pnpm dev:web
 ```
 
 The root checks cover formatting, linting, TypeScript project references, unit tests, and workspace architecture boundaries. Browser tests are available separately through `pnpm test:browser`; feature packages and application entry points are added in subsequent Phase 0 tasks.
 
 The server defaults to `http://127.0.0.1:3000`; see the [server workspace guide](./apps/server/README.md) for configuration and health endpoints.
+
+The [web workspace guide](./apps/web/README.md) describes the React shell, Vite proxy, and public UI/token boundaries.

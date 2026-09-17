@@ -2,17 +2,24 @@
   "name": "@launchpp/ui-tokens",
   "version": "0.0.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./styles.css"
+  ],
   "files": [
-    "dist"
+    "dist",
+    "styles.css"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./styles.css"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5"
   }
 }

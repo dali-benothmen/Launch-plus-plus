@@ -1,2 +1,1 @@
-// The React composition root is introduced with the web-shell foundation.
-export {};
+export { App, createAppRouter, type AppProps } from "./app.js";
