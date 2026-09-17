@@ -1,0 +1,7 @@
+{
+  "capability": "tasks.list",
+  "input": {},
+  "protocolVersion": "0.2",
+  "requestId": "request_01",
+  "type": "launchpp.request"
+}

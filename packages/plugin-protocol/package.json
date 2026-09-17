@@ -4,7 +4,8 @@
   "type": "module",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "exports": {
     ".": {
@@ -14,5 +15,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "typebox": "1.3.33"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5"
   }
 }

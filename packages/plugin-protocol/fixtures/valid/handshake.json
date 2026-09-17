@@ -1,0 +1,23 @@
+{
+  "context": {
+    "actor": { "id": "actor_01" },
+    "grantedPermissions": ["projects:read", "tasks:read"],
+    "installationId": "install_01",
+    "locale": "en-US",
+    "pluginId": "acme.project-overview",
+    "project": { "id": "project_01" },
+    "surfaceId": "overview",
+    "theme": {
+      "id": "launchpp.dark",
+      "mode": "dark",
+      "tokens": {
+        "--launch-color-surface": "#141414",
+        "--launch-color-text-primary": "#f5f5f5"
+      }
+    },
+    "workspace": { "id": "workspace_01" }
+  },
+  "nonce": "01JEXAMPLE0000000000000000",
+  "protocolVersion": "0.1",
+  "type": "launchpp.handshake"
+}

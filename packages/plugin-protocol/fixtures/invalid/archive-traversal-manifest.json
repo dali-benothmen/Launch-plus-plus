@@ -1,0 +1,11 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "overview": { "document": "./browser/../../secrets.txt" }
+    }
+  },
+  "id": "acme.bad-path",
+  "name": "Bad Path",
+  "version": "1.0.0"
+}

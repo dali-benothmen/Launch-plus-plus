@@ -1,0 +1,30 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "overview": { "document": "./browser/overview.html" }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "overview",
+        "path": "overview",
+        "scope": "project",
+        "surface": "overview",
+        "title": "Overview"
+      }
+    ],
+    "settings": [
+      {
+        "id": "overview",
+        "scope": "project",
+        "surface": "overview",
+        "title": "Overview settings"
+      }
+    ]
+  },
+  "id": "acme.duplicate-id",
+  "name": "Duplicate ID",
+  "version": "1.0.0"
+}

@@ -1,0 +1,30 @@
+{
+  "apiVersion": "0",
+  "browser": {
+    "surfaces": {
+      "overview": {
+        "document": "./browser/surfaces/overview/index.html"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "overview",
+        "navigation": {
+          "icon": "dashboard",
+          "label": "Overview",
+          "slot": "project.navigation"
+        },
+        "path": "overview",
+        "scope": "project",
+        "surface": "overview",
+        "title": "Project overview"
+      }
+    ]
+  },
+  "id": "acme.project-overview",
+  "name": "Project Overview",
+  "permissions": ["projects:read", "tasks:read"],
+  "version": "1.0.0"
+}

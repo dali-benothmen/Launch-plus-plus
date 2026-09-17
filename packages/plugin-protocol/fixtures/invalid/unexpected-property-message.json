@@ -1,0 +1,8 @@
+{
+  "capability": "tasks.list",
+  "input": {},
+  "pluginCanForgeActorId": "actor_admin",
+  "protocolVersion": "0.1",
+  "requestId": "request_01",
+  "type": "launchpp.request"
+}

@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "details": { "permission": "tasks:read" },
+    "message": "The plugin is not allowed to read tasks.",
+    "retryable": false
+  },
+  "ok": false,
+  "protocolVersion": "0.1",
+  "requestId": "request_01",
+  "type": "launchpp.response"
+}

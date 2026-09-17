@@ -1,0 +1,6 @@
+{
+  "protocolVersion": "0.1",
+  "reason": "The surface was closed.",
+  "requestId": "request_01",
+  "type": "launchpp.cancel"
+}

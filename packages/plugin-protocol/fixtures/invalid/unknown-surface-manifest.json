@@ -1,0 +1,17 @@
+{
+  "apiVersion": "0",
+  "contributes": {
+    "pages": [
+      {
+        "id": "overview",
+        "path": "overview",
+        "scope": "project",
+        "surface": "missing",
+        "title": "Overview"
+      }
+    ]
+  },
+  "id": "acme.unknown-surface",
+  "name": "Unknown Surface",
+  "version": "1.0.0"
+}
