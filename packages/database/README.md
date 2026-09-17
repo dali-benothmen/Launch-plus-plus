@@ -1,0 +1,27 @@
+# Launch++ persistence adapter
+
+This package owns the physical SQLite schema, reviewed Drizzle migrations, connection policy, transaction implementation, and repository adapters. Domain and application code depend on ports from `@launchpp/core`; it never imports Drizzle, `better-sqlite3`, or database rows.
+
+## Runtime guarantees
+
+- The database must be file-backed and successfully enter WAL mode.
+- Every writer and reader enables foreign keys and a bounded busy timeout.
+- A dedicated read-only connection can serve the last committed snapshot while a write is in progress.
+- Writes pass through one in-process queue and use `BEGIN IMMEDIATE`, so application writes are serialized deliberately.
+- A write callback is synchronous by contract. Returning a promise fails and rolls the transaction back, preventing network calls or asynchronous plugin execution from holding the writer lock.
+- Repository mutations require an explicit `WriteContext`; reads require a `ReadContext`.
+- Domain state and its outbox fact share one transaction.
+- Shutdown stops accepting work, drains already-queued writes, then closes reader and writer handles.
+
+## Migrations
+
+The schema source is `src/schema.ts`. Ordered SQL in `migrations/` is the runtime artifact and must be reviewed like application code.
+
+```bash
+pnpm --filter @launchpp/database db:generate --name <descriptive-name>
+pnpm test:migrations
+```
+
+Runtime startup uses Drizzle's synchronous migrator. All pending migration statements run inside one SQLite transaction. If any statement fails, the set rolls back; startup closes the connection and remains unavailable. Fix or restore the migration input, then retry against the unchanged pre-migration schema. Never edit a migration that has shipped—add a new ordered migration.
+
+The migration metadata table can exist after an initial failure because Drizzle creates it before the migration transaction; it contains no applied entry for the rolled-back set. Backups and installation-level recovery are added with the supported local operations milestone.
