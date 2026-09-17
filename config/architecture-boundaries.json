@@ -1,0 +1,69 @@
+{
+  "$schema": "./architecture-boundaries.schema.json",
+  "workspaceRoots": ["apps", "packages"],
+  "packageNamePattern": "^@launchpp(?:-internal)?/[a-z0-9-]+$",
+  "rules": [
+    {
+      "from": "@launchpp/core",
+      "deny": [
+        "@launchpp/database",
+        "@launchpp/auth-adapter",
+        "@launchpp/plugin-platform",
+        "@launchpp/plugin-runtime",
+        "@launchpp/plugin-sdk",
+        "@launchpp/ui",
+        "fastify",
+        "react",
+        "drizzle-orm"
+      ]
+    },
+    {
+      "from": "@launchpp/plugin-protocol",
+      "deny": [
+        "@launchpp/core",
+        "@launchpp/database",
+        "@launchpp/plugin-platform",
+        "@launchpp/ui",
+        "fastify",
+        "react",
+        "drizzle-orm"
+      ]
+    },
+    {
+      "from": "@launchpp/plugin-data",
+      "deny": ["@launchpp/database", "better-sqlite3", "drizzle-orm"]
+    },
+    {
+      "from": "@launchpp/plugin-sdk",
+      "deny": [
+        "@launchpp/core",
+        "@launchpp/database",
+        "@launchpp/plugin-platform",
+        "@launchpp/plugin-runtime"
+      ]
+    },
+    {
+      "from": "@launchpp/ui",
+      "deny": [
+        "@launchpp/core",
+        "@launchpp/database",
+        "@launchpp/plugin-platform",
+        "@launchpp/plugin-runtime"
+      ]
+    },
+    {
+      "from": "@launchpp/ui-tokens",
+      "deny": [
+        "@launchpp/core",
+        "@launchpp/database",
+        "@launchpp/plugin-platform",
+        "@launchpp/plugin-runtime",
+        "react"
+      ]
+    },
+    {
+      "from": "@launchpp-internal/web",
+      "deny": ["@launchpp/database", "@launchpp/auth-adapter", "@launchpp/plugin-runtime"]
+    }
+  ]
+}

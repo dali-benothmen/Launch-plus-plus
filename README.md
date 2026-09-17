@@ -50,3 +50,14 @@ The documentation set covers:
 - Proposed monorepo, engineering conventions, testing, CI, and delivery phases
 
 All commands and directory structures described in the design documents remain proposals until implementation begins.
+
+## Development foundation
+
+Phase 0 implementation uses the exact Node.js version in `.node-version` / `.nvmrc` and the pnpm version declared in `package.json`.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm check
+```
+
+The root checks cover formatting, linting, TypeScript project references, unit tests, and workspace architecture boundaries. Browser tests are available separately through `pnpm test:browser`; feature packages and application entry points are added in subsequent Phase 0 tasks.
