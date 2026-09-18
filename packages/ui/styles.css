@@ -421,6 +421,11 @@
   line-height: var(--launch-ui-line-height);
 }
 
+.launch-ui-badge.has-children {
+  line-height: 0;
+  vertical-align: middle;
+}
+
 .launch-ui-badge-indicator {
   --launch-ui-badge-indicator-size: 16px;
   position: absolute;
@@ -434,19 +439,21 @@
   align-items: center;
   justify-content: center;
   padding-inline: 4px;
-  border: 1px solid var(--launch-ui-surface);
-  border-radius: 999px;
+  border: 0;
+  border-radius: calc(var(--launch-ui-badge-indicator-size) / 2);
   background: var(--launch-ui-badge-color);
+  box-shadow: 0 0 0 var(--launch-ui-line-width) var(--launch-ui-surface);
   color: #fff;
   font-family: var(--launch-ui-font);
   font-size: 10px;
   font-style: normal;
   font-weight: 400;
-  line-height: calc(var(--launch-ui-badge-indicator-size) - 2px);
+  line-height: var(--launch-ui-badge-indicator-size);
   text-align: center;
   white-space: nowrap;
   transform: translate(50%, -50%);
   transform-origin: center;
+  transition: background-color var(--launch-ui-mid) var(--launch-ui-ease);
   animation: launch-ui-badge-in var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
