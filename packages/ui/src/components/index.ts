@@ -1,5 +1,6 @@
 export * from "./alert/index.js";
 export * from "./anchor/index.js";
+export * from "./auto-complete/index.js";
 export * from "./breadcrumb/index.js";
 export * from "./button/index.js";
 export * from "./card/index.js";

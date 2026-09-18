@@ -356,6 +356,52 @@ button {
   border-radius: var(--launch-ui-radius-lg);
 }
 
+.showcase-autocomplete-stack {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.showcase-autocomplete-textarea {
+  height: 64px;
+}
+
+.showcase-autocomplete-group-title,
+.showcase-autocomplete-group-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.showcase-autocomplete-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--launch-ui-text-tertiary);
+  white-space: nowrap;
+}
+
+.showcase-autocomplete-count svg,
+.showcase-autocomplete-popup-heading svg {
+  width: 14px;
+  height: 14px;
+}
+
+.showcase-autocomplete-popup-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--showcase-border);
+  color: var(--launch-ui-text-secondary);
+}
+
+.showcase-autocomplete-semantic-root {
+  border-radius: var(--launch-ui-radius-lg);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
