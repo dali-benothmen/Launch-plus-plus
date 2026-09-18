@@ -64,9 +64,13 @@ componentTokens:
     groupGap: 12px
     squareRadius: 8px
   input:
-    transitionDuration: 200ms
+    transitionDuration: 1s
     transitionProperties: border-color, background-color, box-shadow
     shapeRound: 9999px
+  card:
+    bodyPadding: 24px
+    border: "1px solid #f0f0f0"
+    borderRadius: 8px
   dialog:
     enterDuration: 200ms
     exitDuration: 200ms
@@ -151,6 +155,8 @@ tokens:
     fast: 0.1s
     mid: 0.2s
     slow: 0.3s
+    hover: 1s
+    hoverEase: "cubic-bezier(0.075, 0.82, 0.165, 1)"
     easeInOut: "cubic-bezier(0.645, 0.045, 0.355, 1)"
     easeOut: "cubic-bezier(0.215, 0.61, 0.355, 1)"
     easeOutCirc: "cubic-bezier(0.08, 0.82, 0.17, 1)"
@@ -296,7 +302,9 @@ Default popup z-index begins at 1000. Component layers then use small, intention
 
 ### Motion
 
-- 100 ms: hover, focus, pressed, and color changes.
+- 1 second with `cubic-bezier(0.075, 0.82, 0.165, 1)`: hover-facing background, border,
+  shadow, and color changes.
+- 100 ms: immediate pressed-state feedback and small utility effects.
 - 200 ms: fades and component-level open/close transitions.
 - 300 ms: larger surface entrance, exit, and movement.
 
@@ -340,7 +348,7 @@ Default geometry:
 - Default shadow: `0 2px 0 rgba(0, 0, 0, 0.02)`.
 - Primary shadow: `0 2px 0 rgba(22, 104, 220, 0.14)`.
 
-The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and transitions with the medium duration and standard ease-in-out curve. Focus-visible styling supplies the accessible outline.
+The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and uses the shared one-second hover transition. Focus-visible styling supplies the accessible outline.
 
 Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
 
@@ -360,7 +368,7 @@ Default outlined input:
 - Add-on background: `rgba(0, 0, 0, 0.02)`.
 - Error focus ring: `0 0 0 2px rgba(255, 38, 5, 0.06)`.
 - Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
-- Border, background, and focus-ring changes transition over 200 ms with the standard ease-in-out curve.
+- Border, background, and focus-ring changes use the shared one-second hover transition.
 
 Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
 
@@ -393,7 +401,9 @@ Use Switch for immediate settings and Checkbox for selection or acknowledgement.
 
 ### Card
 
-Cards are white 8 px-radius containers. Default cards may use a subtle border; raised cards use the light raised shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
+Cards are white 8 px-radius containers. The structural card shell has no padding and uses a 1 px
+solid secondary border; its body owns the standard 24 px padding. Raised cards use the light raised
+shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
 
 Typical body padding is 24 px. Separate header, body, cover, action, and tab regions semantically so plugins can style supported slots without reaching into internal markup.
 

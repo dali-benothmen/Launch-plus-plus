@@ -7,7 +7,7 @@ export interface CodeBlockProps {
 
 export function CodeBlock({ code }: CodeBlockProps) {
   return (
-    <Highlight code={code.trim()} language="tsx" theme={themes.nightOwl}>
+    <Highlight code={code.trim()} language="tsx" theme={themes.github}>
       {({ className, getLineProps, getTokenProps, style, tokens }) => (
         <pre className={`${className} showcase-code`} style={style}>
           {tokens.map((line, lineIndex) => (

@@ -147,6 +147,9 @@ button {
   cursor: pointer;
   font-size: 13px;
   text-align: left;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
 }
 
 .showcase-navigation button:hover,
@@ -397,8 +400,8 @@ button {
   color: var(--launch-color-text);
   cursor: pointer;
   transition:
-    color var(--launch-ui-mid) var(--launch-ui-ease),
-    background-color var(--launch-ui-mid) var(--launch-ui-ease);
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
 }
 
 .showcase-icon-tile:hover,
@@ -485,14 +488,15 @@ button {
   padding: 16px 20px;
   margin: 0;
   border-top: 1px solid var(--launch-color-border);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  color: #393a34;
+  font-family: var(--launch-ui-font-code);
   font-size: 12px;
   line-height: 20px;
   tab-size: 2;
 }
 
 .showcase-usage .showcase-code {
-  border: 0;
+  border: 1px solid var(--launch-color-border-secondary);
   border-radius: 8px;
 }
 
@@ -591,5 +595,12 @@ button {
 
   .showcase-main {
     padding: 32px 18px 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-navigation button,
+  .showcase-icon-tile {
+    transition-duration: 0.01ms;
   }
 }

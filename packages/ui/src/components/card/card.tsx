@@ -3,6 +3,13 @@ import { classes } from "../internal/classes.js";
 
 export interface CardProps extends HTMLAttributes<HTMLElement> {}
 
-export const Card = forwardRef<HTMLElement, CardProps>(function Card({ className, ...props }, ref) {
-  return <section {...props} className={classes("launch-ui-card", className)} ref={ref} />;
+export const Card = forwardRef<HTMLElement, CardProps>(function Card(
+  { children, className, ...props },
+  ref,
+) {
+  return (
+    <section {...props} className={classes("launch-ui-card", className)} ref={ref}>
+      <div className="launch-ui-card-body">{children}</div>
+    </section>
+  );
 });
