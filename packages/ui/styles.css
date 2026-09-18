@@ -811,6 +811,7 @@
     .launch-ui-input-number,
     .launch-ui-input-root,
     .launch-ui-mentions,
+    .launch-ui-select,
     .launch-ui-select-trigger,
     .launch-ui-textarea-wrapper
   ) {
@@ -2216,7 +2217,8 @@
 .launch-ui-input:focus,
 .launch-ui-input:focus-within,
 .launch-ui-textarea-wrapper:focus-within,
-.launch-ui-select-trigger:focus {
+.launch-ui-select-trigger:focus,
+.launch-ui-select-trigger:focus-within {
   border-color: var(--launch-ui-primary);
   box-shadow: 0 0 0 2px rgb(22 104 220 / 12%);
   outline: 0;
@@ -3243,16 +3245,140 @@
   background: var(--launch-ui-fill-quaternary);
 }
 
+.launch-ui-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: 22px;
+  vertical-align: top;
+}
+
 .launch-ui-select-trigger {
   display: inline-flex;
+  width: 100%;
+  min-height: var(--launch-ui-control-height);
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   padding: 0 11px;
+  cursor: pointer;
+}
+
+.launch-ui-select-selection {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  overflow: hidden;
+}
+
+.launch-ui-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-ui-select-value.is-placeholder {
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-select-search {
+  min-width: 12px;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  outline: none;
+}
+
+.launch-ui-select-search::placeholder {
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-select-search + .launch-ui-select-value {
+  position: absolute;
+  inset-inline-start: 0;
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.launch-ui-select-actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-inline-start: 8px;
 }
 
 .launch-ui-select-icon {
   display: inline-flex;
   color: var(--launch-ui-text-tertiary);
+  transition: transform var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-select.is-open .launch-ui-select-icon {
+  transform: rotate(180deg);
+}
+
+.launch-ui-select-clear,
+.launch-ui-select-tag button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--launch-ui-text-tertiary);
+  cursor: pointer;
+}
+
+.launch-ui-select-clear {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: 10px;
+}
+
+.launch-ui-select-clear + .launch-ui-select-icon {
+  opacity: 0;
+}
+
+.launch-ui-select-tag {
+  display: inline-flex;
+  max-width: 100%;
+  height: 24px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 3px;
+  padding-inline: 6px;
+  border: 1px solid var(--launch-ui-border-soft);
+  border-radius: 4px;
+  background: var(--launch-ui-fill-tertiary);
+  line-height: 22px;
+}
+
+.launch-ui-select-tag > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-ui-select-tag button {
+  width: 14px;
+  height: 14px;
+}
+
+.launch-ui-select-tag .launch-ui-control-icon {
+  width: 10px;
+  height: 10px;
 }
 
 .launch-ui-select-content,
@@ -3271,8 +3397,22 @@
 }
 
 .launch-ui-select-content {
-  width: var(--radix-select-trigger-width);
-  transform-origin: var(--radix-select-content-transform-origin);
+  position: fixed;
+  overflow: visible;
+}
+
+.launch-ui-select-content.is-top {
+  transform-origin: bottom center;
+}
+
+.launch-ui-select-content.is-bottom {
+  transform-origin: top center;
+}
+
+.launch-ui-select-list {
+  max-height: 256px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .launch-ui-select-item,
@@ -3290,6 +3430,7 @@
 
 .launch-ui-select-item {
   padding: 5px 32px 5px 12px;
+  cursor: pointer;
 }
 
 .launch-ui-menu-item {
@@ -3298,18 +3439,104 @@
 }
 
 .launch-ui-select-item[data-highlighted],
+.launch-ui-select-item.is-active,
 .launch-ui-menu-item[data-highlighted] {
   background: var(--launch-ui-fill-tertiary);
 }
 
-.launch-ui-select-item[data-state="checked"] {
+.launch-ui-select-item[data-state="checked"],
+.launch-ui-select-item.is-selected {
   background: var(--launch-ui-primary-bg);
   font-weight: 600;
 }
 
 .launch-ui-select-item[data-disabled],
+.launch-ui-select-item.is-disabled,
 .launch-ui-menu-item[data-disabled] {
   color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-select-item-label {
+  min-width: 0;
+  flex: 1;
+}
+
+.launch-ui-select-group.has-label + .launch-ui-select-group.has-label {
+  padding-top: 4px;
+  border-top: 1px solid var(--launch-ui-border-soft);
+  margin-top: 4px;
+}
+
+.launch-ui-select-group-label {
+  padding: 5px 12px;
+  color: var(--launch-ui-text-secondary);
+  font-weight: 600;
+}
+
+.launch-ui-select-empty {
+  padding: 8px 12px;
+  color: var(--launch-ui-text-tertiary);
+  text-align: center;
+}
+
+.launch-ui-select.is-small .launch-ui-select-trigger {
+  min-height: var(--launch-ui-control-height-sm);
+  padding-inline: 7px;
+}
+
+.launch-ui-select.is-large .launch-ui-select-trigger {
+  min-height: var(--launch-ui-control-height-lg);
+  padding-inline: 11px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.launch-ui-select.is-filled .launch-ui-select-trigger {
+  border-color: transparent;
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-select.is-filled .launch-ui-select-trigger:hover {
+  background: var(--launch-ui-fill-secondary);
+}
+
+.launch-ui-select.is-borderless .launch-ui-select-trigger {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.launch-ui-select.is-underlined .launch-ui-select-trigger {
+  padding-inline: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.launch-ui-select.is-error .launch-ui-select-trigger {
+  border-color: var(--launch-ui-error);
+}
+
+.launch-ui-select.is-warning .launch-ui-select-trigger {
+  border-color: var(--launch-ui-warning);
+}
+
+.launch-ui-select.is-disabled .launch-ui-select-trigger {
+  border-color: var(--launch-ui-border);
+  background: var(--launch-ui-fill-quaternary);
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-select.is-multiple .launch-ui-select-trigger {
+  height: auto;
+  min-height: var(--launch-ui-control-height);
+  padding-block: 3px;
+}
+
+.launch-ui-select.is-multiple.is-small .launch-ui-select-tag {
+  height: 18px;
+  line-height: 16px;
 }
 
 .launch-ui-menu-item.is-danger {

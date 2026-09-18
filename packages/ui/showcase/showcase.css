@@ -1040,6 +1040,48 @@ button {
   text-transform: capitalize;
 }
 
+.showcase-select-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.showcase-select-person > svg {
+  flex: none;
+  color: var(--launch-color-text-muted);
+  font-size: 16px;
+}
+
+.showcase-select-person > span {
+  display: grid;
+}
+
+.showcase-select-person strong {
+  font-weight: 500;
+}
+
+.showcase-select-person small {
+  color: var(--launch-color-text-muted);
+  font-size: 12px;
+}
+
+.showcase-select-popup-action {
+  padding: 4px;
+}
+
+.launch-ui-select-custom-tag .launch-ui-tag {
+  gap: 4px;
+}
+
+.launch-ui-select-custom-tag .launch-ui-tag button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
 .showcase-code {
   overflow-x: auto;
   padding: 16px 20px;
