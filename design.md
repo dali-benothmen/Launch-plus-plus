@@ -404,6 +404,19 @@ Flex is the low-level layout primitive for arranging block-level children. It re
 
 Use Flex when layout direction or alignment matters. Use Space when a group only needs consistent spacing between inline elements.
 
+### Space
+
+Space provides consistent separation between inline elements and adds one semantic wrapper around each child. Horizontal orientation is the default and vertically centers items; vertical orientation stacks items from the cross-axis start.
+
+- Preset sizes are 8 px small, 16 px medium, and 24 px large. Numeric values and `[horizontal, vertical]` pairs are also supported.
+- `align` supports start, center, end, and baseline alignment.
+- Horizontal groups may wrap, and both orientations may render a decorative separator between items.
+- Public `root`, `item`, and `separator` slots may be customized through `classNames` and `styles`.
+- `Space.Compact` keeps controls as direct children, collapses shared borders, and supports horizontal or vertical orientation, small/medium/large control sizes, and full-width layout.
+- `Space.Addon` creates a custom labeled cell inside a compact group.
+
+Use regular Space for visual rhythm between separate elements. Use `Space.Compact` only when controls form one connected operation.
+
 ### Grid
 
 Grid provides a responsive 24-column layout through `Row` and `Col`. Content belongs inside columns, and columns belong directly inside rows. When fixed column spans total more than 24, the overflowing column moves to a new line unless wrapping is disabled.

@@ -176,6 +176,28 @@ button {
   background: var(--launch-ui-fill-quaternary);
 }
 
+.showcase-space-stack,
+.showcase-space-compact-examples {
+  width: 100%;
+}
+
+.showcase-space-card {
+  width: 300px;
+}
+
+.showcase-space-align-box {
+  padding: 4px;
+  border: 1px solid var(--launch-ui-primary-border);
+}
+
+.showcase-space-mock {
+  display: inline-flex;
+  min-height: 64px;
+  align-items: center;
+  padding-inline: 16px;
+  background: var(--launch-ui-fill-secondary);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

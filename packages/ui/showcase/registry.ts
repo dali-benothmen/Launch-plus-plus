@@ -11,6 +11,7 @@ import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
+import { spaceShowcase } from "./components/space.showcase.js";
 import { switchShowcase } from "./components/switch.showcase.js";
 import { tableShowcase } from "./components/table.showcase.js";
 import { tabsShowcase } from "./components/tabs.showcase.js";
@@ -34,6 +35,7 @@ export const componentRegistry = defineShowcases([
   flexShowcase,
   gridShowcase,
   masonryShowcase,
+  spaceShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,
