@@ -1549,6 +1549,116 @@
   height: 2px;
 }
 
+.launch-ui-breadcrumb {
+  color: var(--launch-ui-text-tertiary);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: 22px;
+}
+
+.launch-ui-breadcrumb-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.launch-ui-breadcrumb-entry,
+.launch-ui-breadcrumb-item,
+.launch-ui-breadcrumb-link,
+.launch-ui-breadcrumb-label,
+.launch-ui-breadcrumb-button,
+.launch-ui-breadcrumb-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+
+.launch-ui-breadcrumb-link,
+.launch-ui-breadcrumb-label,
+.launch-ui-breadcrumb-button {
+  gap: 4px;
+}
+
+.launch-ui-breadcrumb-link,
+.launch-ui-breadcrumb-button {
+  border-radius: 2px;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  text-decoration: none;
+  transition: color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-breadcrumb-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.launch-ui-breadcrumb-link:hover,
+.launch-ui-breadcrumb-button:hover {
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-breadcrumb-link:focus-visible,
+.launch-ui-breadcrumb-button:focus-visible,
+.launch-ui-breadcrumb-menu-button:focus-visible {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-breadcrumb-item.is-current {
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-breadcrumb-separator {
+  display: inline-flex;
+  align-items: center;
+  margin-inline: 8px;
+  color: var(--launch-ui-text-tertiary);
+}
+
+.launch-ui-breadcrumb-menu-trigger {
+  gap: 2px;
+}
+
+.launch-ui-breadcrumb-menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.launch-ui-breadcrumb-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.launch-ui-breadcrumb-dropdown-icon .launch-ui-control-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.launch-ui-breadcrumb-item svg {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+}
+
+.launch-ui-breadcrumb-menu-link {
+  color: inherit;
+  text-decoration: none;
+}
+
 .launch-ui-tabs-list {
   display: flex;
   gap: 32px;
@@ -2128,6 +2238,8 @@
 @media (prefers-reduced-motion: reduce) {
   .launch-ui-button,
   .launch-ui-anchor-title,
+  .launch-ui-breadcrumb-button,
+  .launch-ui-breadcrumb-link,
   .launch-ui-card.is-hoverable,
   .launch-ui-link,
   .launch-ui-typography-action,

@@ -516,6 +516,20 @@ Anchor provides an in-page table of contents for long, scrollable views. Vertica
 
 Use Anchor for destinations within one rendered page. Use Tabs when selecting one peer view hides the others.
 
+### Breadcrumb
+
+Breadcrumb communicates the current location inside a hierarchy and provides a path back to parent levels. Use it only when the hierarchy contains more than two meaningful layers.
+
+- Text uses the default 13 px type size and 22 px line height.
+- Parent items and separators use tertiary text; the current location uses the primary text color.
+- Separators have 8 px inline margins and default to `/`.
+- Links transition to the primary text color on hover and retain visible keyboard focus.
+- Icons align with labels at a 4 px gap. A dedicated dropdown button exposes sibling destinations without nesting interactive elements.
+- String titles, href values, and connected route paths support named parameter replacement.
+- Public `root`, `item`, and `separator` slots may be customized through `classNames` and `styles`.
+
+Keep labels short, preserve the hierarchy's order, and do not use Breadcrumb as a replacement for primary navigation.
+
 ### Menu and navigation
 
 Navigation selection uses `#e6f4ff` with primary-blue text in the light theme. Hover uses a very pale neutral or blue tint. Icons and labels align consistently; collapsed navigation must expose labels through accessible tooltips.

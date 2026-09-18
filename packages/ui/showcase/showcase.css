@@ -233,6 +233,11 @@ button {
   background: var(--launch-ui-surface-subtle);
 }
 
+.showcase-breadcrumb-semantic-root {
+  border: 1px solid var(--showcase-border);
+  border-radius: var(--launch-ui-radius);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
