@@ -1,1 +1,1 @@
-export { Input, type InputProps, type InputVariant } from "./input.js";
+export { Input, type InputProps, type InputShape, type InputVariant } from "./input.js";

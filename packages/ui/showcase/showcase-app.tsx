@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LaunchProvider } from "../src/index.js";
+import { Input, LaunchProvider } from "../src/index.js";
 import {
   componentRegistry,
   showcaseStages,
@@ -138,25 +138,29 @@ export function ShowcaseApp() {
   return (
     <LaunchProvider mode="light">
       <div className="showcase-shell">
-        <aside className="showcase-sidebar">
-          <header className="showcase-brand">
+        <header className="showcase-header">
+          <div className="showcase-brand">
             <span className="showcase-brand-mark">L+</span>
             <div>
               <strong>Launch++ UI</strong>
               <span>Component showcase</span>
             </div>
-          </header>
+          </div>
 
-          <label className="showcase-search">
+          <label className="showcase-search" htmlFor="showcase-search-input">
             <span className="showcase-visually-hidden">Search components</span>
-            <input
+            <Input
+              id="showcase-search-input"
               onChange={(event) => setQuery(event.currentTarget.value)}
               placeholder="Search components"
+              shape="round"
               type="search"
               value={query}
             />
           </label>
+        </header>
 
+        <aside className="showcase-sidebar">
           <fieldset className="showcase-filters">
             <legend className="showcase-visually-hidden">Filter by lifecycle stage</legend>
             {(["all", ...showcaseStages] as const).map((filter) => (

@@ -61,6 +61,7 @@ componentTokens:
   input:
     transitionDuration: 200ms
     transitionProperties: border-color, background-color, box-shadow
+    shapeRound: 9999px
   dialog:
     enterDuration: 200ms
     exitDuration: 200ms
@@ -202,6 +203,7 @@ The visual system is compact, stable, and extensible. Its implementation rules a
 - Components expose stable semantic slots through `classNames` and `styles`; consumers should not target internal DOM structure.
 - Component APIs increasingly use consistent concepts such as `variant`, `placement`, `orientation`, `open`, `destroyOnHidden`, `title`, and `content`.
 - Inputs and containers use named variants rather than a simple `bordered` boolean.
+- Inputs support a `round` shape for search and other compact discovery controls.
 - Tags distinguish filled and solid variants; Card distinguishes outlined and borderless variants.
 - Static CSS output must remain possible for plugin packaging and predictable runtime performance.
 - Focus visibility is a first-class seed setting through `focusOutline`.

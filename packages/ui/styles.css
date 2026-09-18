@@ -337,6 +337,10 @@
   box-shadow: none;
 }
 
+.launch-ui-input.is-round {
+  border-radius: 9999px;
+}
+
 .launch-ui-input.is-error {
   border-color: var(--launch-ui-error);
 }
