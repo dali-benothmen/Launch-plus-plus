@@ -46,6 +46,38 @@ function VariantMentions() {
   );
 }
 
+const mentionColors = [
+  { label: "Gray", value: "var(--launch-ui-fill-secondary)" },
+  { label: "Blue", value: "#e6f4ff" },
+  { label: "Green", value: "#f6ffed" },
+  { label: "Pink", value: "#fff0f6" },
+] as const;
+
+function MentionColors() {
+  const [color, setColor] = useState<string>(mentionColors[0].value);
+  return (
+    <Space className="showcase-mentions-stack" size="medium" vertical>
+      <Flex gap="small" wrap="wrap">
+        {mentionColors.map((option) => (
+          <Button
+            aria-pressed={color === option.value}
+            key={option.label}
+            onClick={() => setColor(option.value)}
+            variant={color === option.value ? "primary" : "default"}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </Flex>
+      <Mentions
+        defaultValue="Review this with @avery and @maya"
+        mentionColor={color}
+        options={people}
+      />
+    </Space>
+  );
+}
+
 interface MentionFields {
   collaborators?: string;
 }
@@ -228,9 +260,10 @@ function SemanticMentions() {
     <Mentions
       className="showcase-mentions-stack"
       classNames={{ option: "showcase-mentions-option" }}
-      defaultValue="Styled suggestions @"
+      defaultValue="Styled @avery suggestions @"
       options={people}
       styles={({ props }) => ({
+        mention: { background: "#e6f4ff", color: "#0958d9" },
         popup: { border: `1px solid var(--launch-ui-primary)`, minWidth: "280px" },
         textarea: { fontWeight: props.value ? 600 : 400 },
       })}
@@ -272,6 +305,18 @@ export const mentionsShowcase = defineShowcase({
 <Mentions variant="filled" />
 <Mentions variant="borderless" />
 <Mentions variant="underlined" />`,
+    },
+    {
+      id: "mentions-colors",
+      name: "Mention colors",
+      description:
+        "Mentions use a light-gray tag by default. Set mentionColor to match the surrounding context.",
+      preview: MentionColors,
+      code: `<Mentions
+  defaultValue="Review this with @avery and @maya"
+  mentionColor="#e6f4ff"
+  options={people}
+/>`,
     },
     {
       id: "mentions-form",
@@ -404,6 +449,12 @@ export const mentionsShowcase = defineShowcase({
       description: "Defines one or more characters that open mention suggestions.",
       type: "string | string[]",
       defaultValue: '"@"',
+    },
+    {
+      name: "mentionColor",
+      description: "Sets the background color used by rendered mention tags.",
+      type: "string",
+      defaultValue: '"light gray"',
     },
     {
       name: "split",

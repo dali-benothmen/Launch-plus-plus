@@ -25,7 +25,7 @@ export type MentionsPlacement = "bottom" | "top";
 export type MentionsSize = "large" | "medium" | "small";
 export type MentionsStatus = "error" | "success" | "validating" | "warning";
 export type MentionsVariant = "borderless" | "filled" | "outlined" | "underlined";
-export type MentionsSemanticName = "clear" | "option" | "popup" | "root" | "textarea";
+export type MentionsSemanticName = "clear" | "mention" | "option" | "popup" | "root" | "textarea";
 export type MentionsClassNames = Partial<Record<MentionsSemanticName, string>>;
 export type MentionsStyles = Partial<Record<MentionsSemanticName, CSSProperties>>;
 
@@ -73,6 +73,7 @@ export interface MentionsProps
   readonly defaultValue?: string;
   readonly filterOption?: false | ((input: string, option: MentionsOption) => boolean);
   readonly loading?: boolean;
+  readonly mentionColor?: string;
   readonly notFoundContent?: ReactNode;
   readonly onChange?: (value: string) => void;
   readonly onClear?: () => void;
@@ -98,6 +99,11 @@ interface ActiveMention {
   readonly end: number;
   readonly prefix: string;
   readonly query: string;
+  readonly start: number;
+}
+
+interface MentionMatch extends MentionValue {
+  readonly end: number;
   readonly start: number;
 }
 
@@ -128,20 +134,43 @@ function findActiveMention(
   return match;
 }
 
+function findMentions(value: string, prefixes: ReadonlyArray<string>) {
+  const mentions: MentionMatch[] = [];
+  let cursor = 0;
+  while (cursor < value.length) {
+    const prefix = prefixes.find((item) => value.startsWith(item, cursor));
+    const previous = value[cursor - 1];
+    if (!prefix || (cursor > 0 && previous !== undefined && !/\s|[([{]/.test(previous))) {
+      cursor += 1;
+      continue;
+    }
+
+    const valueStart = cursor + prefix.length;
+    let tokenEnd = valueStart;
+    while (tokenEnd < value.length && !/\s/.test(value[tokenEnd] ?? "")) tokenEnd += 1;
+    let end = tokenEnd;
+    while (end > valueStart && /[.,!?;:)\]}]/.test(value[end - 1] ?? "")) end -= 1;
+    if (end > valueStart) {
+      mentions.push({
+        end,
+        prefix,
+        start: cursor,
+        value: value.slice(valueStart, end),
+      });
+    }
+    cursor = Math.max(tokenEnd, cursor + prefix.length);
+  }
+  return mentions;
+}
+
 function getMentions(
   value: string,
   config: { readonly prefix?: string | ReadonlyArray<string> } = {},
 ) {
-  const prefixes = normalizePrefixes(config.prefix);
-  const mentions: MentionValue[] = [];
-  const tokens = value.split(/\s+/);
-  for (const token of tokens) {
-    const prefix = prefixes.find((item) => token.startsWith(item));
-    if (!prefix) continue;
-    const mentionValue = token.slice(prefix.length).replace(/[.,!?;:]+$/, "");
-    if (mentionValue) mentions.push({ prefix, value: mentionValue });
-  }
-  return mentions;
+  return findMentions(value, normalizePrefixes(config.prefix)).map(({ prefix, value }) => ({
+    prefix,
+    value,
+  }));
 }
 
 const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
@@ -155,6 +184,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       disabled = false,
       filterOption,
       loading = false,
+      mentionColor,
       notFoundContent = "No data",
       onBlur,
       onClick,
@@ -165,6 +195,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       onKeyUp,
       onPopupScroll,
       onResize,
+      onScroll,
       onSearch,
       onSelect,
       options = [],
@@ -184,6 +215,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       ...textareaProps
     } = mentionsProps;
     const rootRef = useRef<HTMLDivElement | null>(null);
+    const mirrorRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const popupId = useId();
     const [internalValue, setInternalValue] = useState(defaultValue);
@@ -218,6 +250,33 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       );
     }, [activeMention, filterOption, options]);
     const popupOpen = focused && !dismissed && activeMention !== null;
+    const mentionMatches = useMemo(
+      () => findMentions(displayValue, prefixes),
+      [displayValue, prefixes],
+    );
+    const decoratedContent = useMemo(() => {
+      const content: ReactNode[] = [];
+      let cursor = 0;
+      for (const mention of mentionMatches) {
+        if (mention.start > cursor) content.push(displayValue.slice(cursor, mention.start));
+        content.push(
+          <span
+            className={classes("launch-ui-mentions-tag", resolvedClassNames.mention)}
+            key={`${mention.start}-${mention.end}`}
+            style={resolvedStyles.mention}
+          >
+            {displayValue.slice(mention.start, mention.end)}
+          </span>,
+        );
+        cursor = mention.end;
+      }
+      if (cursor < displayValue.length) content.push(displayValue.slice(cursor));
+      if (displayValue.endsWith("\n")) content.push("\u00a0");
+      return content;
+    }, [displayValue, mentionMatches, resolvedClassNames.mention, resolvedStyles.mention]);
+    const mentionColorStyle = mentionColor
+      ? ({ "--launch-ui-mentions-tag-background": mentionColor } as CSSProperties)
+      : undefined;
 
     useImperativeHandle(
       forwardedRef,
@@ -358,6 +417,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
           "launch-ui-mentions",
           `is-${variant}`,
           `is-${size}`,
+          displayValue.length > 0 && "has-value",
           focused && "is-focused",
           disabled && "is-disabled",
           readOnly && "is-readonly",
@@ -366,8 +426,11 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
           className,
         )}
         ref={rootRef}
-        style={{ ...resolvedStyles.root, ...style }}
+        style={{ ...mentionColorStyle, ...resolvedStyles.root, ...style }}
       >
+        <div aria-hidden="true" className="launch-ui-mentions-mirror" ref={mirrorRef}>
+          {decoratedContent}
+        </div>
         <textarea
           {...textareaProps}
           aria-activedescendant={
@@ -412,6 +475,13 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
             ) {
               updateActiveMention(event.currentTarget.value, event.currentTarget.selectionStart);
             }
+          }}
+          onScroll={(event) => {
+            if (mirrorRef.current) {
+              mirrorRef.current.scrollLeft = event.currentTarget.scrollLeft;
+              mirrorRef.current.scrollTop = event.currentTarget.scrollTop;
+            }
+            onScroll?.(event);
           }}
           readOnly={readOnly}
           ref={textareaRef}

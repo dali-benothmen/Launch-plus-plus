@@ -2766,6 +2766,7 @@
 }
 
 .launch-ui-mentions {
+  --launch-ui-mentions-tag-background: var(--launch-ui-fill-secondary);
   position: relative;
   display: inline-flex;
   width: 100%;
@@ -2795,6 +2796,8 @@
 }
 
 .launch-ui-mentions-textarea {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   min-width: 0;
@@ -2810,12 +2813,42 @@
   resize: none;
 }
 
+.launch-ui-mentions.has-value .launch-ui-mentions-textarea {
+  color: transparent;
+  caret-color: var(--launch-ui-text);
+}
+
+.launch-ui-mentions-mirror {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 5px 11px;
+  color: inherit;
+  line-height: 20px;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+.launch-ui-mentions-tag {
+  padding-inline: 2px;
+  border-radius: 3px;
+  margin-inline: -2px;
+  background: var(--launch-ui-mentions-tag-background);
+  box-decoration-break: clone;
+  color: inherit;
+  transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+  -webkit-box-decoration-break: clone;
+}
+
 .launch-ui-mentions-textarea::placeholder {
   color: var(--launch-ui-text-disabled);
 }
 
 .launch-ui-mentions-clear {
   position: absolute;
+  z-index: 2;
   top: 7px;
   right: 8px;
   display: inline-flex;
@@ -2836,6 +2869,7 @@
   color: var(--launch-ui-text-secondary);
 }
 
+.launch-ui-mentions:has(.launch-ui-mentions-clear) .launch-ui-mentions-mirror,
 .launch-ui-mentions:has(.launch-ui-mentions-clear) .launch-ui-mentions-textarea {
   padding-inline-end: 30px;
 }
@@ -2902,6 +2936,7 @@
   text-align: center;
 }
 
+.launch-ui-mentions.is-small .launch-ui-mentions-mirror,
 .launch-ui-mentions.is-small .launch-ui-mentions-textarea {
   min-height: calc(var(--launch-ui-control-height-sm) - 2px);
   padding: 1px 7px;
@@ -2915,6 +2950,7 @@
   font-size: 16px;
 }
 
+.launch-ui-mentions.is-large .launch-ui-mentions-mirror,
 .launch-ui-mentions.is-large .launch-ui-mentions-textarea {
   min-height: calc(var(--launch-ui-control-height-lg) - 2px);
   padding: 9px 11px;
@@ -4853,6 +4889,7 @@
   .launch-ui-mentions-clear,
   .launch-ui-mentions-option,
   .launch-ui-mentions-popup,
+  .launch-ui-mentions-tag,
   .launch-ui-input-clear,
   .launch-ui-otp-input,
   .launch-ui-password-toggle,
