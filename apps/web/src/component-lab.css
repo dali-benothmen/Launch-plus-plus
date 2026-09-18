@@ -1,10 +1,11 @@
 :root {
-  --lab-primary: #000;
-  --lab-primary-bg: #f5f5f5;
-  --lab-primary-bg-hover: #e8e8e8;
-  --lab-primary-border: #d9d9d9;
-  --lab-primary-hover: #262626;
-  --lab-primary-active: #000;
+  --lab-primary: #1668dc;
+  --lab-primary-bg: #e6f4ff;
+  --lab-primary-bg-hover: #bde1ff;
+  --lab-primary-border: #94cbff;
+  --lab-primary-hover: #3c8ae8;
+  --lab-primary-active: #094bb5;
+  --lab-black: #000;
   --lab-info: #1677ff;
   --lab-info-bg: #e6f4ff;
   --lab-info-border: #91caff;
@@ -265,7 +266,7 @@ button {
 .lab-field input:focus-visible,
 .lab-field select:focus-visible,
 .lab-switch:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.18);
+  outline: 2px solid rgba(22, 104, 220, 0.2);
   outline-offset: 2px;
 }
 
@@ -273,7 +274,7 @@ button {
   border-color: var(--lab-primary);
   background: var(--lab-primary);
   color: #fff;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 0 rgba(22, 104, 220, 0.14);
 }
 
 .lab-button.is-primary:hover {
@@ -437,7 +438,7 @@ button {
 .lab-field select:focus,
 .lab-select-trigger:focus {
   border-color: var(--lab-primary);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(22, 104, 220, 0.12);
   outline: 0;
 }
 
@@ -667,7 +668,7 @@ button {
 
 .lab-tab:focus-visible {
   border-radius: var(--lab-radius);
-  outline: 2px solid rgba(0, 0, 0, 0.18);
+  outline: 2px solid rgba(22, 104, 220, 0.2);
   outline-offset: 2px;
 }
 

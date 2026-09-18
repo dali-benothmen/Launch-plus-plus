@@ -1,19 +1,10 @@
 ---
-name: Ant Design
-sourceVersion: 6.6.4
-capturedAt: 2026-09-18
+name: Launch++ Design System
+version: 0.1.0
+updatedAt: 2026-09-18
 scope: Default light theme and component behavior
-purpose: Reference for recreating the visual language with Radix primitives and CSS
-sources:
-  - https://ant.design/docs/spec/introduce/
-  - https://ant.design/docs/spec/values/
-  - https://ant.design/docs/spec/colors/
-  - https://ant.design/docs/spec/font/
-  - https://ant.design/docs/spec/layout/
-  - https://ant.design/docs/react/customize-theme/
-  - https://ant.design/docs/react/migration-v6/
-  - https://ant.design/components/overview/
-observedSiteRuntime:
+purpose: Source of truth for implementing the Launch++ visual language with Radix primitives and CSS
+referenceRuntime:
   fontFamily: "AlibabaSans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
   fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
   presetColors:
@@ -49,22 +40,26 @@ observedSiteRuntime:
     zIndexBase: 0
     zIndexPopupBase: 1000
     opacityImage: 1
-launchExperiment:
-  colorPrimary: "#000000"
-  colorPrimaryHover: "#262626"
-  colorPrimaryActive: "#000000"
-  colorPrimaryBg: "#f5f5f5"
-  colorPrimaryBgHover: "#e8e8e8"
+brand:
+  colorPrimary: "#1668dc"
+  colorPrimaryHover: "#3c8ae8"
+  colorPrimaryActive: "#094bb5"
+  colorPrimaryBg: "#e6f4ff"
+  colorPrimaryBgHover: "#bde1ff"
+  colorPrimaryBorder: "#94cbff"
+  colorPrimaryBorderHover: "#67abf5"
+  colorBlack: "#000000"
   borderRadius: 6px
 tokens:
   color:
-    primary: "#1677ff"
-    primaryHover: "#4096ff"
-    primaryActive: "#0958d9"
+    primary: "#1668dc"
+    primaryHover: "#3c8ae8"
+    primaryActive: "#094bb5"
     primaryBg: "#e6f4ff"
-    primaryBgHover: "#bae0ff"
-    primaryBorder: "#91caff"
-    primaryBorderHover: "#69b1ff"
+    primaryBgHover: "#bde1ff"
+    primaryBorder: "#94cbff"
+    primaryBorderHover: "#67abf5"
+    black: "#000000"
     success: "#52c41a"
     successBg: "#f6ffed"
     successBorder: "#b7eb8f"
@@ -156,21 +151,19 @@ tokens:
     xxl: 1600px
 ---
 
-# Ant Design 6.6.4 visual system
+# Launch++ design system
 
-This is a practical extraction of Ant Design's current default light theme for the Launch++ UI experiment. It is meant to guide a visually faithful implementation with Radix primitives and plain CSS; it is not a copy of Ant Design's source code or a replacement for its component documentation.
+This document is the source of truth for the Launch++ visual language. It defines the default light theme, interaction model, component measurements, and public styling direction for the core product and its plugins.
 
-The values in the front matter were resolved from the installed `antd@6.6.4` package with `theme.getDesignToken()` and checked against the live official documentation on the capture date. Component measurements below come from the live v6 component-token tables. When this document makes a product recommendation rather than reporting an Ant token, it says so explicitly.
+## Runtime foundations
 
-## Runtime layers and our overrides
+The system uses an `AlibabaSans`-first component font stack with native system fallbacks, a 4 px size unit, 32 px default control height, 6 px base radius, and 1000 popup z-index. The `referenceRuntime` block records the complete supporting palette and primitive values. The `brand` block contains Launch++ product decisions.
 
-The live `ant.design` website is not identical to an unconfigured `antd` installation. Inspection of the site shows an `AlibabaSans`-first font stack, the preset color variables, and the same 4 px size unit, 32 px control height, 6 px base radius, and 1000 popup z-index recorded above. The site's `--font-sans` and `--font-mono` variables are page-level aliases; they are not separate Ant component tokens.
+Context matters when applying shadows. The `drawerDownDark` token uses very low-opacity white layers and belongs only on dark or inverse surfaces. Light surfaces use black-alpha elevation tokens.
 
-Context matters when copying computed variables. For example, the observed `--ant-box-shadow-drawer-down` uses very low-opacity white layers, which indicates a dark or inverse theme context. The default light-theme shadows continue to use black-alpha layers. Keep both documented, but never apply an inverse shadow to a light surface merely because it appeared in an inspector snapshot.
+Launch++ uses `#1668dc` as its primary color. Black remains available as an independent palette token for text, high-contrast surfaces, and future product needs; it is not the primary interaction color.
 
-The `tokens` block remains the official Ant default. The `observedSiteRuntime` block records additions seen on the live documentation site. The `launchExperiment` block is our intentional product direction and currently overrides the brand primary with black while keeping blue available for informational feedback and categorical color. Launch++ components use a 6 px base corner radius.
-
-The page-level font aliases observed on the site are:
+The page-level font aliases are:
 
 ```css
 :root {
@@ -184,27 +177,23 @@ The page-level font aliases observed on the site are:
 }
 ```
 
-Ant's component scope then prepends `AlibabaSans` to its own sans-serif token. If the font is unavailable, the browser naturally falls back to the system stack above.
+The component scope prepends `AlibabaSans` to this sans-serif token. If the font is unavailable, the browser naturally falls back to the system stack above.
 
-## The important v6 finding
+## System direction
 
-Ant Design 6 is primarily a technical evolution, not a visual reset. Ant's own migration guide says most component APIs remain compatible. The default blue, 14 px type, 32 px controls, 6 px radius, surface hierarchy, and many component measurements intentionally retain continuity with v5.
-
-The parts that should make our recreation specifically v6-aware are:
+The visual system is compact, stable, and extensible. Its implementation rules are:
 
 - CSS variables are the default delivery mechanism and modern browsers are the baseline.
 - Components expose stable semantic slots through `classNames` and `styles`; consumers should not target internal DOM structure.
 - Component APIs increasingly use consistent concepts such as `variant`, `placement`, `orientation`, `open`, `destroyOnHidden`, `title`, and `content`.
 - Inputs and containers use named variants rather than a simple `bordered` boolean.
 - Tags distinguish filled and solid variants; Card distinguishes outlined and borderless variants.
-- Zero-runtime static CSS is officially supported from v6.
+- Static CSS output must remain possible for plugin packaging and predictable runtime performance.
 - Focus visibility is a first-class seed setting through `focusOutline`.
-
-In other words, a faithful v6 page may still look recognizably like v5. What changes is the consistency and extensibility beneath the pixels. We should not invent exaggerated visual changes just to make the experiment look “more v6.”
 
 ## Product philosophy
 
-Ant Design exists for complex enterprise products where people repeatedly complete real work. It reduces repeated design decisions by turning stable patterns into reusable components and pages.
+Launch++ supports complex team workflows where people repeatedly complete real work. It reduces repeated design decisions by turning stable patterns into reusable components and pages.
 
 Its four values translate into concrete UI rules:
 
@@ -221,14 +210,14 @@ The default language is flat-first. Hierarchy comes from whitespace, typography,
 
 Use color sparingly:
 
-- In stock Ant Design, blue identifies the principal action, selected navigation, links, focus, and information.
-- In the Launch++ experiment, black replaces blue for primary actions, selection, links, and focus; blue remains an informational and categorical color.
+- Primary blue identifies the principal action, selected navigation, links, and focus.
+- Black is a neutral palette color rather than a brand or interaction state.
 - Green, amber, and red communicate semantic outcomes, never decoration.
 - Preset palette colors belong to categorical labels, charts, and visualization.
 - Primary text uses 88% black; secondary information uses 65%; hints use 45%; disabled and placeholder content use 25%.
 - Prefer alpha-based neutrals over fixed gray hex values so they blend correctly on tinted surfaces.
 
-One section or decision group should normally have one visually dominant action. Several solid-blue buttons side by side destroy hierarchy.
+One section or decision group should normally have one visually dominant action. Several solid-primary buttons side by side destroy hierarchy.
 
 ## Foundations
 
@@ -250,7 +239,7 @@ Use 400 for normal product UI and 600 for titles or strong emphasis. Selected co
 
 ### Spacing and density
 
-The base spatial unit is 4 px. The practical scale is 4, 8, 12, 16, 20, 24, 32, and 48 px. Component-specific optical measurements such as an input's 11 px horizontal padding are valid where Ant's official component tokens specify them; do not spread those exceptions into general layout.
+The base spatial unit is 4 px. The practical scale is 4, 8, 12, 16, 20, 24, 32, and 48 px. Component-specific optical measurements such as an input's 11 px horizontal padding are valid where a component token specifies them; do not spread those exceptions into general layout.
 
 Control heights are:
 
@@ -258,7 +247,7 @@ Control heights are:
 - Medium/default: 32 px
 - Large: 40 px
 
-The 32 px default is important to Ant's enterprise density. Use 40 px where touch comfort or a focused form calls for it, not as the automatic default for every screen.
+The 32 px default preserves the product's compact working density. Use 40 px where touch comfort or a focused form calls for it, not as the automatic default for every screen.
 
 ### Radius
 
@@ -268,7 +257,7 @@ The 32 px default is important to Ant's enterprise density. Use 40 px where touc
 - 8 px: cards, alerts, modals, and larger surfaces.
 - Full circle/pill: avatars, badges, status dots, round controls, and intentionally pill-shaped tags only.
 
-Avoid mixing arbitrary radii. A 16 px “SaaS card” radius is not part of the default Ant 6 language.
+Avoid mixing arbitrary radii. A 16 px “SaaS card” radius is not part of the default Launch++ language.
 
 ### Borders and separators
 
@@ -311,7 +300,7 @@ Validation appears close to its field and combines color with text or iconograph
 
 ### Button
 
-Ant 6 treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. The familiar types map onto those concepts: primary is a solid primary button, default is neutral outlined, dashed is neutral dashed, and text/link are low-chrome actions.
+Launch++ treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. Primary is a solid brand button, default is neutral outlined, dashed is neutral dashed, and text/link are low-chrome actions.
 
 Default geometry:
 
@@ -330,7 +319,7 @@ Use one primary button per action group. Icon-only buttons require an accessible
 
 ### Input, textarea, and input-like controls
 
-Ant 6 uses outlined, filled, borderless, and underlined variants across the input family. Related controls should use the same variant within a form.
+Launch++ uses outlined, filled, borderless, and underlined variants across the input family. Related controls should use the same variant within a form.
 
 Default outlined input:
 
@@ -376,7 +365,7 @@ Use Switch for immediate settings and Checkbox for selection or acknowledgement.
 
 ### Card
 
-Cards are white 8 px-radius containers. Default cards may use a subtle border; raised cards use the light raised shadow. In v6, treat outlined and borderless as explicit variants rather than a `bordered` toggle.
+Cards are white 8 px-radius containers. Default cards may use a subtle border; raised cards use the light raised shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
 
 Typical body padding is 24 px. Separate header, body, cover, action, and tab regions semantically so plugins can style supported slots without reaching into internal markup.
 
@@ -416,7 +405,7 @@ Align numbers to the right, labels to the left, and actions consistently. Avoid 
 
 ### Tag and badge
 
-Default tags use `#f5f5f5`, 88% text, a 4 px radius, and optional `#d9d9d9` border. In v6, use filled for a borderless tint and solid for white text on a semantic/preset color.
+Default tags use `#f5f5f5`, 88% text, a 6 px radius, and optional `#d9d9d9` border. Use filled for a borderless tint and solid for white text on a semantic or preset color.
 
 Tags classify. Badges count or show compact status. Do not use a tag as the only explanation of a critical error.
 
@@ -464,7 +453,7 @@ Do not stack several feedback mechanisms for one event.
 
 ## Semantic component anatomy
 
-Our Radix/CSS recreation should copy Ant 6's principle of stable semantic slots, not its internal class names. Each Launch++ component should expose a small, documented anatomy such as:
+Our Radix/CSS components use stable semantic slots rather than exposing internal class names. Each component should provide a small, documented anatomy such as:
 
 ```text
 Dialog
@@ -487,49 +476,48 @@ This subset is enough to establish the default visual language in plain CSS:
 
 ```css
 :root {
-  --ant-color-primary: #1677ff;
-  --ant-color-primary-hover: #4096ff;
-  --ant-color-primary-active: #0958d9;
-  --ant-color-primary-bg: #e6f4ff;
+  --launch-color-primary: #1668dc;
+  --launch-color-primary-hover: #3c8ae8;
+  --launch-color-primary-active: #094bb5;
+  --launch-color-primary-bg: #e6f4ff;
+  --launch-color-black: #000000;
 
-  --ant-color-success: #52c41a;
-  --ant-color-warning: #faad14;
-  --ant-color-error: #ff4d4f;
+  --launch-color-success: #52c41a;
+  --launch-color-warning: #faad14;
+  --launch-color-error: #ff4d4f;
 
-  --ant-color-text: rgba(0, 0, 0, 0.88);
-  --ant-color-text-secondary: rgba(0, 0, 0, 0.65);
-  --ant-color-text-tertiary: rgba(0, 0, 0, 0.45);
-  --ant-color-text-disabled: rgba(0, 0, 0, 0.25);
-  --ant-color-border: #d9d9d9;
-  --ant-color-border-secondary: #f0f0f0;
-  --ant-color-bg-layout: #f5f5f5;
-  --ant-color-bg-container: #ffffff;
+  --launch-color-text: rgba(0, 0, 0, 0.88);
+  --launch-color-text-secondary: rgba(0, 0, 0, 0.65);
+  --launch-color-text-tertiary: rgba(0, 0, 0, 0.45);
+  --launch-color-text-disabled: rgba(0, 0, 0, 0.25);
+  --launch-color-border: #d9d9d9;
+  --launch-color-border-secondary: #f0f0f0;
+  --launch-color-bg-layout: #f5f5f5;
+  --launch-color-bg-container: #ffffff;
 
-  --ant-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --ant-font-size: 14px;
-  --ant-line-height: 1.5714285714;
+  --launch-font-family: AlibabaSans, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --launch-font-size: 14px;
+  --launch-line-height: 1.5714285714;
 
-  --ant-control-height: 32px;
-  --ant-control-height-sm: 24px;
-  --ant-control-height-lg: 40px;
-  --ant-radius-sm: 4px;
-  --ant-radius: 6px;
-  --ant-radius-lg: 8px;
+  --launch-control-height: 32px;
+  --launch-control-height-sm: 24px;
+  --launch-control-height-lg: 40px;
+  --launch-radius-sm: 4px;
+  --launch-radius: 6px;
+  --launch-radius-lg: 8px;
 
-  --ant-motion-fast: 100ms;
-  --ant-motion-mid: 200ms;
-  --ant-motion-slow: 300ms;
-  --ant-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
-  --ant-ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --launch-motion-fast: 100ms;
+  --launch-motion-mid: 200ms;
+  --launch-motion-slow: 300ms;
+  --launch-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --launch-ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 ```
 
-The `--ant-` prefix above records provenance for this experiment. Launch++ production tokens should use our own public namespace and semantic names rather than pretending to be Ant Design tokens.
-
 ## Component coverage map
 
-The current Ant component catalog is broad: General, Layout, Navigation, Data Entry, Data Display, Feedback, and Other. Recreating every component would be a product in itself, so Launch++ should borrow the system's coherence while implementing only what the MVP needs.
+The full component space is broad: General, Layout, Navigation, Data Entry, Data Display, Feedback, and Other. Building every possible component would be a product in itself, so Launch++ implements only what the product and plugin MVP need.
 
 Recommended MVP order:
 
@@ -554,27 +542,16 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 - Motion respects reduced-motion preferences.
 - Layout and labels survive zoom, long translations, and narrow widths.
 
-## Theming model to preserve
+## Theming model
 
-Ant's official model has three derived layers:
+The Launch++ theme has three derived layers:
 
 1. **Seed tokens** express design intent, such as primary color, base radius, base font size, and control height.
 2. **Map tokens** are algorithmically derived scales and gradients.
 3. **Alias tokens** assign those values to semantic roles used across components.
 
-Components then add narrowly scoped component tokens. Launch++ should preserve the same direction: a small set of theme inputs, derived semantic tokens, and documented component overrides. Plugins should consume public CSS custom properties and UI components; they should not hard-code the captured hex values or depend on internal markup.
+Components then add narrowly scoped component tokens. Keep the public theme centered on a small set of inputs, derived semantic tokens, and documented component overrides. Plugins consume public CSS custom properties and UI components; they must not hard-code internal values or depend on private markup.
 
-## Source boundary
+## Change management
 
-This document records the official Ant Design site and runtime defaults as of Ant Design 6.6.4. The most relevant primary sources are:
-
-- [Introduction and design philosophy](https://ant.design/docs/spec/introduce/)
-- [Design values](https://ant.design/docs/spec/values/)
-- [Color system](https://ant.design/docs/spec/colors/)
-- [Typography](https://ant.design/docs/spec/font/)
-- [Layout](https://ant.design/docs/spec/layout/)
-- [Theme architecture and tokens](https://ant.design/docs/react/customize-theme/)
-- [v5 to v6 migration guide](https://ant.design/docs/react/migration-v6/)
-- [Component overview](https://ant.design/components/overview/)
-
-Individual component values were checked against the official Button, Input, Select, Switch, Card, Tabs, Table, Tag, Alert, Modal, Dropdown, and Tooltip documentation. If a future Ant release changes those values, update `sourceVersion` and re-extract rather than silently mixing versions.
+Treat this file as the canonical visual contract. When a token or component rule changes, update this document and the shared implementation together. Never mix old and new token generations silently; record intentional changes in version control and verify affected components as one coherent set.

@@ -201,11 +201,11 @@ export function ComponentLabPage() {
       <main className="component-lab">
         <header className="lab-hero">
           <div>
-            <span className="lab-kicker">Ant Design 6 foundation · Launch++ styling</span>
+            <span className="lab-kicker">Launch++ design system · Radix + CSS</span>
             <h1>Component study</h1>
             <p>
-              A focused adaptation of the Ant Design language with a black primary, semantic
-              variants, compact controls, and a four-pixel rhythm.
+              A focused component language with a clear blue primary, semantic variants, compact
+              controls, and a four-pixel rhythm.
             </p>
           </div>
           <div aria-label="Color palette" className="lab-palette">
