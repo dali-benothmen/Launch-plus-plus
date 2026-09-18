@@ -447,6 +447,18 @@ button {
   overflow: hidden;
 }
 
+.showcase-form-example {
+  width: min(100%, 560px);
+}
+
+.showcase-form-layouts {
+  width: 100%;
+}
+
+.showcase-form-layouts .launch-ui-form {
+  width: min(100%, 680px);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

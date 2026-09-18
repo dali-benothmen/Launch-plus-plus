@@ -12,6 +12,7 @@ export * from "./dropdown/index.js";
 export * from "./dropdown-menu/index.js";
 export * from "./flex/index.js";
 export * from "./float-button/index.js";
+export * from "./form/index.js";
 export * from "./grid/index.js";
 export * from "./input/index.js";
 export * from "./masonry/index.js";

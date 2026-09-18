@@ -9,10 +9,13 @@ export interface SelectOption {
 }
 
 export interface SelectProps {
+  readonly "aria-describedby"?: string;
+  readonly "aria-invalid"?: boolean;
   readonly ariaLabel: string;
   readonly className?: string;
   readonly defaultValue?: string;
   readonly disabled?: boolean;
+  readonly id?: string;
   readonly onValueChange?: (value: string) => void;
   readonly options: ReadonlyArray<SelectOption>;
   readonly placeholder?: string;
@@ -20,10 +23,13 @@ export interface SelectProps {
 }
 
 export function Select({
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   ariaLabel,
   className,
   defaultValue,
   disabled,
+  id,
   onValueChange,
   options,
   placeholder,
@@ -37,8 +43,11 @@ export function Select({
       {...(value === undefined ? {} : { value })}
     >
       <SelectPrimitive.Trigger
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid}
         aria-label={ariaLabel}
         className={classes("launch-ui-select-trigger", className)}
+        id={id}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon className="launch-ui-select-icon">

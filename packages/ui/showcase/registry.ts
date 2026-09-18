@@ -12,6 +12,7 @@ import { dropdownShowcase } from "./components/dropdown.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
 import { flexShowcase } from "./components/flex.showcase.js";
 import { floatButtonShowcase } from "./components/float-button.showcase.js";
+import { formShowcase } from "./components/form.showcase.js";
 import { gridShowcase } from "./components/grid.showcase.js";
 import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
@@ -53,6 +54,7 @@ export const componentRegistry = defineShowcases([
   autoCompleteShowcase,
   checkboxShowcase,
   datePickerShowcase,
+  formShowcase,
   inputShowcase,
   selectShowcase,
   switchShowcase,
