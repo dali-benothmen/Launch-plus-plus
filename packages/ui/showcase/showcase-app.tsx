@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Input, LaunchProvider } from "../src/index.js";
+import { Card, Input, LaunchProvider } from "../src/index.js";
 import { CodeBlock } from "./code-block.js";
 import {
   componentRegistry,
@@ -58,7 +58,7 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
           {entry.examples.map((example) => {
             const Preview = example.preview;
             return (
-              <section
+              <Card
                 className={`showcase-example is-${example.presentation ?? "default"}`}
                 key={example.id}
               >
@@ -70,7 +70,7 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
                   <Preview />
                 </div>
                 {example.code ? <CodeBlock code={example.code} /> : null}
-              </section>
+              </Card>
             );
           })}
         </div>
