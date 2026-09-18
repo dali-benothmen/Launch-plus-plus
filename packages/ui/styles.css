@@ -4160,47 +4160,110 @@
 
 .launch-ui-switch {
   position: relative;
-  width: 44px;
+  display: inline-block;
+  min-width: 44px;
   height: 22px;
   padding: 0;
   border: 0;
   border-radius: 9999px;
   background: rgb(0 0 0 / 25%);
+  color: var(--launch-ui-surface);
   cursor: pointer;
-  transition: background-color var(--launch-ui-mid) var(--launch-ui-ease);
+  font-family: var(--launch-ui-font);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: start;
+  vertical-align: middle;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    opacity var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
-.launch-ui-switch[data-state="checked"] {
+.launch-ui-switch.is-checked {
   background: var(--launch-ui-primary);
 }
 
-.launch-ui-switch-thumb {
+.launch-ui-switch-inner {
   display: block;
+  min-width: 12px;
+  margin-inline: 24px 7px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: margin var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-switch.is-checked .launch-ui-switch-inner {
+  margin-inline: 7px 24px;
+}
+
+.launch-ui-switch-indicator {
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  display: inline-flex;
   width: 18px;
   height: 18px;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: var(--launch-ui-surface);
   box-shadow: 0 2px 4px rgb(0 35 11 / 20%);
-  transform: translateX(2px);
-  transition: transform var(--launch-ui-mid) var(--launch-ui-ease);
+  color: var(--launch-ui-primary);
+  transition:
+    inset-inline-start var(--launch-ui-mid) var(--launch-ui-ease),
+    width var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
-.launch-ui-switch[data-state="checked"] .launch-ui-switch-thumb {
-  transform: translateX(24px);
+.launch-ui-switch.is-checked .launch-ui-switch-indicator {
+  inset-inline-start: calc(100% - 20px);
 }
 
 .launch-ui-switch.is-small {
-  width: 28px;
+  min-width: 28px;
   height: 16px;
+  font-size: 10px;
+  line-height: 16px;
 }
 
-.launch-ui-switch.is-small .launch-ui-switch-thumb {
+.launch-ui-switch.is-small .launch-ui-switch-inner {
+  min-width: 8px;
+  margin-inline: 16px 5px;
+}
+
+.launch-ui-switch.is-small.is-checked .launch-ui-switch-inner {
+  margin-inline: 5px 16px;
+}
+
+.launch-ui-switch.is-small .launch-ui-switch-indicator {
+  top: 2px;
   width: 12px;
   height: 12px;
 }
 
-.launch-ui-switch.is-small[data-state="checked"] .launch-ui-switch-thumb {
-  transform: translateX(14px);
+.launch-ui-switch.is-small.is-checked .launch-ui-switch-indicator {
+  inset-inline-start: calc(100% - 14px);
+}
+
+.launch-ui-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.launch-ui-switch.is-loading:disabled {
+  cursor: default;
+}
+
+.launch-ui-switch .launch-ui-loading-icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 1.5;
+}
+
+.launch-ui-switch.is-small .launch-ui-loading-icon {
+  width: 8px;
+  height: 8px;
 }
 
 .launch-ui-anchor {
@@ -5367,7 +5430,8 @@
   .launch-ui-date-picker-popup,
   .launch-ui-date-picker-unit-inner,
   .launch-ui-switch,
-  .launch-ui-switch-thumb,
+  .launch-ui-switch-indicator,
+  .launch-ui-switch-inner,
   .launch-ui-tab,
   .launch-ui-tab::after,
   .launch-ui-tooltip,

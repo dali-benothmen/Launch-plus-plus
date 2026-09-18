@@ -1069,6 +1069,20 @@ button {
   padding: 4px;
 }
 
+.showcase-switch-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.showcase-switch-function-root {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 45%) inset;
+}
+
+.showcase-switch-function-indicator {
+  background: #fff;
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }
