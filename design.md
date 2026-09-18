@@ -65,7 +65,7 @@ componentTokens:
     groupGap: 12px
     squareRadius: 8px
   divider:
-    color: "#f0f0f0"
+    color: "rgba(5, 5, 5, 0.06)"
     lineWidth: 1px
     titleFontSize: 13px
     textPaddingInline: 1em
@@ -370,7 +370,7 @@ Use one primary button per action group. Icon-only buttons require an accessible
 
 Dividers separate related content without introducing another container. Horizontal is the default orientation; vertical dividers are reserved for short inline labels, links, or actions.
 
-- Default line: 1 px solid `#f0f0f0`.
+- Default line: 1 px solid `rgba(5, 5, 5, 0.06)`.
 - Variants: solid, dotted, and dashed.
 - Horizontal spacing: 12 px small, 16 px medium, and 24 px large. The default is 24 px.
 - Titled dividers use 13 px medium-weight text with `1em` inline spacing. Plain titles use the same 13 px size at regular weight.
