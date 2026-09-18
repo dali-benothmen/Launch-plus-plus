@@ -58,6 +58,7 @@ componentTokens:
     iconGap: 8px
     fontWeight: 400
     borderRadius: 6px
+    shapeRound: 9999px
   floatButton:
     size: 40px
     viewportInset: 24px
@@ -337,7 +338,7 @@ Validation appears close to its field and combines color with text or iconograph
 
 ### Button
 
-Launch++ treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. Primary is a solid brand button, default is neutral outlined, dashed is neutral dashed, and text/link are low-chrome actions.
+Launch++ treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. The `primary` and `default` variants remain concise shorthands for the most common solid-brand and neutral-outlined treatments. Semantic color is independent of visual treatment and currently supports default, primary, danger, pink, purple, and cyan.
 
 Default geometry:
 
@@ -346,13 +347,14 @@ Default geometry:
 - Radius: 6 px.
 - Horizontal padding: 12 px; small 7 px. The 12 px default is a Launch++ compact override.
 - Icon-to-label gap: 8 px.
+- Shapes: default uses the shared 6 px radius, round uses a pill radius, and circle keeps equal width and height.
 - Default border: `#d9d9d9`; default background: white.
 - Default hover text and border: `#3c8ae8`; active: `#094bb5`.
 - Primary background: `#1668dc`; hover: `#3c8ae8`; active: `#094bb5`; text: white.
 - Default shadow: `0 2px 0 rgba(0, 0, 0, 0.02)`.
 - Primary shadow: `0 2px 0 rgba(22, 104, 220, 0.14)`.
 
-The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and uses the shared one-second hover transition. Focus-visible styling supplies the accessible outline.
+The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and uses the shared one-second hover transition. Focus-visible styling supplies the accessible outline. Icons can appear at the start or end. Loading replaces the icon with a spinner, disables activation, and may accept a custom loading icon. Block buttons fill their container; ghost buttons remove the fill for contrasting surfaces. Providing `href` renders link semantics with the same visual contract.
 
 Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
 

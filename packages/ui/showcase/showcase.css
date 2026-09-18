@@ -502,6 +502,56 @@ button {
   color: var(--launch-color-text);
 }
 
+.showcase-button-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.showcase-button-size-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.showcase-button-size-label {
+  width: 64px;
+  flex: 0 0 auto;
+  color: var(--launch-color-text-muted);
+  font-size: 13px;
+}
+
+.showcase-button-ghost-surface {
+  padding: 24px;
+  border-radius: 8px;
+  background: #8c8c8c;
+}
+
+.showcase-button-block,
+.showcase-button-color-grid {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.showcase-button-color-grid {
+  gap: 16px;
+}
+
+.showcase-button-color-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.showcase-button-color-label {
+  padding-top: 5px;
+  color: var(--launch-color-text-muted);
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
 .showcase-code {
   overflow-x: auto;
   padding: 16px 20px;
