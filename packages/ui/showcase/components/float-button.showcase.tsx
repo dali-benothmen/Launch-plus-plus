@@ -6,7 +6,7 @@ import {
   VerticalAlignTopOutlined,
 } from "@ant-design/icons";
 import { useCallback, useRef } from "react";
-import { FloatButton } from "../../src/components/float-button/index.js";
+import { FloatButton } from "../../src/index.js";
 import { defineShowcase } from "../showcase-definition.js";
 
 function FloatButtonShapes() {
@@ -101,7 +101,7 @@ export const floatButtonShowcase = defineShowcase({
   id: "float-button",
   name: "Float button",
   category: "General",
-  stage: "dev",
+  stage: "prod",
   description: "Keeps a global or frequently used action available above the page content.",
   whenToUse: [
     "Use a float button for an important global action that should remain available while scrolling.",
