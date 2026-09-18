@@ -58,6 +58,13 @@ componentTokens:
     iconGap: 8px
     fontWeight: 400
     borderRadius: 6px
+  input:
+    transitionDuration: 200ms
+    transitionProperties: border-color, background-color, box-shadow
+  dialog:
+    enterDuration: 200ms
+    exitDuration: 200ms
+    exitDistance: 6px
 tokens:
   color:
     primary: "#1668dc"
@@ -343,12 +350,13 @@ Default outlined input:
 - Add-on background: `rgba(0, 0, 0, 0.02)`.
 - Error focus ring: `0 0 0 2px rgba(255, 38, 5, 0.06)`.
 - Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
+- Border, background, and focus-ring changes transition over 200 ms with the standard ease-in-out curve.
 
 Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
 
 ### Select and combobox
 
-The closed trigger follows the same height, radius, border, hover, and focus treatment as Input. The menu is an elevated white surface.
+The closed trigger follows the same height, radius, border, hover, focus, and transition treatment as Input. The menu is an elevated white surface. Always use the shared Select component in product forms and dialogs rather than a browser-native select so keyboard behavior, popup layering, theming, and visual states remain consistent.
 
 - Option height: 32 px.
 - Option padding: 5 px 12 px.
@@ -437,6 +445,8 @@ Keep the title actionable and the description concise. A closable alert needs a 
 Modal content is white with an 8 px radius and the popup shadow. The mask is `rgba(0, 0, 0, 0.45)`. Titles are 16 px / 24 px at weight 600. Header and footer backgrounds remain transparent so the modal reads as one surface.
 
 Focus moves into the dialog, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
+
+Open and close are symmetrical 200 ms transitions. The mask fades in and out; the surface fades and moves no more than 6 px while scaling subtly. The dialog remains mounted until its exit animation completes, preventing an abrupt disappearance.
 
 ### Dropdown, popover, and tooltip
 

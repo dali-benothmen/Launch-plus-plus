@@ -79,10 +79,34 @@ function LabCard({
   );
 }
 
-function SelectExample() {
+interface SelectExampleProps {
+  readonly ariaLabel?: string;
+  readonly defaultValue?: string;
+  readonly options?: ReadonlyArray<{
+    readonly label: string;
+    readonly value: string;
+  }>;
+}
+
+const teamOptions = [
+  { label: "Design team", value: "design" },
+  { label: "Engineering", value: "engineering" },
+  { label: "Marketing", value: "marketing" },
+] as const;
+
+const roleOptions = [
+  { label: "Member", value: "member" },
+  { label: "Administrator", value: "admin" },
+] as const;
+
+function SelectExample({
+  ariaLabel = "Team",
+  defaultValue = "design",
+  options = teamOptions,
+}: SelectExampleProps = {}) {
   return (
-    <Select.Root defaultValue="design">
-      <Select.Trigger aria-label="Team" className="lab-select-trigger">
+    <Select.Root defaultValue={defaultValue}>
+      <Select.Trigger aria-label={ariaLabel} className="lab-select-trigger">
         <Select.Value />
         <Select.Icon className="lab-select-icon">
           <ChevronDownIcon />
@@ -91,24 +115,14 @@ function SelectExample() {
       <Select.Portal>
         <Select.Content className="lab-select-content" position="popper" sideOffset={4}>
           <Select.Viewport>
-            <Select.Item className="lab-select-item" value="design">
-              <Select.ItemText>Design team</Select.ItemText>
-              <Select.ItemIndicator className="lab-item-indicator">
-                <CheckIcon />
-              </Select.ItemIndicator>
-            </Select.Item>
-            <Select.Item className="lab-select-item" value="engineering">
-              <Select.ItemText>Engineering</Select.ItemText>
-              <Select.ItemIndicator className="lab-item-indicator">
-                <CheckIcon />
-              </Select.ItemIndicator>
-            </Select.Item>
-            <Select.Item className="lab-select-item" value="marketing">
-              <Select.ItemText>Marketing</Select.ItemText>
-              <Select.ItemIndicator className="lab-item-indicator">
-                <CheckIcon />
-              </Select.ItemIndicator>
-            </Select.Item>
+            {options.map((option) => (
+              <Select.Item className="lab-select-item" key={option.value} value={option.value}>
+                <Select.ItemText>{option.label}</Select.ItemText>
+                <Select.ItemIndicator className="lab-item-indicator">
+                  <CheckIcon />
+                </Select.ItemIndicator>
+              </Select.Item>
+            ))}
           </Select.Viewport>
         </Select.Content>
       </Select.Portal>
@@ -166,13 +180,10 @@ function ModalExample() {
               <span>Email address</span>
               <input placeholder="name@company.com" type="email" />
             </label>
-            <label className="lab-field">
+            <div className="lab-field">
               <span>Role</span>
-              <select defaultValue="member">
-                <option value="member">Member</option>
-                <option value="admin">Administrator</option>
-              </select>
-            </label>
+              <SelectExample ariaLabel="Role" defaultValue="member" options={roleOptions} />
+            </div>
           </div>
 
           <div className="lab-dialog-actions">

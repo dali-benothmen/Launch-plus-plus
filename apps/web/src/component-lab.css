@@ -274,7 +274,6 @@ button {
 .lab-icon-button:focus-visible,
 .lab-select-trigger:focus-visible,
 .lab-field input:focus-visible,
-.lab-field select:focus-visible,
 .lab-switch:focus-visible {
   outline: 2px solid rgba(22, 104, 220, 0.2);
   outline-offset: 2px;
@@ -411,7 +410,6 @@ button {
 }
 
 .lab-field input,
-.lab-field select,
 .lab-select-trigger {
   width: 100%;
   height: 32px;
@@ -422,16 +420,13 @@ button {
   font-size: 14px;
   line-height: 22px;
   transition:
-    border-color var(--lab-fast) var(--lab-ease),
-    box-shadow var(--lab-fast) var(--lab-ease);
+    border-color var(--lab-mid) var(--lab-ease),
+    background-color var(--lab-mid) var(--lab-ease),
+    box-shadow var(--lab-mid) var(--lab-ease);
 }
 
 .lab-field input {
   padding: 4px 11px;
-}
-
-.lab-field select {
-  padding: 0 11px;
 }
 
 .lab-field input::placeholder {
@@ -439,13 +434,11 @@ button {
 }
 
 .lab-field input:hover,
-.lab-field select:hover,
 .lab-select-trigger:hover {
   border-color: var(--lab-primary-hover);
 }
 
 .lab-field input:focus,
-.lab-field select:focus,
 .lab-select-trigger:focus {
   border-color: var(--lab-primary);
   box-shadow: 0 0 0 2px rgba(22, 104, 220, 0.12);
@@ -938,7 +931,14 @@ button {
   z-index: 1000;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
+}
+
+.lab-dialog-overlay[data-state="open"] {
   animation: lab-fade-in var(--lab-mid) var(--lab-ease);
+}
+
+.lab-dialog-overlay[data-state="closed"] {
+  animation: lab-fade-out var(--lab-mid) var(--lab-ease) forwards;
 }
 
 .lab-dialog-content {
@@ -954,7 +954,14 @@ button {
   color: var(--lab-text);
   font-family: var(--lab-font);
   transform: translate(-50%, -50%);
+}
+
+.lab-dialog-content[data-state="open"] {
   animation: lab-dialog-in var(--lab-mid) var(--lab-ease);
+}
+
+.lab-dialog-content[data-state="closed"] {
+  animation: lab-dialog-out var(--lab-mid) var(--lab-ease) forwards;
 }
 
 .lab-dialog-heading {
@@ -1003,10 +1010,23 @@ button {
   }
 }
 
+@keyframes lab-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes lab-dialog-in {
   from {
     opacity: 0;
     transform: translate(-50%, calc(-50% - 8px)) scale(0.98);
+  }
+}
+
+@keyframes lab-dialog-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 6px)) scale(0.98);
   }
 }
 
