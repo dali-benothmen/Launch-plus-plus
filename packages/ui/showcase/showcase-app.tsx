@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Input, LaunchProvider } from "../src/index.js";
+import { CodeBlock } from "./code-block.js";
 import {
   componentRegistry,
   showcaseStages,
@@ -58,9 +59,7 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
                 <div className="showcase-preview">
                   <Preview />
                 </div>
-                <pre>
-                  <code>{example.code}</code>
-                </pre>
+                <CodeBlock code={example.code} />
               </section>
             );
           })}

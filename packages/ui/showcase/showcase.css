@@ -311,15 +311,20 @@ button {
   gap: 10px;
 }
 
-.showcase-example pre {
+.showcase-code {
   overflow-x: auto;
   padding: 16px 20px;
   margin: 0;
   border-top: 1px solid var(--launch-color-border);
-  background: var(--launch-color-bg-subtle);
-  color: var(--launch-color-text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 12px;
   line-height: 20px;
+  tab-size: 2;
+}
+
+.showcase-code-line {
+  display: block;
+  min-height: 20px;
 }
 
 .showcase-api-wrap {
@@ -352,8 +357,7 @@ button {
   border-bottom: 0;
 }
 
-.showcase-api code,
-.showcase-example code {
+.showcase-api code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
