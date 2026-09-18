@@ -58,7 +58,10 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
           {entry.examples.map((example) => {
             const Preview = example.preview;
             return (
-              <section className="showcase-example" key={example.id}>
+              <section
+                className={`showcase-example is-${example.presentation ?? "default"}`}
+                key={example.id}
+              >
                 <header>
                   <h3>{example.name}</h3>
                   {example.description ? <p>{example.description}</p> : null}
@@ -66,7 +69,7 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
                 <div className="showcase-preview">
                   <Preview />
                 </div>
-                <CodeBlock code={example.code} />
+                {example.code ? <CodeBlock code={example.code} /> : null}
               </section>
             );
           })}

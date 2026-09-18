@@ -5,10 +5,11 @@ export const showcaseStages = ["dev", "test", "prod"] as const;
 export type ShowcaseStage = (typeof showcaseStages)[number];
 
 export interface ShowcaseExample {
-  readonly code: string;
+  readonly code?: string;
   readonly description?: string;
   readonly id: string;
   readonly name: string;
+  readonly presentation?: "default" | "plain";
   readonly preview: ComponentType;
 }
 
