@@ -13,6 +13,49 @@ sources:
   - https://ant.design/docs/react/customize-theme/
   - https://ant.design/docs/react/migration-v6/
   - https://ant.design/components/overview/
+observedSiteRuntime:
+  fontFamily: "AlibabaSans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+  fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
+  presetColors:
+    blue: "#1677ff"
+    purple: "#722ed1"
+    cyan: "#13c2c2"
+    green: "#52c41a"
+    magenta: "#eb2f96"
+    pink: "#eb2f96"
+    red: "#f5222d"
+    orange: "#fa8c16"
+    yellow: "#fadb14"
+    volcano: "#fa541c"
+    geekblue: "#2f54eb"
+    gold: "#faad14"
+    lime: "#a0d911"
+  blueScale:
+    blue1: "#e6f4ff"
+    blue2: "#bae0ff"
+    blue3: "#91caff"
+    blue4: "#69b1ff"
+    blue5: "#4096ff"
+    blue6: "#1677ff"
+    blue7: "#0958d9"
+    blue8: "#003eb3"
+  primitives:
+    lineWidth: 1px
+    lineType: solid
+    sizeUnit: 4px
+    sizeStep: 4px
+    sizePopupArrow: 16px
+    controlHeight: 32px
+    zIndexBase: 0
+    zIndexPopupBase: 1000
+    opacityImage: 1
+launchExperiment:
+  colorPrimary: "#000000"
+  colorPrimaryHover: "#262626"
+  colorPrimaryActive: "#000000"
+  colorPrimaryBg: "#f5f5f5"
+  colorPrimaryBgHover: "#e8e8e8"
+  borderRadius: 6px
 tokens:
   color:
     primary: "#1677ff"
@@ -94,10 +137,16 @@ tokens:
     slow: 0.3s
     easeInOut: "cubic-bezier(0.645, 0.045, 0.355, 1)"
     easeOut: "cubic-bezier(0.215, 0.61, 0.355, 1)"
+    easeOutCirc: "cubic-bezier(0.08, 0.82, 0.17, 1)"
+    easeInOutCirc: "cubic-bezier(0.78, 0.14, 0.15, 0.86)"
     easeOutBack: "cubic-bezier(0.12, 0.4, 0.29, 1.46)"
+    easeInBack: "cubic-bezier(0.71, -0.46, 0.88, 0.6)"
+    easeInQuint: "cubic-bezier(0.755, 0.05, 0.855, 0.06)"
+    easeOutQuint: "cubic-bezier(0.23, 1, 0.32, 1)"
   elevation:
     raised: "0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.03)"
     popup: "0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)"
+    drawerDownDark: "0 -6px 16px rgba(255, 255, 255, 0.016), 0 -3px 6px -4px rgba(255, 255, 255, 0.024), 0 -9px 28px 8px rgba(255, 255, 255, 0.01)"
   breakpoint:
     xs: 480px
     sm: 576px
@@ -112,6 +161,30 @@ tokens:
 This is a practical extraction of Ant Design's current default light theme for the Launch++ UI experiment. It is meant to guide a visually faithful implementation with Radix primitives and plain CSS; it is not a copy of Ant Design's source code or a replacement for its component documentation.
 
 The values in the front matter were resolved from the installed `antd@6.6.4` package with `theme.getDesignToken()` and checked against the live official documentation on the capture date. Component measurements below come from the live v6 component-token tables. When this document makes a product recommendation rather than reporting an Ant token, it says so explicitly.
+
+## Runtime layers and our overrides
+
+The live `ant.design` website is not identical to an unconfigured `antd` installation. Inspection of the site shows an `AlibabaSans`-first font stack, the preset color variables, and the same 4 px size unit, 32 px control height, 6 px base radius, and 1000 popup z-index recorded above. The site's `--font-sans` and `--font-mono` variables are page-level aliases; they are not separate Ant component tokens.
+
+Context matters when copying computed variables. For example, the observed `--ant-box-shadow-drawer-down` uses very low-opacity white layers, which indicates a dark or inverse theme context. The default light-theme shadows continue to use black-alpha layers. Keep both documented, but never apply an inverse shadow to a light surface merely because it appeared in an inspector snapshot.
+
+The `tokens` block remains the official Ant default. The `observedSiteRuntime` block records additions seen on the live documentation site. The `launchExperiment` block is our intentional product direction and currently overrides the brand primary with black while keeping blue available for informational feedback and categorical color. Launch++ components use a 6 px base corner radius.
+
+The page-level font aliases observed on the site are:
+
+```css
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
+}
+```
+
+Ant's component scope then prepends `AlibabaSans` to its own sans-serif token. If the font is unavailable, the browser naturally falls back to the system stack above.
 
 ## The important v6 finding
 
@@ -144,11 +217,12 @@ For Launch++, this means the interface should feel calm, precise, information-de
 
 ## Visual character
 
-The default language is flat-first. Hierarchy comes from whitespace, typography, pale neutral fills, thin borders, and selective blue—not from constant shadow. White is the main work surface, `#f5f5f5` is the layout canvas, and `#fafafa` or subtle black-alpha fills separate table headers and secondary regions.
+The default language is flat-first. Hierarchy comes from whitespace, typography, pale neutral fills, thin borders, and selective accent color—not from constant shadow. White is the main work surface, `#f5f5f5` is the layout canvas, and `#fafafa` or subtle black-alpha fills separate table headers and secondary regions.
 
 Use color sparingly:
 
-- Blue identifies the principal action, selected navigation, links, focus, and information.
+- In stock Ant Design, blue identifies the principal action, selected navigation, links, focus, and information.
+- In the Launch++ experiment, black replaces blue for primary actions, selection, links, and focus; blue remains an informational and categorical color.
 - Green, amber, and red communicate semantic outcomes, never decoration.
 - Preset palette colors belong to categorical labels, charts, and visualization.
 - Primary text uses 88% black; secondary information uses 65%; hints use 45%; disabled and placeholder content use 25%.

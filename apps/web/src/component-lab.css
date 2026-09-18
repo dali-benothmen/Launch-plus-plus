@@ -1,10 +1,14 @@
 :root {
-  --lab-primary: #1677ff;
-  --lab-primary-bg: #e6f4ff;
-  --lab-primary-bg-hover: #bae0ff;
-  --lab-primary-border: #91caff;
-  --lab-primary-hover: #4096ff;
-  --lab-primary-active: #0958d9;
+  --lab-primary: #000;
+  --lab-primary-bg: #f5f5f5;
+  --lab-primary-bg-hover: #e8e8e8;
+  --lab-primary-border: #d9d9d9;
+  --lab-primary-hover: #262626;
+  --lab-primary-active: #000;
+  --lab-info: #1677ff;
+  --lab-info-bg: #e6f4ff;
+  --lab-info-border: #91caff;
+  --lab-info-text: #0958d9;
   --lab-success: #52c41a;
   --lab-success-bg: #f6ffed;
   --lab-success-border: #b7eb8f;
@@ -28,12 +32,14 @@
   --lab-fill-quaternary: rgba(0, 0, 0, 0.02);
   --lab-border: #d9d9d9;
   --lab-border-soft: #f0f0f0;
+  --lab-radius: 6px;
+  --lab-radius-lg: 8px;
   --lab-shadow-popup:
     0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
     0 9px 28px 8px rgba(0, 0, 0, 0.05);
   --lab-font:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-    sans-serif;
+    AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
   --lab-fast: 100ms;
   --lab-mid: 200ms;
   --lab-ease: cubic-bezier(0.645, 0.045, 0.355, 1);
@@ -144,7 +150,7 @@ button {
   min-width: 0;
   padding: 24px;
   border: 1px solid var(--lab-border-soft);
-  border-radius: 8px;
+  border-radius: var(--lab-radius-lg);
   background: var(--lab-surface);
 }
 
@@ -199,7 +205,7 @@ button {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--lab-border);
-  border-radius: 6px;
+  border-radius: var(--lab-radius);
   background: var(--lab-surface);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
   color: var(--lab-text);
@@ -259,7 +265,7 @@ button {
 .lab-field input:focus-visible,
 .lab-field select:focus-visible,
 .lab-switch:focus-visible {
-  outline: 2px solid rgba(22, 119, 255, 0.2);
+  outline: 2px solid rgba(0, 0, 0, 0.18);
   outline-offset: 2px;
 }
 
@@ -267,7 +273,7 @@ button {
   border-color: var(--lab-primary);
   background: var(--lab-primary);
   color: #fff;
-  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 .lab-button.is-primary:hover {
@@ -399,7 +405,7 @@ button {
   width: 100%;
   height: 32px;
   border: 1px solid var(--lab-border);
-  border-radius: 6px;
+  border-radius: var(--lab-radius);
   background: var(--lab-surface);
   color: var(--lab-text);
   font-size: 14px;
@@ -431,7 +437,7 @@ button {
 .lab-field select:focus,
 .lab-select-trigger:focus {
   border-color: var(--lab-primary);
-  box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   outline: 0;
 }
 
@@ -496,7 +502,7 @@ button {
   z-index: 1050;
   overflow: hidden;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: var(--lab-radius);
   background: var(--lab-surface);
   box-shadow: var(--lab-shadow-popup);
   color: var(--lab-text);
@@ -517,7 +523,7 @@ button {
   display: flex;
   min-height: 32px;
   align-items: center;
-  border-radius: 4px;
+  border-radius: var(--lab-radius);
   cursor: default;
   outline: none;
   user-select: none;
@@ -660,8 +666,8 @@ button {
 }
 
 .lab-tab:focus-visible {
-  border-radius: 2px;
-  outline: 2px solid rgba(22, 119, 255, 0.2);
+  border-radius: var(--lab-radius);
+  outline: 2px solid rgba(0, 0, 0, 0.18);
   outline-offset: 2px;
 }
 
@@ -700,7 +706,7 @@ button {
   align-items: center;
   padding: 0 7px;
   border: 1px solid var(--lab-border);
-  border-radius: 4px;
+  border-radius: var(--lab-radius);
   background: #f5f5f5;
   color: var(--lab-text);
   font-size: 12px;
@@ -708,9 +714,9 @@ button {
 }
 
 .lab-tag.is-blue {
-  border-color: var(--lab-primary-border);
-  background: var(--lab-primary-bg);
-  color: var(--lab-primary-active);
+  border-color: var(--lab-info-border);
+  background: var(--lab-info-bg);
+  color: var(--lab-info-text);
 }
 
 .lab-tag.is-purple {
@@ -746,7 +752,7 @@ button {
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--lab-radius-lg);
 }
 
 .lab-alert.is-success {
@@ -755,8 +761,8 @@ button {
 }
 
 .lab-alert.is-info {
-  border-color: var(--lab-primary-border);
-  background: var(--lab-primary-bg);
+  border-color: var(--lab-info-border);
+  background: var(--lab-info-bg);
 }
 
 .lab-alert.is-warning {
@@ -787,7 +793,7 @@ button {
 }
 
 .lab-alert-icon.is-info {
-  background: var(--lab-primary);
+  background: var(--lab-info);
 }
 
 .lab-alert-icon.is-warning {
@@ -888,7 +894,7 @@ button {
 }
 
 .lab-status i.is-blue {
-  background: var(--lab-primary);
+  background: var(--lab-info);
 }
 
 .lab-status i.is-green {
@@ -903,7 +909,7 @@ button {
   z-index: 1070;
   max-width: 250px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--lab-radius);
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
   font-family: var(--lab-font);
@@ -931,7 +937,7 @@ button {
   left: 50%;
   width: min(calc(100vw - 32px), 520px);
   padding: 20px 24px;
-  border-radius: 8px;
+  border-radius: var(--lab-radius-lg);
   background: var(--lab-surface);
   box-shadow: var(--lab-shadow-popup);
   color: var(--lab-text);
