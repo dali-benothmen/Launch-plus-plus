@@ -496,6 +496,219 @@
   gap: 8px;
 }
 
+.launch-ui-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--launch-ui-text);
+  cursor: pointer;
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-radio-input {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  opacity: 0;
+}
+
+.launch-ui-radio-icon {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  box-sizing: border-box;
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) var(--launch-ui-border);
+  border-radius: 50%;
+  background: var(--launch-ui-surface);
+  pointer-events: none;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    box-shadow var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-radio-icon::after {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--launch-ui-primary);
+  content: "";
+  transform: scale(0);
+  transition: transform var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-radio:hover .launch-ui-radio-icon {
+  border-color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-radio-input:focus-visible + .launch-ui-radio-icon {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-radio-input:checked + .launch-ui-radio-icon,
+.launch-ui-radio.is-checked .launch-ui-radio-icon {
+  border-color: var(--launch-ui-primary);
+}
+
+.launch-ui-radio-input:checked + .launch-ui-radio-icon::after,
+.launch-ui-radio.is-checked .launch-ui-radio-icon::after {
+  transform: scale(1);
+}
+
+.launch-ui-radio-label {
+  padding-inline-start: 8px;
+}
+
+.launch-ui-radio.is-disabled {
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-radio.is-disabled .launch-ui-radio-icon {
+  border-color: var(--launch-ui-border);
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-radio.is-disabled .launch-ui-radio-icon::after {
+  background: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-radio-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.launch-ui-radio-group.is-vertical {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.launch-ui-radio-group.is-block {
+  display: flex;
+  width: 100%;
+}
+
+.launch-ui-radio-group.is-block > .launch-ui-radio {
+  flex: 1;
+}
+
+.launch-ui-radio.is-button {
+  z-index: 0;
+  height: var(--launch-ui-control-height);
+  box-sizing: border-box;
+  justify-content: center;
+  padding: 0 15px;
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) var(--launch-ui-border);
+  background: var(--launch-ui-surface);
+  line-height: calc(var(--launch-ui-control-height) - 2px);
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-radio.is-button .launch-ui-radio-label {
+  padding-inline-start: 0;
+}
+
+.launch-ui-radio.is-button:hover:not(.is-disabled) {
+  color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-radio.is-button:has(.launch-ui-radio-input:focus-visible) {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-radio.is-button.is-checked {
+  z-index: 1;
+  border-color: var(--launch-ui-primary);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-radio.is-button.is-solid.is-checked {
+  border-color: var(--launch-ui-primary);
+  background: var(--launch-ui-primary);
+  color: #fff;
+}
+
+.launch-ui-radio.is-button.is-solid.is-checked:hover:not(.is-disabled) {
+  border-color: var(--launch-ui-primary-hover);
+  background: var(--launch-ui-primary-hover);
+  color: #fff;
+}
+
+.launch-ui-radio.is-button.is-disabled {
+  border-color: var(--launch-ui-border);
+  background: var(--launch-ui-fill-quaternary);
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-radio.is-button.is-solid.is-disabled.is-checked {
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-radio.is-button.is-small {
+  height: var(--launch-ui-control-height-sm);
+  padding-inline: 7px;
+  line-height: calc(var(--launch-ui-control-height-sm) - 2px);
+}
+
+.launch-ui-radio.is-button.is-large {
+  height: var(--launch-ui-control-height-lg);
+  padding-inline: 15px;
+  font-size: 16px;
+  line-height: calc(var(--launch-ui-control-height-lg) - 2px);
+}
+
+.launch-ui-radio-group.is-button-group {
+  gap: 0;
+}
+
+.launch-ui-radio-group.is-button-group.is-horizontal
+  > .launch-ui-radio.is-button:not(:first-child) {
+  margin-inline-start: -1px;
+}
+
+.launch-ui-radio-group.is-button-group.is-horizontal > .launch-ui-radio.is-button:first-child {
+  border-start-start-radius: var(--launch-ui-radius);
+  border-end-start-radius: var(--launch-ui-radius);
+}
+
+.launch-ui-radio-group.is-button-group.is-horizontal > .launch-ui-radio.is-button:last-child {
+  border-start-end-radius: var(--launch-ui-radius);
+  border-end-end-radius: var(--launch-ui-radius);
+}
+
+.launch-ui-radio-group.is-button-group.is-vertical > .launch-ui-radio.is-button {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.launch-ui-radio-group.is-button-group.is-vertical > .launch-ui-radio.is-button:not(:first-child) {
+  margin-top: -1px;
+}
+
+.launch-ui-radio-group.is-button-group.is-vertical > .launch-ui-radio.is-button:first-child {
+  border-start-start-radius: var(--launch-ui-radius);
+  border-start-end-radius: var(--launch-ui-radius);
+}
+
+.launch-ui-radio-group.is-button-group.is-vertical > .launch-ui-radio.is-button:last-child {
+  border-end-start-radius: var(--launch-ui-radius);
+  border-end-end-radius: var(--launch-ui-radius);
+}
+
 .launch-ui-form {
   display: flex;
   box-sizing: border-box;
@@ -4918,6 +5131,8 @@
   .launch-ui-select-item,
   .launch-ui-menu-item,
   .launch-ui-checkbox-icon,
+  .launch-ui-radio-icon,
+  .launch-ui-radio.is-button,
   .launch-ui-date-picker,
   .launch-ui-date-picker-cell-inner,
   .launch-ui-date-picker-clear,

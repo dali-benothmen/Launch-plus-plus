@@ -490,6 +490,27 @@ button {
   justify-content: space-between;
 }
 
+.showcase-radio-stack,
+.showcase-radio-form {
+  width: min(100%, 560px);
+}
+
+.showcase-radio-function-icon {
+  border-color: var(--launch-ui-warning);
+}
+
+.showcase-radio-function-label {
+  color: var(--launch-ui-warning);
+  font-weight: 600;
+}
+
+.showcase-radio-option-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
