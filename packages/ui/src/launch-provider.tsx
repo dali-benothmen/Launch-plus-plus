@@ -1,3 +1,4 @@
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { ConfigProvider, theme } from "antd";
 import { useLayoutEffect, type PropsWithChildren } from "react";
 import { themeAttribute, type ThemeMode } from "@launchpp/ui-tokens";
@@ -22,7 +23,7 @@ export function LaunchProvider({ children, mode }: LaunchProviderProps) {
         },
       }}
     >
-      {children}
+      <TooltipPrimitive.Provider delayDuration={300}>{children}</TooltipPrimitive.Provider>
     </ConfigProvider>
   );
 }
