@@ -520,6 +520,18 @@
   vertical-align: middle;
 }
 
+.launch-ui-flex {
+  display: flex;
+}
+
+.launch-ui-flex.is-horizontal {
+  align-items: flex-start;
+}
+
+.launch-ui-flex.is-vertical {
+  flex-direction: column;
+}
+
 .launch-ui-card {
   position: relative;
   box-sizing: border-box;

@@ -72,6 +72,10 @@ componentTokens:
     spacingSmall: 12px
     spacingMedium: 16px
     spacingLarge: 24px
+  flex:
+    gapSmall: 8px
+    gapMedium: 16px
+    gapLarge: 24px
   input:
     transitionDuration: 1s
     transitionProperties: border-color, background-color, box-shadow
@@ -378,6 +382,19 @@ Dividers separate related content without introducing another container. Horizon
 - Vertical dividers are `0.9em` high with 8 px inline spacing.
 
 The root exposes native separator semantics and its orientation. Public `root`, `content`, and `rail` slots may be customized through the component API; consumers should not target private DOM structure.
+
+### Flex
+
+Flex is the low-level layout primitive for arranging block-level children. It renders no wrappers around individual children and supports horizontal or vertical direction, wrapping, alignment, distribution, and preset or custom gaps.
+
+- Horizontal is the default orientation and aligns children to the cross-axis start.
+- Vertical orientation uses a column direction and keeps the browser's default stretch behavior.
+- Preset gaps are 8 px small, 16 px medium, and 24 px large. Numeric and CSS length values are also accepted.
+- `wrap` enables additional rows; explicit CSS wrap values remain available for advanced layouts.
+- `justify`, `align`, and `flex` map directly to their corresponding CSS properties.
+- The root element defaults to `div` and may be replaced with a more meaningful semantic element through `component`.
+
+Use Flex when layout direction or alignment matters. Use Space when a group only needs consistent spacing between inline elements.
 
 ### Input, textarea, and input-like controls
 

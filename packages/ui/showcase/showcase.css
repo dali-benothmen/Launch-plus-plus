@@ -386,6 +386,52 @@ button {
   opacity: 0.9;
 }
 
+.showcase-flex-blocks {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.showcase-flex-block {
+  min-height: 54px;
+  background: rgb(22 104 220 / 75%);
+}
+
+.showcase-flex-block:nth-child(even) {
+  background: var(--launch-ui-primary);
+}
+
+.showcase-flex-control {
+  display: grid;
+  min-width: 180px;
+  gap: 6px;
+}
+
+.showcase-flex-alignment-box {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--launch-ui-primary-border);
+  border-radius: var(--launch-ui-radius);
+}
+
+.showcase-flex-card {
+  width: min(100%, 620px);
+}
+
+.showcase-flex-avatar {
+  display: grid;
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
+  font-size: 28px;
+  font-weight: 600;
+}
+
 .showcase-icon-browser {
   display: grid;
   gap: 20px;
