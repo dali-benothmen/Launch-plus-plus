@@ -1118,6 +1118,43 @@ button {
   border-color: var(--launch-ui-primary);
 }
 
+.showcase-avatar-badge {
+  position: relative;
+  display: inline-flex;
+}
+
+.showcase-avatar-badge-count,
+.showcase-avatar-badge-dot {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: var(--launch-ui-error);
+  color: #fff;
+}
+
+.showcase-avatar-badge-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 16px;
+  transform: translate(50%, -50%);
+}
+
+.showcase-avatar-badge-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--launch-ui-success);
+  transform: translate(35%, -35%);
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }
