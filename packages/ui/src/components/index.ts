@@ -18,6 +18,7 @@ export * from "./form/index.js";
 export * from "./grid/index.js";
 export * from "./input/index.js";
 export * from "./input-number/index.js";
+export * from "./list/index.js";
 export * from "./masonry/index.js";
 export * from "./mentions/index.js";
 export * from "./menu/index.js";

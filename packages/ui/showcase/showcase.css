@@ -1127,6 +1127,19 @@ button {
   font-size: 9px;
 }
 
+.showcase-list-rich-content {
+  min-width: 0;
+}
+
+.showcase-list-semantic-root {
+  border-color: var(--launch-ui-primary-border);
+}
+
+.showcase-list-semantic-header {
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }
