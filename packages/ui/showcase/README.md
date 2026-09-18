@@ -14,8 +14,8 @@ lifecycle stage, examples, essential API, and accessibility notes. Import that r
 
 - `dev`: actively being built and visible only in the showcase.
 - `test`: ready for manual review and still excluded from the public API.
-- `prod`: approved and explicitly exported from `packages/ui/src/index.ts`.
+- `prod`: approved and explicitly exported from the public `@launchpp/ui` package API.
 
-Changing a showcase entry to `prod` does not publish it automatically. Add its public export to
-`packages/ui/src/index.ts` only after approval. This keeps unfinished components out of application
-and plugin imports.
+Changing a showcase entry to `prod` does not publish it automatically. Add its public export to the
+root entry point or an intentional package subpath only after approval. This keeps unfinished
+components out of application and plugin imports.

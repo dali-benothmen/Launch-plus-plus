@@ -13,7 +13,7 @@ type StageFilter = "all" | ShowcaseStage;
 const stageDescriptions: Record<ShowcaseStage, string> = {
   dev: "Actively being built and available only in this showcase.",
   test: "Ready for manual review but not part of the public package API.",
-  prod: "Approved and exported from the public @launchpp/ui entry point.",
+  prod: "Approved and exported from the public @launchpp/ui package API.",
 };
 
 function StageBadge({ stage }: { readonly stage: ShowcaseStage }) {
@@ -33,6 +33,13 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
           <p>{entry.description}</p>
         </div>
       </header>
+
+      {entry.usage ? (
+        <section className="showcase-section showcase-usage">
+          <h2>Usage</h2>
+          <CodeBlock code={entry.usage} />
+        </section>
+      ) : null}
 
       {entry.whenToUse && entry.whenToUse.length > 0 ? (
         <section className="showcase-guidance">

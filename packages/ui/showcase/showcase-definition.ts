@@ -28,6 +28,7 @@ export interface ComponentShowcase {
   readonly id: string;
   readonly name: string;
   readonly stage: ShowcaseStage;
+  readonly usage?: string;
   readonly whenToUse?: ReadonlyArray<string>;
 }
 
