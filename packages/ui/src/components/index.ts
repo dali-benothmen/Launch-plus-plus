@@ -13,6 +13,7 @@ export * from "./grid/index.js";
 export * from "./input/index.js";
 export * from "./masonry/index.js";
 export * from "./menu/index.js";
+export * from "./pagination/index.js";
 export * from "./select/index.js";
 export * from "./space/index.js";
 export * from "./switch/index.js";

@@ -316,6 +316,22 @@ button {
   padding-block: 4px;
 }
 
+.showcase-pagination-stack {
+  display: grid;
+  width: 100%;
+  gap: 24px;
+}
+
+.showcase-pagination-stack > div {
+  display: grid;
+  gap: 8px;
+}
+
+.showcase-pagination-semantic-root {
+  border: 1px solid var(--showcase-border);
+  border-radius: var(--launch-ui-radius-lg);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

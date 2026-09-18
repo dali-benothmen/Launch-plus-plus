@@ -14,6 +14,7 @@ import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
+import { paginationShowcase } from "./components/pagination.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
 import { spaceShowcase } from "./components/space.showcase.js";
 import { switchShowcase } from "./components/switch.showcase.js";
@@ -44,6 +45,7 @@ export const componentRegistry = defineShowcases([
   breadcrumbShowcase,
   dropdownShowcase,
   menuShowcase,
+  paginationShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,

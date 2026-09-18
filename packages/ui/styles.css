@@ -1826,6 +1826,183 @@
   background: rgb(255 255 255 / 12%);
 }
 
+.launch-ui-pagination {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-pagination.is-start {
+  justify-content: flex-start;
+}
+
+.launch-ui-pagination.is-center {
+  justify-content: center;
+}
+
+.launch-ui-pagination.is-end {
+  justify-content: flex-end;
+}
+
+.launch-ui-pagination-pages,
+.launch-ui-pagination-options,
+.launch-ui-pagination-quick-jumper,
+.launch-ui-pagination-simple {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.launch-ui-pagination-item,
+.launch-ui-pagination-go-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: var(--launch-ui-pagination-control-size, 32px);
+  min-width: var(--launch-ui-pagination-control-size, 32px);
+  align-items: center;
+  justify-content: center;
+  padding-inline: 6px;
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) transparent;
+  border-radius: var(--launch-ui-radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  outline: none;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-pagination-item:hover:not(:disabled),
+.launch-ui-pagination-item:focus-visible,
+.launch-ui-pagination-go-button:hover:not(:disabled),
+.launch-ui-pagination-go-button:focus-visible {
+  background: var(--launch-ui-fill-tertiary);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-pagination-item:focus-visible,
+.launch-ui-pagination-go-button:focus-visible,
+.launch-ui-pagination-quick-input:focus-visible,
+.launch-ui-pagination-simple-input:focus-visible {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-pagination-item.is-selected {
+  border-color: var(--launch-ui-primary);
+  background: var(--launch-ui-surface);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-pagination-item.is-ellipsis {
+  color: var(--launch-ui-text-tertiary);
+  letter-spacing: 1px;
+}
+
+.launch-ui-pagination-item:disabled,
+.launch-ui-pagination-go-button:disabled {
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-pagination.is-disabled {
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-pagination-icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.launch-ui-pagination-total {
+  margin-inline-end: 8px;
+  color: var(--launch-ui-text-secondary);
+}
+
+.launch-ui-pagination-size-changer .launch-ui-select-trigger {
+  height: var(--launch-ui-pagination-control-size, 32px);
+  min-width: 112px;
+}
+
+.launch-ui-pagination-quick-jumper {
+  margin-inline-start: 8px;
+  white-space: nowrap;
+}
+
+.launch-ui-pagination-quick-input,
+.launch-ui-pagination-simple-input {
+  width: 52px;
+  height: var(--launch-ui-pagination-control-size, 32px);
+  padding-inline: 6px;
+  text-align: center;
+}
+
+.launch-ui-pagination-quick-input {
+  appearance: textfield;
+}
+
+.launch-ui-pagination-quick-input::-webkit-inner-spin-button,
+.launch-ui-pagination-quick-input::-webkit-outer-spin-button,
+.launch-ui-pagination-simple-input::-webkit-inner-spin-button,
+.launch-ui-pagination-simple-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.launch-ui-pagination-simple-current {
+  min-width: 24px;
+  text-align: center;
+}
+
+.launch-ui-pagination.is-small {
+  --launch-ui-pagination-control-size: 24px;
+  gap: 4px;
+}
+
+.launch-ui-pagination.is-small .launch-ui-pagination-pages,
+.launch-ui-pagination.is-small .launch-ui-pagination-options,
+.launch-ui-pagination.is-small .launch-ui-pagination-quick-jumper {
+  gap: 4px;
+}
+
+.launch-ui-pagination.is-small .launch-ui-pagination-item,
+.launch-ui-pagination.is-small .launch-ui-pagination-go-button {
+  padding-inline: 4px;
+  font-size: 12px;
+}
+
+.launch-ui-pagination.is-small .launch-ui-pagination-size-changer .launch-ui-select-trigger {
+  min-width: 96px;
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
+.launch-ui-pagination.is-large {
+  --launch-ui-pagination-control-size: 40px;
+}
+
+.launch-ui-pagination.is-responsive-small .launch-ui-pagination-total,
+.launch-ui-pagination.is-responsive-small .launch-ui-pagination-options,
+.launch-ui-pagination.is-responsive-small .launch-ui-pagination-quick-jumper {
+  display: none;
+}
+
 .launch-ui-switch {
   position: relative;
   width: 44px;
