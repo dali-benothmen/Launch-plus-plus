@@ -154,6 +154,12 @@ function canonicalDecimal(value: string) {
   return `${parts.negative && !zero ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
 }
 
+function isIntermediateDecimal(value: string, decimalSeparator: string) {
+  const normalized =
+    decimalSeparator === "." ? value.trim() : value.replaceAll(decimalSeparator, ".").trim();
+  return /^[+-]?\.?$/.test(normalized);
+}
+
 function decimalPlaces(value: InputNumberValue) {
   const text = String(value).toLowerCase();
   if (text.includes("e")) {
@@ -433,8 +439,12 @@ function InputNumberRoot<TValue extends InputNumberValue = number>(
     onInput?.(text);
     const parsed = parseDisplay(text);
     if (parsed === null) {
-      setInputValue(text);
-      if (text.trim() === "") publish(null);
+      if (text.trim() === "") {
+        setInputValue("");
+        publish(null);
+      } else if (!parser && isIntermediateDecimal(text, decimalSeparator)) {
+        setInputValue(text);
+      }
       return;
     }
     const nextValue = toValue(parsed);
