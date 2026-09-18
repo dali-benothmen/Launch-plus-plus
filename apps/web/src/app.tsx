@@ -10,12 +10,18 @@ import type { ThemeMode } from "@launchpp/ui-tokens";
 import "@launchpp/ui-tokens/styles.css";
 import "./app.css";
 import { ApiClientProvider } from "./api-client-context.js";
+import { ComponentLabPage } from "./component-lab.js";
 import { MembersPage, MyWorkPage, SettingsPage } from "./pages.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
 export const appRoutes: RouteObject[] = [
   {
+    path: "/",
+    element: <ComponentLabPage />,
+  },
+  {
+    path: "/app",
     element: <AppShell />,
     children: [
       { index: true, element: <MyWorkPage /> },
