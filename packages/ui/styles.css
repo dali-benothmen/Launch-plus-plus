@@ -423,11 +423,13 @@
 }
 
 .launch-ui-divider {
+  --launch-ui-divider-color: var(--launch-ui-border-soft);
   --launch-ui-divider-line-style: solid;
+  --launch-ui-divider-spacing: 24px;
   box-sizing: border-box;
   padding: 0;
   border: 0;
-  border-color: var(--launch-ui-border-soft);
+  border-color: var(--launch-ui-divider-color);
   margin: 0;
   color: var(--launch-ui-text);
   font-family: var(--launch-ui-font);
@@ -447,60 +449,58 @@
   clear: both;
   width: 100%;
   min-width: 100%;
-  margin-block: 24px;
-  border-block-start-width: var(--launch-ui-line-width);
+  margin-block: var(--launch-ui-divider-spacing);
+  border-block-start-width: 1px;
   border-block-start-style: var(--launch-ui-divider-line-style);
 }
 
 .launch-ui-divider.is-horizontal.is-small {
-  margin-block: 12px;
+  --launch-ui-divider-spacing: 12px;
 }
 
 .launch-ui-divider.is-horizontal.is-medium {
-  margin-block: 16px;
+  --launch-ui-divider-spacing: 16px;
 }
 
 .launch-ui-divider.is-horizontal.is-large {
-  margin-block: 24px;
+  --launch-ui-divider-spacing: 24px;
 }
 
 .launch-ui-divider.is-horizontal.has-content {
   display: flex;
   align-items: center;
-  margin-block: 16px;
+  --launch-ui-divider-spacing: 16px;
   border-block-start: 0;
   white-space: nowrap;
   text-align: center;
 }
 
 .launch-ui-divider.is-horizontal.has-content.is-small {
-  margin-block: 12px;
+  --launch-ui-divider-spacing: 12px;
 }
 
 .launch-ui-divider.is-horizontal.has-content.is-large {
-  margin-block: 24px;
+  --launch-ui-divider-spacing: 24px;
 }
 
 .launch-ui-divider-rail {
-  position: relative;
-  top: 50%;
   flex: 1;
   border: 0;
   border-color: inherit;
-  border-block-start-width: var(--launch-ui-line-width);
+  border-block-start-width: 1px;
   border-block-start-style: var(--launch-ui-divider-line-style);
-  transform: translateY(50%);
 }
 
 .launch-ui-divider-content {
   display: inline-block;
   margin-inline: 1em;
-  font-size: 16px;
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 500;
 }
 
 .launch-ui-divider.is-plain .launch-ui-divider-content {
-  font-size: var(--launch-ui-font-size);
+  font-size: 13px;
   font-weight: 400;
 }
 
@@ -515,7 +515,7 @@
   display: inline-block;
   height: 0.9em;
   margin-inline: 8px;
-  border-inline-start-width: var(--launch-ui-line-width);
+  border-inline-start-width: 1px;
   border-inline-start-style: var(--launch-ui-divider-line-style);
   vertical-align: middle;
 }

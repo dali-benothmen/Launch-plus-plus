@@ -367,11 +367,11 @@ button {
 }
 
 .showcase-divider-custom-root {
-  border-color: var(--launch-ui-primary);
+  opacity: 0.9;
 }
 
 .showcase-divider-custom-content {
-  color: var(--launch-ui-primary);
+  font-style: italic;
 }
 
 .showcase-divider-custom-rail {
@@ -379,11 +379,11 @@ button {
 }
 
 .showcase-divider-custom-start {
-  border-color: var(--launch-ui-success);
+  opacity: 0.8;
 }
 
 .showcase-divider-custom-default {
-  border-color: var(--launch-ui-border);
+  opacity: 0.9;
 }
 
 .showcase-icon-browser {

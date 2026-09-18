@@ -66,6 +66,8 @@ componentTokens:
     squareRadius: 8px
   divider:
     color: "#f0f0f0"
+    lineWidth: 1px
+    titleFontSize: 13px
     textPaddingInline: 1em
     spacingSmall: 12px
     spacingMedium: 16px
@@ -371,7 +373,7 @@ Dividers separate related content without introducing another container. Horizon
 - Default line: 1 px solid `#f0f0f0`.
 - Variants: solid, dotted, and dashed.
 - Horizontal spacing: 12 px small, 16 px medium, and 24 px large. The default is 24 px.
-- Titled dividers use 16 px medium-weight text with `1em` inline spacing. Plain titles use the standard 14 px body style.
+- Titled dividers use 13 px medium-weight text with `1em` inline spacing. Plain titles use the same 13 px size at regular weight.
 - Start and end titles leave a short 5% rail on their aligned side; centered titles divide the available width evenly.
 - Vertical dividers are `0.9em` high with 8 px inline spacing.
 

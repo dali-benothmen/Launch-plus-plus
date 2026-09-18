@@ -70,7 +70,7 @@ function classNamesFunction({ props }: DividerSemanticInfo): DividerSemanticClas
 const stylesObject: DividerSemanticStyles = {
   content: { fontStyle: "italic" },
   rail: { opacity: 0.85 },
-  root: { borderStyle: "dashed", borderWidth: 2 },
+  root: { cursor: "default" },
 };
 
 function stylesFunction({ props }: DividerSemanticInfo): DividerSemanticStyles {
@@ -135,20 +135,14 @@ function PlainTitles() {
 }
 
 function DividerVariants() {
-  const lineStyle = { borderColor: "var(--launch-ui-primary)" };
-
   return (
     <div className="showcase-divider-copy">
       <Copy />
-      <Divider style={lineStyle}>Solid</Divider>
+      <Divider>Solid</Divider>
       <Copy />
-      <Divider style={lineStyle} variant="dotted">
-        Dotted
-      </Divider>
+      <Divider variant="dotted">Dotted</Divider>
       <Copy />
-      <Divider style={lineStyle} variant="dashed">
-        Dashed
-      </Divider>
+      <Divider variant="dashed">Dashed</Divider>
       <Copy />
     </div>
   );
@@ -209,7 +203,7 @@ export const dividerShowcase = defineShowcase({
 };
 
 const styles = {
-  root: { borderWidth: 2, borderStyle: "dashed" },
+  root: { cursor: "default" },
   content: { fontStyle: "italic" },
   rail: { opacity: 0.85 },
 };
