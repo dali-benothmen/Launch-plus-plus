@@ -42,6 +42,14 @@ function CloseIcon() {
   );
 }
 
+function LoadingIcon() {
+  return (
+    <svg aria-hidden="true" className="lab-loading-icon" viewBox="0 0 16 16">
+      <circle cx="8" cy="8" r="5.5" />
+    </svg>
+  );
+}
+
 function StatusIcon({ variant }: { readonly variant: "error" | "info" | "success" | "warning" }) {
   const symbols = { error: "×", info: "i", success: "✓", warning: "!" } as const;
   return (
@@ -193,11 +201,11 @@ export function ComponentLabPage() {
       <main className="component-lab">
         <header className="lab-hero">
           <div>
-            <span className="lab-kicker">Radix + custom CSS</span>
+            <span className="lab-kicker">Ant Design 6.6.4 · Radix + CSS</span>
             <h1>Component study</h1>
             <p>
-              A small visual experiment based on the Ant Design language: calm surfaces, compact
-              controls, explicit states, and a four-pixel rhythm.
+              A focused recreation of the current Ant Design language: semantic variants, compact
+              controls, clear feedback, and a four-pixel rhythm.
             </p>
           </div>
           <div aria-label="Color palette" className="lab-palette">
@@ -209,7 +217,7 @@ export function ComponentLabPage() {
         </header>
 
         <div className="lab-grid">
-          <LabCard description="Compact, certain, and action-led." title="Actions">
+          <LabCard description="Color and variant are independent in the v6 model." title="Actions">
             <div className="lab-row">
               <button className="lab-button is-primary" type="button">
                 Primary action
@@ -220,8 +228,26 @@ export function ComponentLabPage() {
               <button className="lab-button is-dashed" type="button">
                 Dashed
               </button>
+              <button className="lab-button is-filled" type="button">
+                Filled
+              </button>
               <button className="lab-button is-text" type="button">
-                Text button
+                Text
+              </button>
+              <button className="lab-button is-link" type="button">
+                Link
+              </button>
+            </div>
+            <div className="lab-row is-state-row">
+              <button className="lab-button is-danger" type="button">
+                Danger
+              </button>
+              <button className="lab-button is-primary" disabled type="button">
+                Disabled
+              </button>
+              <button aria-busy="true" className="lab-button is-primary" type="button">
+                <LoadingIcon />
+                Loading
               </button>
             </div>
             <div className="lab-row is-secondary">
@@ -244,7 +270,7 @@ export function ComponentLabPage() {
           </LabCard>
 
           <LabCard
-            description="Input, select, validation, and a boolean setting."
+            description="Outlined and filled fields share one interaction contract."
             title="Form controls"
           >
             <div className="lab-field-stack">
@@ -262,6 +288,16 @@ export function ComponentLabPage() {
                   <span>Project key</span>
                   <input aria-invalid="true" defaultValue="LP!" />
                   <small>Use letters and numbers only.</small>
+                </label>
+              </div>
+              <div className="lab-field-grid">
+                <label className="lab-field">
+                  <span>Filled variant</span>
+                  <input className="is-filled" defaultValue="launch-plus-plus" spellCheck="false" />
+                </label>
+                <label className="lab-field">
+                  <span>Underlined variant</span>
+                  <input className="is-underlined" defaultValue="Maya Chen" />
                 </label>
               </div>
               <div className="lab-switch-row">
@@ -282,7 +318,7 @@ export function ComponentLabPage() {
           </LabCard>
 
           <LabCard
-            description="Tabs use color and stroke, never a filled background."
+            description="Selection is communicated with color, fill, or a precise ink bar."
             title="Tabs and tags"
           >
             <Tabs.Root className="lab-tabs" defaultValue="overview">
@@ -303,9 +339,9 @@ export function ComponentLabPage() {
                   but unmistakable.
                 </p>
                 <div className="lab-tags">
-                  <span className="lab-tag is-blue">In progress</span>
+                  <span className="lab-tag is-blue is-filled">In progress</span>
                   <span className="lab-tag is-purple">Design</span>
-                  <span className="lab-tag is-green">Approved</span>
+                  <span className="lab-tag is-green is-solid">Approved</span>
                   <span className="lab-tag">Neutral</span>
                 </div>
               </Tabs.Content>
@@ -357,8 +393,8 @@ export function ComponentLabPage() {
           <section className="lab-card is-wide">
             <header className="lab-card-header is-inline">
               <div>
-                <h2>Compact table</h2>
-                <p>Flat by default, with hierarchy carried by borders and type.</p>
+                <h2>Data table</h2>
+                <p>Default density, with hierarchy carried by borders and typography.</p>
               </div>
               <button className="lab-button" type="button">
                 Export
