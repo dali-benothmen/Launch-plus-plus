@@ -122,7 +122,7 @@ tokens:
     infoBg: "#e6f4ff"
     infoBorder: "#91caff"
     text: "rgba(0, 0, 0, 0.88)"
-    textSecondary: "rgba(0, 0, 0, 0.65)"
+    textSecondary: "rgba(0, 0, 0, 0.88)"
     textTertiary: "rgba(0, 0, 0, 0.45)"
     textQuaternary: "rgba(0, 0, 0, 0.25)"
     textDisabled: "rgba(0, 0, 0, 0.25)"
@@ -637,7 +637,7 @@ This subset is enough to establish the default visual language in plain CSS:
   --launch-color-error: #ff4d4f;
 
   --launch-color-text: rgba(0, 0, 0, 0.88);
-  --launch-color-text-secondary: rgba(0, 0, 0, 0.65);
+  --launch-color-text-secondary: rgba(0, 0, 0, 0.88);
   --launch-color-text-tertiary: rgba(0, 0, 0, 0.45);
   --launch-color-text-disabled: rgba(0, 0, 0, 0.25);
   --launch-color-border: #d9d9d9;

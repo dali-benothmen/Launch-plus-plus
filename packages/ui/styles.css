@@ -22,8 +22,8 @@
   --launch-ui-error-border: #ffccc7;
   --launch-ui-surface: var(--launch-color-bg-elevated, #fff);
   --launch-ui-surface-subtle: var(--launch-color-bg-subtle, #fafafa);
-  --launch-ui-text: var(--launch-color-text, rgb(0 0 0 / 88%));
-  --launch-ui-text-secondary: var(--launch-color-text-muted, rgb(0 0 0 / 65%));
+  --launch-ui-text: var(--launch-color-text, rgba(0, 0, 0, 0.88));
+  --launch-ui-text-secondary: var(--launch-color-text-muted, rgba(0, 0, 0, 0.88));
   --launch-ui-text-tertiary: rgb(0 0 0 / 45%);
   --launch-ui-text-disabled: rgb(0 0 0 / 25%);
   --launch-ui-fill-secondary: rgb(0 0 0 / 6%);

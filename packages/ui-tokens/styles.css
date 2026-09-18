@@ -8,8 +8,8 @@
   --launch-color-bg-subtle: #fafafa;
   --launch-color-border: #d9d9d9;
   --launch-color-border-secondary: #f0f0f0;
-  --launch-color-text: rgb(0 0 0 / 88%);
-  --launch-color-text-muted: rgb(0 0 0 / 65%);
+  --launch-color-text: rgba(0, 0, 0, 0.88);
+  --launch-color-text-muted: rgba(0, 0, 0, 0.88);
   --launch-color-focus: #1668dc;
   --launch-shadow-surface: none;
   --launch-font-family:

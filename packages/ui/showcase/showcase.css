@@ -1,7 +1,7 @@
 :root {
   --showcase-border: #f0f0f0;
   --showcase-hover: #f5f5f5;
-  --showcase-section-label: rgb(0 0 0 / 45%);
+  --showcase-section-label: rgba(0, 0, 0, 0.88);
   color: var(--launch-color-text);
   background: var(--launch-color-bg-canvas);
   font-family:
