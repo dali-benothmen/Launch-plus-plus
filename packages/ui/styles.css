@@ -470,7 +470,7 @@
   display: flex;
   align-items: center;
   --launch-ui-divider-spacing: 16px;
-  border-block-start: 0;
+  border-block-start-width: 0;
   white-space: nowrap;
   text-align: center;
 }
