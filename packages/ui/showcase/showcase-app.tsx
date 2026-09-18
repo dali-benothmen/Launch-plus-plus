@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Card, Input, LaunchProvider } from "../src/index.js";
+import { Button, Card, Dialog, Input, LaunchProvider } from "../src/index.js";
 import { CodeBlock } from "./code-block.js";
 import {
   componentRegistry,
@@ -205,15 +205,24 @@ export function ShowcaseApp() {
             ))}
           </nav>
 
-          <details className="showcase-stage-help">
-            <summary>Lifecycle stages</summary>
-            {showcaseStages.map((item) => (
-              <p key={item}>
-                <StageBadge stage={item} />
-                <span>{stageDescriptions[item]}</span>
-              </p>
-            ))}
-          </details>
+          <Dialog
+            description="Lifecycle labels communicate how ready a component is for public use."
+            title="Lifecycle stages"
+            trigger={
+              <Button className="showcase-stage-help-trigger" variant="text">
+                Lifecycle stages
+              </Button>
+            }
+          >
+            <div className="showcase-stage-dialog">
+              {showcaseStages.map((item) => (
+                <div key={item}>
+                  <StageBadge stage={item} />
+                  <p>{stageDescriptions[item]}</p>
+                </div>
+              ))}
+            </div>
+          </Dialog>
         </aside>
 
         <main className="showcase-main">

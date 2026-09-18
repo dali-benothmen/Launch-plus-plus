@@ -187,20 +187,28 @@ button {
   color: #389e0d;
 }
 
-.showcase-stage-help {
-  color: var(--launch-color-text-muted);
-  font-size: 12px;
+.showcase-stage-help-trigger {
+  width: 100%;
+  justify-content: flex-start;
 }
 
-.showcase-stage-help summary {
-  cursor: pointer;
+.showcase-stage-dialog {
+  display: grid;
+  gap: 16px;
 }
 
-.showcase-stage-help p {
+.showcase-stage-dialog > div {
   display: grid;
   grid-template-columns: auto 1fr;
+  align-items: start;
   gap: 8px;
-  margin: 10px 0 0;
+}
+
+.showcase-stage-dialog p {
+  margin: 0;
+  color: var(--launch-color-text-muted);
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .showcase-main {
