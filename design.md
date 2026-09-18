@@ -76,6 +76,14 @@ componentTokens:
     gapSmall: 8px
     gapMedium: 16px
     gapLarge: 24px
+  grid:
+    columns: 24
+    breakpointSm: 576px
+    breakpointMd: 768px
+    breakpointLg: 992px
+    breakpointXl: 1200px
+    breakpointXxl: 1600px
+    breakpointXxxl: 1920px
   input:
     transitionDuration: 1s
     transitionProperties: border-color, background-color, box-shadow
@@ -395,6 +403,19 @@ Flex is the low-level layout primitive for arranging block-level children. It re
 - The root element defaults to `div` and may be replaced with a more meaningful semantic element through `component`.
 
 Use Flex when layout direction or alignment matters. Use Space when a group only needs consistent spacing between inline elements.
+
+### Grid
+
+Grid provides a responsive 24-column layout through `Row` and `Col`. Content belongs inside columns, and columns belong directly inside rows. When fixed column spans total more than 24, the overflowing column moves to a new line unless wrapping is disabled.
+
+- A span represents a fraction of 24: 6 is 25%, 8 is one third, 12 is 50%, and 24 is full width.
+- Rows default to wrapping, top alignment, and start justification.
+- Gutters accept pixel numbers, CSS lengths, responsive maps, or a `[horizontal, vertical]` pair.
+- Columns support span, offset, order, push, pull, and flex behavior.
+- Responsive column settings use `xs`, `sm`, `md`, `lg`, `xl`, `xxl`, and `xxxl` at 0, 576, 768, 992, 1200, 1600, and 1920 px.
+- Prefer one to four major regions in a row. The grid is a layout aid, not a reason to maximize information density.
+
+Responsive layout is CSS-driven. Use `Grid.useBreakpoint` only when behavior cannot be expressed through responsive grid properties or CSS.
 
 ### Input, textarea, and input-like controls
 

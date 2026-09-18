@@ -432,6 +432,73 @@ button {
   font-weight: 600;
 }
 
+.showcase-grid-concept,
+.showcase-grid-stack,
+.showcase-grid-section-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.showcase-grid-concept {
+  overflow: hidden;
+  border: 1px solid var(--launch-ui-border-soft);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(100% / 24 - 1px),
+    rgb(5 5 5 / 4%) calc(100% / 24 - 1px),
+    rgb(5 5 5 / 4%) calc(100% / 24)
+  );
+}
+
+.showcase-grid-section-stack {
+  gap: 12px;
+}
+
+.showcase-grid-section-divider {
+  margin-block: 8px 0;
+}
+
+.showcase-grid-cell {
+  display: grid;
+  min-height: 40px;
+  place-items: center;
+  padding: 8px;
+  background: var(--launch-ui-primary);
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}
+
+.showcase-grid-cell.is-muted {
+  background: rgb(22 104 220 / 72%);
+}
+
+.showcase-grid-cell.is-short {
+  min-height: 52px;
+}
+
+.showcase-grid-cell.is-medium {
+  min-height: 84px;
+}
+
+.showcase-grid-cell.is-tall {
+  min-height: 112px;
+}
+
+.showcase-grid-row-surface {
+  min-height: 128px;
+  margin-top: 6px;
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.showcase-grid-breakpoints {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .showcase-icon-browser {
   display: grid;
   gap: 20px;

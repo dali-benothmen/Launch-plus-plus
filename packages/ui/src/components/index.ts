@@ -6,6 +6,7 @@ export * from "./divider/index.js";
 export * from "./dropdown-menu/index.js";
 export * from "./float-button/index.js";
 export * from "./flex/index.js";
+export * from "./grid/index.js";
 export * from "./input/index.js";
 export * from "./select/index.js";
 export * from "./switch/index.js";

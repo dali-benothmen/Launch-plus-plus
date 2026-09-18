@@ -6,6 +6,7 @@ import { dividerShowcase } from "./components/divider.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
 import { floatButtonShowcase } from "./components/float-button.showcase.js";
 import { flexShowcase } from "./components/flex.showcase.js";
+import { gridShowcase } from "./components/grid.showcase.js";
 import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
@@ -30,6 +31,7 @@ export const componentRegistry = defineShowcases([
   typographyShowcase,
   dividerShowcase,
   flexShowcase,
+  gridShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,
