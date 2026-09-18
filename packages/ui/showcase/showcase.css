@@ -87,6 +87,11 @@ button {
   width: 100%;
 }
 
+.showcase-header-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .showcase-filters {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -185,11 +190,6 @@ button {
 
 .showcase-stage.is-prod {
   color: #389e0d;
-}
-
-.showcase-stage-help-trigger {
-  width: 100%;
-  justify-content: flex-start;
 }
 
 .showcase-stage-dialog {
@@ -599,6 +599,10 @@ button {
     grid-template-columns: 1fr;
     gap: 16px;
     padding: 16px;
+  }
+
+  .showcase-header-actions {
+    justify-content: flex-start;
   }
 
   .showcase-sidebar {

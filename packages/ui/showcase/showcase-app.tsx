@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button, Card, Dialog, Input, LaunchProvider } from "../src/index.js";
+import { InfoCircleOutlined } from "../src/icons.js";
 import { CodeBlock } from "./code-block.js";
 import {
   componentRegistry,
@@ -167,6 +168,23 @@ export function ShowcaseApp() {
               value={query}
             />
           </label>
+
+          <div className="showcase-header-actions">
+            <Dialog
+              description="Lifecycle labels communicate how ready a component is for public use."
+              title="Lifecycle stages"
+              trigger={<Button icon={<InfoCircleOutlined />}>Lifecycle stages</Button>}
+            >
+              <div className="showcase-stage-dialog">
+                {showcaseStages.map((item) => (
+                  <div key={item}>
+                    <StageBadge stage={item} />
+                    <p>{stageDescriptions[item]}</p>
+                  </div>
+                ))}
+              </div>
+            </Dialog>
+          </div>
         </header>
 
         <aside className="showcase-sidebar">
@@ -204,25 +222,6 @@ export function ShowcaseApp() {
               </section>
             ))}
           </nav>
-
-          <Dialog
-            description="Lifecycle labels communicate how ready a component is for public use."
-            title="Lifecycle stages"
-            trigger={
-              <Button className="showcase-stage-help-trigger" variant="text">
-                Lifecycle stages
-              </Button>
-            }
-          >
-            <div className="showcase-stage-dialog">
-              {showcaseStages.map((item) => (
-                <div key={item}>
-                  <StageBadge stage={item} />
-                  <p>{stageDescriptions[item]}</p>
-                </div>
-              ))}
-            </div>
-          </Dialog>
         </aside>
 
         <main className="showcase-main">
