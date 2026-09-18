@@ -40,6 +40,8 @@
   --launch-ui-control-height-lg: 40px;
   --launch-ui-shadow-popup:
     0 6px 16px rgb(0 0 0 / 8%), 0 3px 6px -4px rgb(0 0 0 / 12%), 0 9px 28px 8px rgb(0 0 0 / 5%);
+  --launch-ui-shadow-card:
+    0 1px 2px -2px rgb(0 0 0 / 16%), 0 3px 6px rgb(0 0 0 / 12%), 0 5px 12px 4px rgb(0 0 0 / 9%);
   --launch-ui-font: var(
     --launch-font-family,
     AlibabaSans,
@@ -242,6 +244,7 @@
 .launch-ui-card {
   position: relative;
   box-sizing: border-box;
+  overflow: hidden;
   min-width: 0;
   padding: 0;
   border: var(--launch-ui-line-width) var(--launch-ui-line-style) var(--launch-ui-border-soft);
@@ -255,8 +258,96 @@
   list-style: none;
 }
 
+.launch-ui-card.is-borderless {
+  border-color: transparent;
+}
+
+.launch-ui-card.is-hoverable {
+  cursor: pointer;
+  transition:
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    box-shadow var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-card.is-hoverable:hover {
+  border-color: transparent;
+  box-shadow: var(--launch-ui-shadow-card);
+}
+
+.launch-ui-card-header {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  border-bottom: var(--launch-ui-line-width) var(--launch-ui-line-style)
+    var(--launch-ui-border-soft);
+}
+
+.launch-ui-card-title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-ui-card-extra {
+  flex: 0 0 auto;
+}
+
+.launch-ui-card-cover img {
+  display: block;
+  width: 100%;
+}
+
 .launch-ui-card-body {
   padding: 24px;
+}
+
+.launch-ui-card.is-small .launch-ui-card-header {
+  min-height: 38px;
+  padding-inline: 12px;
+}
+
+.launch-ui-card.is-small .launch-ui-card-title {
+  font-size: var(--launch-ui-font-size);
+}
+
+.launch-ui-card.is-small .launch-ui-card-body {
+  padding: 12px;
+}
+
+.launch-ui-card-meta {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.launch-ui-card-meta-avatar {
+  flex: 0 0 auto;
+}
+
+.launch-ui-card-meta-detail {
+  min-width: 0;
+  flex: 1;
+}
+
+.launch-ui-card-meta-title {
+  overflow: hidden;
+  margin-bottom: 4px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-ui-card-meta-description {
+  overflow: hidden;
+  color: var(--launch-ui-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .launch-ui-typography-root,
@@ -1319,6 +1410,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .launch-ui-button,
+  .launch-ui-card.is-hoverable,
   .launch-ui-link,
   .launch-ui-typography-action,
   .launch-ui-typography-expand,

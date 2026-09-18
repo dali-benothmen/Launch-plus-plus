@@ -69,8 +69,11 @@ componentTokens:
     shapeRound: 9999px
   card:
     bodyPadding: 24px
+    bodyPaddingSmall: 12px
     border: "1px solid #f0f0f0"
     borderRadius: 8px
+    headerHeight: 56px
+    headerHeightSmall: 38px
   dialog:
     enterDuration: 200ms
     exitDuration: 200ms
@@ -167,6 +170,7 @@ tokens:
     easeOutQuint: "cubic-bezier(0.23, 1, 0.32, 1)"
   elevation:
     raised: "0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.03)"
+    card: "0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09)"
     popup: "0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)"
     drawerDownDark: "0 -6px 16px rgba(255, 255, 255, 0.016), 0 -3px 6px -4px rgba(255, 255, 255, 0.024), 0 -9px 28px 8px rgba(255, 255, 255, 0.01)"
   breakpoint:
@@ -405,7 +409,11 @@ Cards are white 8 px-radius containers. The structural card shell has no padding
 solid secondary border; its body owns the standard 24 px padding. Raised cards use the light raised
 shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
 
-Typical body padding is 24 px. Separate header, body, cover, action, and tab regions semantically so plugins can style supported slots without reaching into internal markup.
+The medium header is 56 px tall with 24 px horizontal padding. Small cards use a 38 px header and
+12 px header and body padding. `title` and `extra` share the header; `cover` renders media before the
+body; and `Card.Meta` groups an optional avatar, title, and description. Hoverable cards transition
+to the dedicated card shadow. Separate header, body, cover, action, and tab regions semantically so
+plugins can style supported slots without reaching into internal markup.
 
 ### Tabs
 

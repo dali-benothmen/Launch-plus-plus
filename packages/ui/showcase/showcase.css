@@ -333,6 +333,16 @@ button {
   width: min(100%, 360px);
 }
 
+.showcase-card-content {
+  display: grid;
+  gap: 8px;
+}
+
+.showcase-card-surface {
+  padding: 24px;
+  background: var(--launch-color-bg-canvas);
+}
+
 .showcase-icon-browser {
   display: grid;
   gap: 20px;
