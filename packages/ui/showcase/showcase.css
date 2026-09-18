@@ -87,6 +87,10 @@ button {
   width: 100%;
 }
 
+.showcase-search .launch-ui-autocomplete {
+  width: 100%;
+}
+
 .showcase-header-actions {
   display: flex;
   justify-content: flex-end;
@@ -551,7 +555,7 @@ button {
 .showcase-stage-dialog p {
   margin: 0;
   color: var(--launch-color-text-muted);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 22px;
 }
 
@@ -564,6 +568,8 @@ button {
 .showcase-component {
   width: 100%;
   margin: 0 auto;
+  font-size: 13px;
+  line-height: 22px;
 }
 
 .showcase-component-header {
@@ -590,8 +596,8 @@ button {
   max-width: 680px;
   margin: 0;
   color: var(--launch-color-text-muted);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 13px;
+  line-height: 22px;
 }
 
 .showcase-section,
@@ -611,7 +617,8 @@ button {
   padding-left: 20px;
   margin: 0;
   color: var(--launch-color-text-muted);
-  line-height: 24px;
+  font-size: 13px;
+  line-height: 22px;
 }
 
 .showcase-examples {
@@ -1118,34 +1125,10 @@ button {
   min-height: 20px;
 }
 
-.showcase-api-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--launch-color-border);
-  border-radius: 8px;
-}
-
-.showcase-api {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--launch-color-bg-elevated);
-  font-size: 13px;
-  text-align: left;
-}
-
 .showcase-api th,
 .showcase-api td {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--launch-color-border);
   vertical-align: top;
-}
-
-.showcase-api th {
-  background: var(--launch-color-bg-subtle);
-  font-weight: 600;
-}
-
-.showcase-api tr:last-child td {
-  border-bottom: 0;
+  white-space: normal;
 }
 
 .showcase-api code {

@@ -2738,7 +2738,7 @@
   cursor: not-allowed;
 }
 
-.launch-ui-autocomplete-group + .launch-ui-autocomplete-group {
+.launch-ui-autocomplete-group.has-label + .launch-ui-autocomplete-group.has-label {
   padding-top: 4px;
   border-top: 1px solid var(--launch-ui-border-soft);
   margin-top: 4px;
@@ -4976,7 +4976,7 @@
   border-collapse: collapse;
   color: var(--launch-ui-text);
   font-family: var(--launch-ui-font);
-  font-size: 14px;
+  font-size: var(--launch-ui-font-size);
   line-height: 22px;
   text-align: left;
 }

@@ -1,12 +1,21 @@
 import { useMemo, useState } from "react";
-import { Button, Card, Dialog, Input, LaunchProvider } from "../src/index.js";
 import { InfoCircleOutlined } from "../src/icons.js";
+import {
+  AutoComplete,
+  type AutoCompleteOption,
+  Button,
+  Card,
+  Dialog,
+  Input,
+  LaunchProvider,
+  Table,
+} from "../src/index.js";
 import { CodeBlock } from "./code-block.js";
 import {
-  componentRegistry,
-  showcaseStages,
   type ComponentShowcase,
+  componentRegistry,
   type ShowcaseStage,
+  showcaseStages,
 } from "./registry.js";
 
 type StageFilter = "all" | ShowcaseStage;
@@ -80,32 +89,30 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
       {entry.api && entry.api.length > 0 ? (
         <section className="showcase-section">
           <h2>Essential API</h2>
-          <div className="showcase-api-wrap">
-            <table className="showcase-api">
-              <thead>
-                <tr>
-                  <th>Property</th>
-                  <th>Description</th>
-                  <th>Type</th>
-                  <th>Default</th>
+          <Table className="showcase-api">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entry.api.map((item) => (
+                <tr key={item.name}>
+                  <td>
+                    <code>{item.name}</code>
+                  </td>
+                  <td>{item.description}</td>
+                  <td>
+                    <code>{item.type}</code>
+                  </td>
+                  <td>{item.defaultValue ? <code>{item.defaultValue}</code> : "—"}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {entry.api.map((item) => (
-                  <tr key={item.name}>
-                    <td>
-                      <code>{item.name}</code>
-                    </td>
-                    <td>{item.description}</td>
-                    <td>
-                      <code>{item.type}</code>
-                    </td>
-                    <td>{item.defaultValue ? <code>{item.defaultValue}</code> : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </Table>
         </section>
       ) : null}
 
@@ -127,6 +134,17 @@ export function ShowcaseApp() {
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<StageFilter>("all");
   const [selectedId, setSelectedId] = useState<string | undefined>(componentRegistry[0]?.id);
+
+  const searchOptions = useMemo<ReadonlyArray<AutoCompleteOption>>(
+    () =>
+      componentRegistry
+        .filter((entry) => stage === "all" || entry.stage === stage)
+        .map((entry) => ({
+          label: `${entry.name} · ${entry.category}`,
+          value: entry.name,
+        })),
+    [stage],
+  );
 
   const visibleEntries = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -159,14 +177,31 @@ export function ShowcaseApp() {
 
           <label className="showcase-search" htmlFor="showcase-search-input">
             <span className="showcase-visually-hidden">Search components</span>
-            <Input
-              id="showcase-search-input"
-              onChange={(event) => setQuery(event.currentTarget.value)}
+            <AutoComplete
+              allowClear
+              onChange={setQuery}
+              onSelect={(name) => {
+                const selected = componentRegistry.find((entry) => entry.name === name);
+                if (selected) setSelectedId(selected.id);
+              }}
+              options={searchOptions}
               placeholder="Search components"
-              shape="round"
-              type="search"
+              showSearch={{
+                filterOption: (inputValue, option) => {
+                  const entry = componentRegistry.find(
+                    (component) => component.name === option.value,
+                  );
+                  if (!entry) return false;
+                  const searchableText = `${entry.name} ${entry.category} ${entry.description}`;
+                  return searchableText
+                    .toLocaleLowerCase()
+                    .includes(inputValue.toLocaleLowerCase());
+                },
+              }}
               value={query}
-            />
+            >
+              <Input id="showcase-search-input" placeholder="Search components" type="search" />
+            </AutoComplete>
           </label>
 
           <div className="showcase-header-actions">

@@ -536,7 +536,11 @@ export const AutoComplete = forwardRef<AutoCompleteRef, AutoCompleteProps>(
               {...(group.label === undefined
                 ? {}
                 : { "aria-labelledby": `${listboxId}-group-${group.key}` })}
-              className={classes("launch-ui-autocomplete-group", resolvedClassNames.popup?.group)}
+              className={classes(
+                "launch-ui-autocomplete-group",
+                group.label !== undefined && "has-label",
+                resolvedClassNames.popup?.group,
+              )}
               key={group.key}
               role={group.label === undefined ? "presentation" : "group"}
               style={resolvedStyles.popup?.group}
