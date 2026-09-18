@@ -5341,6 +5341,351 @@
   border-radius: 0 var(--launch-ui-radius-lg) var(--launch-ui-radius-lg) 0;
 }
 
+.launch-ui-upload {
+  box-sizing: border-box;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-upload-input {
+  display: none;
+}
+
+.launch-ui-upload-trigger {
+  display: inline-block;
+}
+
+.launch-ui-upload-trigger:not(.is-hidden) {
+  cursor: pointer;
+}
+
+.launch-ui-upload-trigger.is-hidden {
+  display: none;
+}
+
+.launch-ui-upload.is-disabled .launch-ui-upload-trigger {
+  cursor: not-allowed;
+}
+
+.launch-ui-upload.is-drag {
+  display: block;
+  width: 100%;
+}
+
+.launch-ui-upload.is-drag .launch-ui-upload-trigger {
+  display: block;
+  min-height: 180px;
+  padding: 28px 24px;
+  border: var(--launch-ui-line-width) dashed var(--launch-ui-border);
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-fill-quaternary);
+  text-align: center;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-upload-list {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  margin: 8px 0 0;
+  list-style: none;
+}
+
+.launch-ui-upload-item {
+  position: relative;
+  display: flex;
+  min-height: 26px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: var(--launch-ui-radius);
+  color: var(--launch-ui-text);
+  transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-upload-item:hover {
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-upload-item-visual {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-upload-item-visual img {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.launch-ui-upload-file-glyph,
+.launch-ui-upload-glyph {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.launch-ui-upload-glyph {
+  font-size: 16px;
+}
+
+.launch-ui-upload-item-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.launch-ui-upload-item-name {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-ui-upload-item-name:hover {
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-upload-item.is-error,
+.launch-ui-upload-item.is-error .launch-ui-upload-item-name {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-upload-extra {
+  flex: none;
+  color: var(--launch-ui-text-tertiary);
+  font-size: 12px;
+}
+
+.launch-ui-upload-error {
+  flex: none;
+  font-size: 12px;
+}
+
+.launch-ui-upload-progress-track {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  left: 32px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--launch-ui-fill-secondary);
+}
+
+.launch-ui-upload-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--launch-ui-primary);
+  transition: width var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-upload-actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-upload-item:hover .launch-ui-upload-actions,
+.launch-ui-upload-item:focus-within .launch-ui-upload-actions {
+  opacity: 1;
+}
+
+.launch-ui-upload-actions button {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--launch-ui-text-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-upload-actions button:hover {
+  background: var(--launch-ui-fill-secondary);
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-upload.is-list-picture .launch-ui-upload-item {
+  min-height: 66px;
+  padding: 8px;
+  border: 1px solid var(--launch-ui-border-soft);
+}
+
+.launch-ui-upload.is-list-picture .launch-ui-upload-item-visual {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+
+.launch-ui-upload.is-list-picture-card,
+.launch-ui-upload.is-list-picture-circle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-trigger,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-trigger,
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-list,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-list {
+  margin: 0;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-trigger,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-trigger {
+  order: 2;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-list > li,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-list > li {
+  order: 1;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-list,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-list {
+  display: contents;
+}
+
+.launch-ui-upload-card-trigger,
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-item,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item {
+  display: flex;
+  width: 104px;
+  height: 104px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--launch-ui-border);
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-fill-quaternary);
+}
+
+.launch-ui-upload-card-trigger {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-card-trigger,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item {
+  border-radius: 50%;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-item,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item {
+  position: relative;
+  padding: 8px;
+  border-style: solid;
+  background: var(--launch-ui-surface);
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-item-visual,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-visual {
+  width: 100%;
+  height: 100%;
+  flex-basis: 100%;
+}
+
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-visual,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-visual img {
+  border-radius: 50%;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-item-content,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-content {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  left: 8px;
+  display: block;
+  overflow: hidden;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 90%);
+  text-align: center;
+}
+
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-content {
+  right: 16px;
+  left: 16px;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-item-name,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-item-name {
+  width: 100%;
+  text-align: center;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-actions,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-actions {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgb(0 0 0 / 45%);
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-actions button,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-actions button {
+  color: #fff;
+}
+
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-progress-track,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-progress-track,
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-error,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-error,
+.launch-ui-upload.is-list-picture-card .launch-ui-upload-extra,
+.launch-ui-upload.is-list-picture-circle .launch-ui-upload-extra {
+  display: none;
+}
+
+.launch-ui-upload.is-drag:not(.is-disabled) .launch-ui-upload-trigger:hover,
+.launch-ui-upload.is-drag.is-dragging .launch-ui-upload-trigger {
+  border-color: var(--launch-ui-primary);
+  background: var(--launch-ui-primary-bg);
+}
+
+.launch-ui-upload.is-drag .launch-ui-upload-trigger:focus-visible {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
 @keyframes launch-ui-popup-in {
   from {
     opacity: 0;
@@ -5439,6 +5784,11 @@
   .launch-ui-dialog-content,
   .launch-ui-float-button,
   .launch-ui-float-button-group-items,
+  .launch-ui-upload-actions,
+  .launch-ui-upload-actions button,
+  .launch-ui-upload-item,
+  .launch-ui-upload-progress-track > span,
+  .launch-ui-upload.is-drag .launch-ui-upload-trigger,
   .launch-ui-textarea-clear,
   .launch-ui-textarea-wrapper,
   .launch-ui-table tbody tr {

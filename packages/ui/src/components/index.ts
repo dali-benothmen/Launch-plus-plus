@@ -29,3 +29,4 @@ export * from "./tabs/index.js";
 export * from "./tag/index.js";
 export * from "./tooltip/index.js";
 export * from "./typography/index.js";
+export * from "./upload/index.js";

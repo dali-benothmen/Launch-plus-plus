@@ -1090,6 +1090,34 @@ button {
   background: #fff;
 }
 
+.showcase-upload-drag-icon {
+  margin-bottom: 12px;
+  color: var(--launch-ui-primary);
+  font-size: 42px;
+  line-height: 1;
+}
+
+.showcase-upload-drag-icon + .launch-ui-title {
+  margin: 0 0 4px;
+}
+
+.showcase-upload-paste {
+  display: grid;
+  min-width: 220px;
+  min-height: 96px;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px dashed var(--launch-ui-border);
+  border-radius: var(--launch-ui-radius-lg);
+  place-items: center;
+  background: var(--launch-ui-fill-quaternary);
+  color: var(--launch-ui-text-secondary);
+}
+
+.showcase-upload-paste:hover {
+  border-color: var(--launch-ui-primary);
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }
