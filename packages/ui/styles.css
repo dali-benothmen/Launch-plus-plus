@@ -2855,7 +2855,7 @@
   border-radius: 3px;
   background: var(--launch-ui-mentions-tag-background);
   color: var(--launch-ui-primary);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 18px;
   white-space: nowrap;
   transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
