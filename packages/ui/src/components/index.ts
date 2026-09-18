@@ -5,6 +5,7 @@ export * from "./breadcrumb/index.js";
 export * from "./button/index.js";
 export * from "./card/index.js";
 export * from "./checkbox/index.js";
+export * from "./date-picker/index.js";
 export * from "./dialog/index.js";
 export * from "./divider/index.js";
 export * from "./dropdown/index.js";

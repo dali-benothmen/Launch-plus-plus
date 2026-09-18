@@ -5,6 +5,7 @@ import { breadcrumbShowcase } from "./components/breadcrumb.showcase.js";
 import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { checkboxShowcase } from "./components/checkbox.showcase.js";
+import { datePickerShowcase } from "./components/date-picker.showcase.js";
 import { dialogShowcase } from "./components/dialog.showcase.js";
 import { dividerShowcase } from "./components/divider.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
@@ -51,6 +52,7 @@ export const componentRegistry = defineShowcases([
   tabsShowcase,
   autoCompleteShowcase,
   checkboxShowcase,
+  datePickerShowcase,
   inputShowcase,
   selectShowcase,
   switchShowcase,

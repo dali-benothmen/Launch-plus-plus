@@ -427,6 +427,26 @@ button {
   width: 100%;
 }
 
+.showcase-date-picker-event-cell {
+  position: relative;
+  display: inline-flex;
+}
+
+.showcase-date-picker-event-cell > i {
+  position: absolute;
+  z-index: 2;
+  right: 1px;
+  bottom: 1px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--launch-ui-error);
+}
+
+.showcase-date-picker-popup {
+  overflow: hidden;
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
