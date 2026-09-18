@@ -2,6 +2,7 @@ import { alertShowcase } from "./components/alert.showcase.js";
 import { anchorShowcase } from "./components/anchor.showcase.js";
 import { autoCompleteShowcase } from "./components/auto-complete.showcase.js";
 import { avatarShowcase } from "./components/avatar.showcase.js";
+import { badgeShowcase } from "./components/badge.showcase.js";
 import { breadcrumbShowcase } from "./components/breadcrumb.showcase.js";
 import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
@@ -68,6 +69,7 @@ export const componentRegistry = defineShowcases([
   switchShowcase,
   uploadShowcase,
   avatarShowcase,
+  badgeShowcase,
   cardShowcase,
   tableShowcase,
   tagShowcase,

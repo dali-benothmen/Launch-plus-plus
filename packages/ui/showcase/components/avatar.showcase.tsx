@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TeamOutlined, UserOutlined } from "../../src/icons.js";
-import { Avatar, Button, Flex, Space, Typography } from "../../src/index.js";
+import { Avatar, Badge, Button, Flex, Space, Typography } from "../../src/index.js";
 import { defineShowcase } from "../showcase-definition.js";
 
 function avatarImage(label: string, background: string) {
@@ -125,16 +125,12 @@ function ResponsiveAvatar() {
 function BadgedAvatars() {
   return (
     <Flex align="center" gap="large">
-      <span className="showcase-avatar-badge">
+      <Badge count={1}>
         <Avatar aria-label="User with one notification" icon={<UserOutlined />} shape="square" />
-        <span className="showcase-avatar-badge-count">1</span>
-      </span>
-      <span className="showcase-avatar-badge">
+      </Badge>
+      <Badge color="green" dot title="Online">
         <Avatar alt="Maya Chen, online" shape="square" src={userImages[1]} />
-        <span className="showcase-avatar-badge-dot">
-          <span className="showcase-visually-hidden">Online</span>
-        </span>
-      </span>
+      </Badge>
     </Flex>
   );
 }
