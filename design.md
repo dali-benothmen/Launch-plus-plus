@@ -209,6 +209,8 @@ The visual system is compact, stable, and extensible. Its implementation rules a
 - Component APIs increasingly use consistent concepts such as `variant`, `placement`, `orientation`, `open`, `destroyOnHidden`, `title`, and `content`.
 - Inputs and containers use named variants rather than a simple `bordered` boolean.
 - Inputs support a `round` shape for search and other compact discovery controls.
+- Typography includes document structure, semantic text styles, links, inline editing, copying, and
+  expandable ellipsis behavior.
 - Tags distinguish filled and solid variants; Card distinguishes outlined and borderless variants.
 - Static CSS output must remain possible for plugin packaging and predictable runtime performance.
 - Focus visibility is a first-class seed setting through `focusOutline`.

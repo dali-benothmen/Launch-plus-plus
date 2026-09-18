@@ -304,6 +304,12 @@ button {
   gap: 12px;
 }
 
+.showcase-typography-stack {
+  display: grid;
+  align-items: start;
+  gap: 8px;
+}
+
 .showcase-preview-constrained {
   width: min(100%, 360px);
 }

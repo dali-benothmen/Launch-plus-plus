@@ -220,10 +220,17 @@
   color: var(--launch-ui-text);
 }
 
-.launch-ui-title {
-  margin: 0;
+.launch-ui-typography-root,
+.launch-ui-typography {
   color: var(--launch-ui-text);
   font-family: var(--launch-ui-font);
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: break-word;
+}
+
+.launch-ui-title {
+  margin: 0 0 0.5em;
   font-weight: 600;
 }
 
@@ -253,30 +260,244 @@
 }
 
 .launch-ui-text {
-  color: var(--launch-ui-text);
-  font-family: var(--launch-ui-font);
-  font-size: 14px;
-  line-height: 22px;
+  display: inline;
 }
 
-.launch-ui-text.is-secondary {
+.launch-ui-typography.is-secondary {
   color: var(--launch-ui-text-secondary);
 }
 
-.launch-ui-text.is-tertiary {
+.launch-ui-typography.is-tertiary {
   color: var(--launch-ui-text-tertiary);
 }
 
-.launch-ui-text.is-strong {
+.launch-ui-typography.is-success {
+  color: var(--launch-ui-success);
+}
+
+.launch-ui-typography.is-warning {
+  color: var(--launch-ui-warning);
+}
+
+.launch-ui-typography.is-danger {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-typography.is-disabled {
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.launch-ui-typography.is-strong {
   font-weight: 600;
+}
+
+.launch-ui-typography.is-italic {
+  font-style: italic;
+}
+
+.launch-ui-typography.is-underline {
+  text-decoration: underline;
+  text-decoration-skip-ink: auto;
+}
+
+.launch-ui-typography.is-delete {
+  text-decoration: line-through;
+}
+
+.launch-ui-typography.is-mark {
+  padding: 0;
+  background: #ffe58f;
+}
+
+.launch-ui-typography.is-code {
+  padding: 0.2em 0.4em 0.1em;
+  border: 1px solid var(--launch-ui-border-soft);
+  border-radius: 3px;
+  background: var(--launch-ui-fill-secondary);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 85%;
+}
+
+.launch-ui-typography.is-keyboard {
+  padding: 0.15em 0.4em 0.1em;
+  border: 1px solid var(--launch-ui-border);
+  border-radius: 3px;
+  background: var(--launch-ui-surface-subtle);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 10%);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 90%;
 }
 
 .launch-ui-paragraph {
   margin: 0 0 1em;
-  color: var(--launch-ui-text);
+}
+
+.launch-ui-link {
+  color: var(--launch-ui-primary);
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+  transition: color var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-link:hover {
+  color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-link:active {
+  color: var(--launch-ui-primary-active);
+}
+
+.launch-ui-link.is-disabled {
+  color: var(--launch-ui-text-disabled);
+  pointer-events: none;
+}
+
+.launch-ui-typography-root > .launch-ui-title:not(:first-child) {
+  margin-top: 1.2em;
+}
+
+.launch-ui-typography-root ul,
+.launch-ui-typography-root ol {
+  padding-left: 1.6em;
+  margin: 0 0 1em;
+}
+
+.launch-ui-typography-root li {
+  margin-bottom: 0.25em;
+}
+
+.launch-ui-typography-root blockquote {
+  padding-left: 0.75em;
+  margin: 1em 0;
+  border-left: 4px solid var(--launch-ui-border);
+  color: var(--launch-ui-text-secondary);
+}
+
+.launch-ui-typography-root pre {
+  overflow-x: auto;
+  padding: 12px 16px;
+  border-radius: var(--launch-ui-radius);
+  margin: 1em 0;
+  background: var(--launch-ui-surface-subtle);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.launch-ui-typography-root table {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.launch-ui-typography-root th,
+.launch-ui-typography-root td {
+  padding: 12px 16px;
+  border: 1px solid var(--launch-ui-border-soft);
+}
+
+.launch-ui-typography-root th {
+  background: var(--launch-ui-surface-subtle);
+  font-weight: 600;
+}
+
+.launch-ui-typography-action,
+.launch-ui-typography-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 0;
+  margin-inline: 2px;
+  background: transparent;
+  color: var(--launch-ui-primary);
+  cursor: pointer;
   font-family: var(--launch-ui-font);
   font-size: 14px;
-  line-height: 22px;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+.launch-ui-typography-action:hover,
+.launch-ui-typography-expand:hover {
+  color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-typography-action svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.launch-ui-typography.is-editing {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.launch-ui-typography-editor {
+  width: 100%;
+  min-height: var(--launch-ui-control-height);
+  resize: vertical;
+  padding: 4px 11px;
+  border: 1px solid var(--launch-ui-primary);
+  border-radius: var(--launch-ui-radius);
+  background: var(--launch-ui-surface);
+  box-shadow: 0 0 0 2px rgb(22 104 220 / 12%);
+  color: var(--launch-ui-text);
+  font: inherit;
+  line-height: inherit;
+  outline: none;
+}
+
+.launch-ui-typography.has-ellipsis {
+  max-width: 100%;
+}
+
+.launch-ui-text.has-ellipsis,
+.launch-ui-link.has-ellipsis {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.launch-ui-typography-content.is-ellipsis {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--launch-ui-ellipsis-rows);
+}
+
+.launch-ui-typography-content.is-ellipsis.is-single-line {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.launch-ui-typography-content.is-editable-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: text;
+  font: inherit;
+  text-align: inherit;
+}
+
+.launch-ui-typography-suffix {
+  margin-inline-start: 0.25em;
 }
 
 .launch-ui-input,
