@@ -480,6 +480,10 @@ export function Dropdown(dropdownProps: DropdownProps) {
           collisionPadding={8}
           onPointerEnter={clearCloseTimer}
           onPointerLeave={closeFromHover}
+          onPointerDownOutside={(event) => {
+            const target = event.detail.originalEvent.target;
+            if (target instanceof Node && triggerNode?.contains(target)) event.preventDefault();
+          }}
           side={resolvedPlacement.side}
           sideOffset={6}
           style={resolvedStyles.root}
