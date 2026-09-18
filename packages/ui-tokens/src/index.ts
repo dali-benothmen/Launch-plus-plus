@@ -4,17 +4,17 @@ export const themeAttribute = "data-launch-theme" as const;
 
 export const semanticThemeValues = Object.freeze({
   light: Object.freeze({
-    accent: "#5b5bd6",
-    background: "#f6f7f9",
+    accent: "#1668dc",
+    background: "#f5f5f5",
     elevated: "#ffffff",
-    text: "#1d2433",
-    textMuted: "#687083",
+    text: "rgb(0 0 0 / 88%)",
+    textMuted: "rgb(0 0 0 / 65%)",
   }),
   dark: Object.freeze({
-    accent: "#8b8bf5",
-    background: "#111318",
-    elevated: "#191c23",
-    text: "#f4f6fa",
-    textMuted: "#a4abba",
+    accent: "#165bbe",
+    background: "#000000",
+    elevated: "#141414",
+    text: "rgb(255 255 255 / 85%)",
+    textMuted: "rgb(255 255 255 / 65%)",
   }),
 });
