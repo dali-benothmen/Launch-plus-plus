@@ -398,6 +398,35 @@ button {
   border-radius: var(--launch-ui-radius-lg);
 }
 
+.showcase-checkbox-check-all {
+  width: min(100%, 320px);
+}
+
+.showcase-checkbox-check-all > .launch-ui-divider {
+  margin-block: 16px;
+}
+
+.showcase-checkbox-function-root {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: var(--launch-ui-radius);
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.showcase-checkbox-function-icon {
+  border-color: var(--launch-ui-warning);
+}
+
+.showcase-checkbox-function-label.is-checked {
+  color: var(--launch-ui-warning);
+  font-weight: 600;
+}
+
+.showcase-checkbox-grid,
+.showcase-checkbox-grid > .launch-ui-row {
+  width: 100%;
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
