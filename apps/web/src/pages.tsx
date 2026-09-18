@@ -1,11 +1,11 @@
-import { Button, Empty, Typography } from "@launchpp/ui";
+import { Button, Card, Typography } from "@launchpp/ui";
 
 export function MyWorkPage() {
   return (
     <section aria-labelledby="my-work-title" className="page-stack">
       <header className="page-header">
         <div>
-          <Typography.Text className="eyebrow">Workspace</Typography.Text>
+          <Typography.Text type="secondary">Workspace</Typography.Text>
           <Typography.Title id="my-work-title" level={1}>
             My Work
           </Typography.Title>
@@ -13,13 +13,19 @@ export function MyWorkPage() {
             Your projects and assigned work will appear here.
           </Typography.Text>
         </div>
-        <Button type="primary">Create project</Button>
+        <Button variant="primary">Create project</Button>
       </header>
-      <div className="empty-surface">
-        <Empty description="Create your first project to get started">
-          <Button type="primary">Create project</Button>
-        </Empty>
-      </div>
+      <Card className="home-empty-card">
+        <div className="home-empty-state">
+          <Typography.Title level={3}>No projects yet</Typography.Title>
+          <Typography.Text type="secondary">
+            Create your first project to get started.
+          </Typography.Text>
+          <Button className="home-empty-action" variant="primary">
+            Create project
+          </Button>
+        </div>
+      </Card>
     </section>
   );
 }

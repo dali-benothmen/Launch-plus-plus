@@ -14,9 +14,9 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useThemeController } from "./theme-context.js";
 
 const iconLinks = [
-  { icon: <HomeIcon aria-hidden />, label: "My Work", to: "/" },
-  { icon: <MembersIcon aria-hidden />, label: "Members", to: "/members" },
-  { icon: <SettingsIcon aria-hidden />, label: "Settings", to: "/settings" },
+  { icon: <HomeIcon aria-hidden />, label: "My Work", to: "/app" },
+  { icon: <MembersIcon aria-hidden />, label: "Members", to: "/app/members" },
+  { icon: <SettingsIcon aria-hidden />, label: "Settings", to: "/app/settings" },
 ] as const;
 
 export function AppShell() {
@@ -28,7 +28,7 @@ export function AppShell() {
         Skip to content
       </a>
       <aside aria-label="Primary navigation" className="icon-rail">
-        <NavLink aria-label="Launch++ home" className="brand-mark" to="/">
+        <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
           L+
         </NavLink>
         <nav className="rail-links">
@@ -37,7 +37,7 @@ export function AppShell() {
               <NavLink
                 aria-label={item.label}
                 className={({ isActive }) => `rail-link${isActive ? " is-active" : ""}`}
-                end={item.to === "/"}
+                end={item.to === "/app"}
                 to={item.to}
               >
                 {item.icon}
@@ -48,10 +48,11 @@ export function AppShell() {
         <Tooltip placement="right" title={`Use ${theme.mode === "light" ? "dark" : "light"} theme`}>
           <Button
             aria-label={`Use ${theme.mode === "light" ? "dark" : "light"} theme`}
-            className="theme-toggle"
             icon={theme.mode === "light" ? <DarkThemeIcon /> : <LightThemeIcon />}
+            iconOnly
             onClick={theme.toggle}
-            type="text"
+            size="large"
+            variant="text"
           />
         </Tooltip>
       </aside>
@@ -60,7 +61,13 @@ export function AppShell() {
         <header className="project-sidebar-header">
           <Typography.Text strong>Projects</Typography.Text>
           <Tooltip title="Create project">
-            <Button aria-label="Create project" icon={<AddIcon />} size="small" type="text" />
+            <Button
+              aria-label="Create project"
+              icon={<AddIcon />}
+              iconOnly
+              size="small"
+              variant="text"
+            />
           </Tooltip>
         </header>
         <div className="project-tree-empty">
