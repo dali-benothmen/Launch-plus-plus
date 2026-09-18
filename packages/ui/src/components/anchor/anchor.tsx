@@ -83,6 +83,24 @@ function getTargetTop(target: HTMLElement, container: AnchorContainer) {
   return targetRect.top - container.getBoundingClientRect().top;
 }
 
+function isAtScrollEnd(container: AnchorContainer, bounds: number) {
+  if (isWindow(container)) {
+    const documentHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+    );
+    return (
+      documentHeight > container.innerHeight &&
+      container.scrollY + container.innerHeight >= documentHeight - bounds
+    );
+  }
+
+  return (
+    container.scrollHeight > container.clientHeight &&
+    container.scrollTop + container.clientHeight >= container.scrollHeight - bounds
+  );
+}
+
 function scrollToTarget(target: HTMLElement, container: AnchorContainer, offset: number) {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ? "auto"
@@ -170,10 +188,14 @@ export const Anchor = forwardRef<HTMLElement, AnchorProps>(function Anchor(ancho
     const updateFromScroll = () => {
       let nextLink = "";
       const threshold = offsetTop + bounds;
+      const targetItems = flatItems.filter(({ href }) => getTarget(href) !== null);
 
-      for (const { href } of flatItems) {
+      for (const { href } of targetItems) {
         const target = getTarget(href);
         if (target && getTargetTop(target, container) <= threshold) nextLink = href;
+      }
+      if (isAtScrollEnd(container, bounds)) {
+        nextLink = targetItems.at(-1)?.href ?? nextLink;
       }
       updateActiveLink(nextLink);
     };
