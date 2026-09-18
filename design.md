@@ -50,6 +50,14 @@ brand:
   colorPrimaryBorderHover: "#67abf5"
   colorBlack: "#000000"
   borderRadius: 6px
+componentTokens:
+  button:
+    contentFontSize: 14px
+    controlHeight: 32px
+    paddingInline: 12px
+    iconGap: 8px
+    fontWeight: 400
+    borderRadius: 6px
 tokens:
   color:
     primary: "#1668dc"
@@ -307,13 +315,15 @@ Default geometry:
 - Height: 32 px; large 40 px; small 24 px.
 - Font: 14 px / 22 px, weight 400; large font 16 px.
 - Radius: 6 px.
-- Horizontal padding: 15 px; small 7 px.
+- Horizontal padding: 12 px; small 7 px. The 12 px default is a Launch++ compact override.
 - Icon-to-label gap: 8 px.
 - Default border: `#d9d9d9`; default background: white.
-- Default hover text and border: `#4096ff`; active: `#0958d9`.
-- Primary background: `#1677ff`; hover: `#4096ff`; active: `#0958d9`; text: white.
+- Default hover text and border: `#3c8ae8`; active: `#094bb5`.
+- Primary background: `#1668dc`; hover: `#3c8ae8`; active: `#094bb5`; text: white.
 - Default shadow: `0 2px 0 rgba(0, 0, 0, 0.02)`.
-- Primary shadow: `0 2px 0 rgba(5, 145, 255, 0.10)`.
+- Primary shadow: `0 2px 0 rgba(22, 104, 220, 0.14)`.
+
+The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and transitions with the medium duration and standard ease-in-out curve. Focus-visible styling supplies the accessible outline.
 
 Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
 
@@ -327,8 +337,8 @@ Default outlined input:
 - Horizontal padding: 11 px; small 7 px.
 - Vertical padding: 4 px; large 7 px; small 0.
 - Radius: 6 px; border: `#d9d9d9`; background: white.
-- Hover border: `#4096ff`.
-- Focus border: `#1677ff` with `0 0 0 2px rgba(5, 145, 255, 0.10)`.
+- Hover border: `#3c8ae8`.
+- Focus border: `#1668dc` with `0 0 0 2px rgba(22, 104, 220, 0.12)`.
 - Placeholder: 25% black.
 - Add-on background: `rgba(0, 0, 0, 0.02)`.
 - Error focus ring: `0 0 0 2px rgba(255, 38, 5, 0.06)`.
@@ -378,7 +388,7 @@ Tabs use text and a primary ink bar rather than a filled background in their sta
 - Vertical tab padding: 12 px; large 16 px; small 8 px.
 - Content gap below navigation: 16 px.
 - Resting text: 88% black.
-- Hover: `#4096ff`; selected: `#1677ff`; active: `#0958d9`.
+- Hover: `#3c8ae8`; selected: `#1668dc`; active: `#094bb5`.
 
 Use tabs for peer views of the same context, not for a full application hierarchy. Keep the active view stable on refresh where the product expects deep linking.
 
@@ -399,7 +409,7 @@ Tables are information-dense, not decorative. Headers use a `#fafafa` fill and 8
 - Header divider: `#f0f0f0`.
 - Hover/expanded-row surface: `#fafafa` or a 2–4% black fill.
 - Sorted header: `#f0f0f0`.
-- Selected row: `#e6f4ff`; selected hover: `#bae0ff`.
+- Selected row: `#e6f4ff`; selected hover: `#bde1ff`.
 
 Align numbers to the right, labels to the left, and actions consistently. Avoid zebra striping by default. Loading, empty, error, pagination, sorting, selection, expansion, and horizontal overflow need deliberate states.
 

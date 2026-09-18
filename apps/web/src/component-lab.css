@@ -35,6 +35,11 @@
   --lab-border-soft: #f0f0f0;
   --lab-radius: 6px;
   --lab-radius-lg: 8px;
+  --lab-button-font-size: 14px;
+  --lab-button-height: 32px;
+  --lab-button-padding-inline: 12px;
+  --lab-button-icon-gap: 8px;
+  --lab-button-font-weight: 400;
   --lab-shadow-popup:
     0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
     0 9px 28px 8px rgba(0, 0, 0, 0.05);
@@ -201,32 +206,37 @@ button {
 
 .lab-button,
 .lab-icon-button {
+  position: relative;
   display: inline-flex;
-  height: 32px;
+  height: var(--lab-button-height);
   align-items: center;
   justify-content: center;
   border: 1px solid var(--lab-border);
   border-radius: var(--lab-radius);
   background: var(--lab-surface);
+  background-image: none;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
   color: var(--lab-text);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--lab-button-font-size);
+  font-weight: var(--lab-button-font-weight);
   line-height: 22px;
-  transition:
-    border-color var(--lab-fast) var(--lab-ease),
-    color var(--lab-fast) var(--lab-ease),
-    background-color var(--lab-fast) var(--lab-ease),
-    box-shadow var(--lab-fast) var(--lab-ease);
+  outline: none;
+  text-align: center;
+  touch-action: manipulation;
+  transition: all var(--lab-mid) var(--lab-ease);
+  -webkit-user-select: none;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .lab-button {
-  gap: 8px;
-  padding: 0 15px;
+  gap: var(--lab-button-icon-gap);
+  padding: 0 var(--lab-button-padding-inline);
 }
 
 .lab-icon-button {
-  width: 32px;
+  width: var(--lab-button-height);
   flex: 0 0 auto;
   padding: 0;
 }
