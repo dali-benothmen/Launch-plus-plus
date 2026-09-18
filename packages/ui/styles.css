@@ -422,7 +422,7 @@
 }
 
 .launch-ui-badge-indicator {
-  --launch-ui-badge-indicator-size: 20px;
+  --launch-ui-badge-indicator-size: 16px;
   position: absolute;
   z-index: 1;
   top: 0;
@@ -433,14 +433,13 @@
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  padding-inline: 6px;
+  padding-inline: 4px;
   border: 1px solid var(--launch-ui-surface);
   border-radius: 999px;
   background: var(--launch-ui-badge-color);
-  box-shadow: 0 0 0 1px var(--launch-ui-surface);
   color: #fff;
   font-family: var(--launch-ui-font);
-  font-size: 12px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 400;
   line-height: calc(var(--launch-ui-badge-indicator-size) - 2px);
@@ -458,7 +457,7 @@
 }
 
 .launch-ui-badge-indicator.is-dot {
-  --launch-ui-badge-indicator-size: 8px;
+  --launch-ui-badge-indicator-size: 6px;
   padding: 0;
 }
 

@@ -71,6 +71,10 @@ componentTokens:
     sizeSmall: 23px
     sizeExtraSmall: 14px
     groupSize: 32px
+  badge:
+    countSize: 16px
+    countSizeSmall: 14px
+    dotSize: 6px
   divider:
     color: "rgba(5, 5, 5, 0.06)"
     lineWidth: 1px

@@ -21,7 +21,7 @@ import {
 import { defineShowcase } from "../showcase-definition.js";
 
 function BadgeTarget() {
-  return <Avatar aria-label="User" icon={<UserOutlined />} shape="square" size="large" />;
+  return <Avatar aria-label="User" icon={<UserOutlined />} shape="square" />;
 }
 
 function BasicBadges() {
