@@ -18,6 +18,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "scripts": {
+    "showcase": "vite --config vite.showcase.config.ts",
+    "showcase:build": "vite build --config vite.showcase.config.ts",
+    "showcase:check": "tsc -p tsconfig.showcase.json --noEmit"
+  },
   "dependencies": {
     "@ant-design/icons": "6.3.4",
     "@launchpp/ui-tokens": "workspace:*",
@@ -36,7 +41,9 @@
   "devDependencies": {
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "vite": "8.3.0"
   }
 }
