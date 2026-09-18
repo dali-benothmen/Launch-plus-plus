@@ -16,6 +16,7 @@ import { formShowcase } from "./components/form.showcase.js";
 import { gridShowcase } from "./components/grid.showcase.js";
 import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
+import { inputNumberShowcase } from "./components/input-number.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
@@ -56,6 +57,7 @@ export const componentRegistry = defineShowcases([
   datePickerShowcase,
   formShowcase,
   inputShowcase,
+  inputNumberShowcase,
   selectShowcase,
   switchShowcase,
   cardShowcase,

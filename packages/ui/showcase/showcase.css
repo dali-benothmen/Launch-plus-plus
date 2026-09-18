@@ -459,6 +459,14 @@ button {
   width: min(100%, 680px);
 }
 
+.showcase-input-number-stack {
+  width: min(100%, 420px);
+}
+
+.showcase-input-number-custom-input {
+  color: var(--launch-ui-primary);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

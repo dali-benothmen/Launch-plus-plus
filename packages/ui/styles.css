@@ -595,6 +595,7 @@
     .launch-ui-autocomplete,
     .launch-ui-date-picker,
     .launch-ui-input,
+    .launch-ui-input-number,
     .launch-ui-input-root,
     .launch-ui-select-trigger,
     .launch-ui-textarea-wrapper
@@ -2539,6 +2540,230 @@
   text-align: center;
 }
 
+.launch-ui-input-number {
+  position: relative;
+  display: inline-flex;
+  width: 90px;
+  height: var(--launch-ui-control-height);
+  box-sizing: border-box;
+  align-items: center;
+  overflow: hidden;
+  padding: 0;
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) var(--launch-ui-border);
+  border-radius: var(--launch-ui-radius);
+  background: var(--launch-ui-surface);
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    box-shadow var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-input-number:hover {
+  border-color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-input-number:focus-within,
+.launch-ui-input-number.is-focused {
+  border-color: var(--launch-ui-primary);
+  box-shadow: 0 0 0 2px rgb(22 104 220 / 10%);
+}
+
+.launch-ui-input-number-input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: 0;
+  text-align: start;
+}
+
+.launch-ui-input-number-input::placeholder {
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-input-number-prefix,
+.launch-ui-input-number-suffix {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--launch-ui-text-secondary);
+  pointer-events: none;
+}
+
+.launch-ui-input-number-prefix {
+  margin-inline: 11px -7px;
+}
+
+.launch-ui-input-number-suffix {
+  margin-inline: -7px 11px;
+}
+
+.launch-ui-input-number-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  width: 0;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border-inline-start: 1px solid var(--launch-ui-border);
+  background: var(--launch-ui-surface);
+  opacity: 0;
+  transition:
+    opacity var(--launch-ui-mid) var(--launch-ui-ease),
+    width var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-input-number:hover .launch-ui-input-number-actions,
+.launch-ui-input-number:focus-within .launch-ui-input-number-actions {
+  width: 22px;
+  opacity: 1;
+}
+
+.launch-ui-input-number-handler {
+  display: inline-flex;
+  min-width: 22px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--launch-ui-text-tertiary);
+  cursor: pointer;
+  outline: 0;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-input-number-actions .launch-ui-input-number-handler.is-down {
+  border-top: 1px solid var(--launch-ui-border);
+}
+
+.launch-ui-input-number-handler:hover:not(:disabled) {
+  background: var(--launch-ui-fill-tertiary);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-input-number-handler:disabled,
+.launch-ui-input-number-handler.is-disabled {
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-input-number-icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.launch-ui-input-number.is-spinner {
+  width: auto;
+}
+
+.launch-ui-input-number.is-spinner .launch-ui-input-number-input {
+  width: 72px;
+  padding-inline: 11px;
+  text-align: center;
+}
+
+.launch-ui-input-number.is-spinner > .launch-ui-input-number-handler {
+  align-self: stretch;
+  padding-inline: 8px;
+}
+
+.launch-ui-input-number.is-spinner > .launch-ui-input-number-handler.is-down {
+  border-inline-end: 1px solid var(--launch-ui-border);
+}
+
+.launch-ui-input-number.is-spinner > .launch-ui-input-number-handler.is-up {
+  border-inline-start: 1px solid var(--launch-ui-border);
+}
+
+.launch-ui-input-number.is-small {
+  height: var(--launch-ui-control-height-sm);
+}
+
+.launch-ui-input-number.is-small .launch-ui-input-number-input {
+  padding-inline: 7px;
+}
+
+.launch-ui-input-number.is-large {
+  height: var(--launch-ui-control-height-lg);
+  font-size: 16px;
+}
+
+.launch-ui-input-number.is-large .launch-ui-input-number-input {
+  padding-inline: 11px;
+}
+
+.launch-ui-input-number.is-filled {
+  border-color: transparent;
+  background: var(--launch-ui-fill-secondary);
+}
+
+.launch-ui-input-number.is-filled:hover,
+.launch-ui-input-number.is-filled:focus-within {
+  border-color: transparent;
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-input-number.is-borderless {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.launch-ui-input-number.is-underlined {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.launch-ui-input-number.is-error,
+.launch-ui-input-number.is-out-of-range {
+  border-color: var(--launch-ui-error);
+}
+
+.launch-ui-input-number.is-warning {
+  border-color: var(--launch-ui-warning);
+}
+
+.launch-ui-input-number.is-out-of-range .launch-ui-input-number-input {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-input-number.is-disabled {
+  border-color: var(--launch-ui-border);
+  background: var(--launch-ui-fill-quaternary);
+  box-shadow: none;
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+}
+
+.launch-ui-input-number.is-disabled .launch-ui-input-number-input {
+  cursor: not-allowed;
+}
+
+.launch-ui-input-number.is-readonly .launch-ui-input-number-actions {
+  display: none;
+}
+
 .launch-ui-select-trigger {
   display: inline-flex;
   align-items: center;
@@ -4410,6 +4635,9 @@
   .launch-ui-typography-action,
   .launch-ui-typography-expand,
   .launch-ui-input,
+  .launch-ui-input-number,
+  .launch-ui-input-number-actions,
+  .launch-ui-input-number-handler,
   .launch-ui-input-clear,
   .launch-ui-otp-input,
   .launch-ui-password-toggle,
