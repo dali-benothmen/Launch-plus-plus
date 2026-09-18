@@ -467,6 +467,29 @@ button {
   color: var(--launch-ui-primary);
 }
 
+.showcase-mentions-stack {
+  width: min(100%, 520px);
+}
+
+.showcase-mentions-popup-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--launch-ui-border-soft);
+  color: var(--launch-ui-text-secondary);
+  font-weight: 600;
+}
+
+.showcase-mentions-placement {
+  width: min(100%, 520px);
+  padding-top: 140px;
+}
+
+.showcase-mentions-option {
+  justify-content: space-between;
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

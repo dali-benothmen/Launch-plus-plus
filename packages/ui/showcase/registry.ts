@@ -18,6 +18,7 @@ import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { inputNumberShowcase } from "./components/input-number.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
+import { mentionsShowcase } from "./components/mentions.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
@@ -58,6 +59,7 @@ export const componentRegistry = defineShowcases([
   formShowcase,
   inputShowcase,
   inputNumberShowcase,
+  mentionsShowcase,
   selectShowcase,
   switchShowcase,
   cardShowcase,
