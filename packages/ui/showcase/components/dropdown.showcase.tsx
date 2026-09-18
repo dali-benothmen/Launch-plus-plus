@@ -13,6 +13,7 @@ import {
   Dropdown,
   type DropdownMenuItem,
   Flex,
+  type LinkProps,
   Space,
   Tooltip,
   Typography,
@@ -32,9 +33,16 @@ const standardItems: ReadonlyArray<DropdownMenuItem> = [
   { key: "3", label: "3rd menu item" },
 ];
 
-function DropdownLink({ children }: { readonly children: React.ReactNode }) {
+function DropdownLink({ children, onClick, ...props }: LinkProps) {
   return (
-    <Typography.Link href="#dropdown" onClick={(event) => event.preventDefault()}>
+    <Typography.Link
+      {...props}
+      href="#dropdown"
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) event.preventDefault();
+      }}
+    >
       <Space>
         {children}
         <DownOutlined />

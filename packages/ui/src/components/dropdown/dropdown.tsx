@@ -448,7 +448,7 @@ export function Dropdown(dropdownProps: DropdownProps) {
     popupContainer ?? (typeof document === "undefined" ? undefined : document.body);
 
   return (
-    <DropdownPrimitive.Root onOpenChange={handleOpenChange} open={open}>
+    <DropdownPrimitive.Root modal={false} onOpenChange={handleOpenChange} open={open}>
       {isContextTrigger ? (
         triggerElement
       ) : (
