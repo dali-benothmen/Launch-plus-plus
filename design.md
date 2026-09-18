@@ -1,332 +1,506 @@
 ---
-version: alpha
 name: Ant Design
-description: Enterprise-grade React UI design system from Ant Group, built around the values Natural, Certain, Meaningful, and Growing.
-colors:
-  primary: "#1677FF"
-  success: "#52C41A"
-  warning: "#FAAD14"
-  error: "#FF4D4F"
-  info: "#1677FF"
-  blue: "#1677FF"
-  blue-7: "#0958D9"
-  purple: "#722ED1"
-  cyan: "#13C2C2"
-  green: "#52C41A"
-  magenta: "#EB2F96"
-  red: "#F5222D"
-  orange: "#FA8C16"
-  yellow: "#FADB14"
-  volcano: "#FA541C"
-  geekblue: "#2F54EB"
-  gold: "#FAAD14"
-  lime: "#A0D911"
-  surface: "#FFFFFF"
-  surface-container: "#FAFAFA"
-  surface-layout: "#F5F5F5"
-  on-surface: "#1F1F1F"
-  on-surface-variant: "#595959"
-  on-surface-disabled: "#BFBFBF"
-  outline: "#D9D9D9"
-  outline-variant: "#F0F0F0"
-typography:
-  display-lg:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 38px
-    fontWeight: "600"
-    lineHeight: 46px
-  headline-lg:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 30px
-    fontWeight: "600"
-    lineHeight: 38px
-  headline-md:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 24px
-    fontWeight: "600"
-    lineHeight: 32px
-  headline-sm:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 20px
-    fontWeight: "600"
-    lineHeight: 28px
-  title-lg:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 16px
-    fontWeight: "600"
-    lineHeight: 24px
-  title-md:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
+sourceVersion: 6.6.4
+capturedAt: 2026-09-18
+scope: Default light theme and component behavior
+purpose: Reference for recreating the visual language with Radix primitives and CSS
+sources:
+  - https://ant.design/docs/spec/introduce/
+  - https://ant.design/docs/spec/values/
+  - https://ant.design/docs/spec/colors/
+  - https://ant.design/docs/spec/font/
+  - https://ant.design/docs/spec/layout/
+  - https://ant.design/docs/react/customize-theme/
+  - https://ant.design/docs/react/migration-v6/
+  - https://ant.design/components/overview/
+tokens:
+  color:
+    primary: "#1677ff"
+    primaryHover: "#4096ff"
+    primaryActive: "#0958d9"
+    primaryBg: "#e6f4ff"
+    primaryBgHover: "#bae0ff"
+    primaryBorder: "#91caff"
+    primaryBorderHover: "#69b1ff"
+    success: "#52c41a"
+    successBg: "#f6ffed"
+    successBorder: "#b7eb8f"
+    warning: "#faad14"
+    warningBg: "#fffbe6"
+    warningBorder: "#ffe58f"
+    error: "#ff4d4f"
+    errorBg: "#fff2f0"
+    errorBorder: "#ffccc7"
+    info: "#1677ff"
+    infoBg: "#e6f4ff"
+    infoBorder: "#91caff"
+    text: "rgba(0, 0, 0, 0.88)"
+    textSecondary: "rgba(0, 0, 0, 0.65)"
+    textTertiary: "rgba(0, 0, 0, 0.45)"
+    textQuaternary: "rgba(0, 0, 0, 0.25)"
+    textDisabled: "rgba(0, 0, 0, 0.25)"
+    textPlaceholder: "rgba(0, 0, 0, 0.25)"
+    bgBase: "#ffffff"
+    bgLayout: "#f5f5f5"
+    bgContainer: "#ffffff"
+    bgElevated: "#ffffff"
+    bgSpotlight: "rgba(0, 0, 0, 0.85)"
+    fill: "rgba(0, 0, 0, 0.15)"
+    fillSecondary: "rgba(0, 0, 0, 0.06)"
+    fillTertiary: "rgba(0, 0, 0, 0.04)"
+    fillQuaternary: "rgba(0, 0, 0, 0.02)"
+    border: "#d9d9d9"
+    borderSecondary: "#f0f0f0"
+    split: "rgba(5, 5, 5, 0.06)"
+  typography:
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+    fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
+    fontSizeSm: 12px
     fontSize: 14px
-    fontWeight: "600"
+    fontSizeLg: 16px
+    fontSizeXl: 20px
+    heading1: 38px/46px
+    heading2: 30px/38px
+    heading3: 24px/32px
+    heading4: 20px/28px
+    heading5: 16px/24px
     lineHeight: 22px
-  body-lg:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 16px
-    fontWeight: "400"
-    lineHeight: 24px
-  body-md:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 14px
-    fontWeight: "400"
-    lineHeight: 22px
-  body-sm:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif"
-    fontSize: 12px
-    fontWeight: "400"
-    lineHeight: 20px
-  code:
-    fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
-    fontSize: 13px
-    fontWeight: "400"
-    lineHeight: 20px
-rounded:
-  none: 0px
-  sm: 2px
-  md: 4px
-  DEFAULT: 6px
-  lg: 8px
-  xl: 16px
-  full: 9999px
-spacing:
-  unit: 4px
-  xs: 4px
-  sm: 8px
-  md: 16px
-  lg: 24px
-  xl: 32px
-  control-height: 32px
-components:
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "#FFFFFF"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.DEFAULT}"
-    height: 32px
-    padding: 0 15px
-  button-primary-hover:
-    backgroundColor: "#4096FF"
-  button-primary-active:
-    backgroundColor: "#0958D9"
-  button-default:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.DEFAULT}"
-    height: 32px
-    padding: 0 15px
-  button-default-hover:
-    textColor: "#4096FF"
-  input-field:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.DEFAULT}"
-    height: 32px
-    padding: 4px 11px
-  input-field-focus:
-    backgroundColor: "{colors.surface}"
-  select-field:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.DEFAULT}"
-    height: 32px
-    padding: 0 11px
-  card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 24px
-  modal:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 20px 24px
-  menu-item-selected:
-    backgroundColor: "#E6F4FF"
-    textColor: "{colors.primary}"
-    typography: "{typography.body-md}"
-  tabs-tab-active:
-    textColor: "{colors.primary}"
-    typography: "{typography.body-md}"
-  table-header:
-    backgroundColor: "{colors.surface-container}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.title-md}"
-    padding: 16px
-  tag:
-    backgroundColor: "{colors.surface-container}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 0 7px
-  tooltip:
-    backgroundColor: "rgba(0, 0, 0, 0.85)"
-    textColor: "#FFFFFF"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.md}"
-    padding: 6px 8px
-  dropdown-item-hover:
-    backgroundColor: "{colors.surface-container}"
-    textColor: "{colors.on-surface}"
-  alert-success:
-    backgroundColor: "#F6FFED"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 8px 12px
-  alert-warning:
-    backgroundColor: "#FFFBE6"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 8px 12px
-  alert-error:
-    backgroundColor: "#FFF2F0"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 8px 12px
-  alert-info:
-    backgroundColor: "#E6F4FF"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.lg}"
-    padding: 8px 12px
-  badge-status-error:
-    backgroundColor: "{colors.error}"
-    rounded: "{rounded.full}"
-    width: 6px
-    height: 6px
-  tag-blue:
-    backgroundColor: "#E6F4FF"
-    textColor: "{colors.blue-7}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 0 7px
+    fontWeightRegular: 400
+    fontWeightStrong: 600
+  size:
+    unit: 4px
+    controlXs: 16px
+    controlSm: 24px
+    control: 32px
+    controlLg: 40px
+    spaceXxs: 4px
+    spaceXs: 8px
+    spaceSm: 12px
+    space: 16px
+    spaceMd: 20px
+    spaceLg: 24px
+    spaceXl: 32px
+    spaceXxl: 48px
+  radius:
+    xs: 2px
+    sm: 4px
+    base: 6px
+    lg: 8px
+    outer: 4px
+    round: 9999px
+  motion:
+    fast: 0.1s
+    mid: 0.2s
+    slow: 0.3s
+    easeInOut: "cubic-bezier(0.645, 0.045, 0.355, 1)"
+    easeOut: "cubic-bezier(0.215, 0.61, 0.355, 1)"
+    easeOutBack: "cubic-bezier(0.12, 0.4, 0.29, 1.46)"
+  elevation:
+    raised: "0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.03)"
+    popup: "0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)"
+  breakpoint:
+    xs: 480px
+    sm: 576px
+    md: 768px
+    lg: 992px
+    xl: 1200px
+    xxl: 1600px
 ---
 
-## Overview
+# Ant Design 6.6.4 visual system
 
-This document describes the default light theme of **Ant Design v6**. The system follows semantic versioning: major releases (v5 → v6) signal an overhaul of the design language, while minor and patch releases keep this document stable. Refer to [CHANGELOG.en-US.md](https://github.com/ant-design/ant-design/blob/master/CHANGELOG.en-US.md) for the per-release token drift inside a major.
+This is a practical extraction of Ant Design's current default light theme for the Launch++ UI experiment. It is meant to guide a visually faithful implementation with Radix primitives and plain CSS; it is not a copy of Ant Design's source code or a replacement for its component documentation.
 
-Ant Design is the open-source design system Ant Group uses to ship enterprise software — primarily mid- and back-office consoles, dashboards, and operational tools. The system was created in 2015 to give large product teams a shared, opinionated foundation so they could ship dense, data-rich interfaces without re-deciding the basics on every screen.
+The values in the front matter were resolved from the installed `antd@6.6.4` package with `theme.getDesignToken()` and checked against the live official documentation on the capture date. Component measurements below come from the live v6 component-token tables. When this document makes a product recommendation rather than reporting an Ant token, it says so explicitly.
 
-Four values guide every decision in the system:
+## The important v6 finding
 
-- **Natural.** The interface follows established conventions; nothing surprises a returning user. Patterns that already exist in operating systems and prior generations of enterprise software are preferred over novel inventions.
-- **Certain.** Users always know what state they're in, what their inputs did, and what the next step is. Hover, focus, loading, and error states are explicit and consistent.
-- **Meaningful.** Visual emphasis is reserved for action. Decoration that does not communicate is removed.
-- **Growing.** The system scales from small forms to dense tables to multi-tenant admin consoles without losing coherence.
+Ant Design 6 is primarily a technical evolution, not a visual reset. Ant's own migration guide says most component APIs remain compatible. The default blue, 14 px type, 32 px controls, 6 px radius, surface hierarchy, and many component measurements intentionally retain continuity with v5.
 
-## Colors
+The parts that should make our recreation specifically v6-aware are:
 
-The palette is built from one **primary** brand seed, four semantic state seeds (`success`, `warning`, `error`, `info`), and neutral base colors for text and surfaces. Color seeds expand automatically through `@ant-design/colors` into gradient steps covering background tint, hover, active, and outline variants — change the seed, and the entire derived palette moves with it.
+- CSS variables are the default delivery mechanism and modern browsers are the baseline.
+- Components expose stable semantic slots through `classNames` and `styles`; consumers should not target internal DOM structure.
+- Component APIs increasingly use consistent concepts such as `variant`, `placement`, `orientation`, `open`, `destroyOnHidden`, `title`, and `content`.
+- Inputs and containers use named variants rather than a simple `bordered` boolean.
+- Tags distinguish filled and solid variants; Card distinguishes outlined and borderless variants.
+- Zero-runtime static CSS is officially supported from v6.
+- Focus visibility is a first-class seed setting through `focusOutline`.
 
-`#1677FF` was chosen as the primary because blue reads as trustworthy and focused without the corporate flatness of a darker navy or the playfulness of a saturated cyan. It is the default brand color for actions, links, focus rings, selected navigation, and active tabs.
+In other words, a faithful v6 page may still look recognizably like v5. What changes is the consistency and extensibility beneath the pixels. We should not invent exaggerated visual changes just to make the experiment look “more v6.”
 
-Accessibility note: this file records Ant Design's default visual tokens. Some brand-color pairs, especially white text on `#1677FF` and primary text on pale selected backgrounds, are below WCAG AA's 4.5:1 contrast threshold for small text. For strict accessibility targets, darken `colorPrimary` through `ConfigProvider` or use component-specific token overrides rather than inventing one-off colors.
+## Product philosophy
 
-Neutral text and overlays in the runtime token system are expressed as `rgba(0, 0, 0, α)` rather than flat grey hex values. The reason is overlay: when text sits above a tinted card or a colored cell highlight, an opaque grey breaks the tint, while a transparent black blends naturally. The four standard alpha steps are `0.88` (primary text, exported here as `#1F1F1F`), `0.65` (secondary text, `#595959`), `0.45` (tertiary / description text), and `0.25` (placeholder / disabled, `#BFBFBF`). The hex values listed in this document are the equivalent composited result on a white surface, suitable for static export targets that require hex; downstream consumers that support alpha should prefer the `rgba()` form from `@ant-design/cssinjs`.
+Ant Design exists for complex enterprise products where people repeatedly complete real work. It reduces repeated design decisions by turning stable patterns into reusable components and pages.
 
-The preset colors (`blue`, `purple`, `cyan`, `green`, `magenta`, `red`, `orange`, `yellow`, `volcano`, `geekblue`, `gold`, `lime`; `pink` is a deprecated alias of `magenta` in runtime tokens) are reserved for tags, charts, and categorical visualization — never for primary UI affordances. Use functional colors (`success`/`warning`/`error`/`info`) for status, and reserve `primary` for the single most important action on each screen.
+Its four values translate into concrete UI rules:
 
-## Typography
+- **Natural:** match user expectations, reduce cognitive effort, and organize actions around the user's task.
+- **Certain:** show state clearly, reuse consistent interaction patterns, and prefer modular rules over subjective styling.
+- **Meaningful:** give every interaction a clear purpose and immediate feedback; decoration must not compete with the work.
+- **Growing:** make capabilities discoverable and allow the system to expand without losing consistency.
 
-The base font size is **14 px**, not 16. Enterprise consoles trade legibility headroom for information density — a 1440 px-wide window has to comfortably fit a sidebar, a header, a data table with eight columns, and a detail pane. At 14 px, a row of body copy reaches the eye-saccade sweet spot of ~75 characters at the column widths these layouts demand.
+For Launch++, this means the interface should feel calm, precise, information-dense, and predictable. “Modern” comes from polish, rhythm, feedback, and restraint—not oversized type, excessive glass effects, or ornamental gradients.
 
-The font stack prioritizes the OS UI font in order: Apple's `-apple-system`, then `BlinkMacSystemFont`, then Windows' `Segoe UI`, then Android/ChromeOS' `Roboto`, then `Helvetica Neue`, then `Arial`, with `Noto Sans` covering Linux. Emoji fallbacks are kept short. The code font uses `SFMono-Regular`, `Consolas`, `Liberation Mono`, `Menlo`, and `Courier` in the same order.
+## Visual character
 
-Only **two font weights** appear in product UI: 400 (body, controls, menu items, tab labels) and 600 (`fontWeightStrong` — headings, table headers, and any title-grade typography). Thin (100–300), bold (700+), and italics are not used in interface chrome — they fight the calm, certain tone the system targets. Italics are acceptable only inside long-form documentation prose. Visual emphasis on selected/active states comes from color and stroke (border, underline), not weight.
+The default language is flat-first. Hierarchy comes from whitespace, typography, pale neutral fills, thin borders, and selective blue—not from constant shadow. White is the main work surface, `#f5f5f5` is the layout canvas, and `#fafafa` or subtle black-alpha fills separate table headers and secondary regions.
 
-## Layout
+Use color sparingly:
 
-All spacing snaps to a **4 px grid**. The six-step spacing scale (`unit`, `xs`, `sm`, `md`, `lg`, `xl` → 4 / 4 / 8 / 16 / 24 / 32 px) covers every gap, gutter, and inset in the system. Magic numbers — `padding: 11px`, `gap: 13px` — do not appear in token-driven code; the input field's 11 px horizontal padding exists only because the design pre-dates the 4 px grid and a one-pixel migration would shift millions of existing screens.
+- Blue identifies the principal action, selected navigation, links, focus, and information.
+- Green, amber, and red communicate semantic outcomes, never decoration.
+- Preset palette colors belong to categorical labels, charts, and visualization.
+- Primary text uses 88% black; secondary information uses 65%; hints use 45%; disabled and placeholder content use 25%.
+- Prefer alpha-based neutrals over fixed gray hex values so they blend correctly on tinted surfaces.
 
-Surfaces use a **three-layer model**:
+One section or decision group should normally have one visually dominant action. Several solid-blue buttons side by side destroy hierarchy.
 
-1. **`bg-layout`** (`#F5F5F5`) — the page background. It surrounds and contains everything else.
-2. **`bg-container`** (`#FFFFFF`) — the surface for cards, panels, tables, and forms. This is where most content lives.
-3. **`bg-elevated`** (`#FFFFFF`, same hex as `bg-container`) — the surface for modals, dropdowns, popovers. Distinguished from `bg-container` not by color but by shadow.
+## Foundations
 
-Never hard-code `#FFF` or `#FAFAFA` in product code. Read the token. The three-layer model is what lets a dark-mode algorithm flip the surface ladder without breaking layouts.
+### Typography
 
-## Elevation & Depth
+The system font stack makes controls feel native on each platform. The base is deliberately compact: 14 px type on a 22 px line height.
 
-Ant Design is **flat-first**. Borders and tonal contrast carry hierarchy. Shadows appear only on surfaces that genuinely float above their context.
+| Role | Size | Line height | Weight |
+| --- | ---: | ---: | ---: |
+| Heading 1 | 38 px | 46 px | 600 |
+| Heading 2 | 30 px | 38 px | 600 |
+| Heading 3 | 24 px | 32 px | 600 |
+| Heading 4 | 20 px | 28 px | 600 |
+| Heading 5 / large title | 16 px | 24 px | 600 |
+| Body / control | 14 px | 22 px | 400 |
+| Small / metadata | 12 px | 20 px | 400 |
 
-Shadow tokens are generated from `colorShadow`, so the same names adapt across light and dark themes. The core tiers are:
+Use 400 for normal product UI and 600 for titles or strong emphasis. Selected controls normally gain emphasis through color or shape, not a sudden font-weight change. Keep labels short and use sentence case.
 
-- **Tertiary** (`boxShadowTertiary`) — the light raised-surface shadow: `0 1px 2px 0 rgba(0,0,0,0.05), 0 1px 6px -1px rgba(0,0,0,0.03), 0 2px 4px 0 rgba(0,0,0,0.03)`.
-- **Popup** (`boxShadow` and `boxShadowSecondary`) — the standard floating-layer shadow: `0 6px 16px 0 rgba(0,0,0,0.08), 0 3px 6px -4px rgba(0,0,0,0.12), 0 9px 28px 8px rgba(0,0,0,0.05)`.
-- **Card** (`boxShadowCard`) — a card-specific raised shadow with tighter spread, used when cards need separation from the container.
-- **Directional drawer and overflow shadows** (`boxShadowDrawer*`, `boxShadowTabsOverflow*`) — specialized tokens for edge-attached surfaces and scroll affordances.
-- **Popover arrow** (`boxShadowPopoverArrow`) — used only for the small triangular pointer on tooltip and popover arrows.
+### Spacing and density
 
-Motion uses three durations and a small library of cubic-bezier easings, all exposed as tokens:
+The base spatial unit is 4 px. The practical scale is 4, 8, 12, 16, 20, 24, 32, and 48 px. Component-specific optical measurements such as an input's 11 px horizontal padding are valid where Ant's official component tokens specify them; do not spread those exceptions into general layout.
 
-- `motionDurationFast` — 0.1 s, for state changes (hover, focus, press).
-- `motionDurationMid` — 0.2 s, for component-internal transitions (collapse, fade).
-- `motionDurationSlow` — 0.3 s, for surface-level changes (modal enter, drawer slide).
+Control heights are:
 
-Easings are pre-defined: `motionEaseInOut`, `motionEaseOut`, `motionEaseIn`, `motionEaseOutBack`, `motionEaseOutCirc`, etc. Do not pick a `transition-timing-function` arbitrarily. If the design need does not match an existing easing, use `motionEaseInOut` and move on.
+- Small: 24 px
+- Medium/default: 32 px
+- Large: 40 px
 
-## Shapes
+The 32 px default is important to Ant's enterprise density. Use 40 px where touch comfort or a focused form calls for it, not as the automatic default for every screen.
 
-The default corner radius is **6 px**. It is round enough to read as modern and friendly, but small enough that a 32-pixel-tall button still presents a clean, almost-rectangular silhouette suitable for dense forms.
+### Radius
 
-By component class:
+- 2 px: tiny internal details.
+- 4 px: small tags and compact inner shapes.
+- 6 px: normal controls.
+- 8 px: cards, alerts, modals, and larger surfaces.
+- Full circle/pill: avatars, badges, status dots, round controls, and intentionally pill-shaped tags only.
 
-- **Controls** (button, input, select, dropdown trigger) — 6 px (`rounded.DEFAULT`).
-- **Surfaces** (card, modal, drawer, notification) — 8 px (`rounded.lg`).
-- **Tags and small chips** — 4 px (`rounded.md`).
-- **Tooltip and popover** — 4 px (`rounded.md`).
+Avoid mixing arbitrary radii. A 16 px “SaaS card” radius is not part of the default Ant 6 language.
 
-Full-pill (`rounded.full`, 9999 px) is reserved for circular avatars, badges, and dots — not for buttons or tags. Square (0 px) is reserved for tables and the inner edges of segmented controls. Mixing radii on adjacent elements is a smell: a card with 8 px corners should not contain a button with 16 px corners.
+### Borders and separators
 
-## Components
+Use a 1 px solid `#d9d9d9` border for interactive controls and `#f0f0f0` or `rgba(5, 5, 5, 0.06)` for internal separation. Borders should carry most low-level structure. A borderless element must still have enough fill, spacing, or context to remain understandable.
 
-Component archetypes capture the system's most common surfaces and states. Each entry below maps to the token references in the YAML front-matter.
+### Elevation
 
-- **Button (primary)** — the single dominant action per screen. Solid `primary` fill, white text, 32 px tall, 6 px radius. Hover lightens the fill to `#4096FF`; active darkens to `#0958D9`. Do not stack two `primary` buttons in one decision.
-- **Button (default)** — secondary actions. Transparent background on a white surface, dark text, 1 px outline border. Hover changes text color to `#4096FF`; the border tints to match.
-- **Input field** — 32 px tall to match buttons. Subtle 1 px outline border; focus state thickens the border to `primary` and adds an inset glow. Placeholder text uses `on-surface-disabled`.
-- **Select** — visually identical to Input. The trigger reads as an input until interacted with.
-- **Card** — the workhorse container. White surface, 8 px radius, optional `boxShadowCard` elevation. Internal padding is 24 px on all sides; nested controls maintain 16 px gaps.
-- **Modal** — same surface and radius as Card, but uses the secondary shadow tier and is centered on a `rgba(0, 0, 0, 0.45)` mask. Body padding is 20 px top/bottom × 24 px left/right.
-- **Menu (selected item)** — `#E6F4FF` background, `primary` text. This is the single visual cue for "you are here" in navigation.
-- **Tabs (active tab)** — `primary` text and a 2 px `primary` underline. Inactive tabs are `on-surface-variant`. No background fill on tabs at any state.
-- **Table (header row)** — `surface-container` background, `title-md` typography (14 px / 600). Body rows alternate on hover only, not by default — the system trusts users to read dense data without zebra striping.
-- **Tag** — small categorical label. 4 px radius, 12 px font, low-saturation pastel fills from the preset palette. Never use a tag for a critical state — use Alert or Badge.
-- **Alert** — semantic feedback surface. Success, warning, error, and info alerts use pale semantic backgrounds with normal text color; the status is communicated by icon and tint, not by low-contrast colored body text.
-- **Badge status dot** — compact status indicator. Critical status may use `error` fill, but the dot is not a substitute for text in accessibility-critical flows.
-- **Tooltip** — high-contrast inverse surface: `rgba(0,0,0,0.85)` background, white text. Always positioned by the framework, never manually pinned.
-- **Dropdown menu (item hover)** — `surface-container` fill on hover, no text-color change. The hover affordance is enough.
+Use the raised shadow for subtly lifted cards and the popup shadow for dropdowns, popovers, modals, and other detached layers. Do not put a popup shadow on every card. Overlay masks use `rgba(0, 0, 0, 0.45)`.
 
-## Do's and Don'ts
+Default popup z-index begins at 1000. Component layers then use small, intentional offsets; for example dropdowns and tab overflow menus commonly use 1050, while tooltips use 1070.
 
-- **Do** use the four design values as a tie-breaker. When two approaches conflict, the one that produces a more certain, more legible state for the user wins.
-- **Don't** stack two `primary`-colored buttons on the same surface. Pick one. Demote the rest to `default`.
-- **Do** read surfaces from `colors.surface`, `colors.surface-container`, and `colors.surface-layout`. They reflect the three-layer model.
-- **Don't** hard-code `#FFFFFF` or `#FAFAFA`. The hex is incidental; the role is what matters.
-- **Do** use `motionDurationMid` (0.2 s) for any component-level transition you cannot find a more specific token for.
-- **Don't** invent custom `cubic-bezier` curves. Use the named easings.
-- **Do** reserve the preset color palette (`blue` through `lime`) for tags, charts, and categorical visualization.
-- **Don't** mint accent colors outside the preset palette for one-off UI surfaces. If a screen seems to need one, the design probably needs a different layout instead.
-- **Do** snap every gap, inset, and gutter to the 4 px grid through the spacing scale.
-- **Don't** use magic numbers in product code. If the scale lacks a step you need, the design needs revisiting, not a one-pixel override.
+### Motion
 
-## Customization
+- 100 ms: hover, focus, pressed, and color changes.
+- 200 ms: fades and component-level open/close transitions.
+- 300 ms: larger surface entrance, exit, and movement.
 
-Every value in the YAML front-matter above is a **default** produced by `defaultAlgorithm` — the light theme. Ant Design theming is broader than Design Token replacement: it includes algorithmic derivation, component-scoped overrides, dynamic switching, nested theme scopes, CSS variable output, static token consumption, and zero-runtime CSS extraction. See [Customize Theme](https://ant.design/docs/react/customize-theme.md) for the complete runtime API and examples.
+Use the provided easing curves. Motion should confirm cause and effect, never delay routine work. Respect `prefers-reduced-motion`; remove spatial movement and reduce nonessential animation when requested.
 
-The primary theme configuration entry is `ConfigProvider`'s `theme` prop:
+## Interaction contract
 
-1. **Seed token overrides.** Pass `theme.token` to `ConfigProvider` to replace any seed. The primary and semantic color seeds (`colorPrimary`, `colorSuccess`, `colorWarning`, `colorError`, `colorInfo`) expand into derived gradients, while `colorBgBase` and `colorTextBase` drive neutral surfaces and text. Spacing, radius, and font-size seeds work the same way.
+Every interactive component needs the same complete state model:
 
-2. **Algorithm switching.** Set `theme.algorithm` to swap the derivation logic. `defaultAlgorithm`, `darkAlgorithm`, and `compactAlgorithm` can be used alone or composed as an array — do not invert colors manually; the algorithms account for non-linear palette, surface, shadow, and size relationships.
+1. Resting
+2. Hovered
+3. Focus-visible
+4. Pressed or active
+5. Selected or checked, when applicable
+6. Loading, when applicable
+7. Disabled
+8. Error or warning, when applicable
 
-3. **Component-level overrides.** `theme.components.Button` (or any component's token namespace) can override a single component's Component Token and consumed Alias Token without affecting others. In component config, `algorithm` can opt that component into token derivation when the override should still follow seed-token relationships.
+Keyboard focus must remain visible. Do not remove the outline unless an equally visible focus ring replaces it. Pointer hover and keyboard focus are separate states and should not be conflated.
 
-4. **Runtime scope.** Themes can switch dynamically by changing `ConfigProvider.theme`, and nested `ConfigProvider` instances create local themes that inherit unchanged tokens from their parent. Static APIs such as `message.xxx`, `Modal.xxx`, and `notification.xxx` do not automatically receive the surrounding context; use hook-based APIs, `App`, or explicit context holders when themed static feedback is required.
+Disabled controls use 25% text, subdued fill, and no interactive cursor. Loading actions retain their width, block duplicate activation, and replace or accompany the leading icon with a spinner. Destructive actions use error styling only when the consequence is genuinely destructive.
 
-5. **Token consumption and output.** Use `theme.useToken()` inside React and `theme.getDesignToken()` outside React to consume resolved tokens. Use `theme.cssVar` when CSS variables are needed, and `theme.zeroRuntime` with prebuilt or extracted CSS when runtime style generation must be disabled.
+Validation appears close to its field and combines color with text or iconography. Never make color the only carrier of meaning.
 
-For custom theme generation, keep Ant Design's interaction structure, density, state feedback, and component semantics first. Then change the smallest necessary seed set: usually `colorPrimary`, status colors, `borderRadius`, `fontFamily`, `fontSize`, and neutral surface bases. Brand pages may look distinct, but forms, tables, navigation, overlays, focus states, and validation feedback should still feel like Ant Design. Avoid generating custom CSS rules that bypass tokens, algorithms, `theme.components`, CSS variables, or extracted static styles; if a theme cannot be expressed through those official layers, treat that as a design-system extension rather than a one-off page style.
+## Component specifications
+
+### Button
+
+Ant 6 treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. The familiar types map onto those concepts: primary is a solid primary button, default is neutral outlined, dashed is neutral dashed, and text/link are low-chrome actions.
+
+Default geometry:
+
+- Height: 32 px; large 40 px; small 24 px.
+- Font: 14 px / 22 px, weight 400; large font 16 px.
+- Radius: 6 px.
+- Horizontal padding: 15 px; small 7 px.
+- Icon-to-label gap: 8 px.
+- Default border: `#d9d9d9`; default background: white.
+- Default hover text and border: `#4096ff`; active: `#0958d9`.
+- Primary background: `#1677ff`; hover: `#4096ff`; active: `#0958d9`; text: white.
+- Default shadow: `0 2px 0 rgba(0, 0, 0, 0.02)`.
+- Primary shadow: `0 2px 0 rgba(5, 145, 255, 0.10)`.
+
+Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
+
+### Input, textarea, and input-like controls
+
+Ant 6 uses outlined, filled, borderless, and underlined variants across the input family. Related controls should use the same variant within a form.
+
+Default outlined input:
+
+- Height: 32 px; large 40 px; small 24 px.
+- Horizontal padding: 11 px; small 7 px.
+- Vertical padding: 4 px; large 7 px; small 0.
+- Radius: 6 px; border: `#d9d9d9`; background: white.
+- Hover border: `#4096ff`.
+- Focus border: `#1677ff` with `0 0 0 2px rgba(5, 145, 255, 0.10)`.
+- Placeholder: 25% black.
+- Add-on background: `rgba(0, 0, 0, 0.02)`.
+- Error focus ring: `0 0 0 2px rgba(255, 38, 5, 0.06)`.
+- Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
+
+Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
+
+### Select and combobox
+
+The closed trigger follows the same height, radius, border, hover, and focus treatment as Input. The menu is an elevated white surface.
+
+- Option height: 32 px.
+- Option padding: 5 px 12 px.
+- Active option background: `rgba(0, 0, 0, 0.04)`.
+- Selected option uses the primary-tinted surface and primary emphasis.
+- Multiple-value chip background: `rgba(0, 0, 0, 0.06)`.
+- Multiple chip height: 24 px; large 32 px; small 16 px.
+
+Typing, selection, keyboard navigation, clear, loading, empty, and invalid states must all be represented. The visible label and stored value are distinct concepts.
+
+### Checkbox, radio, and switch
+
+These controls use primary blue for checked state and a neutral border when unchecked. Preserve a generous click target even though the visible indicator is compact.
+
+Switch defaults:
+
+- Track: 44 × 22 px; small 28 × 16 px.
+- Inner padding: 2 px.
+- Handle: 18 px; small 12 px.
+- Handle color: white.
+- Handle shadow: `0 2px 4px rgba(0, 35, 11, 0.20)`.
+
+Use Switch for immediate settings and Checkbox for selection or acknowledgement. If changing a switch requires a separate Save action, a checkbox is usually clearer.
+
+### Card
+
+Cards are white 8 px-radius containers. Default cards may use a subtle border; raised cards use the light raised shadow. In v6, treat outlined and borderless as explicit variants rather than a `bordered` toggle.
+
+Typical body padding is 24 px. Separate header, body, cover, action, and tab regions semantically so plugins can style supported slots without reaching into internal markup.
+
+### Tabs
+
+Tabs use text and a primary ink bar rather than a filled background in their standard form.
+
+- Font: 14 px; large 16 px.
+- Horizontal gap: 32 px.
+- Vertical tab padding: 12 px; large 16 px; small 8 px.
+- Content gap below navigation: 16 px.
+- Resting text: 88% black.
+- Hover: `#4096ff`; selected: `#1677ff`; active: `#0958d9`.
+
+Use tabs for peer views of the same context, not for a full application hierarchy. Keep the active view stable on refresh where the product expects deep linking.
+
+### Menu and navigation
+
+Navigation selection uses `#e6f4ff` with primary-blue text in the light theme. Hover uses a very pale neutral or blue tint. Icons and labels align consistently; collapsed navigation must expose labels through accessible tooltips.
+
+Only one item is selected within a navigation level. Use hierarchy and indentation conservatively—deep nested menus make enterprise software harder to scan.
+
+### Table
+
+Tables are information-dense, not decorative. Headers use a `#fafafa` fill and 88% text. Rows are white until an interaction or status requires otherwise.
+
+- Default cell padding: 16 px horizontally and 16 px vertically.
+- Middle density: 8 px horizontal, 12 px vertical.
+- Small density: 8 px horizontal and vertical.
+- Header radius: 8 px at the outer top corners.
+- Header divider: `#f0f0f0`.
+- Hover/expanded-row surface: `#fafafa` or a 2–4% black fill.
+- Sorted header: `#f0f0f0`.
+- Selected row: `#e6f4ff`; selected hover: `#bae0ff`.
+
+Align numbers to the right, labels to the left, and actions consistently. Avoid zebra striping by default. Loading, empty, error, pagination, sorting, selection, expansion, and horizontal overflow need deliberate states.
+
+### Tag and badge
+
+Default tags use `#f5f5f5`, 88% text, a 4 px radius, and optional `#d9d9d9` border. In v6, use filled for a borderless tint and solid for white text on a semantic/preset color.
+
+Tags classify. Badges count or show compact status. Do not use a tag as the only explanation of a critical error.
+
+### Alert
+
+Alerts use an 8 px radius and 8 px × 12 px padding in the compact form. Description-style alerts use more space, typically 20 px × 24 px, with a 24 px status icon.
+
+| Status | Accent | Background | Border |
+| --- | --- | --- | --- |
+| Info | `#1677ff` | `#e6f4ff` | `#91caff` |
+| Success | `#52c41a` | `#f6ffed` | `#b7eb8f` |
+| Warning | `#faad14` | `#fffbe6` | `#ffe58f` |
+| Error | `#ff4d4f` | `#fff2f0` | `#ffccc7` |
+
+Keep the title actionable and the description concise. A closable alert needs a properly labelled close button.
+
+### Modal and drawer
+
+Modal content is white with an 8 px radius and the popup shadow. The mask is `rgba(0, 0, 0, 0.45)`. Titles are 16 px / 24 px at weight 600. Header and footer backgrounds remain transparent so the modal reads as one surface.
+
+Focus moves into the dialog, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
+
+### Dropdown, popover, and tooltip
+
+All three are elevated, transient layers, but they serve different purposes:
+
+- Dropdown: actions or selection; white surface, 5 px vertical menu padding, 1050 z-index.
+- Popover: richer interactive or explanatory content.
+- Tooltip: short, noninteractive clarification; maximum width 250 px, `rgba(0, 0, 0, 0.85)` background, white text, 1070 z-index.
+
+Use collision-aware positioning and preserve an 8 px relationship to the trigger where geometry allows. Tooltips must never contain essential information unavailable elsewhere.
+
+### Empty, loading, result, message, and notification
+
+Feedback should answer three questions: what happened, what it means, and what the user can do next. Use:
+
+- Skeleton for content whose shape is known and expected soon.
+- Spinner for indeterminate work in a bounded area.
+- Empty for a valid zero-data state, with a next action when useful.
+- Result for a significant completed outcome.
+- Message for brief global confirmation.
+- Notification for richer asynchronous information that may include an action.
+
+Do not stack several feedback mechanisms for one event.
+
+## Semantic component anatomy
+
+Our Radix/CSS recreation should copy Ant 6's principle of stable semantic slots, not its internal class names. Each Launch++ component should expose a small, documented anatomy such as:
+
+```text
+Dialog
+├── root
+├── mask
+├── wrapper
+├── section
+│   ├── header
+│   │   ├── title
+│   │   └── close
+│   ├── body
+│   └── footer
+```
+
+The public styling surface should target these roles. DOM changes underneath must not break plugin styling. Prefer component props and tokens over descendant selectors.
+
+## CSS reference
+
+This subset is enough to establish the default visual language in plain CSS:
+
+```css
+:root {
+  --ant-color-primary: #1677ff;
+  --ant-color-primary-hover: #4096ff;
+  --ant-color-primary-active: #0958d9;
+  --ant-color-primary-bg: #e6f4ff;
+
+  --ant-color-success: #52c41a;
+  --ant-color-warning: #faad14;
+  --ant-color-error: #ff4d4f;
+
+  --ant-color-text: rgba(0, 0, 0, 0.88);
+  --ant-color-text-secondary: rgba(0, 0, 0, 0.65);
+  --ant-color-text-tertiary: rgba(0, 0, 0, 0.45);
+  --ant-color-text-disabled: rgba(0, 0, 0, 0.25);
+  --ant-color-border: #d9d9d9;
+  --ant-color-border-secondary: #f0f0f0;
+  --ant-color-bg-layout: #f5f5f5;
+  --ant-color-bg-container: #ffffff;
+
+  --ant-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --ant-font-size: 14px;
+  --ant-line-height: 1.5714285714;
+
+  --ant-control-height: 32px;
+  --ant-control-height-sm: 24px;
+  --ant-control-height-lg: 40px;
+  --ant-radius-sm: 4px;
+  --ant-radius: 6px;
+  --ant-radius-lg: 8px;
+
+  --ant-motion-fast: 100ms;
+  --ant-motion-mid: 200ms;
+  --ant-motion-slow: 300ms;
+  --ant-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ant-ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+```
+
+The `--ant-` prefix above records provenance for this experiment. Launch++ production tokens should use our own public namespace and semantic names rather than pretending to be Ant Design tokens.
+
+## Component coverage map
+
+The current Ant component catalog is broad: General, Layout, Navigation, Data Entry, Data Display, Feedback, and Other. Recreating every component would be a product in itself, so Launch++ should borrow the system's coherence while implementing only what the MVP needs.
+
+Recommended MVP order:
+
+1. Button, icon button, typography, link, divider, space.
+2. Input, textarea, select/combobox, checkbox, radio, switch, form field.
+3. Card, avatar, tag, badge, empty, skeleton, spinner.
+4. Menu, dropdown, tooltip, popover, tabs, breadcrumb.
+5. Dialog, drawer, alert, message, notification, confirm.
+6. Table and pagination.
+
+Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color pickers, QR codes, and advanced layout helpers should wait until a real Launch++ or plugin use case needs them.
+
+## Accessibility and quality bar
+
+- Use semantic HTML first; Radix supplies behavior where native elements are insufficient.
+- Every control is keyboard operable and has a visible focus state.
+- Icon-only controls have accessible names.
+- Dialogs, popovers, menus, and comboboxes follow their expected ARIA patterns.
+- Error, success, and selection never rely on color alone.
+- Touch targets may exceed the visible 24–32 px control through padding or a larger hit area.
+- Text and control contrast must be checked in our final Launch++ theme. Matching a source token does not waive our accessibility target.
+- Motion respects reduced-motion preferences.
+- Layout and labels survive zoom, long translations, and narrow widths.
+
+## Theming model to preserve
+
+Ant's official model has three derived layers:
+
+1. **Seed tokens** express design intent, such as primary color, base radius, base font size, and control height.
+2. **Map tokens** are algorithmically derived scales and gradients.
+3. **Alias tokens** assign those values to semantic roles used across components.
+
+Components then add narrowly scoped component tokens. Launch++ should preserve the same direction: a small set of theme inputs, derived semantic tokens, and documented component overrides. Plugins should consume public CSS custom properties and UI components; they should not hard-code the captured hex values or depend on internal markup.
+
+## Source boundary
+
+This document records the official Ant Design site and runtime defaults as of Ant Design 6.6.4. The most relevant primary sources are:
+
+- [Introduction and design philosophy](https://ant.design/docs/spec/introduce/)
+- [Design values](https://ant.design/docs/spec/values/)
+- [Color system](https://ant.design/docs/spec/colors/)
+- [Typography](https://ant.design/docs/spec/font/)
+- [Layout](https://ant.design/docs/spec/layout/)
+- [Theme architecture and tokens](https://ant.design/docs/react/customize-theme/)
+- [v5 to v6 migration guide](https://ant.design/docs/react/migration-v6/)
+- [Component overview](https://ant.design/components/overview/)
+
+Individual component values were checked against the official Button, Input, Select, Switch, Card, Tabs, Table, Tag, Alert, Modal, Dropdown, and Tooltip documentation. If a future Ant release changes those values, update `sourceVersion` and re-extract rather than silently mixing versions.
