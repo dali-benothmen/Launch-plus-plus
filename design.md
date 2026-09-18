@@ -502,6 +502,20 @@ Tabs use text and a primary ink bar rather than a filled background in their sta
 
 Use tabs for peer views of the same context, not for a full application hierarchy. Keep the active view stable on refresh where the product expects deep linking.
 
+### Anchor
+
+Anchor provides an in-page table of contents for long, scrollable views. Vertical orientation is the default and supports shallow nested links; horizontal orientation is reserved for a flat set of peer sections.
+
+- Links use 4 px vertical and 16 px leading padding in vertical orientation.
+- The resting rail uses the secondary border color; the active indicator is a 2 px primary line.
+- Active text uses the primary color, while hover uses the primary hover color.
+- The horizontal variant uses 24 px spacing and an active bottom indicator.
+- Smooth scrolling respects reduced-motion preferences and supports window or element scroll containers.
+- Sticky positioning, section bounds, shared and item-specific offsets, history replacement, and custom active-link resolution are public behavior.
+- Public `root`, `item`, `itemTitle`, and `indicator` slots may be customized through `classNames` and `styles`.
+
+Use Anchor for destinations within one rendered page. Use Tabs when selecting one peer view hides the others.
+
 ### Menu and navigation
 
 Navigation selection uses `#e6f4ff` with primary-blue text in the light theme. Hover uses a very pale neutral or blue tint. Icons and labels align consistently; collapsed navigation must expose labels through accessible tooltips.

@@ -1446,6 +1446,109 @@
   transform: translateX(14px);
 }
 
+.launch-ui-anchor {
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: 22px;
+}
+
+.launch-ui-anchor.is-affixed {
+  position: sticky;
+  z-index: 10;
+  top: var(--launch-ui-anchor-offset-top);
+}
+
+.launch-ui-anchor.is-affixed.is-bottom-affixed {
+  top: auto;
+  bottom: var(--launch-ui-anchor-offset-bottom);
+}
+
+.launch-ui-anchor-list {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.launch-ui-anchor.is-vertical > .launch-ui-anchor-list::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  background: var(--launch-ui-border-soft);
+  content: "";
+}
+
+.launch-ui-anchor.is-vertical .launch-ui-anchor-list[data-level]:not([data-level="0"]) {
+  padding-inline-start: 16px;
+}
+
+.launch-ui-anchor-title {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding-block: 4px;
+  padding-inline: 16px 8px;
+  color: var(--launch-ui-text);
+  outline: none;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  transition: color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+  white-space: nowrap;
+}
+
+.launch-ui-anchor-title:hover {
+  color: var(--launch-ui-primary-hover);
+}
+
+.launch-ui-anchor-title:focus-visible {
+  border-radius: var(--launch-ui-radius);
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: -2px;
+}
+
+.launch-ui-anchor-item.is-active > .launch-ui-anchor-title {
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-anchor-indicator {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  background: var(--launch-ui-primary);
+}
+
+.launch-ui-anchor.is-vertical .launch-ui-anchor-indicator {
+  inset-block: 4px;
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 1px;
+}
+
+.launch-ui-anchor.is-horizontal {
+  overflow-x: auto;
+}
+
+.launch-ui-anchor.is-horizontal > .launch-ui-anchor-list {
+  display: flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--launch-ui-border-soft);
+}
+
+.launch-ui-anchor.is-horizontal .launch-ui-anchor-title {
+  padding: 8px 0;
+}
+
+.launch-ui-anchor.is-horizontal .launch-ui-anchor-indicator {
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+}
+
 .launch-ui-tabs-list {
   display: flex;
   gap: 32px;
@@ -2024,6 +2127,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .launch-ui-button,
+  .launch-ui-anchor-title,
   .launch-ui-card.is-hoverable,
   .launch-ui-link,
   .launch-ui-typography-action,

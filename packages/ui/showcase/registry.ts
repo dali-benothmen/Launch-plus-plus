@@ -1,4 +1,5 @@
 import { alertShowcase } from "./components/alert.showcase.js";
+import { anchorShowcase } from "./components/anchor.showcase.js";
 import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { dialogShowcase } from "./components/dialog.showcase.js";
@@ -36,6 +37,7 @@ export const componentRegistry = defineShowcases([
   gridShowcase,
   masonryShowcase,
   spaceShowcase,
+  anchorShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,

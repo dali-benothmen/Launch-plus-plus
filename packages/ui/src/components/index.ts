@@ -1,4 +1,5 @@
 export * from "./alert/index.js";
+export * from "./anchor/index.js";
 export * from "./button/index.js";
 export * from "./card/index.js";
 export * from "./dialog/index.js";
