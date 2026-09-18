@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createBrowserRouter,
+  Navigate,
   RouterProvider,
   type RouteObject,
   type RouterProviderProps,
@@ -16,6 +17,11 @@ import { ThemeControllerProvider } from "./theme-context.js";
 
 export const appRoutes: RouteObject[] = [
   {
+    path: "/",
+    element: <Navigate replace to="/app" />,
+  },
+  {
+    path: "/app",
     element: <AppShell />,
     children: [
       { index: true, element: <MyWorkPage /> },
