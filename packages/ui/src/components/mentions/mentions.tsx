@@ -260,12 +260,16 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       for (const mention of mentionMatches) {
         if (mention.start > cursor) content.push(displayValue.slice(cursor, mention.start));
         content.push(
-          <span
-            className={classes("launch-ui-mentions-tag", resolvedClassNames.mention)}
-            key={`${mention.start}-${mention.end}`}
-            style={resolvedStyles.mention}
-          >
-            {displayValue.slice(mention.start, mention.end)}
+          <span className="launch-ui-mentions-token" key={`${mention.start}-${mention.end}`}>
+            <span
+              className={classes("launch-ui-mentions-tag", resolvedClassNames.mention)}
+              style={resolvedStyles.mention}
+            >
+              {mention.value}
+            </span>
+            <span className="launch-ui-mentions-measure">
+              {displayValue.slice(mention.start, mention.end)}
+            </span>
           </span>,
         );
         cursor = mention.end;

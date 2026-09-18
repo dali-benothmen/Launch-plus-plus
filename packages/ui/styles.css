@@ -2766,7 +2766,7 @@
 }
 
 .launch-ui-mentions {
-  --launch-ui-mentions-tag-background: var(--launch-ui-fill-secondary);
+  --launch-ui-mentions-tag-background: var(--launch-ui-primary-bg);
   position: relative;
   display: inline-flex;
   width: 100%;
@@ -2831,15 +2831,34 @@
   white-space: pre-wrap;
 }
 
+.launch-ui-mentions-token {
+  position: relative;
+  display: inline-block;
+  white-space: pre;
+}
+
+.launch-ui-mentions-measure {
+  visibility: hidden;
+}
+
 .launch-ui-mentions-tag {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  left: 0;
+  display: inline-flex;
+  height: 18px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
   padding-inline: 2px;
   border-radius: 3px;
-  margin-inline: -2px;
   background: var(--launch-ui-mentions-tag-background);
-  box-decoration-break: clone;
-  color: inherit;
+  color: var(--launch-ui-primary);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
   transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
-  -webkit-box-decoration-break: clone;
 }
 
 .launch-ui-mentions-textarea::placeholder {

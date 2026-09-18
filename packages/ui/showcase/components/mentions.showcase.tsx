@@ -47,8 +47,8 @@ function VariantMentions() {
 }
 
 const mentionColors = [
-  { label: "Gray", value: "var(--launch-ui-fill-secondary)" },
   { label: "Blue", value: "#e6f4ff" },
+  { label: "Gray", value: "var(--launch-ui-fill-secondary)" },
   { label: "Green", value: "#f6ffed" },
   { label: "Pink", value: "#fff0f6" },
 ] as const;
@@ -310,7 +310,7 @@ export const mentionsShowcase = defineShowcase({
       id: "mentions-colors",
       name: "Mention colors",
       description:
-        "Mentions use a light-gray tag by default. Set mentionColor to match the surrounding context.",
+        "Mentions use a light-blue tag by default. Set mentionColor to match the surrounding context.",
       preview: MentionColors,
       code: `<Mentions
   defaultValue="Review this with @avery and @maya"
@@ -454,7 +454,7 @@ export const mentionsShowcase = defineShowcase({
       name: "mentionColor",
       description: "Sets the background color used by rendered mention tags.",
       type: "string",
-      defaultValue: '"light gray"',
+      defaultValue: '"light blue"',
     },
     {
       name: "split",
