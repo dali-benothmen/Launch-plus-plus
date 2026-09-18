@@ -275,6 +275,47 @@ button {
   pointer-events: none;
 }
 
+.showcase-menu-column {
+  display: grid;
+  width: 256px;
+  justify-items: start;
+  gap: 16px;
+}
+
+.showcase-menu-semantic-root {
+  max-width: 600px;
+  padding: 8px;
+  border: 1px solid var(--showcase-border);
+  border-radius: var(--launch-ui-radius);
+}
+
+.showcase-menu-custom-popup {
+  min-width: 420px;
+  padding: 12px;
+}
+
+.showcase-menu-custom-popup h3 {
+  padding: 0 4px 10px;
+  border-bottom: 1px solid var(--showcase-border);
+  margin: 0 0 8px;
+}
+
+.showcase-menu-custom-popup .launch-ui-dropdown-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.showcase-menu-custom-popup .launch-ui-dropdown-item {
+  align-items: flex-start;
+}
+
+.showcase-menu-feature-item {
+  display: grid;
+  gap: 2px;
+  padding-block: 4px;
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

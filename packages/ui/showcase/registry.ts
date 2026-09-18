@@ -13,6 +13,7 @@ import { gridShowcase } from "./components/grid.showcase.js";
 import { iconsShowcase } from "./components/icons.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
+import { menuShowcase } from "./components/menu.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
 import { spaceShowcase } from "./components/space.showcase.js";
 import { switchShowcase } from "./components/switch.showcase.js";
@@ -42,6 +43,7 @@ export const componentRegistry = defineShowcases([
   anchorShowcase,
   breadcrumbShowcase,
   dropdownShowcase,
+  menuShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,
