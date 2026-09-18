@@ -157,13 +157,14 @@ button {
     color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
 }
 
-.showcase-navigation button:hover,
-.showcase-navigation button.is-active {
+.showcase-navigation button:hover {
   background: var(--showcase-hover);
   color: var(--launch-color-text);
 }
 
 .showcase-navigation button.is-active {
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
   font-weight: 600;
 }
 
