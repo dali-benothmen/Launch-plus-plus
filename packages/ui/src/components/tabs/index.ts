@@ -1,1 +1,16 @@
-export { Tabs, type TabItem, type TabsProps } from "./tabs.js";
+export {
+  type TabItem,
+  Tabs,
+  type TabsAnimatedConfig,
+  type TabsClassNames,
+  type TabsEditTarget,
+  type TabsExtraContent,
+  type TabsIndicatorAlign,
+  type TabsIndicatorConfig,
+  type TabsPlacement,
+  type TabsProps,
+  type TabsSemanticName,
+  type TabsSize,
+  type TabsStyles,
+  type TabsType,
+} from "./tabs.js";

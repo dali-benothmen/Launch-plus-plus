@@ -332,6 +332,30 @@ button {
   border-radius: var(--launch-ui-radius-lg);
 }
 
+.showcase-tabs-stack {
+  display: grid;
+  gap: 32px;
+}
+
+.showcase-tabs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.showcase-tabs-overflow {
+  width: min(100%, 680px);
+}
+
+.showcase-tabs-placement {
+  min-height: 180px;
+}
+
+.showcase-tabs-semantic-root {
+  border: 1px solid var(--showcase-border);
+  border-radius: var(--launch-ui-radius-lg);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;
