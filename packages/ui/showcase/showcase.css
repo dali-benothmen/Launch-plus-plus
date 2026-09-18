@@ -171,6 +171,11 @@ button {
   color: var(--launch-ui-primary);
 }
 
+.showcase-masonry-semantic-item {
+  border-radius: var(--launch-ui-radius);
+  background: var(--launch-ui-fill-quaternary);
+}
+
 .showcase-stage {
   display: inline-flex;
   align-items: center;

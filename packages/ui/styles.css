@@ -786,6 +786,20 @@
   white-space: nowrap;
 }
 
+.launch-ui-masonry {
+  position: relative;
+  width: 100%;
+  height: var(--launch-ui-masonry-height);
+}
+
+.launch-ui-masonry-item {
+  position: absolute;
+  inset-block-start: var(--launch-ui-masonry-item-top);
+  inset-inline-start: var(--launch-ui-masonry-item-left);
+  min-width: 0;
+  width: var(--launch-ui-masonry-item-width);
+}
+
 .launch-ui-typography-root,
 .launch-ui-typography {
   color: var(--launch-ui-text);
