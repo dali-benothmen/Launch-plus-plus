@@ -301,6 +301,16 @@ button {
   gap: 12px;
 }
 
+.showcase-preview-constrained {
+  width: min(100%, 360px);
+}
+
+.showcase-control-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .showcase-example pre {
   overflow-x: auto;
   padding: 16px 20px;

@@ -1,5 +1,15 @@
+import { alertShowcase } from "./components/alert.showcase.js";
 import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
+import { dialogShowcase } from "./components/dialog.showcase.js";
+import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
+import { inputShowcase } from "./components/input.showcase.js";
+import { selectShowcase } from "./components/select.showcase.js";
+import { switchShowcase } from "./components/switch.showcase.js";
+import { tableShowcase } from "./components/table.showcase.js";
+import { tabsShowcase } from "./components/tabs.showcase.js";
+import { tagShowcase } from "./components/tag.showcase.js";
+import { tooltipShowcase } from "./components/tooltip.showcase.js";
 import { typographyShowcase } from "./components/typography.showcase.js";
 import { defineShowcases } from "./showcase-definition.js";
 
@@ -11,6 +21,16 @@ export {
 
 export const componentRegistry = defineShowcases([
   buttonShowcase,
-  cardShowcase,
   typographyShowcase,
+  tabsShowcase,
+  inputShowcase,
+  selectShowcase,
+  switchShowcase,
+  cardShowcase,
+  tableShowcase,
+  tagShowcase,
+  alertShowcase,
+  dialogShowcase,
+  dropdownMenuShowcase,
+  tooltipShowcase,
 ]);
