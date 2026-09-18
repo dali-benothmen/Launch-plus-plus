@@ -355,6 +355,37 @@ button {
   background: var(--launch-color-bg-canvas);
 }
 
+.showcase-preview .showcase-divider-copy p {
+  margin: 0;
+  color: var(--launch-color-text-muted);
+  line-height: 22px;
+}
+
+.showcase-divider-inline {
+  display: flex;
+  align-items: center;
+}
+
+.showcase-divider-custom-root {
+  border-color: var(--launch-ui-primary);
+}
+
+.showcase-divider-custom-content {
+  color: var(--launch-ui-primary);
+}
+
+.showcase-divider-custom-rail {
+  opacity: 0.65;
+}
+
+.showcase-divider-custom-start {
+  border-color: var(--launch-ui-success);
+}
+
+.showcase-divider-custom-default {
+  border-color: var(--launch-ui-border);
+}
+
 .showcase-icon-browser {
   display: grid;
   gap: 20px;

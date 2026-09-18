@@ -2,6 +2,7 @@ import { alertShowcase } from "./components/alert.showcase.js";
 import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { dialogShowcase } from "./components/dialog.showcase.js";
+import { dividerShowcase } from "./components/divider.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
 import { floatButtonShowcase } from "./components/float-button.showcase.js";
 import { iconsShowcase } from "./components/icons.showcase.js";
@@ -26,6 +27,7 @@ export const componentRegistry = defineShowcases([
   floatButtonShowcase,
   iconsShowcase,
   typographyShowcase,
+  dividerShowcase,
   tabsShowcase,
   inputShowcase,
   selectShowcase,

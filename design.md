@@ -64,6 +64,12 @@ componentTokens:
     viewportInset: 24px
     groupGap: 12px
     squareRadius: 8px
+  divider:
+    color: "#f0f0f0"
+    textPaddingInline: 1em
+    spacingSmall: 12px
+    spacingMedium: 16px
+    spacingLarge: 24px
   input:
     transitionDuration: 1s
     transitionProperties: border-color, background-color, box-shadow
@@ -357,6 +363,19 @@ Default geometry:
 The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and uses the shared one-second hover transition. Focus-visible styling supplies the accessible outline. Icons can appear at the start or end. Loading replaces the icon with a spinner, disables activation, and may accept a custom loading icon. Block buttons fill their container; ghost buttons remove the fill for contrasting surfaces. Providing `href` renders link semantics with the same visual contract.
 
 Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
+
+### Divider
+
+Dividers separate related content without introducing another container. Horizontal is the default orientation; vertical dividers are reserved for short inline labels, links, or actions.
+
+- Default line: 1 px solid `#f0f0f0`.
+- Variants: solid, dotted, and dashed.
+- Horizontal spacing: 12 px small, 16 px medium, and 24 px large. The default is 24 px.
+- Titled dividers use 16 px medium-weight text with `1em` inline spacing. Plain titles use the standard 14 px body style.
+- Start and end titles leave a short 5% rail on their aligned side; centered titles divide the available width evenly.
+- Vertical dividers are `0.9em` high with 8 px inline spacing.
+
+The root exposes native separator semantics and its orientation. Public `root`, `content`, and `rail` slots may be customized through the component API; consumers should not target private DOM structure.
 
 ### Input, textarea, and input-like controls
 

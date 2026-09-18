@@ -2,6 +2,7 @@ export * from "./alert/index.js";
 export * from "./button/index.js";
 export * from "./card/index.js";
 export * from "./dialog/index.js";
+export * from "./divider/index.js";
 export * from "./dropdown-menu/index.js";
 export * from "./float-button/index.js";
 export * from "./input/index.js";
