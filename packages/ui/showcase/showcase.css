@@ -311,6 +311,37 @@ button {
   gap: 10px;
 }
 
+.showcase-float-surface {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--launch-color-bg-subtle);
+}
+
+.showcase-float-surface.is-tall {
+  min-height: 320px;
+}
+
+.showcase-float-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+.showcase-float-scroll-content {
+  display: flex;
+  min-height: 680px;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--launch-color-text-muted);
+}
+
+.showcase-float-scroll-content strong {
+  color: var(--launch-color-text);
+}
+
 .showcase-code {
   overflow-x: auto;
   padding: 16px 20px;

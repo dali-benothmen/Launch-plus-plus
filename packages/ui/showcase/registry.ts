@@ -3,6 +3,7 @@ import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { dialogShowcase } from "./components/dialog.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
+import { floatButtonShowcase } from "./components/float-button.showcase.js";
 import { inputShowcase } from "./components/input.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
 import { switchShowcase } from "./components/switch.showcase.js";
@@ -21,6 +22,7 @@ export {
 
 export const componentRegistry = defineShowcases([
   buttonShowcase,
+  floatButtonShowcase,
   typographyShowcase,
   tabsShowcase,
   inputShowcase,

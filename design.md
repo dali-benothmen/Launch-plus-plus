@@ -58,6 +58,11 @@ componentTokens:
     iconGap: 8px
     fontWeight: 400
     borderRadius: 6px
+  floatButton:
+    size: 40px
+    viewportInset: 24px
+    groupGap: 12px
+    squareRadius: 8px
   input:
     transitionDuration: 200ms
     transitionProperties: border-color, background-color, box-shadow

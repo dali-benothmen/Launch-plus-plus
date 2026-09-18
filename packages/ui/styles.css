@@ -763,6 +763,254 @@
   padding-top: 24px;
 }
 
+.launch-ui-float-button {
+  position: fixed;
+  z-index: 99;
+  right: 24px;
+  bottom: 24px;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--launch-ui-border-soft);
+  background: var(--launch-ui-surface);
+  box-shadow: var(--launch-ui-shadow-popup);
+  color: var(--launch-ui-text);
+  cursor: pointer;
+  font-family: var(--launch-ui-font);
+  outline: none;
+  text-decoration: none;
+  transition:
+    color var(--launch-ui-mid) var(--launch-ui-ease),
+    background-color var(--launch-ui-mid) var(--launch-ui-ease),
+    transform var(--launch-ui-mid) var(--launch-ui-ease),
+    box-shadow var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-float-button.is-circle {
+  border-radius: 50%;
+}
+
+.launch-ui-float-button.is-square {
+  border-radius: var(--launch-ui-radius-lg);
+}
+
+.launch-ui-float-button:hover {
+  color: var(--launch-ui-primary-hover);
+  transform: translateY(-1px);
+}
+
+.launch-ui-float-button:active {
+  color: var(--launch-ui-primary-active);
+  transform: translateY(0);
+}
+
+.launch-ui-float-button:focus-visible {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-float-button.is-primary {
+  border-color: var(--launch-ui-primary);
+  background: var(--launch-ui-primary);
+  color: #fff;
+}
+
+.launch-ui-float-button.is-primary:hover {
+  border-color: var(--launch-ui-primary-hover);
+  background: var(--launch-ui-primary-hover);
+  color: #fff;
+}
+
+.launch-ui-float-button:disabled,
+.launch-ui-float-button.is-disabled {
+  border-color: var(--launch-ui-border);
+  background: var(--launch-ui-fill-quaternary);
+  box-shadow: none;
+  color: var(--launch-ui-text-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.launch-ui-float-button-content {
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.launch-ui-float-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.launch-ui-float-button-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.launch-ui-float-button-description {
+  display: -webkit-box;
+  overflow: hidden;
+  padding: 4px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 12px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.launch-ui-float-button-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 6px;
+  border: 1px solid #fff;
+  border-radius: 10px;
+  background: var(--launch-ui-error);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.launch-ui-float-button-badge.is-dot {
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
+}
+
+.launch-ui-float-button-group {
+  position: fixed;
+  z-index: 99;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+.launch-ui-float-button-group.is-top {
+  flex-direction: column;
+}
+
+.launch-ui-float-button-group.is-bottom {
+  flex-direction: column-reverse;
+}
+
+.launch-ui-float-button-group.is-left {
+  flex-direction: row;
+}
+
+.launch-ui-float-button-group.is-right {
+  flex-direction: row-reverse;
+}
+
+.launch-ui-float-button-group-items {
+  display: flex;
+  gap: 12px;
+  opacity: 1;
+  transform: scale(1) translate(0);
+  transition:
+    opacity var(--launch-ui-mid) var(--launch-ui-ease),
+    transform var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-float-button-group.is-top .launch-ui-float-button-group-items,
+.launch-ui-float-button-group.is-bottom .launch-ui-float-button-group-items {
+  flex-direction: column;
+}
+
+.launch-ui-float-button-group.is-left .launch-ui-float-button-group-items,
+.launch-ui-float-button-group.is-right .launch-ui-float-button-group-items {
+  flex-direction: row;
+}
+
+.launch-ui-float-button-group[data-state="closed"] .launch-ui-float-button-group-items {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.launch-ui-float-button-group.is-top[data-state="closed"] .launch-ui-float-button-group-items {
+  transform: scale(0.9) translateY(8px);
+}
+
+.launch-ui-float-button-group.is-bottom[data-state="closed"] .launch-ui-float-button-group-items {
+  transform: scale(0.9) translateY(-8px);
+}
+
+.launch-ui-float-button-group.is-left[data-state="closed"] .launch-ui-float-button-group-items {
+  transform: scale(0.9) translateX(8px);
+}
+
+.launch-ui-float-button-group.is-right[data-state="closed"] .launch-ui-float-button-group-items {
+  transform: scale(0.9) translateX(-8px);
+}
+
+.launch-ui-float-button-group .launch-ui-float-button {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 auto;
+}
+
+.launch-ui-float-button-group.is-static.is-square {
+  gap: 0;
+}
+
+.launch-ui-float-button-group.is-static.is-square .launch-ui-float-button-group-items {
+  overflow: visible;
+  gap: 0;
+  border-radius: var(--launch-ui-radius-lg);
+  box-shadow: var(--launch-ui-shadow-popup);
+}
+
+.launch-ui-float-button-group.is-static.is-square .launch-ui-float-button {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.launch-ui-float-button-group.is-static.is-square .launch-ui-float-button:hover {
+  transform: none;
+}
+
+.launch-ui-float-button-group.is-static.is-square.is-top .launch-ui-float-button:first-child,
+.launch-ui-float-button-group.is-static.is-square.is-bottom .launch-ui-float-button:last-child {
+  border-radius: var(--launch-ui-radius-lg) var(--launch-ui-radius-lg) 0 0;
+}
+
+.launch-ui-float-button-group.is-static.is-square.is-top .launch-ui-float-button:last-child,
+.launch-ui-float-button-group.is-static.is-square.is-bottom .launch-ui-float-button:first-child {
+  border-radius: 0 0 var(--launch-ui-radius-lg) var(--launch-ui-radius-lg);
+}
+
+.launch-ui-float-button-group.is-static.is-square.is-left .launch-ui-float-button:first-child,
+.launch-ui-float-button-group.is-static.is-square.is-right .launch-ui-float-button:last-child {
+  border-radius: var(--launch-ui-radius-lg) 0 0 var(--launch-ui-radius-lg);
+}
+
+.launch-ui-float-button-group.is-static.is-square.is-left .launch-ui-float-button:last-child,
+.launch-ui-float-button-group.is-static.is-square.is-right .launch-ui-float-button:first-child {
+  border-radius: 0 var(--launch-ui-radius-lg) var(--launch-ui-radius-lg) 0;
+}
+
 @keyframes launch-ui-popup-in {
   from {
     opacity: 0;
@@ -812,7 +1060,9 @@
   .launch-ui-tab::after,
   .launch-ui-tooltip,
   .launch-ui-dialog-overlay,
-  .launch-ui-dialog-content {
+  .launch-ui-dialog-content,
+  .launch-ui-float-button,
+  .launch-ui-float-button-group-items {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
   }
