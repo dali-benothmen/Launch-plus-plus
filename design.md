@@ -143,7 +143,7 @@ tokens:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
     fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
     fontSizeSm: 12px
-    fontSize: 12px
+    fontSize: 13px
     fontSizeLg: 16px
     fontSizeXl: 20px
     heading1: 38px/46px
@@ -606,7 +606,7 @@ This subset is enough to establish the default visual language in plain CSS:
 
   --launch-font-family: AlibabaSans, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --launch-font-size: 12px;
+  --launch-font-size: 13px;
   --launch-line-height: 1.5714285714;
 
   --launch-control-height: 32px;

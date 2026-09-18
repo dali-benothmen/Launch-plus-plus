@@ -63,7 +63,7 @@
     Courier,
     monospace
   );
-  --launch-ui-font-size: var(--launch-font-size, 12px);
+  --launch-ui-font-size: var(--launch-font-size, 13px);
   --launch-ui-line-height: var(--launch-line-height, 1.5714285714285714);
   --launch-ui-fast: 100ms;
   --launch-ui-mid: 200ms;
