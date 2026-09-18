@@ -1,7 +1,7 @@
 ---
 name: Launch++ Design System
 version: 0.1.0
-updatedAt: 2026-09-18
+updatedAt: 2026-09-19
 scope: Default light theme and component behavior
 purpose: Source of truth for implementing the Launch++ visual language with Radix primitives and CSS
 referenceRuntime:
@@ -64,6 +64,13 @@ componentTokens:
     viewportInset: 24px
     groupGap: 12px
     squareRadius: 8px
+  avatar:
+    sizeExtraLarge: 63px
+    sizeLarge: 40px
+    sizeDefault: 32px
+    sizeSmall: 23px
+    sizeExtraSmall: 14px
+    groupSize: 32px
   divider:
     color: "rgba(5, 5, 5, 0.06)"
     lineWidth: 1px

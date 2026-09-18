@@ -20,14 +20,14 @@ function BasicAvatars() {
   return (
     <Flex align="start" gap="large" vertical>
       <Space align="center" size="large" wrap>
-        <Avatar aria-label="User" icon={<UserOutlined />} size={64} />
+        <Avatar aria-label="User" icon={<UserOutlined />} size={63} />
         <Avatar aria-label="User" icon={<UserOutlined />} size="large" />
         <Avatar aria-label="User" icon={<UserOutlined />} />
         <Avatar aria-label="User" icon={<UserOutlined />} size="small" />
         <Avatar aria-label="User" icon={<UserOutlined />} size={14} />
       </Space>
       <Space align="center" size="large" wrap>
-        <Avatar aria-label="User" icon={<UserOutlined />} shape="square" size={64} />
+        <Avatar aria-label="User" icon={<UserOutlined />} shape="square" size={63} />
         <Avatar aria-label="User" icon={<UserOutlined />} shape="square" size="large" />
         <Avatar aria-label="User" icon={<UserOutlined />} shape="square" />
         <Avatar aria-label="User" icon={<UserOutlined />} shape="square" size="small" />
@@ -97,7 +97,7 @@ function AvatarGroups() {
           <Avatar alt={`Team member ${index + 1}`} key={image} src={image} />
         ))}
       </Avatar.Group>
-      <Avatar.Group max={{ count: 2, popover: { trigger: "click" } }} shape="square" size="large">
+      <Avatar.Group max={{ count: 2, popover: { trigger: "click" } }} shape="square">
         {userImages.map((image, index) => (
           <Avatar alt={`Team member ${index + 1}`} key={image} src={image} />
         ))}
@@ -155,7 +155,7 @@ export const avatarShowcase = defineShowcase({
       name: "Sizes and shapes",
       description: "Use named or numeric sizes with circular and square shapes.",
       preview: BasicAvatars,
-      code: `<Avatar size={64} icon={<UserOutlined />} />
+      code: `<Avatar size={63} icon={<UserOutlined />} />
 <Avatar size="large" icon={<UserOutlined />} />
 <Avatar icon={<UserOutlined />} />
 <Avatar size="small" icon={<UserOutlined />} />
@@ -239,7 +239,8 @@ export const avatarShowcase = defineShowcase({
     },
     {
       name: "size",
-      description: "Uses a named, numeric, or responsive size.",
+      description:
+        "Uses a named, numeric, or responsive size. Large is 40px, medium is 32px, and small is 23px.",
       type: 'number | "large" | "medium" | "small" | AvatarResponsiveSize',
       defaultValue: '"medium"',
     },
