@@ -157,6 +157,10 @@ button {
     color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
 }
 
+.showcase-navigation button + button {
+  margin-top: 4px;
+}
+
 .showcase-navigation button:hover {
   background: var(--showcase-hover);
   color: var(--launch-color-text);
@@ -165,7 +169,6 @@ button {
 .showcase-navigation button.is-active {
   background: var(--launch-ui-primary-bg);
   color: var(--launch-ui-primary);
-  font-weight: 600;
 }
 
 .showcase-stage {
