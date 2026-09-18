@@ -1412,15 +1412,14 @@
   justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: var(--launch-ui-text-disabled);
-  color: var(--launch-ui-surface);
+  background: transparent;
+  color: var(--launch-ui-text-disabled);
   cursor: pointer;
   opacity: 0;
   outline: none;
   transform: translateY(-50%);
   transition:
-    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
     opacity var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
@@ -1430,7 +1429,7 @@
 }
 
 .launch-ui-autocomplete-clear:hover {
-  background: var(--launch-ui-text-tertiary);
+  color: var(--launch-ui-text-tertiary);
 }
 
 .launch-ui-autocomplete-clear:focus-visible {
@@ -1440,9 +1439,13 @@
 }
 
 .launch-ui-autocomplete-clear .launch-ui-control-icon {
-  width: 10px;
-  height: 10px;
-  stroke-width: 2;
+  width: 14px;
+  height: 14px;
+}
+
+.launch-ui-autocomplete-clear svg {
+  width: 14px;
+  height: 14px;
 }
 
 .launch-ui-autocomplete-popup {

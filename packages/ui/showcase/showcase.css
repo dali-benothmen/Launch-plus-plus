@@ -362,10 +362,6 @@ button {
   justify-items: start;
 }
 
-.showcase-autocomplete-textarea {
-  height: 64px;
-}
-
 .showcase-autocomplete-group-title,
 .showcase-autocomplete-group-option {
   display: flex;

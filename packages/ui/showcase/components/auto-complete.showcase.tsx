@@ -53,7 +53,7 @@ function CustomInputAutoComplete() {
       showSearch={{ onSearch: (query) => setOptions(suggestions(query)) }}
       style={{ width: 280 }}
     >
-      <textarea className="showcase-autocomplete-textarea" placeholder="Write a short note" />
+      <input placeholder="Input here" />
     </AutoComplete>
   );
 }
@@ -108,10 +108,25 @@ function GroupedAutoComplete() {
 }
 
 function StatusAutoComplete() {
+  const [errorOptions, setErrorOptions] = useState<ReadonlyArray<AutoCompleteOption>>([]);
+  const [warningOptions, setWarningOptions] = useState<ReadonlyArray<AutoCompleteOption>>([]);
+
   return (
     <div className="showcase-autocomplete-stack">
-      <AutoComplete placeholder="Error" status="error" style={{ width: 240 }} />
-      <AutoComplete placeholder="Warning" status="warning" style={{ width: 240 }} />
+      <AutoComplete
+        options={errorOptions}
+        placeholder="Error"
+        showSearch={{ onSearch: (query) => setErrorOptions(suggestions(query)) }}
+        status="error"
+        style={{ width: 240 }}
+      />
+      <AutoComplete
+        options={warningOptions}
+        placeholder="Warning"
+        showSearch={{ onSearch: (query) => setWarningOptions(suggestions(query)) }}
+        status="warning"
+        style={{ width: 240 }}
+      />
       <AutoComplete disabled placeholder="Disabled" style={{ width: 240 }} />
     </div>
   );
@@ -293,7 +308,7 @@ export const autoCompleteShowcase = defineShowcase({
         "Provide an input-like child when suggestions should enhance a specialized field.",
       preview: CustomInputAutoComplete,
       code: `<AutoComplete options={options} showSearch={{ onSearch: handleSearch }}>
-  <textarea placeholder="Write a short note" />
+  <input placeholder="Input here" />
 </AutoComplete>`,
     },
     {
@@ -312,8 +327,16 @@ export const autoCompleteShowcase = defineShowcase({
       name: "Status and disabled",
       description: "Communicate validation state or make the field unavailable.",
       preview: StatusAutoComplete,
-      code: `<AutoComplete status="error" placeholder="Error" />
-<AutoComplete status="warning" placeholder="Warning" />
+      code: `<AutoComplete
+  options={errorOptions}
+  status="error"
+  showSearch={{ onSearch: handleErrorSearch }}
+/>
+<AutoComplete
+  options={warningOptions}
+  status="warning"
+  showSearch={{ onSearch: handleWarningSearch }}
+/>
 <AutoComplete disabled placeholder="Disabled" />`,
     },
     {
