@@ -8,7 +8,6 @@ import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { checkboxShowcase } from "./components/checkbox.showcase.js";
 import { datePickerShowcase } from "./components/date-picker.showcase.js";
-import { dialogShowcase } from "./components/dialog.showcase.js";
 import { dividerShowcase } from "./components/divider.showcase.js";
 import { drawerShowcase } from "./components/drawer.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
@@ -25,6 +24,7 @@ import { masonryShowcase } from "./components/masonry.showcase.js";
 import { mentionsShowcase } from "./components/mentions.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
 import { messageShowcase } from "./components/message.showcase.js";
+import { modalShowcase } from "./components/modal.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
 import { popoverShowcase } from "./components/popover.showcase.js";
 import { radioShowcase } from "./components/radio.showcase.js";
@@ -88,7 +88,7 @@ export const componentRegistry = defineShowcases([
   alertShowcase,
   drawerShowcase,
   messageShowcase,
-  dialogShowcase,
+  modalShowcase,
   dropdownMenuShowcase,
   tooltipShowcase,
 ]);

@@ -321,7 +321,7 @@ export const drawerShowcase = defineShowcase({
   description: "Slides a focused panel from an edge while preserving the current page context.",
   whenToUse: [
     "Use Drawer for details, forms, or secondary tasks that should not replace the current page.",
-    "Use a Dialog instead when the task is short, blocking, and requires immediate attention.",
+    "Use a Modal instead when the task is short, blocking, and requires immediate attention.",
     "Keep drawer workflows focused; use a full page when the content needs substantial navigation.",
   ],
   examples: [

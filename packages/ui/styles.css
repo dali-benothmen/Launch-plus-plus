@@ -6766,71 +6766,157 @@
   filter: drop-shadow(0 2px 1px rgb(0 0 0 / 5%));
 }
 
-.launch-ui-dialog-overlay {
+.launch-ui-modal-root {
   position: fixed;
-  z-index: 1000;
   inset: 0;
-  background: rgb(0 0 0 / 45%);
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+  pointer-events: none;
 }
 
-.launch-ui-dialog-overlay[data-state="open"] {
+.launch-ui-modal-root.is-hidden {
+  display: none;
+}
+
+.launch-ui-modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  pointer-events: auto;
+}
+
+.launch-ui-modal-mask.is-blurred {
+  backdrop-filter: blur(4px);
+}
+
+.launch-ui-modal-mask[data-state="open"] {
   animation: launch-ui-fade-in var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
-.launch-ui-dialog-overlay[data-state="closed"] {
+.launch-ui-modal-mask[data-state="closed"] {
   animation: launch-ui-fade-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
 }
 
-.launch-ui-dialog-content {
-  position: fixed;
-  z-index: 1001;
-  top: 50%;
+.launch-ui-modal-container {
+  position: absolute;
+  top: 100px;
   left: 50%;
-  width: min(calc(100vw - 32px), 520px);
+  display: flex;
+  width: min(calc(100vw - 32px), var(--launch-ui-modal-width, 520px));
+  max-height: calc(100vh - 132px);
+  box-sizing: border-box;
+  flex-direction: column;
+  overflow: hidden;
   padding: 20px 24px;
   border-radius: var(--launch-ui-radius-lg);
   background: var(--launch-ui-surface);
   box-shadow: var(--launch-ui-shadow-popup);
   color: var(--launch-ui-text);
-  font-family: var(--launch-ui-font);
+  pointer-events: auto;
+  transform: translateX(-50%);
+}
+
+.launch-ui-modal-container.is-centered {
+  top: 50%;
+  max-height: calc(100vh - 32px);
   transform: translate(-50%, -50%);
 }
 
-.launch-ui-dialog-content[data-state="open"] {
-  animation: launch-ui-dialog-in var(--launch-ui-mid) var(--launch-ui-ease);
+.launch-ui-modal-container[data-state="open"] {
+  animation: launch-ui-modal-in var(--launch-ui-mid) var(--launch-ui-ease);
 }
 
-.launch-ui-dialog-content[data-state="closed"] {
-  animation: launch-ui-dialog-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+.launch-ui-modal-container[data-state="closed"] {
+  animation: launch-ui-modal-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
 }
 
-.launch-ui-dialog-header {
+.launch-ui-modal-container.is-centered[data-state="open"] {
+  animation-name: launch-ui-modal-centered-in;
+}
+
+.launch-ui-modal-container.is-centered[data-state="closed"] {
+  animation-name: launch-ui-modal-centered-out;
+}
+
+.launch-ui-modal-header {
   display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 
-.launch-ui-dialog-header h2 {
+.launch-ui-modal-title {
+  min-width: 0;
+  flex: 1;
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
 }
 
-.launch-ui-dialog-header p {
-  margin: 4px 0 0;
-  color: var(--launch-ui-text-secondary);
-  font-size: 14px;
-  line-height: 22px;
+.launch-ui-modal-close {
+  flex: 0 0 auto;
+  margin: -6px -8px 0 0;
+  color: var(--launch-ui-text-tertiary);
 }
 
-.launch-ui-dialog-footer {
+.launch-ui-modal-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.launch-ui-modal-body > :first-child {
+  margin-top: 0;
+}
+
+.launch-ui-modal-body > :last-child {
+  margin-bottom: 0;
+}
+
+.launch-ui-modal-footer {
   display: flex;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding-top: 24px;
+  padding-top: 12px;
+}
+
+.launch-ui-modal-skeleton {
+  display: grid;
+  gap: 12px;
+  padding-block: 4px;
+}
+
+.launch-ui-modal-skeleton span {
+  height: 14px;
+  border-radius: var(--launch-ui-radius);
+  background: linear-gradient(
+    90deg,
+    var(--launch-ui-fill-tertiary) 25%,
+    var(--launch-ui-fill-secondary) 37%,
+    var(--launch-ui-fill-tertiary) 63%
+  );
+  background-size: 400% 100%;
+  animation: launch-ui-drawer-skeleton 1.4s ease infinite;
+}
+
+.launch-ui-modal-skeleton span:nth-child(1) {
+  width: 38%;
+}
+
+.launch-ui-modal-skeleton span:nth-child(3) {
+  width: 88%;
+}
+
+.launch-ui-modal-skeleton span:nth-child(4) {
+  width: 62%;
 }
 
 .launch-ui-drawer-root {
@@ -7743,14 +7829,28 @@
   }
 }
 
-@keyframes launch-ui-dialog-in {
+@keyframes launch-ui-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.98);
+  }
+}
+
+@keyframes launch-ui-modal-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -6px) scale(0.98);
+  }
+}
+
+@keyframes launch-ui-modal-centered-in {
   from {
     opacity: 0;
     transform: translate(-50%, calc(-50% - 8px)) scale(0.98);
   }
 }
 
-@keyframes launch-ui-dialog-out {
+@keyframes launch-ui-modal-centered-out {
   to {
     opacity: 0;
     transform: translate(-50%, calc(-50% - 6px)) scale(0.98);
@@ -7895,8 +7995,9 @@
   .launch-ui-timeline .launch-ui-loading-icon,
   .launch-ui-tooltip,
   .launch-ui-popover-container,
-  .launch-ui-dialog-overlay,
-  .launch-ui-dialog-content,
+  .launch-ui-modal-mask,
+  .launch-ui-modal-container,
+  .launch-ui-modal-skeleton span,
   .launch-ui-drawer-mask,
   .launch-ui-drawer-content,
   .launch-ui-drawer-resizer::after,

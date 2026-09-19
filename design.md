@@ -106,7 +106,7 @@ componentTokens:
     borderRadius: 8px
     headerHeight: 56px
     headerHeightSmall: 38px
-  dialog:
+  modal:
     enterDuration: 200ms
     exitDuration: 200ms
     exitDistance: 6px
@@ -585,9 +585,9 @@ Keep the title actionable and the description concise. A closable alert needs a 
 
 Modal content is white with an 8 px radius and the popup shadow. The mask is `rgba(0, 0, 0, 0.45)`. Titles are 16 px / 24 px at weight 600. Header and footer backgrounds remain transparent so the modal reads as one surface.
 
-Focus moves into the dialog, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
+Focus moves into the modal, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
 
-Open and close are symmetrical 200 ms transitions. The mask fades in and out; the surface fades and moves no more than 6 px while scaling subtly. The dialog remains mounted until its exit animation completes, preventing an abrupt disappearance.
+Open and close are symmetrical 200 ms transitions. The mask fades in and out; the surface fades and moves no more than 6 px while scaling subtly. The modal remains mounted until its exit animation completes, preventing an abrupt disappearance.
 
 ### Dropdown, popover, and tooltip
 
@@ -617,16 +617,15 @@ Do not stack several feedback mechanisms for one event.
 Our Radix/CSS components use stable semantic slots rather than exposing internal class names. Each component should provide a small, documented anatomy such as:
 
 ```text
-Dialog
+Modal
 ├── root
 ├── mask
-├── wrapper
-├── section
-│   ├── header
-│   │   ├── title
-│   │   └── close
-│   ├── body
-│   └── footer
+└── container
+    ├── header
+    │   ├── title
+    │   └── close
+    ├── body
+    └── footer
 ```
 
 The public styling surface should target these roles. DOM changes underneath must not break plugin styling. Prefer component props and tokens over descendant selectors.
@@ -686,7 +685,7 @@ Recommended MVP order:
 2. Input, textarea, select/combobox, checkbox, radio, switch, form field.
 3. Card, avatar, tag, badge, empty, skeleton, spinner.
 4. Menu, dropdown, tooltip, popover, tabs, breadcrumb.
-5. Dialog, drawer, alert, message, notification, confirm.
+5. Modal, drawer, alert, message, notification, confirm.
 6. Table and pagination.
 
 Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color pickers, QR codes, and advanced layout helpers should wait until a real Launch++ or plugin use case needs them.
@@ -696,7 +695,7 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 - Use semantic HTML first; Radix supplies behavior where native elements are insufficient.
 - Every control is keyboard operable and has a visible focus state.
 - Icon-only controls have accessible names.
-- Dialogs, popovers, menus, and comboboxes follow their expected ARIA patterns.
+- Modals, popovers, menus, and comboboxes follow their expected ARIA patterns.
 - Error, success, and selection never rely on color alone.
 - Touch targets may exceed the visible 24–32 px control through padding or a larger hit area.
 - Text and control contrast must be checked in our final Launch++ theme. Matching a source token does not waive our accessibility target.

@@ -5,9 +5,9 @@ import {
   type AutoCompleteOption,
   Button,
   Card,
-  Dialog,
   Input,
   LaunchProvider,
+  Modal,
   Table,
 } from "../src/index.js";
 import { CodeBlock } from "./code-block.js";
@@ -132,6 +132,7 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
 
 export function ShowcaseApp() {
   const [query, setQuery] = useState("");
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [stage, setStage] = useState<StageFilter>("all");
   const [selectedId, setSelectedId] = useState<string | undefined>(componentRegistry[0]?.id);
 
@@ -205,12 +206,17 @@ export function ShowcaseApp() {
           </label>
 
           <div className="showcase-header-actions">
-            <Dialog
-              description="Lifecycle labels communicate how ready a component is for public use."
+            <Button icon={<InfoCircleOutlined />} onClick={() => setLifecycleOpen(true)}>
+              Lifecycle stages
+            </Button>
+            <Modal
+              footer={null}
+              onCancel={() => setLifecycleOpen(false)}
+              open={lifecycleOpen}
               title="Lifecycle stages"
-              trigger={<Button icon={<InfoCircleOutlined />}>Lifecycle stages</Button>}
             >
               <div className="showcase-stage-dialog">
+                <p>Lifecycle labels communicate how ready a component is for public use.</p>
                 {showcaseStages.map((item) => (
                   <div key={item}>
                     <StageBadge stage={item} />
@@ -218,7 +224,7 @@ export function ShowcaseApp() {
                   </div>
                 ))}
               </div>
-            </Dialog>
+            </Modal>
           </div>
         </header>
 
