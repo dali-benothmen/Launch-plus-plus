@@ -157,6 +157,7 @@ export function Drawer(drawerProps: DrawerProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const resolvedOpen = open ?? internalOpen;
   const [hasOpened, setHasOpened] = useState(resolvedOpen);
+  const [exitComplete, setExitComplete] = useState(!resolvedOpen);
   const [resizeState, setResizeState] = useState<DrawerResizeState>();
   const panelRef = useRef<HTMLDivElement>(null);
   const lastCloseEvent = useRef<DrawerCloseEvent | undefined>(undefined);
@@ -179,10 +180,11 @@ export function Drawer(drawerProps: DrawerProps) {
     placement: _closePlacement,
     ...closeButtonAria
   } = closableConfig ?? {};
-  // Keeping a modal Radix overlay mounted also keeps its scroll and pointer locks mounted.
-  // Preserve hidden content only for drawers without a modal mask; masked drawers unmount after
-  // their exit animation so the page is always restored completely.
-  const keepMounted = !maskEnabled && (forceRender || (!destroyOnHidden && hasOpened));
+  // A masked drawer stays mounted only while its exit animation runs. Keeping it mounted after
+  // that point would also retain Radix's scroll and pointer locks.
+  const keepMounted = maskEnabled
+    ? !resolvedOpen && !exitComplete
+    : forceRender || (!destroyOnHidden && hasOpened);
   const container = resolveContainer(getContainer);
   const resizedSize =
     resizeState?.placement === placement && Object.is(resizeState.size, size)
@@ -191,8 +193,17 @@ export function Drawer(drawerProps: DrawerProps) {
   const drawerSize = resizedSize === undefined ? resolveSize(size) : `${resizedSize}px`;
 
   useEffect(() => {
-    if (resolvedOpen) setHasOpened(true);
+    if (resolvedOpen) {
+      setHasOpened(true);
+      setExitComplete(false);
+    }
   }, [resolvedOpen]);
+
+  useEffect(() => {
+    if (resolvedOpen || exitComplete || !maskEnabled) return;
+    const fallback = window.setTimeout(() => setExitComplete(true), 250);
+    return () => window.clearTimeout(fallback);
+  }, [exitComplete, maskEnabled, resolvedOpen]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (open === undefined) setInternalOpen(nextOpen);
@@ -276,6 +287,7 @@ export function Drawer(drawerProps: DrawerProps) {
         const nextState = event.currentTarget.getAttribute("data-state") === "open";
         if (lastAnimationState.current === nextState) return;
         lastAnimationState.current = nextState;
+        if (!nextState) setExitComplete(true);
         afterOpenChange?.(nextState);
       }}
       onCloseAutoFocus={(event) => {
