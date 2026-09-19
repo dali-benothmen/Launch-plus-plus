@@ -1,11 +1,9 @@
 import type { ProjectCatalog, WorkspaceContext } from "@launchpp/api-client";
-import { Alert, Button, Card, Form, Input, Select, Spin, Tag, Typography } from "@launchpp/ui";
+import { Alert, Button, Card, Form, Input, Spin, Tag, Typography } from "@launchpp/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
-
-const ungroupedValue = "__ungrouped__";
 
 export function MyWorkPage() {
   const api = useApiClient();
@@ -81,22 +79,12 @@ export function ProjectCreationEntryPage() {
   const api = useApiClient();
   const navigate = useNavigate();
   const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext>();
-  const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [name, setName] = useState("");
-  const [folderId, setFolderId] = useState(ungroupedValue);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
-    void api.workspaces
-      .list()
-      .then(async (context) => {
-        setWorkspaceContext(context);
-        if (context.currentWorkspaceId) {
-          setCatalog(await api.projects.list(context.currentWorkspaceId));
-        }
-      })
-      .catch(setError);
+    void api.workspaces.list().then(setWorkspaceContext).catch(setError);
   }, [api]);
 
   const createProject = async () => {
@@ -105,10 +93,7 @@ export function ProjectCreationEntryPage() {
     setSaving(true);
     setError(undefined);
     try {
-      const project = await api.projects.create(workspaceId, {
-        ...(folderId === ungroupedValue ? {} : { folderId }),
-        name,
-      });
+      const project = await api.projects.create(workspaceId, { name });
       window.dispatchEvent(new Event(projectNavigationChangedEvent));
       navigate(`/app/workspaces/${workspaceId}/projects/${project.id}`, { replace: true });
     } catch (reason) {
@@ -148,19 +133,6 @@ export function ProjectCreationEntryPage() {
             }}
             placeholder="Project name"
             value={name}
-          />
-        </Form.Item>
-        <Form.Item label="Folder">
-          <Select
-            onChange={(value) => setFolderId(String(value ?? ungroupedValue))}
-            options={[
-              { label: "Ungrouped", value: ungroupedValue },
-              ...(catalog?.folders.map((folder) => ({
-                label: folder.name,
-                value: folder.id,
-              })) ?? []),
-            ]}
-            value={folderId}
           />
         </Form.Item>
         <Button

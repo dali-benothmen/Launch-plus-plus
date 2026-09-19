@@ -1,6 +1,5 @@
 import type {
   ProjectCatalog,
-  ProjectFolderSummary,
   ProjectSummary,
   WorkspaceContext,
   WorkspaceSummary,
@@ -15,7 +14,6 @@ import {
   Input,
   message,
   Modal,
-  Select,
   Spin,
   Tree,
   type TreeDataNode,
@@ -26,41 +24,28 @@ import { useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
 type EditorState =
-  | Readonly<{ kind: "create-folder"; workspaceId: string }>
-  | Readonly<{ folder: ProjectFolderSummary; kind: "rename-folder"; workspaceId: string }>
-  | Readonly<{ folderId?: string; kind: "create-project"; workspaceId: string }>
+  | Readonly<{ kind: "create-project"; workspaceId: string }>
   | Readonly<{ kind: "rename-project"; project: ProjectSummary; workspaceId: string }>;
 
-type DeleteState =
-  | Readonly<{
-      folderId: string;
-      kind: "folder";
-      name: string;
-      workspaceId: string;
-    }>
-  | Readonly<{
-      kind: "project";
-      name: string;
-      projectId: string;
-      workspaceId: string;
-    }>;
+type DeleteState = Readonly<{
+  name: string;
+  projectId: string;
+  workspaceId: string;
+}>;
 
 interface NavigationTarget {
-  readonly folderId?: string;
-  readonly kind: "folder" | "project" | "section" | "workspace";
+  readonly kind: "project" | "section" | "workspace";
   readonly projectId?: string;
   readonly workspaceId: string;
 }
 
 const emptyCatalog: ProjectCatalog = { folders: [], projects: [], statuses: [] };
-const ungroupedValue = "__ungrouped__";
 export const projectNavigationChangedEvent = "launchpp:project-navigation-changed";
 
 function targetFromKey(key: string): NavigationTarget | undefined {
   const [kind, workspaceId, resourceId] = key.split(":");
   if (!workspaceId) return undefined;
   if (kind === "workspace") return { kind, workspaceId };
-  if (kind === "folder" && resourceId) return { folderId: resourceId, kind, workspaceId };
   if (kind === "project" && resourceId) return { kind, projectId: resourceId, workspaceId };
   if (kind === "section") return { kind, workspaceId };
   return undefined;
@@ -82,10 +67,6 @@ function workspaceNodes(
   const activeProjects = catalog.projects.filter((project) => project.archivedAt === undefined);
   const archivedProjects = catalog.projects.filter((project) => project.archivedAt !== undefined);
   const favorites = activeProjects.filter((project) => project.favorite);
-  const recent = activeProjects
-    .filter((project) => project.lastOpenedAt !== undefined)
-    .toSorted((first, second) => (second.lastOpenedAt ?? 0) - (first.lastOpenedAt ?? 0))
-    .slice(0, 5);
   const nodes: TreeDataNode[] = [];
 
   if (favorites.length > 0) {
@@ -97,39 +78,11 @@ function workspaceNodes(
       title: "Favorites",
     });
   }
-  if (recent.length > 0) {
-    nodes.push({
-      children: recent.map((project) => projectNode(project, "recent")),
-      isLeaf: false,
-      key: `section:${workspace.id}:recent`,
-      style: { marginBlock: 2 },
-      title: "Recent",
-    });
-  }
-  for (const folder of catalog.folders) {
-    nodes.push({
-      children: activeProjects
-        .filter((project) => project.folderId === folder.id)
-        .toSorted((first, second) => first.position - second.position)
-        .map((project) => projectNode(project, `folder-${folder.id}`)),
-      isLeaf: false,
-      key: `folder:${workspace.id}:${folder.id}`,
-      style: { marginBlock: 2 },
-      title: folder.name,
-    });
-  }
-  const ungrouped = activeProjects
-    .filter((project) => project.folderId === undefined)
-    .toSorted((first, second) => first.position - second.position);
-  if (ungrouped.length > 0) {
-    nodes.push({
-      children: ungrouped.map((project) => projectNode(project, "ungrouped")),
-      isLeaf: false,
-      key: `section:${workspace.id}:ungrouped`,
-      style: { marginBlock: 2 },
-      title: "Ungrouped",
-    });
-  }
+  nodes.push(
+    ...activeProjects
+      .toSorted((first, second) => first.position - second.position)
+      .map((project) => projectNode(project, "workspace")),
+  );
   if (archivedProjects.length > 0) {
     nodes.push({
       children: archivedProjects.map((project) => projectNode(project, "archived")),
@@ -163,7 +116,6 @@ export function ProjectSidebar() {
   const [renamingWorkspace, setRenamingWorkspace] = useState(false);
   const [editor, setEditor] = useState<EditorState>();
   const [editorName, setEditorName] = useState("");
-  const [editorFolderId, setEditorFolderId] = useState(ungroupedValue);
   const [editorError, setEditorError] = useState<unknown>();
   const [savingEditor, setSavingEditor] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteState>();
@@ -215,30 +167,18 @@ export function ProjectSidebar() {
   const catalogFor = (workspaceId: string) => catalogs[workspaceId] ?? emptyCatalog;
   const projectFor = (workspaceId: string, projectId: string) =>
     catalogFor(workspaceId).projects.find((project) => project.id === projectId);
-  const folderFor = (workspaceId: string, folderId: string) =>
-    catalogFor(workspaceId).folders.find((folder) => folder.id === folderId);
 
   const openEditor = (state: EditorState) => {
     defer(() => {
       setEditorError(undefined);
       setEditor(state);
-      if (state.kind === "rename-folder") setEditorName(state.folder.name);
-      else if (state.kind === "rename-project") {
-        setEditorName(state.project.name);
-        setEditorFolderId(state.project.folderId ?? ungroupedValue);
-      } else {
-        setEditorName("");
-        setEditorFolderId(
-          state.kind === "create-project" ? (state.folderId ?? ungroupedValue) : ungroupedValue,
-        );
-      }
+      setEditorName(state.kind === "rename-project" ? state.project.name : "");
     });
   };
 
   const closeEditor = () => {
     setEditor(undefined);
     setEditorName("");
-    setEditorFolderId(ungroupedValue);
     setEditorError(undefined);
   };
 
@@ -258,15 +198,6 @@ export function ProjectSidebar() {
       .then(loadNavigation)
       .catch(() => undefined);
     navigate(`/app/workspaces/${workspaceId}/projects/${projectId}`);
-  };
-
-  const moveFolder = (workspaceId: string, folderId: string, direction: -1 | 1) => {
-    const ids = catalogFor(workspaceId).folders.map((folder) => folder.id);
-    const index = ids.indexOf(folderId);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
-    [ids[index], ids[nextIndex]] = [ids[nextIndex]!, ids[index]!];
-    void runAction(() => api.projects.reorderFolders(workspaceId, ids), "Folder order updated.");
   };
 
   const moveProject = (workspaceId: string, projectId: string, direction: -1 | 1) => {
@@ -318,11 +249,6 @@ export function ProjectSidebar() {
           label: "Create project",
           onClick: () => openEditor({ kind: "create-project", workspaceId: target.workspaceId }),
         },
-        {
-          key: "create-folder",
-          label: "Create folder",
-          onClick: () => openEditor({ kind: "create-folder", workspaceId: target.workspaceId }),
-        },
         { key: "toggle-workspace", label: isExpanded ? "Close" : "Open", onClick: toggle },
         { type: "divider" },
         {
@@ -345,61 +271,6 @@ export function ProjectSidebar() {
 
     if (target.kind === "section") {
       return [{ key: "toggle-section", label: isExpanded ? "Close" : "Open", onClick: toggle }];
-    }
-
-    if (target.kind === "folder" && target.folderId) {
-      const folder = folderFor(target.workspaceId, target.folderId);
-      const folders = catalogFor(target.workspaceId).folders;
-      const index = folders.findIndex((item) => item.id === target.folderId);
-      if (!folder) return [];
-      return [
-        {
-          key: "create-project",
-          label: "Create project",
-          onClick: () =>
-            openEditor({
-              folderId: folder.id,
-              kind: "create-project",
-              workspaceId: target.workspaceId,
-            }),
-        },
-        { key: "toggle-folder", label: isExpanded ? "Close" : "Open", onClick: toggle },
-        { type: "divider" },
-        {
-          disabled: index <= 0,
-          key: "move-folder-up",
-          label: "Move up",
-          onClick: () => moveFolder(target.workspaceId, folder.id, -1),
-        },
-        {
-          disabled: index < 0 || index >= folders.length - 1,
-          key: "move-folder-down",
-          label: "Move down",
-          onClick: () => moveFolder(target.workspaceId, folder.id, 1),
-        },
-        {
-          key: "rename-folder",
-          label: "Rename",
-          onClick: () =>
-            openEditor({ folder, kind: "rename-folder", workspaceId: target.workspaceId }),
-        },
-        {
-          danger: true,
-          key: "delete-folder",
-          label: "Delete folder",
-          onClick: () =>
-            defer(() =>
-              setDeleteTarget({
-                folderId: folder.id,
-                kind: "folder",
-                name: folder.name,
-                workspaceId: target.workspaceId,
-              }),
-            ),
-        },
-        { type: "divider" },
-        { key: "folder-properties", label: "Properties", onClick: openProperties },
-      ];
     }
 
     if (target.kind === "project" && target.projectId) {
@@ -443,7 +314,7 @@ export function ProjectSidebar() {
               },
               {
                 key: "rename-project",
-                label: "Rename or move",
+                label: "Rename",
                 onClick: () =>
                   openEditor({
                     kind: "rename-project",
@@ -482,7 +353,6 @@ export function ProjectSidebar() {
           onClick: () =>
             defer(() =>
               setDeleteTarget({
-                kind: "project",
                 name: project.name,
                 projectId: project.id,
                 workspaceId: target.workspaceId,
@@ -537,25 +407,11 @@ export function ProjectSidebar() {
     setSavingEditor(true);
     setEditorError(undefined);
     try {
-      if (editor.kind === "create-folder") {
-        const folder = await api.projects.createFolder(editor.workspaceId, editorName);
-        messageApi.success(`${folder.name} created.`);
-      } else if (editor.kind === "rename-folder") {
-        const folder = await api.projects.renameFolder(
-          editor.workspaceId,
-          editor.folder.id,
-          editorName,
-        );
-        messageApi.success(`${folder.name} renamed.`);
-      } else if (editor.kind === "create-project") {
-        const project = await api.projects.create(editor.workspaceId, {
-          ...(editorFolderId === ungroupedValue ? {} : { folderId: editorFolderId }),
-          name: editorName,
-        });
+      if (editor.kind === "create-project") {
+        const project = await api.projects.create(editor.workspaceId, { name: editorName });
         messageApi.success(`${project.name} created.`);
       } else {
         const project = await api.projects.update(editor.workspaceId, editor.project.id, {
-          folderId: editorFolderId === ungroupedValue ? null : editorFolderId,
           name: editorName,
         });
         messageApi.success(`${project.name} updated.`);
@@ -573,14 +429,9 @@ export function ProjectSidebar() {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      if (deleteTarget.kind === "folder") {
-        await api.projects.deleteFolder(deleteTarget.workspaceId, deleteTarget.folderId);
-        messageApi.success(`${deleteTarget.name} removed. Its projects are now ungrouped.`);
-      } else {
-        await api.projects.delete(deleteTarget.workspaceId, deleteTarget.projectId);
-        messageApi.success(`${deleteTarget.name} deleted.`);
-        navigate("/app");
-      }
+      await api.projects.delete(deleteTarget.workspaceId, deleteTarget.projectId);
+      messageApi.success(`${deleteTarget.name} deleted.`);
+      navigate("/app");
       setDeleteTarget(undefined);
       window.dispatchEvent(new Event(projectNavigationChangedEvent));
     } catch (reason) {
@@ -590,25 +441,7 @@ export function ProjectSidebar() {
     }
   };
 
-  const editorWorkspaceId = editor?.workspaceId;
-  const folderOptions = [
-    { label: "Ungrouped", value: ungroupedValue },
-    ...(editorWorkspaceId
-      ? catalogFor(editorWorkspaceId).folders.map((folder) => ({
-          label: folder.name,
-          value: folder.id,
-        }))
-      : []),
-  ];
-  const editorIsProject = editor?.kind === "create-project" || editor?.kind === "rename-project";
-  const editorTitle =
-    editor?.kind === "create-folder"
-      ? "Create folder"
-      : editor?.kind === "rename-folder"
-        ? "Rename folder"
-        : editor?.kind === "create-project"
-          ? "Create project"
-          : "Rename or move project";
+  const editorTitle = editor?.kind === "create-project" ? "Create project" : "Rename project";
 
   return (
     <>
@@ -787,25 +620,16 @@ export function ProjectSidebar() {
               : {})}
           >
             <Input
-              maxLength={editorIsProject ? 120 : 80}
+              maxLength={120}
               onChange={(event) => {
                 setEditorName(event.target.value);
                 setEditorError(undefined);
               }}
-              placeholder={editorIsProject ? "Project name" : "Folder name"}
+              placeholder="Project name"
               {...(editorError ? { status: "error" as const } : {})}
               value={editorName}
             />
           </Form.Item>
-          {editorIsProject ? (
-            <Form.Item label="Folder">
-              <Select
-                onChange={(value) => setEditorFolderId(String(value ?? ungroupedValue))}
-                options={folderOptions}
-                value={editorFolderId}
-              />
-            </Form.Item>
-          ) : null}
         </Form>
       </Modal>
 
@@ -816,12 +640,10 @@ export function ProjectSidebar() {
         onCancel={() => setDeleteTarget(undefined)}
         onOk={() => void confirmDelete()}
         open={deleteTarget !== undefined}
-        title={deleteTarget?.kind === "folder" ? "Delete folder" : "Delete project"}
+        title="Delete project"
       >
         <Typography.Paragraph>
-          {deleteTarget?.kind === "folder"
-            ? `Delete ${deleteTarget.name}? Its projects will become ungrouped.`
-            : `Delete ${deleteTarget?.name ?? "this project"}? This action removes it from ordinary navigation.`}
+          {`Delete ${deleteTarget?.name ?? "this project"}? This action removes it from ordinary navigation.`}
         </Typography.Paragraph>
       </Modal>
 
@@ -833,9 +655,7 @@ export function ProjectSidebar() {
         title={
           String(propertiesNode?.key).startsWith("project:")
             ? "Project properties"
-            : String(propertiesNode?.key).startsWith("folder:")
-              ? "Folder properties"
-              : "Workspace properties"
+            : "Workspace properties"
         }
       >
         <Typography.Paragraph>

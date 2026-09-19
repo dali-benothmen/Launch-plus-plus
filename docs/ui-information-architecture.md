@@ -56,7 +56,7 @@ The second sidebar changes with the selected global area:
 
 | Area | Context sidebar contents |
 | --- | --- |
-| My Work | Project search, favorites/recent projects, project folders, ungrouped projects, archived entry |
+| My Work | Project search, favorite projects, workspace projects, archived entry |
 | Selected project | The same project tree, keeping project switching immediate |
 | Calendar | Calendar/project visibility filters and saved calendar choices when supported |
 | Members | All members, pending invitations, role filters, and deactivated members when supported |
@@ -65,7 +65,7 @@ The second sidebar changes with the selected global area:
 
 Replacing the sidebar by context prevents Settings or Members from creating a third navigation column. The layout should not show both a project tree and a settings tree simultaneously.
 
-## Project tree and folders
+## Project tree
 
 During ordinary work, the contextual sidebar is the project browser. A separate top-level Projects page is not required initially.
 
@@ -75,11 +75,9 @@ The project sidebar contains:
 - Projects represented as files beneath their workspace.
 - A compact create-workspace action; project creation is added with the project slice.
 - Project search.
-- Favorites or recent projects.
-- Workspace project folders.
-- Projects that have no folder.
+- Favorite projects.
 - Archived projects entry.
-- Folder and project actions through contextual menus.
+- Workspace and project actions through contextual menus.
 
 An example structure is:
 
@@ -87,29 +85,23 @@ An example structure is:
 Personal Workspace
   Favorites
     Launch++
-  Product
-    Launch++ Web
-    Launch++ API
-  Ungrouped
-    Internal tools
+  Launch++
+  Launch++ Web
+  Internal tools
 
 Client Workspace
-  Clients
-    Acme Website
-    Northstar App
+  Acme Website
+  Northstar App
 ```
 
-V1 folders have a deliberately small contract:
+The V1 hierarchy has a deliberately small contract:
 
-- One folder level; folders cannot contain other folders.
-- A project belongs to zero or one folder.
-- Folders can be created, renamed, reordered, collapsed, and removed.
-- Projects can be reordered and moved between folders.
-- Removing a folder does not delete its projects; they become ungrouped.
-- Folders organize navigation only. They do not inherit permissions, settings, workflows, or plugin enablement.
-- Favorites and recent projects are virtual sections, not folders stored in the project hierarchy.
+- The workspace is the only folder boundary; users do not create folders inside it.
+- Every project belongs directly to one workspace.
+- Projects can be reordered within their workspace.
+- Favorites and Archived are virtual sections, not folders stored in the project hierarchy.
 
-This preserves an easy path to portfolios or deeper organization later without turning the first project model into an enterprise hierarchy.
+This keeps project discovery immediate and avoids introducing hierarchy management into the MVP.
 
 ## Public and authentication pages
 
@@ -414,7 +406,7 @@ All primary operations work without drag and drop. URLs identify workspace, proj
 ## Explicitly deferred
 
 - Dedicated top-level Projects page while the project sidebar provides browsing and creation.
-- Deeply nested project folders.
+- User-created project folders.
 - Folder-based permissions, workflows, or plugin inheritance.
 - Customizable My Work/dashboard widgets.
 - Core reporting, roadmaps, Gantt, CRM, billing, or automation pages.
@@ -431,7 +423,7 @@ These may be introduced later or through plugins without changing the stable she
 - Desktop uses a narrow global icon rail and one independently collapsible contextual sidebar.
 - The project tree occupies the contextual sidebar during ordinary work; Calendar, Members, and Settings replace its contents with area-specific navigation.
 - The project tree is sufficient for initial project discovery, so a separate Projects page is deferred.
-- Project folders are one level and organizational only.
+- Workspaces directly contain projects; user-created project folders are deferred.
 - Authentication uses a split form/presentation layout on wide screens.
 - Onboarding is path-aware and ends at useful project work quickly.
 - Board, List, and plugin project views share one project page and header.
@@ -447,7 +439,7 @@ The first usability review should verify:
 
 - Whether the icon-only rail remains understandable with tooltips and keyboard focus.
 - Whether users understand why the contextual sidebar changes by product area.
-- Whether one-level folders organize realistic project sets without encouraging deep hierarchy.
+- Whether direct workspace-to-project navigation remains clear for realistic project sets.
 - Whether My Work is a better default than reopening the last project.
 - Whether the two-row project header remains calm after several plugin views are enabled.
 - Whether the route-backed task panel preserves enough Board/List context at common laptop widths.

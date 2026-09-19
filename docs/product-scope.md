@@ -154,7 +154,7 @@ The complete page and navigation model is defined in [UI information architectur
 The desktop product shell has three stable columns plus contextual surfaces:
 
 - **Global icon rail:** workspace switcher, product areas, approved extension pages, settings, and user menu.
-- **Context sidebar:** project folders/tree during ordinary work, replaced by local navigation for Calendar, Members, and Settings.
+- **Context sidebar:** workspace/project tree during ordinary work, replaced by local navigation for Calendar, Members, and Settings.
 - **Main content:** My Work, the selected project view, Members, Settings, or a plugin page.
 - **Contextual surfaces:** task details, dialogs, menus, panels, and notifications.
 
