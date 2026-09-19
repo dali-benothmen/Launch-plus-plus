@@ -6114,6 +6114,10 @@
   font-size: 14px;
 }
 
+.launch-ui-tree-icon.is-expandable {
+  cursor: pointer;
+}
+
 .launch-ui-tree-title {
   min-width: 0;
   min-height: 24px;
