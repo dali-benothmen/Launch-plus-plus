@@ -7018,6 +7018,180 @@
   margin-top: 12px;
 }
 
+.launch-ui-progress {
+  box-sizing: border-box;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-progress.is-line {
+  display: inline-block;
+  width: 100%;
+}
+
+.launch-ui-progress.is-line.has-steps {
+  width: auto;
+}
+
+.launch-ui-progress.is-line.has-steps .launch-ui-progress-body {
+  width: auto;
+}
+
+.launch-ui-progress-body {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+}
+
+.launch-ui-progress-body.is-info-below {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.launch-ui-progress-body.is-info-below > .launch-ui-progress-rail {
+  flex-basis: 100%;
+}
+
+.launch-ui-progress-body.is-info-below > .launch-ui-progress-indicator {
+  width: 100%;
+  text-align: center;
+}
+
+.launch-ui-progress-rail {
+  position: relative;
+  display: block;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.launch-ui-progress-track {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  overflow: hidden;
+  transition: width 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-progress-track.is-success-segment {
+  z-index: 1;
+}
+
+.launch-ui-progress.is-active .launch-ui-progress-track:not(.is-success-segment)::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: launch-ui-progress-active 2.4s var(--launch-ui-ease) infinite;
+  background: #fff;
+  content: "";
+  opacity: 0;
+}
+
+.launch-ui-progress-indicator {
+  display: inline-flex;
+  min-width: 2em;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--launch-ui-text);
+  white-space: nowrap;
+}
+
+.launch-ui-progress-indicator.is-inner {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  padding-inline: 8px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.launch-ui-progress-indicator.is-inner.is-align-start {
+  justify-content: flex-start;
+}
+
+.launch-ui-progress-indicator.is-inner.is-align-end {
+  justify-content: flex-end;
+}
+
+.launch-ui-progress.is-success > .launch-ui-progress-body > .launch-ui-progress-indicator,
+.launch-ui-progress.is-success
+  > .launch-ui-progress-body
+  > .launch-ui-progress-rail
+  > .launch-ui-progress-indicator {
+  color: var(--launch-ui-success);
+}
+
+.launch-ui-progress.is-exception > .launch-ui-progress-body > .launch-ui-progress-indicator,
+.launch-ui-progress.is-exception
+  > .launch-ui-progress-body
+  > .launch-ui-progress-rail
+  > .launch-ui-progress-indicator {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-progress.is-small .launch-ui-progress-indicator {
+  font-size: 12px;
+}
+
+.launch-ui-progress-steps {
+  display: flex;
+  align-items: center;
+}
+
+.launch-ui-progress-step {
+  display: block;
+  min-width: 2px;
+  flex: none;
+  transition: background-color 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-progress.is-circle,
+.launch-ui-progress.is-dashboard {
+  display: inline-block;
+  line-height: 1;
+}
+
+.launch-ui-progress-circle-body {
+  position: relative;
+  display: inline-block;
+}
+
+.launch-ui-progress-circle-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.launch-ui-progress-circle-rail,
+.launch-ui-progress-circle-track {
+  transition:
+    stroke 300ms var(--launch-ui-ease),
+    stroke-dasharray 300ms var(--launch-ui-ease),
+    stroke-dashoffset 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-progress-circle-body > .launch-ui-progress-indicator {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  font-size: 1em;
+  text-align: center;
+}
+
+.launch-ui-progress.is-success > .launch-ui-progress-circle-body > .launch-ui-progress-indicator {
+  color: var(--launch-ui-success);
+}
+
+.launch-ui-progress.is-exception > .launch-ui-progress-circle-body > .launch-ui-progress-indicator {
+  color: var(--launch-ui-error);
+}
+
 .launch-ui-modal-root {
   position: fixed;
   inset: 0;
@@ -8242,6 +8416,23 @@
   }
 }
 
+@keyframes launch-ui-progress-active {
+  0% {
+    transform: translateX(-100%) scaleX(0);
+    opacity: 0.1;
+  }
+
+  45% {
+    transform: translateX(0) scaleX(1);
+    opacity: 0.25;
+  }
+
+  100% {
+    transform: translateX(100%) scaleX(0);
+    opacity: 0;
+  }
+}
+
 @keyframes launch-ui-spin {
   to {
     transform: rotate(360deg);
@@ -8302,6 +8493,11 @@
   .launch-ui-timeline .launch-ui-loading-icon,
   .launch-ui-tooltip,
   .launch-ui-popover-container,
+  .launch-ui-progress-circle-rail,
+  .launch-ui-progress-circle-track,
+  .launch-ui-progress-step,
+  .launch-ui-progress-track,
+  .launch-ui-progress-track::after,
   .launch-ui-modal-mask,
   .launch-ui-modal-container,
   .launch-ui-modal-skeleton span,
