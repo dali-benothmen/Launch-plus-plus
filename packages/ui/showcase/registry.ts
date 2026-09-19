@@ -33,6 +33,7 @@ import { popoverShowcase } from "./components/popover.showcase.js";
 import { popconfirmShowcase } from "./components/popconfirm.showcase.js";
 import { progressShowcase } from "./components/progress.showcase.js";
 import { radioShowcase } from "./components/radio.showcase.js";
+import { resultShowcase } from "./components/result.showcase.js";
 import { segmentedShowcase } from "./components/segmented.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
 import { skeletonShowcase } from "./components/skeleton.showcase.js";
@@ -101,6 +102,7 @@ export const componentRegistry = defineShowcases([
   notificationShowcase,
   popconfirmShowcase,
   progressShowcase,
+  resultShowcase,
   skeletonShowcase,
   spinShowcase,
   dropdownMenuShowcase,

@@ -32,6 +32,7 @@ export * from "./popover/index.js";
 export * from "./popconfirm/index.js";
 export * from "./progress/index.js";
 export * from "./radio/index.js";
+export * from "./result/index.js";
 export * from "./segmented/index.js";
 export * from "./select/index.js";
 export * from "./skeleton/index.js";
