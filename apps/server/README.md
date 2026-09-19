@@ -11,7 +11,7 @@ pnpm start:server
 
 The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp.sqlite`. Liveness is available at `/health/live`; readiness is available at `/health/ready`. Readiness becomes true only after the listener and migrated SQLite composition are available, and becomes false before graceful shutdown begins. Closing the server releases the Better Auth and application database connections after in-flight work.
 
-On an empty database, startup logs a one-time first-owner setup token that expires after 30 minutes. Open the web application, enter that token on the setup screen, and create the owner account. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.
+On an empty database, startup logs a one-time first-owner setup token that expires after 30 minutes. The raw value is released after that single log entry; only its hash remains in memory for validation. Open the web application, enter the token on the setup screen, and create the owner account. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.
 
 ## Configuration
 

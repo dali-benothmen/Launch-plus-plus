@@ -21,4 +21,4 @@ Vite proxies `/health` and `/api` to `http://127.0.0.1:3000`. A production clien
 - `LaunchProvider` maps light/dark semantic values into Ant Design and places `data-launch-theme` on the root document.
 - The narrow-screen shell keeps the global rail and collapses the empty project pane; the complete mobile drawer behavior belongs to the authenticated-shell milestone.
 
-The root route resolves installation and session state before choosing the first-owner setup, sign-in, or authenticated application route. Successful setup continues directly toward first-project creation; there is no questionnaire onboarding or Calendar route. My Work, Members, and Settings remain intentional placeholders for their delivery slices.
+The root route resolves installation and session state before choosing the first-owner setup, sign-in, or authenticated application route. Successful setup lands on the protected first-project creation entry route; the complete workspace-backed creation form belongs to its later product task. There is no questionnaire onboarding or Calendar route. My Work, Members, and Settings remain intentional placeholders for their delivery slices.

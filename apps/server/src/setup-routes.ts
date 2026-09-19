@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import { CreateInstallationService } from "@launchpp/core";
 import {
@@ -52,8 +52,8 @@ async function forwardResponse(response: Response, reply: import("fastify").Fast
 }
 
 export interface SetupCoordinator {
-  readonly token: string | undefined;
   register(app: FastifyInstance): Promise<void>;
+  takeToken(): string | undefined;
 }
 
 export function createSetupCoordinator(input: {
@@ -66,7 +66,10 @@ export function createSetupCoordinator(input: {
   let initialized = input.database.read(
     (context) => installations.findFirst(context) !== undefined,
   );
-  let setupToken = initialized ? undefined : randomBytes(32).toString("base64url");
+  let printableSetupToken = initialized ? undefined : randomBytes(32).toString("base64url");
+  let setupTokenHash = printableSetupToken
+    ? createHash("sha256").update(printableSetupToken).digest()
+    : undefined;
   const expiresAt = Date.now() + 30 * 60 * 1000;
   let setupInProgress = false;
   const service = new CreateInstallationService({
@@ -78,9 +81,6 @@ export function createSetupCoordinator(input: {
   });
 
   return {
-    get token() {
-      return setupToken;
-    },
     async register(app) {
       app.addHook("preHandler", async (request, reply) => {
         const path = request.url.split("?", 1)[0];
@@ -128,13 +128,9 @@ export function createSetupCoordinator(input: {
               .status(403)
               .send({ code: "origin_rejected", message: "The request origin was rejected." });
           }
-          const supplied = Buffer.from(request.body.setupToken);
-          const expected = Buffer.from(setupToken ?? "");
-          if (
-            Date.now() > expiresAt ||
-            supplied.length !== expected.length ||
-            !timingSafeEqual(supplied, expected)
-          ) {
+          const supplied = createHash("sha256").update(request.body.setupToken).digest();
+          const expected = setupTokenHash;
+          if (Date.now() > expiresAt || !expected || !timingSafeEqual(supplied, expected)) {
             return reply.status(403).send({
               code: "invalid_setup_token",
               message: "The setup token is invalid or expired.",
@@ -162,7 +158,7 @@ export function createSetupCoordinator(input: {
             if (!session) throw new Error("Owner session was not created during setup");
             await service.execute({ actorId: session.identity.id, correlationId: request.id });
             initialized = true;
-            setupToken = undefined;
+            setupTokenHash = undefined;
             return forwardResponse(authResponse, reply);
           } finally {
             setupInProgress = false;
@@ -180,6 +176,11 @@ export function createSetupCoordinator(input: {
         email: false,
         operatorRecovery: true,
       }));
+    },
+    takeToken() {
+      const token = printableSetupToken;
+      printableSetupToken = undefined;
+      return token;
     },
   };
 }

@@ -41,11 +41,9 @@ export async function buildApplicationServer(
       identity: identity.adapter,
     });
     await setup.register(app);
-    if (setup.token) {
-      app.log.warn(
-        { expiresInMinutes: 30, setupToken: setup.token },
-        "first-owner setup token generated",
-      );
+    const setupToken = setup.takeToken();
+    if (setupToken) {
+      app.log.warn({ expiresInMinutes: 30, setupToken }, "first-owner setup token generated");
     }
     await registerBetterAuthRoutes(app, identity.adapter);
     app.addHook("onClose", async () => {

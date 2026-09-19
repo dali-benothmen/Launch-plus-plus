@@ -3,7 +3,6 @@ import type { ThemeMode } from "@launchpp/ui-tokens";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createBrowserRouter,
-  Navigate,
   type RouteObject,
   RouterProvider,
   type RouterProviderProps,
@@ -14,11 +13,12 @@ import { ApiClientProvider } from "./api-client-context.js";
 import {
   AuthenticatedRoute,
   EntryRedirect,
+  InstallationBoundary,
   RecoveryPage,
   SetupPage,
   SignInPage,
 } from "./auth-pages.js";
-import { MembersPage, MyWorkPage, SettingsPage } from "./pages.js";
+import { MembersPage, MyWorkPage, ProjectCreationEntryPage, SettingsPage } from "./pages.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
@@ -27,9 +27,30 @@ export const appRoutes: RouteObject[] = [
     path: "/",
     element: <EntryRedirect />,
   },
-  { path: "/setup", element: <SetupPage /> },
-  { path: "/sign-in", element: <SignInPage /> },
-  { path: "/recover", element: <RecoveryPage /> },
+  {
+    path: "/setup",
+    element: (
+      <InstallationBoundary requiresSetup>
+        <SetupPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
+    path: "/sign-in",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <SignInPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
+    path: "/recover",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <RecoveryPage />
+      </InstallationBoundary>
+    ),
+  },
   {
     path: "/app",
     element: (
@@ -41,7 +62,7 @@ export const appRoutes: RouteObject[] = [
       { index: true, element: <MyWorkPage /> },
       {
         path: "projects/new",
-        element: <Navigate replace to="/app" />,
+        element: <ProjectCreationEntryPage />,
       },
       { path: "members", element: <MembersPage /> },
       { path: "settings", element: <SettingsPage /> },

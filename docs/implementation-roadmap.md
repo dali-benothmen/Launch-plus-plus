@@ -1,6 +1,6 @@
 # Launch++ implementation roadmap
 
-Status: proposed execution plan derived from the accepted product and architecture documents. No application implementation exists yet.
+Status: active execution plan derived from the accepted product and architecture documents.
 
 This document turns the target architecture into ordered phases and checkable tasks. It is the delivery-level source of truth; subsystem documents remain authoritative for their contracts. Relevant inputs are the [product scope](./product-scope.md), [system architecture](./system-architecture.md), [plugin system](./plugin-system-design.md), [plugin UI system](./plugin-ui-system.md), [plugin storage](./plugin-storage-design.md), [plugin CLI](./plugin-cli-design.md), [theme system](./theme-system-design.md), [security and operations](./security-and-operations.md), and [development guide](./development-and-delivery.md).
 
@@ -113,7 +113,7 @@ All Phase 0 exit conditions pass on a clean machine.
 
 ### Tasks
 
-- [ ] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and direct redirect to project creation. Do not add questionnaire-style onboarding.
+- [x] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and direct redirect to project creation. Do not add questionnaire-style onboarding.
 - [ ] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
 - [ ] **P1-03 — Implement projects, folders, and statuses.** Add project CRUD/archive, one-level navigation folders, ordering, favorite/recent behavior, and default ordered statuses with database invariants.
 - [ ] **P1-04 — Implement the task domain.** Add tasks, subtasks, status movement, assignees, labels, due dates, revisions, archive/restore, ordering, and optimistic-concurrency errors through application services.

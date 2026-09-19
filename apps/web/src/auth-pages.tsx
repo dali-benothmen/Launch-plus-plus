@@ -45,6 +45,41 @@ function ErrorMessage({ error }: { readonly error: unknown }) {
   return error instanceof Error ? <Alert title={error.message} type="error" /> : null;
 }
 
+export function InstallationBoundary({
+  children,
+  requiresSetup,
+}: PropsWithChildren<{ readonly requiresSetup: boolean }>) {
+  const api = useApiClient();
+  const [currentState, setCurrentState] = useState<boolean>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    let active = true;
+    void api.setup
+      .status()
+      .then((status) => {
+        if (active) setCurrentState(status.requiresSetup);
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(reason);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  if (error) {
+    return (
+      <AuthLayout title="Unable to load Launch++">
+        <ErrorMessage error={error} />
+      </AuthLayout>
+    );
+  }
+  if (currentState === undefined) return <Spin fullscreen description="Loading Launch++" />;
+  if (currentState !== requiresSetup) return <Navigate replace to="/" />;
+  return children;
+}
+
 export function EntryRedirect() {
   const api = useApiClient();
   const [destination, setDestination] = useState<string>();
@@ -86,19 +121,25 @@ export function EntryRedirect() {
 export function AuthenticatedRoute({ children }: PropsWithChildren) {
   const api = useApiClient();
   const location = useLocation();
-  const [authenticated, setAuthenticated] = useState<boolean>();
+  const [access, setAccess] = useState<"anonymous" | "authenticated" | "loading" | "setup">(
+    "loading",
+  );
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
     let active = true;
-    void api.auth
-      .session()
-      .then((session) => {
-        if (active) setAuthenticated(session !== null);
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(reason);
-      });
+    void (async () => {
+      const status = await api.setup.status();
+      if (!active) return;
+      if (status.requiresSetup) {
+        setAccess("setup");
+        return;
+      }
+      const session = await api.auth.session();
+      if (active) setAccess(session ? "authenticated" : "anonymous");
+    })().catch((reason: unknown) => {
+      if (active) setError(reason);
+    });
     return () => {
       active = false;
     };
@@ -111,8 +152,11 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
       </AuthLayout>
     );
   }
-  if (authenticated === undefined) return <Spin fullscreen description="Loading session" />;
-  if (!authenticated) return <Navigate replace state={{ from: location.pathname }} to="/sign-in" />;
+  if (access === "loading") return <Spin fullscreen description="Loading session" />;
+  if (access === "setup") return <Navigate replace to="/setup" />;
+  if (access === "anonymous") {
+    return <Navigate replace state={{ from: location.pathname }} to="/sign-in" />;
+  }
   return children;
 }
 
@@ -231,14 +275,40 @@ export function SignInPage() {
 }
 
 export function RecoveryPage() {
+  const api = useApiClient();
+  const [capabilities, setCapabilities] = useState<{
+    readonly email: boolean;
+    readonly operatorRecovery: boolean;
+  }>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    let active = true;
+    void api.auth
+      .recoveryCapabilities()
+      .then((result) => {
+        if (active) setCapabilities(result);
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(reason);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
   return (
     <AuthLayout title="Recover access">
-      <Alert
-        description="Email recovery is not configured yet. Ask the installation operator to restore access locally."
-        showIcon
-        title="Operator recovery required"
-        type="info"
-      />
+      <ErrorMessage error={error} />
+      {!error && !capabilities ? <Spin description="Checking recovery options" /> : null}
+      {capabilities && !capabilities.email && capabilities.operatorRecovery ? (
+        <Alert
+          description="Email recovery is not configured yet. Ask the installation operator to restore access locally."
+          showIcon
+          title="Operator recovery required"
+          type="info"
+        />
+      ) : null}
       <div className="auth-recovery-action">
         <Link to="/sign-in">Return to sign in</Link>
       </div>
