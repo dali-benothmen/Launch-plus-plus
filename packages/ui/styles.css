@@ -4096,6 +4096,7 @@
 .launch-ui-select-content {
   position: fixed;
   overflow: visible;
+  pointer-events: auto;
 }
 
 .launch-ui-select-content.is-top {
