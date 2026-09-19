@@ -2,8 +2,6 @@ import "../styles.css";
 
 export {
   AppstoreOutlined as ProjectsIcon,
-  FolderOpenOutlined as FolderOpenIcon,
-  FolderOutlined as FolderIcon,
   HomeOutlined as HomeIcon,
   MoonOutlined as DarkThemeIcon,
   PlusOutlined as AddIcon,

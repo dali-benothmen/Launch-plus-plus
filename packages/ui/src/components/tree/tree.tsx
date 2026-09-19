@@ -575,7 +575,7 @@ function TreeInner(treeProps: TreeProps, forwardedRef: ForwardedRef<TreeRef>) {
         const loading = loadingKeys.has(node.key);
         const hasChildren = node.children.length > 0;
         const expandable = hasChildren || (loadData !== undefined && node.data.isLeaf !== true);
-        const isLeaf = node.data.isLeaf === true || !expandable;
+        const isLeaf = node.data.isLeaf ?? !expandable;
         const renderProps: TreeNodeRenderProps = {
           checked,
           data: node.data,

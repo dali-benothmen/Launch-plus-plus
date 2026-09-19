@@ -3,8 +3,6 @@ import {
   AddIcon,
   Button,
   DarkThemeIcon,
-  FolderIcon,
-  FolderOpenIcon,
   Form,
   HomeIcon,
   Input,
@@ -63,7 +61,7 @@ export function AppShell() {
     () =>
       workspaceContext?.workspaces.map((workspace) => ({
         children: [],
-        icon: ({ expanded }) => (expanded ? <FolderOpenIcon /> : <FolderIcon />),
+        isLeaf: false,
         key: `workspace:${workspace.id}`,
         title: workspace.name,
       })) ?? [],
