@@ -76,6 +76,7 @@ export function AppShell() {
         children: [],
         isLeaf: false,
         key: `workspace:${workspace.id}`,
+        style: { marginInlineStart: -24, width: "calc(100% + 24px)" },
         title: workspace.name,
       })) ?? [],
     [workspaceContext],
@@ -277,6 +278,7 @@ export function AppShell() {
         </Form>
       </Modal>
       <Drawer
+        mask={false}
         onClose={() => setPropertiesOpen(false)}
         open={propertiesOpen}
         placement="right"

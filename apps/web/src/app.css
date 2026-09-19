@@ -152,11 +152,12 @@
 
 .project-sidebar-actions {
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .project-tree-context-surface {
   min-height: 1px;
+  overflow: hidden;
 }
 
 .project-tree-workspace + .project-tree-workspace {
