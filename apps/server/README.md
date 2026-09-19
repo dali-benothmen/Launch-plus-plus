@@ -13,6 +13,10 @@ The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp
 
 On an empty database, local loopback access authorizes the setup browser automatically with a short-lived `HttpOnly` cookie. Startup also logs a one-time setup URL for remote/VPS operators; its fragment is exchanged for the same cookie and removed from the browser address before account creation. Both methods expire after 30 minutes, raw secrets are released after use, and only hashes remain in server memory. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.
 
+First-owner setup atomically creates the installation, Launch++ profile, default workspace, active owner membership, audit facts, and outbox facts after Better Auth creates the identity. Existing development databases from the earlier authentication slice are repaired lazily on the first authenticated workspace read by creating the missing profile and owner workspace.
+
+The authenticated workspace endpoints currently support listing accessible workspaces, creating an owned workspace, and selecting the current workspace. Reads are membership-filtered, selection requires an active matching membership, and workspace-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
+
 ## Configuration
 
 Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP_*` variables, malformed values, and insecure production origins stop startup before a listener opens.

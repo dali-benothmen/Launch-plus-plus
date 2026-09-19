@@ -114,7 +114,7 @@ All Phase 0 exit conditions pass on a clean machine.
 ### Tasks
 
 - [x] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and direct redirect to project creation. Do not add questionnaire-style onboarding.
-- [ ] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
+- [x] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
 - [ ] **P1-03 — Implement projects, folders, and statuses.** Add project CRUD/archive, one-level navigation folders, ordering, favorite/recent behavior, and default ordered statuses with database invariants.
 - [ ] **P1-04 — Implement the task domain.** Add tasks, subtasks, status movement, assignees, labels, due dates, revisions, archive/restore, ordering, and optimistic-concurrency errors through application services.
 - [ ] **P1-05 — Publish the core HTTP contract.** Add versioned JSON schemas, REST endpoints, problem details, cursors, idempotency support, OpenAPI generation, and the generated TypeScript API client for implemented resources.

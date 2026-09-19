@@ -150,6 +150,16 @@
   background: var(--launch-color-bg-elevated);
 }
 
+.project-sidebar-workspace,
+.workspace-create-field {
+  display: grid;
+  gap: 6px;
+}
+
+.project-sidebar-workspace {
+  margin-bottom: 20px;
+}
+
 .project-sidebar-header {
   display: flex;
   align-items: center;

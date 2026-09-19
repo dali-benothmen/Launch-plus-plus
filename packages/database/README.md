@@ -19,6 +19,10 @@ The schema source is `src/schema.ts`. Ordered SQL in `migrations/` is the runtim
 
 The identity tables are physically owned here even though Better Auth is isolated in `@launchpp/auth-adapter`. This keeps all production schema changes in one reviewed migration chain; the auth library does not mutate the production schema at request time.
 
+Workspace persistence keeps product identity separate from authentication. `user_profiles` links an auth user to Launch++ preferences and their current workspace, `workspaces` owns the durable workspace record, and `workspace_members` is the authorization boundary. A new workspace and its active owner membership are written in the same transaction. Security-relevant setup and workspace creation facts are appended to `audit_entries`; post-commit work is represented separately in the transactional outbox.
+
+Only owner membership is created or managed in the current solo slice. The schema reserves the documented admin and member values, but invitation, role-change, suspension, removal, and ownership-transfer flows are not exposed until the team phase.
+
 ```bash
 pnpm --filter @launchpp/database db:generate --name <descriptive-name>
 pnpm test:migrations

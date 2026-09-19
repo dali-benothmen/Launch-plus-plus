@@ -8,6 +8,7 @@ import type { FastifyInstance } from "fastify";
 
 import { type BuildServerOptions, buildServer } from "./server.js";
 import { createSetupCoordinator } from "./setup-routes.js";
+import { registerWorkspaceRoutes } from "./workspace-routes.js";
 
 export interface ApplicationResources {
   readonly database: SqliteDatabase;
@@ -51,6 +52,7 @@ export async function buildApplicationServer(
         "first-owner setup link generated",
       );
     }
+    await registerWorkspaceRoutes(app, { database, identity: identity.adapter });
     await registerBetterAuthRoutes(app, identity.adapter);
     app.addHook("onClose", async () => {
       identity?.close();

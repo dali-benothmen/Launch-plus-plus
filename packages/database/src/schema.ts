@@ -1,4 +1,14 @@
-import { index, integer, sqliteTable, text, customType } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import {
+  check,
+  customType,
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 const authDate = customType<{ data: Date; driverData: string }>({
   dataType: () => "date",
@@ -95,11 +105,107 @@ export const authVerifications = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const workspaces = sqliteTable(
+  "workspaces",
+  {
+    id: text("id").primaryKey(),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => installations.id, { onDelete: "restrict" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    archivedAt: integer("archived_at"),
+    deletedAt: integer("deleted_at"),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    uniqueIndex("workspaces_installation_slug_unique").on(table.installationId, table.slug),
+    index("workspaces_installation_updated_idx").on(table.installationId, table.updatedAt),
+    check("workspaces_name_not_blank", sql`length(trim(${table.name})) > 0`),
+    check("workspaces_revision_positive", sql`${table.revision} > 0`),
+  ],
+);
+
+export const userProfiles = sqliteTable("user_profiles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull(),
+  avatarAssetId: text("avatar_asset_id"),
+  locale: text("locale").notNull().default("en"),
+  timeZone: text("time_zone").notNull().default("UTC"),
+  currentWorkspaceId: text("current_workspace_id").references(() => workspaces.id, {
+    onDelete: "set null",
+  }),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  revision: integer("revision").notNull().default(1),
+});
+
+export const workspaceMembers = sqliteTable(
+  "workspace_members",
+  {
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["owner", "admin", "member"] }).notNull(),
+    state: text("state", { enum: ["active", "suspended"] }).notNull(),
+    joinedAt: integer("joined_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.workspaceId, table.userId] }),
+    index("workspace_members_user_state_idx").on(table.userId, table.state, table.workspaceId),
+    check("workspace_members_role_valid", sql`${table.role} in ('owner', 'admin', 'member')`),
+    check("workspace_members_state_valid", sql`${table.state} in ('active', 'suspended')`),
+  ],
+);
+
+export const auditEntries = sqliteTable(
+  "audit_entries",
+  {
+    id: text("id").primaryKey(),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => installations.id, { onDelete: "restrict" }),
+    workspaceId: text("workspace_id").references(() => workspaces.id, { onDelete: "restrict" }),
+    actorType: text("actor_type", { enum: ["user", "operator", "system"] }).notNull(),
+    actorId: text("actor_id"),
+    operation: text("operation").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    outcome: text("outcome", { enum: ["succeeded", "denied", "failed"] }).notNull(),
+    metadataJson: text("metadata_json").notNull(),
+    occurredAt: integer("occurred_at").notNull(),
+    correlationId: text("correlation_id").notNull(),
+  },
+  (table) => [
+    index("audit_entries_installation_time_idx").on(table.installationId, table.occurredAt),
+    index("audit_entries_workspace_time_idx").on(table.workspaceId, table.occurredAt),
+    check(
+      "audit_entries_outcome_valid",
+      sql`${table.outcome} in ('succeeded', 'denied', 'failed')`,
+    ),
+  ],
+);
+
 export const databaseSchema = {
+  auditEntries,
   authAccounts,
   authSessions,
   authUsers,
   authVerifications,
   installations,
   outboxMessages,
+  userProfiles,
+  workspaceMembers,
+  workspaces,
 };

@@ -1,10 +1,14 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
-import { CreateInstallationService } from "@launchpp/core";
+import { InitializeOwnerWorkspaceService } from "@launchpp/core";
 import {
   type SqliteDatabase,
+  SqliteAuditWriter,
   SqliteInstallationRepository,
   SqliteOutboxRepository,
+  SqliteUserProfileRepository,
+  SqliteWorkspaceMembershipRepository,
+  SqliteWorkspaceRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -95,6 +99,10 @@ export function createSetupCoordinator(input: {
 }): SetupCoordinator {
   const installations = new SqliteInstallationRepository();
   const outbox = new SqliteOutboxRepository();
+  const profiles = new SqliteUserProfileRepository();
+  const workspaces = new SqliteWorkspaceRepository();
+  const memberships = new SqliteWorkspaceMembershipRepository();
+  const audit = new SqliteAuditWriter();
   let initialized = input.database.read(
     (context) => installations.findFirst(context) !== undefined,
   );
@@ -105,12 +113,16 @@ export function createSetupCoordinator(input: {
   const setupClaimHashes: Buffer[] = [];
   const expiresAt = Date.now() + 30 * 60 * 1000;
   let setupInProgress = false;
-  const service = new CreateInstallationService({
+  const service = new InitializeOwnerWorkspaceService({
+    audit,
     clock: Date.now,
     generateId: randomUUID,
     installations,
+    memberships,
     outbox,
+    profiles,
     transactions: input.database,
+    workspaces,
   });
   const secureCookie = new URL(input.baseUrl).protocol === "https:";
   const localSetupOrigin = isLoopbackOrigin(input.baseUrl);
@@ -260,7 +272,11 @@ export function createSetupCoordinator(input: {
               new Headers({ cookie: cookieHeader(authResponse) }),
             );
             if (!session) throw new Error("Owner session was not created during setup");
-            await service.execute({ actorId: session.identity.id, correlationId: request.id });
+            await service.execute({
+              correlationId: request.id,
+              displayName: session.identity.name,
+              userId: session.identity.id,
+            });
             initialized = true;
             setupTokenHash = undefined;
             setupClaimHashes.length = 0;

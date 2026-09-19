@@ -25,6 +25,18 @@ export interface SetupStatus {
   readonly setupAuthorized: boolean;
 }
 
+export interface WorkspaceSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly revision: number;
+  readonly slug: string;
+}
+
+export interface WorkspaceContext {
+  readonly currentWorkspaceId?: string;
+  readonly workspaces: readonly WorkspaceSummary[];
+}
+
 export class ApiError extends Error {
   override readonly name = "ApiError";
   constructor(
@@ -52,6 +64,11 @@ export interface ApiClient {
     claim(token: string): Promise<void>;
     createOwner(input: OwnerSetupInput): Promise<void>;
     status(): Promise<SetupStatus>;
+  };
+  readonly workspaces: {
+    create(name: string): Promise<WorkspaceSummary>;
+    list(): Promise<WorkspaceContext>;
+    select(workspaceId: string): Promise<void>;
   };
 }
 
@@ -146,6 +163,22 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         });
       },
       status: () => json<SetupStatus>("/api/setup/status"),
+    }),
+    workspaces: Object.freeze({
+      create: (name: string) =>
+        json<WorkspaceSummary>("/api/workspaces", {
+          body: JSON.stringify({ name }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }),
+      list: () => json<WorkspaceContext>("/api/workspaces"),
+      async select(workspaceId: string): Promise<void> {
+        await json("/api/workspaces/current", {
+          body: JSON.stringify({ workspaceId }),
+          headers: { "content-type": "application/json" },
+          method: "PUT",
+        });
+      },
     }),
   });
 }

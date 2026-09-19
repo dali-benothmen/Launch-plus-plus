@@ -86,6 +86,7 @@ Better Auth owns its user, session, linked account, and verification tables. Lau
 - `avatar_asset_id`, nullable
 - `locale`
 - `time_zone`
+- `current_workspace_id`, nullable — the user's selected active workspace
 - `created_at`, `updated_at`, `revision`
 
 Authentication schema changes are generated/reviewed alongside application migrations. An auth library migration is never run independently against production without backup and compatibility tests.
@@ -222,6 +223,8 @@ Comment edits preserve authorship and generate activity. A recoverably deleted c
 Activity is an append-oriented human history created from successful domain changes. It is not the canonical event store and does not reconstruct state. Summary data contains stable display facts needed to explain the action while sensitive live details are loaded under current permissions.
 
 Security-relevant installation and permission changes additionally write a separate audit stream with stricter retention and operator visibility, described in the security document.
+
+The initial `audit_entries` table records installation/workspace scope, actor, operation, target, outcome, bounded JSON metadata, occurrence time, and correlation ID. First-owner setup and workspace creation write these audit facts in the same transaction as their domain state.
 
 ### Notifications
 

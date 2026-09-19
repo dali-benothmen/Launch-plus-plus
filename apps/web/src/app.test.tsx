@@ -24,6 +24,19 @@ const apiClient: ApiClient = {
     createOwner: vi.fn(async () => undefined),
     status: vi.fn(async () => ({ requiresSetup: false, setupAuthorized: false })),
   },
+  workspaces: {
+    create: vi.fn(async () => ({
+      id: "workspace-1",
+      name: "My Workspace",
+      revision: 1,
+      slug: "my-workspace",
+    })),
+    list: vi.fn(async () => ({
+      currentWorkspaceId: "workspace-1",
+      workspaces: [{ id: "workspace-1", name: "My Workspace", revision: 1, slug: "my-workspace" }],
+    })),
+    select: vi.fn(async () => undefined),
+  },
 };
 
 beforeAll(() => {
