@@ -97,7 +97,7 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
         `${selection}
          INNER JOIN workspace_members member ON member.workspace_id = workspaces.id
          WHERE member.user_id = ? AND member.state = 'active' AND workspaces.deleted_at IS NULL
-         ORDER BY workspaces.updated_at DESC, workspaces.id ASC`,
+         ORDER BY workspaces.created_at ASC, workspaces.id ASC`,
       )
       .all(userId)
       .map(mapWorkspace);
