@@ -20,6 +20,7 @@ import {
   Typography,
 } from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
@@ -182,45 +183,12 @@ export function ProjectSidebar() {
     setEditorError(undefined);
   };
 
-  const runAction = async (action: () => Promise<void>, success: string) => {
-    try {
-      await action();
-      window.dispatchEvent(new Event(projectNavigationChangedEvent));
-      messageApi.success(success);
-    } catch (reason) {
-      messageApi.error(errorMessage(reason, "The action could not be completed."));
-    }
-  };
-
   const openProject = (workspaceId: string, projectId: string) => {
     void api.projects
       .markOpened(workspaceId, projectId)
       .then(loadNavigation)
       .catch(() => undefined);
     navigate(`/app/workspaces/${workspaceId}/projects/${projectId}`);
-  };
-
-  const moveProject = (workspaceId: string, projectId: string, direction: -1 | 1) => {
-    const project = projectFor(workspaceId, projectId);
-    if (!project || project.archivedAt !== undefined) return;
-    const ids = catalogFor(workspaceId)
-      .projects.filter(
-        (item) => item.archivedAt === undefined && item.folderId === project.folderId,
-      )
-      .toSorted((first, second) => first.position - second.position)
-      .map((item) => item.id);
-    const index = ids.indexOf(projectId);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
-    [ids[index], ids[nextIndex]] = [ids[nextIndex]!, ids[index]!];
-    void runAction(
-      () =>
-        api.projects.reorderProjects(workspaceId, {
-          ...(project.folderId ? { folderId: project.folderId } : {}),
-          orderedProjectIds: ids,
-        }),
-      "Project order updated.",
-    );
   };
 
   const contextMenuItems = useMemo<ReadonlyArray<DropdownMenuItem>>(() => {
@@ -276,12 +244,6 @@ export function ProjectSidebar() {
     if (target.kind === "project" && target.projectId) {
       const project = projectFor(target.workspaceId, target.projectId);
       if (!project) return [];
-      const siblings = catalogFor(target.workspaceId)
-        .projects.filter(
-          (item) => item.archivedAt === undefined && item.folderId === project.folderId,
-        )
-        .toSorted((first, second) => first.position - second.position);
-      const index = siblings.findIndex((item) => item.id === project.id);
       return [
         {
           key: "open-project",
@@ -289,67 +251,19 @@ export function ProjectSidebar() {
           onClick: () => openProject(target.workspaceId, project.id),
         },
         {
-          key: "favorite-project",
-          label: project.favorite ? "Remove from favorites" : "Add to favorites",
+          key: "rename-project",
+          label: "Rename",
           onClick: () =>
-            void runAction(
-              () => api.projects.setFavorite(target.workspaceId, project.id, !project.favorite),
-              project.favorite ? "Removed from favorites." : "Added to favorites.",
-            ),
+            openEditor({
+              kind: "rename-project",
+              project,
+              workspaceId: target.workspaceId,
+            }),
         },
-        ...(project.archivedAt === undefined
-          ? ([
-              { type: "divider" as const },
-              {
-                disabled: index <= 0,
-                key: "move-project-up",
-                label: "Move up",
-                onClick: () => moveProject(target.workspaceId, project.id, -1),
-              },
-              {
-                disabled: index < 0 || index >= siblings.length - 1,
-                key: "move-project-down",
-                label: "Move down",
-                onClick: () => moveProject(target.workspaceId, project.id, 1),
-              },
-              {
-                key: "rename-project",
-                label: "Rename",
-                onClick: () =>
-                  openEditor({
-                    kind: "rename-project",
-                    project,
-                    workspaceId: target.workspaceId,
-                  }),
-              },
-              {
-                key: "archive-project",
-                label: "Archive",
-                onClick: () =>
-                  void runAction(
-                    () =>
-                      api.projects.archive(target.workspaceId, project.id).then(() => undefined),
-                    `${project.name} archived.`,
-                  ),
-              },
-            ] satisfies ReadonlyArray<DropdownMenuItem>)
-          : ([
-              { type: "divider" as const },
-              {
-                key: "restore-project",
-                label: "Restore",
-                onClick: () =>
-                  void runAction(
-                    () =>
-                      api.projects.restore(target.workspaceId, project.id).then(() => undefined),
-                    `${project.name} restored.`,
-                  ),
-              },
-            ] satisfies ReadonlyArray<DropdownMenuItem>)),
         {
           danger: true,
           key: "delete-project",
-          label: "Delete",
+          label: "Delete project",
           onClick: () =>
             defer(() =>
               setDeleteTarget({
@@ -483,7 +397,9 @@ export function ProjectSidebar() {
                 blockNode
                 expandedKeys={expandedKeys}
                 onExpand={(keys) => setExpandedKeys(keys.map(String))}
-                onRightClick={({ node }) => setContextNode(node)}
+                onRightClick={({ node }) => {
+                  flushSync(() => setContextNode(node));
+                }}
                 onSelect={(_, info) => {
                   if (!info.selected) return;
                   const target = targetFromKey(String(info.node.key));
