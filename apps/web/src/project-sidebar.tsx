@@ -17,7 +17,6 @@ import {
   message,
   Modal,
   Spin,
-  Tooltip,
   Tree,
   type TreeDataNode,
   Typography,
@@ -441,27 +440,14 @@ export function ProjectSidebar({
             </Button>
           </div>
           {onCollapseToggle ? (
-            collapsed ? (
-              <Button
-                aria-label="Expand workspace sidebar"
-                icon={<ExpandNavigationIcon />}
-                iconOnly
-                onClick={onCollapseToggle}
-                size="small"
-                variant="text"
-              />
-            ) : (
-              <Tooltip placement="bottom" title="Collapse workspace sidebar">
-                <Button
-                  aria-label="Collapse workspace sidebar"
-                  icon={<CollapseNavigationIcon />}
-                  iconOnly
-                  onClick={onCollapseToggle}
-                  size="small"
-                  variant="text"
-                />
-              </Tooltip>
-            )
+            <Button
+              aria-label={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
+              icon={collapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />}
+              iconOnly
+              onClick={onCollapseToggle}
+              size="small"
+              variant="text"
+            />
           ) : null}
         </div>
         <div aria-hidden={collapsed} className="project-sidebar-body" inert={collapsed}>
