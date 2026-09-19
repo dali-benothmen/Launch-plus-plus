@@ -202,22 +202,22 @@ function ResizableDrawer() {
 type MaskMode = "blur" | "dimmed" | "none";
 
 function MaskDrawer() {
-  const [open, setOpen] = useState<MaskMode>();
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<MaskMode>("dimmed");
   const mask =
-    open === "blur" ? { blur: true } : open === "none" ? { closable: false, enabled: false } : true;
+    mode === "blur" ? { blur: true } : mode === "none" ? { closable: false, enabled: false } : true;
+  const show = (nextMode: MaskMode) => {
+    setMode(nextMode);
+    setOpen(true);
+  };
   return (
     <>
       <Space wrap>
-        <Button onClick={() => setOpen("blur")}>Blur mask</Button>
-        <Button onClick={() => setOpen("dimmed")}>Dimmed mask</Button>
-        <Button onClick={() => setOpen("none")}>No mask</Button>
+        <Button onClick={() => show("blur")}>Blur mask</Button>
+        <Button onClick={() => show("dimmed")}>Dimmed mask</Button>
+        <Button onClick={() => show("none")}>No mask</Button>
       </Space>
-      <Drawer
-        mask={mask}
-        onClose={() => setOpen(undefined)}
-        open={open !== undefined}
-        title={`${open ?? "Mask"} drawer`}
-      >
+      <Drawer mask={mask} onClose={() => setOpen(false)} open={open} title={`${mode} drawer`}>
         <DrawerCopy />
       </Drawer>
     </>
