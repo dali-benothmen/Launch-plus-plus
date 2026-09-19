@@ -5554,45 +5554,206 @@
 }
 
 .launch-ui-tag {
+  --launch-ui-tag-color: var(--launch-ui-text);
+  --launch-ui-tag-bg: #f5f5f5;
+  --launch-ui-tag-border: var(--launch-ui-border);
+  box-sizing: border-box;
   display: inline-flex;
   height: 22px;
   align-items: center;
+  gap: 4px;
   padding: 0 7px;
-  border: 1px solid var(--launch-ui-border);
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) transparent;
   border-radius: var(--launch-ui-radius);
-  background: #f5f5f5;
-  color: var(--launch-ui-text);
+  background: var(--launch-ui-tag-bg);
+  color: var(--launch-ui-tag-color);
   font-family: var(--launch-ui-font);
   font-size: 12px;
   line-height: 20px;
+  text-decoration: none;
+  vertical-align: middle;
+  white-space: nowrap;
+  transition:
+    background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
+    opacity var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
 }
 
-.launch-ui-tag.is-blue {
-  border-color: var(--launch-ui-info-border);
-  background: var(--launch-ui-info-bg);
-  color: var(--launch-ui-info-text);
+.launch-ui-tag.is-default,
+.launch-ui-tag.is-neutral {
+  --launch-ui-tag-color: var(--launch-ui-text);
+  --launch-ui-tag-bg: #f5f5f5;
+  --launch-ui-tag-border: var(--launch-ui-border);
+}
+
+.launch-ui-tag.is-blue,
+.launch-ui-tag.is-processing {
+  --launch-ui-tag-color: #0958d9;
+  --launch-ui-tag-bg: #e6f4ff;
+  --launch-ui-tag-border: #91caff;
+}
+
+.launch-ui-tag.is-cyan {
+  --launch-ui-tag-color: #08979c;
+  --launch-ui-tag-bg: #e6fffb;
+  --launch-ui-tag-border: #87e8de;
+}
+
+.launch-ui-tag.is-geekblue {
+  --launch-ui-tag-color: #1d39c4;
+  --launch-ui-tag-bg: #f0f5ff;
+  --launch-ui-tag-border: #adc6ff;
+}
+
+.launch-ui-tag.is-green,
+.launch-ui-tag.is-success {
+  --launch-ui-tag-color: #389e0d;
+  --launch-ui-tag-bg: #f6ffed;
+  --launch-ui-tag-border: #b7eb8f;
+}
+
+.launch-ui-tag.is-lime {
+  --launch-ui-tag-color: #7cb305;
+  --launch-ui-tag-bg: #fcffe6;
+  --launch-ui-tag-border: #eaff8f;
+}
+
+.launch-ui-tag.is-gold,
+.launch-ui-tag.is-warning {
+  --launch-ui-tag-color: #d48806;
+  --launch-ui-tag-bg: #fffbe6;
+  --launch-ui-tag-border: #ffe58f;
+}
+
+.launch-ui-tag.is-orange {
+  --launch-ui-tag-color: #d46b08;
+  --launch-ui-tag-bg: #fff7e6;
+  --launch-ui-tag-border: #ffd591;
+}
+
+.launch-ui-tag.is-volcano {
+  --launch-ui-tag-color: #d4380d;
+  --launch-ui-tag-bg: #fff2e8;
+  --launch-ui-tag-border: #ffbb96;
+}
+
+.launch-ui-tag.is-red,
+.launch-ui-tag.is-error {
+  --launch-ui-tag-color: #cf1322;
+  --launch-ui-tag-bg: #fff1f0;
+  --launch-ui-tag-border: #ffa39e;
+}
+
+.launch-ui-tag.is-magenta {
+  --launch-ui-tag-color: #c41d7f;
+  --launch-ui-tag-bg: #fff0f6;
+  --launch-ui-tag-border: #ffadd2;
 }
 
 .launch-ui-tag.is-purple {
-  border-color: #d3adf7;
-  background: #f9f0ff;
-  color: #531dab;
+  --launch-ui-tag-color: #531dab;
+  --launch-ui-tag-bg: #f9f0ff;
+  --launch-ui-tag-border: #d3adf7;
 }
 
-.launch-ui-tag.is-green {
-  border-color: var(--launch-ui-success-border);
-  background: var(--launch-ui-success-bg);
-  color: #389e0d;
+.launch-ui-tag.is-custom-color {
+  --launch-ui-tag-bg: color-mix(in srgb, var(--launch-ui-tag-color) 10%, white);
+  --launch-ui-tag-border: color-mix(in srgb, var(--launch-ui-tag-color) 38%, white);
 }
 
-.launch-ui-tag.is-filled {
-  border-color: transparent;
+.launch-ui-tag.is-outlined {
+  border-color: var(--launch-ui-tag-border);
+  background: var(--launch-ui-surface);
 }
 
 .launch-ui-tag.is-solid {
-  border-color: currentColor;
-  background: var(--launch-ui-success);
+  border-color: var(--launch-ui-tag-color);
+  background: var(--launch-ui-tag-color);
   color: #fff;
+}
+
+.launch-ui-tag-icon,
+.launch-ui-tag-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.launch-ui-tag-icon > svg,
+.launch-ui-tag-close > svg {
+  width: 1em;
+  height: 1em;
+}
+
+.launch-ui-tag-close {
+  padding: 0;
+  border: 0;
+  margin-inline-start: 1px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-tag-close:hover {
+  opacity: 1;
+}
+
+.launch-ui-tag-close:disabled {
+  cursor: not-allowed;
+}
+
+.launch-ui-tag.is-link,
+.launch-ui-tag[role="button"] {
+  cursor: pointer;
+}
+
+.launch-ui-tag.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.launch-ui-tag.is-checkable {
+  height: 22px;
+  padding: 0 7px;
+  border-color: transparent;
+  appearance: none;
+  background: transparent;
+  color: var(--launch-ui-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.launch-ui-tag.is-checkable:not(:disabled):hover {
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-tag.is-checkable.is-checked {
+  background: var(--launch-ui-primary);
+  color: #fff;
+}
+
+.launch-ui-tag.is-checkable.is-checked:hover {
+  background: var(--launch-ui-primary-hover);
+  color: #fff;
+}
+
+.launch-ui-tag.is-checkable:focus-visible,
+.launch-ui-tag-close:focus-visible {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 2px;
+}
+
+.launch-ui-tag-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .launch-ui-alert {
@@ -6655,6 +6816,8 @@
   .launch-ui-switch-inner,
   .launch-ui-tab,
   .launch-ui-tab::after,
+  .launch-ui-tag,
+  .launch-ui-tag-close,
   .launch-ui-tooltip,
   .launch-ui-popover-container,
   .launch-ui-dialog-overlay,
