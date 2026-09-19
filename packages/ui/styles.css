@@ -5873,8 +5873,8 @@
   top: 50%;
   right: -50%;
   left: 50%;
-  border-width: 2px 0 0;
-  transform: translateY(-1px);
+  border-width: 1px 0 0;
+  transform: translateY(-0.5px);
 }
 
 .launch-ui-timeline.is-horizontal .launch-ui-timeline-icon {
@@ -5939,8 +5939,8 @@
   top: 14px;
   bottom: -20px;
   left: 50%;
-  border-width: 0 0 0 2px;
-  transform: translateX(-1px);
+  border-width: 0 0 0 1px;
+  transform: translateX(-0.5px);
 }
 
 .launch-ui-timeline.is-vertical .launch-ui-timeline-icon {
