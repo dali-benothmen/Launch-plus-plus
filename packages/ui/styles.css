@@ -1744,6 +1744,7 @@
   font-family: var(--launch-ui-font);
   font-size: var(--launch-ui-font-size);
   animation: launch-ui-popup-in var(--launch-ui-mid) var(--launch-ui-ease);
+  pointer-events: auto;
 }
 
 .launch-ui-date-picker-popup::before {
