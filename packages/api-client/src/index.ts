@@ -18,7 +18,11 @@ export interface OwnerSetupInput {
   readonly email: string;
   readonly name: string;
   readonly password: string;
-  readonly setupToken: string;
+}
+
+export interface SetupStatus {
+  readonly requiresSetup: boolean;
+  readonly setupAuthorized: boolean;
 }
 
 export class ApiError extends Error {
@@ -45,8 +49,9 @@ export interface ApiClient {
     readiness(signal?: AbortSignal): Promise<HealthReadiness>;
   };
   readonly setup: {
+    claim(token: string): Promise<void>;
     createOwner(input: OwnerSetupInput): Promise<void>;
-    status(): Promise<{ readonly requiresSetup: boolean }>;
+    status(): Promise<SetupStatus>;
   };
 }
 
@@ -126,6 +131,13 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
       },
     }),
     setup: Object.freeze({
+      async claim(token: string): Promise<void> {
+        await json("/api/setup/claim", {
+          body: JSON.stringify({ token }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+      },
       async createOwner(input: OwnerSetupInput): Promise<void> {
         await json("/api/setup/owner", {
           body: JSON.stringify(input),
@@ -133,7 +145,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
           method: "POST",
         });
       },
-      status: () => json<{ readonly requiresSetup: boolean }>("/api/setup/status"),
+      status: () => json<SetupStatus>("/api/setup/status"),
     }),
   });
 }

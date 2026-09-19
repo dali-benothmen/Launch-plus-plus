@@ -20,8 +20,9 @@ const apiClient: ApiClient = {
   },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
   setup: {
+    claim: vi.fn(async () => undefined),
     createOwner: vi.fn(async () => undefined),
-    status: vi.fn(async () => ({ requiresSetup: false })),
+    status: vi.fn(async () => ({ requiresSetup: false, setupAuthorized: false })),
   },
 };
 

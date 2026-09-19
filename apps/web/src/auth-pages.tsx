@@ -163,8 +163,36 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
 export function SetupPage() {
   const api = useApiClient();
   const navigate = useNavigate();
+  const [authorized, setAuthorized] = useState<boolean>();
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      const token = fragment.get("token");
+      if (token) {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+        await api.setup.claim(token);
+        if (active) setAuthorized(true);
+        return;
+      }
+      const status = await api.setup.status();
+      if (active) setAuthorized(status.setupAuthorized);
+    })().catch((reason: unknown) => {
+      if (!active) return;
+      setError(reason);
+      setAuthorized(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [api]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -176,7 +204,6 @@ export function SetupPage() {
         email: String(data.get("email") ?? ""),
         name: String(data.get("name") ?? ""),
         password: String(data.get("password") ?? ""),
-        setupToken: String(data.get("setupToken") ?? ""),
       });
       navigate("/app/projects/new", { replace: true });
     } catch (reason) {
@@ -186,10 +213,28 @@ export function SetupPage() {
     }
   };
 
+  if (authorized === undefined) {
+    return <Spin fullscreen description="Preparing secure setup" />;
+  }
+
+  if (!authorized) {
+    return (
+      <AuthLayout title="Authorize setup">
+        <ErrorMessage error={error} />
+        <Alert
+          description="Open the one-time setup URL printed by the server. Local installations authorize this browser automatically."
+          showIcon
+          title="Authorized setup link required"
+          type="info"
+        />
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout title="Set up Launch++">
       <Typography.Paragraph type="secondary">
-        Create the first owner account using the temporary token printed by the server.
+        Create the first owner account for this installation.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
         <ErrorMessage error={error} />
@@ -207,9 +252,6 @@ export function SetupPage() {
             name="password"
             required
           />
-        </Field>
-        <Field htmlFor="setup-token" label="Setup token">
-          <Input autoComplete="off" id="setup-token" name="setupToken" required />
         </Field>
         <Button block loading={loading} type="submit" variant="primary">
           Create owner account

@@ -43,7 +43,13 @@ export async function buildApplicationServer(
     await setup.register(app);
     const setupToken = setup.takeToken();
     if (setupToken) {
-      app.log.warn({ expiresInMinutes: 30, setupToken }, "first-owner setup token generated");
+      app.log.warn(
+        {
+          expiresInMinutes: 30,
+          setupUrl: `${options.config.baseUrl}/setup#token=${encodeURIComponent(setupToken)}`,
+        },
+        "first-owner setup link generated",
+      );
     }
     await registerBetterAuthRoutes(app, identity.adapter);
     app.addHook("onClose", async () => {
