@@ -5789,12 +5789,13 @@
 
 .launch-ui-timeline-title {
   color: var(--launch-ui-text-tertiary);
-  font-size: 12px;
 }
 
 .launch-ui-timeline-content,
 .launch-ui-timeline-title {
   min-width: 0;
+  font-size: 12px;
+  line-height: 20px;
   overflow-wrap: anywhere;
 }
 
@@ -5820,7 +5821,7 @@
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--launch-ui-timeline-color);
+  border: 1px solid var(--launch-ui-timeline-color);
   border-radius: 50%;
   background: var(--launch-ui-surface);
   color: var(--launch-ui-timeline-color);
@@ -5912,8 +5913,8 @@
 
 .launch-ui-timeline.is-vertical .launch-ui-timeline-item {
   display: grid;
-  min-height: 56px;
-  padding-bottom: 20px;
+  min-height: 40px;
+  padding-bottom: 12px;
   grid-template-rows: auto;
 }
 
@@ -5937,7 +5938,7 @@
 
 .launch-ui-timeline.is-vertical .launch-ui-timeline-rail {
   top: 14px;
-  bottom: -20px;
+  bottom: -12px;
   left: 50%;
   border-width: 0 0 0 1px;
   transform: translateX(-0.5px);
