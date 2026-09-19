@@ -1194,6 +1194,26 @@ button {
   outline-offset: 1px;
 }
 
+.showcase-tree-search {
+  width: min(100%, 360px);
+}
+
+.showcase-tree-search mark {
+  background: transparent;
+  color: var(--launch-ui-error);
+}
+
+.showcase-tree-scroll {
+  width: min(100%, 360px);
+  border: 1px solid var(--launch-color-border-secondary);
+  border-radius: var(--launch-ui-radius);
+  padding: 8px;
+}
+
+.showcase-tree-semantic {
+  width: min(100%, 420px);
+}
+
 .showcase-segmented-user-option,
 .showcase-segmented-season {
   padding: 4px;

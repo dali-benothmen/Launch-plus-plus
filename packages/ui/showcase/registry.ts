@@ -35,6 +35,7 @@ import { tabsShowcase } from "./components/tabs.showcase.js";
 import { tagShowcase } from "./components/tag.showcase.js";
 import { timelineShowcase } from "./components/timeline.showcase.js";
 import { tooltipShowcase } from "./components/tooltip.showcase.js";
+import { treeShowcase } from "./components/tree.showcase.js";
 import { typographyShowcase } from "./components/typography.showcase.js";
 import { uploadShowcase } from "./components/upload.showcase.js";
 import { defineShowcases } from "./showcase-definition.js";
@@ -81,6 +82,7 @@ export const componentRegistry = defineShowcases([
   tableShowcase,
   tagShowcase,
   timelineShowcase,
+  treeShowcase,
   alertShowcase,
   dialogShowcase,
   dropdownMenuShowcase,

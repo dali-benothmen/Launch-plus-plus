@@ -5990,6 +5990,240 @@
   grid-row: 1;
 }
 
+.launch-ui-tree {
+  box-sizing: border-box;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-tree-group,
+.launch-ui-tree-node {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.launch-ui-tree-group .launch-ui-tree-group {
+  padding-inline-start: 24px;
+}
+
+.launch-ui-tree-node {
+  position: relative;
+  outline: none;
+}
+
+.launch-ui-tree-node:focus-visible > .launch-ui-tree-item {
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: -1px;
+}
+
+.launch-ui-tree-item {
+  position: relative;
+  display: inline-flex;
+  min-height: 24px;
+  box-sizing: border-box;
+  align-items: center;
+  border-radius: var(--launch-ui-radius);
+  color: inherit;
+  transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-tree-item.is-block,
+.launch-ui-tree.is-block .launch-ui-tree-item {
+  display: flex;
+  width: 100%;
+}
+
+.launch-ui-tree-switcher,
+.launch-ui-tree-drag-handle,
+.launch-ui-tree-icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  color: var(--launch-ui-text-secondary);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.launch-ui-tree-switcher {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.launch-ui-tree-switcher:disabled {
+  cursor: not-allowed;
+}
+
+.launch-ui-tree-switcher.is-default {
+  transform: rotate(-90deg);
+  transition: transform var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-tree-switcher.is-default.is-expanded {
+  transform: rotate(0);
+}
+
+.launch-ui-tree-switcher.is-leaf {
+  cursor: default;
+}
+
+.launch-ui-tree-drag-handle {
+  color: var(--launch-ui-text-tertiary);
+  cursor: grab;
+}
+
+.launch-ui-tree-node:active > .launch-ui-tree-item > .launch-ui-tree-drag-handle {
+  cursor: grabbing;
+}
+
+.launch-ui-tree-icon {
+  width: 20px;
+  flex-basis: 20px;
+  font-size: 14px;
+}
+
+.launch-ui-tree-title {
+  min-width: 0;
+  min-height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--launch-ui-radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: 24px;
+  outline: none;
+  text-align: start;
+  transition: background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-tree-title:hover {
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-tree-item.is-selected .launch-ui-tree-title {
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-tree-item.is-filtered .launch-ui-tree-title {
+  color: var(--launch-ui-error);
+  font-weight: 500;
+}
+
+.launch-ui-tree-item.is-block .launch-ui-tree-title,
+.launch-ui-tree.is-block .launch-ui-tree-title {
+  flex: 1;
+}
+
+.launch-ui-tree-item.is-block:hover,
+.launch-ui-tree.is-block .launch-ui-tree-item:hover {
+  background: var(--launch-ui-fill-tertiary);
+}
+
+.launch-ui-tree-item.is-block.is-selected,
+.launch-ui-tree.is-block .launch-ui-tree-item.is-selected {
+  background: var(--launch-ui-primary-bg);
+  color: var(--launch-ui-primary);
+}
+
+.launch-ui-tree-item.is-block .launch-ui-tree-title,
+.launch-ui-tree.is-block .launch-ui-tree-item .launch-ui-tree-title {
+  background: transparent;
+}
+
+.launch-ui-tree-item .launch-ui-checkbox {
+  margin-inline: 4px;
+}
+
+.launch-ui-tree-item.is-disabled {
+  color: var(--launch-ui-text-disabled);
+}
+
+.launch-ui-tree-item.is-disabled .launch-ui-tree-title {
+  cursor: not-allowed;
+}
+
+.launch-ui-tree-item.is-dragging {
+  opacity: 0.45;
+}
+
+.launch-ui-tree-node.is-drop-inside > .launch-ui-tree-item {
+  background: var(--launch-ui-primary-bg);
+}
+
+.launch-ui-tree-node.is-drop-before > .launch-ui-tree-item::before,
+.launch-ui-tree-node.is-drop-after > .launch-ui-tree-item::after {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--launch-ui-primary);
+  content: "";
+}
+
+.launch-ui-tree-node.is-drop-before > .launch-ui-tree-item::before {
+  top: 0;
+}
+
+.launch-ui-tree-node.is-drop-after > .launch-ui-tree-item::after {
+  bottom: 0;
+}
+
+.launch-ui-tree.has-line .launch-ui-tree-group .launch-ui-tree-group {
+  position: relative;
+}
+
+.launch-ui-tree.has-line .launch-ui-tree-group .launch-ui-tree-group::before {
+  position: absolute;
+  top: 0;
+  bottom: 12px;
+  left: 11px;
+  border-inline-start: 1px solid var(--launch-ui-border-soft);
+  content: "";
+}
+
+.launch-ui-tree.has-line
+  .launch-ui-tree-group
+  .launch-ui-tree-group
+  > .launch-ui-tree-node::before {
+  position: absolute;
+  top: 12px;
+  left: -13px;
+  width: 13px;
+  border-top: 1px solid var(--launch-ui-border-soft);
+  content: "";
+}
+
+.launch-ui-directory-tree .launch-ui-tree-item {
+  display: flex;
+  width: 100%;
+}
+
+.launch-ui-directory-tree .launch-ui-tree-title {
+  flex: 1;
+}
+
+.launch-ui-directory-tree .launch-ui-tree-item.is-selected {
+  background: var(--launch-ui-primary);
+  color: #fff;
+}
+
+.launch-ui-directory-tree .launch-ui-tree-item.is-selected .launch-ui-tree-title {
+  background: transparent;
+  color: inherit;
+}
+
 .launch-ui-alert {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -7081,6 +7315,9 @@
   .launch-ui-upload.is-drag .launch-ui-upload-trigger,
   .launch-ui-textarea-clear,
   .launch-ui-textarea-wrapper,
+  .launch-ui-tree-item,
+  .launch-ui-tree-title,
+  .launch-ui-tree-switcher,
   .launch-ui-table tbody tr {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
