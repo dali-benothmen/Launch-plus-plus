@@ -780,7 +780,15 @@ function TreeInner(treeProps: TreeProps, forwardedRef: ForwardedRef<TreeRef>) {
                 {title}
               </button>
             </div>
-            {hasChildren && expanded ? renderNodes(node.children) : null}
+            {hasChildren ? (
+              <div
+                aria-hidden={!expanded}
+                className={classes("launch-ui-tree-children", expanded && "is-expanded")}
+                inert={!expanded}
+              >
+                <div className="launch-ui-tree-children-inner">{renderNodes(node.children)}</div>
+              </div>
+            ) : null}
           </li>
         );
       })}

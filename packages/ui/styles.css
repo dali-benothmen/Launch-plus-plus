@@ -6009,6 +6009,25 @@
   padding-inline-start: 24px;
 }
 
+.launch-ui-tree-children {
+  display: grid;
+  opacity: 0;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--launch-ui-mid) var(--launch-ui-ease),
+    opacity var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-tree-children.is-expanded {
+  opacity: 1;
+  grid-template-rows: 1fr;
+}
+
+.launch-ui-tree-children-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .launch-ui-tree-node {
   position: relative;
   outline: none;
@@ -7316,6 +7335,7 @@
   .launch-ui-textarea-clear,
   .launch-ui-textarea-wrapper,
   .launch-ui-tree-item,
+  .launch-ui-tree-children,
   .launch-ui-tree-title,
   .launch-ui-tree-switcher,
   .launch-ui-table tbody tr {
