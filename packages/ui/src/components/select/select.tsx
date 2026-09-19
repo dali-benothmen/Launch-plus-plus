@@ -242,6 +242,7 @@ export const Select = forwardRef<SelectRef, SelectProps>(
       defaultValue ?? (mode === undefined ? undefined : []),
     );
     const [internalOpen, setInternalOpen] = useState(defaultOpen);
+    const [popupMounted, setPopupMounted] = useState(defaultOpen && !disabled);
     const [searchValue, setSearchValue] = useState("");
     const [activeIndex, setActiveIndex] = useState(-1);
     const [popupPosition, setPopupPosition] = useState<CSSProperties>({ visibility: "hidden" });
@@ -319,12 +320,9 @@ export const Select = forwardRef<SelectRef, SelectProps>(
     const updateOpen = useCallback(
       (nextOpen: boolean) => {
         if (disabled) return;
+        if (nextOpen) setPopupMounted(true);
         if (controlledOpen === undefined) setInternalOpen(nextOpen);
         if (nextOpen !== open) onOpenChange?.(nextOpen);
-        if (!nextOpen) {
-          setSearchValue("");
-          setActiveIndex(-1);
-        }
       },
       [controlledOpen, disabled, onOpenChange, open],
     );
@@ -477,6 +475,20 @@ export const Select = forwardRef<SelectRef, SelectProps>(
     );
 
     useEffect(() => {
+      if (popupVisible) setPopupMounted(true);
+    }, [popupVisible]);
+
+    useEffect(() => {
+      if (popupVisible || !popupMounted) return;
+      const fallback = window.setTimeout(() => {
+        setPopupMounted(false);
+        setSearchValue("");
+        setActiveIndex(-1);
+      }, 250);
+      return () => window.clearTimeout(fallback);
+    }, [popupMounted, popupVisible]);
+
+    useEffect(() => {
       if (!popupVisible) return;
       const closeOnOutsidePointer = (event: PointerEvent) => {
         const target = event.target as Node;
@@ -621,7 +633,7 @@ export const Select = forwardRef<SelectRef, SelectProps>(
         )}
       </div>
     );
-    const popup = popupVisible ? (
+    const popup = popupMounted ? (
       <div
         className={classes(
           "launch-ui-select-content",
@@ -629,7 +641,14 @@ export const Select = forwardRef<SelectRef, SelectProps>(
           resolvedClassNames.popup,
         )}
         data-launch-ui-popup="select"
+        data-state={popupVisible ? "open" : "closed"}
         id={listboxId}
+        onAnimationEnd={(event) => {
+          if (event.currentTarget !== event.target || popupVisible) return;
+          setPopupMounted(false);
+          setSearchValue("");
+          setActiveIndex(-1);
+        }}
         ref={popupRef}
         role="listbox"
         style={{ ...popupPosition, ...resolvedStyles.popup }}

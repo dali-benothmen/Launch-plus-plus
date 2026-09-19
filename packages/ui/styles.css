@@ -4099,6 +4099,11 @@
   pointer-events: auto;
 }
 
+.launch-ui-select-content[data-state="closed"] {
+  animation: launch-ui-popup-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+  pointer-events: none;
+}
+
 .launch-ui-select-content.is-top {
   transform-origin: bottom center;
 }
@@ -7973,6 +7978,7 @@
   .launch-ui-search-button,
   .launch-ui-search-icon-button,
   .launch-ui-select-trigger,
+  .launch-ui-select-content,
   .launch-ui-select-item,
   .launch-ui-menu-item,
   .launch-ui-checkbox-icon,
