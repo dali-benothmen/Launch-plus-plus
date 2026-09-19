@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   check,
   customType,
   foreignKey,
@@ -274,6 +275,11 @@ export const projectStatuses = sqliteTable(
       table.projectId,
       sql`lower(${table.name})`,
     ),
+    uniqueIndex("project_statuses_workspace_project_id_unique").on(
+      table.workspaceId,
+      table.projectId,
+      table.id,
+    ),
     index("project_statuses_project_state_idx").on(table.projectId, table.archivedAt),
     foreignKey({
       columns: [table.workspaceId, table.projectId],
@@ -315,6 +321,167 @@ export const projectPreferences = sqliteTable(
   ],
 );
 
+export const tasks = sqliteTable(
+  "tasks",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    projectId: text("project_id").notNull(),
+    number: integer("number").notNull(),
+    parentTaskId: text("parent_task_id").references((): AnySQLiteColumn => tasks.id, {
+      onDelete: "restrict",
+    }),
+    statusId: text("status_id").notNull(),
+    title: text("title").notNull(),
+    description: text("description_markdown").notNull().default(""),
+    dueDate: text("due_date"),
+    position: integer("position").notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    updatedByUserId: text("updated_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    archivedAt: integer("archived_at"),
+    deletedAt: integer("deleted_at"),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    uniqueIndex("tasks_project_number_unique").on(table.projectId, table.number),
+    uniqueIndex("tasks_workspace_id_unique").on(table.workspaceId, table.id),
+    uniqueIndex("tasks_project_scope_position_unique")
+      .on(table.projectId, table.statusId, sql`coalesce(${table.parentTaskId}, '')`, table.position)
+      .where(sql`${table.archivedAt} is null and ${table.deletedAt} is null`),
+    index("tasks_project_status_position_idx").on(
+      table.projectId,
+      table.statusId,
+      table.parentTaskId,
+      table.position,
+    ),
+    index("tasks_project_updated_idx").on(table.projectId, table.updatedAt),
+    index("tasks_parent_idx").on(table.parentTaskId, table.archivedAt),
+    index("tasks_due_date_idx").on(table.workspaceId, table.dueDate),
+    foreignKey({
+      columns: [table.workspaceId, table.projectId],
+      foreignColumns: [projects.workspaceId, projects.id],
+      name: "tasks_workspace_project_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.projectId, table.statusId],
+      foreignColumns: [projectStatuses.workspaceId, projectStatuses.projectId, projectStatuses.id],
+      name: "tasks_workspace_project_status_fk",
+    }).onDelete("restrict"),
+    check("tasks_number_positive", sql`${table.number} > 0`),
+    check("tasks_title_not_blank", sql`length(trim(${table.title})) > 0`),
+    check("tasks_position_valid", sql`${table.position} >= 0`),
+    check("tasks_revision_positive", sql`${table.revision} > 0`),
+    check(
+      "tasks_due_date_valid",
+      sql`${table.dueDate} is null or ${table.dueDate} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
+    ),
+    check(
+      "tasks_parent_not_self",
+      sql`${table.parentTaskId} is null or ${table.parentTaskId} <> ${table.id}`,
+    ),
+  ],
+);
+
+export const taskAssignees = sqliteTable(
+  "task_assignees",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    taskId: text("task_id").notNull(),
+    userId: text("user_id").notNull(),
+    assignedByUserId: text("assigned_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    assignedAt: integer("assigned_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.userId] }),
+    index("task_assignees_user_idx").on(table.workspaceId, table.userId, table.taskId),
+    foreignKey({
+      columns: [table.workspaceId, table.taskId],
+      foreignColumns: [tasks.workspaceId, tasks.id],
+      name: "task_assignees_workspace_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.userId],
+      foreignColumns: [workspaceMembers.workspaceId, workspaceMembers.userId],
+      name: "task_assignees_workspace_member_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const labels = sqliteTable(
+  "labels",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: text("project_id"),
+    name: text("name").notNull(),
+    comparisonKey: text("comparison_key").notNull(),
+    color: text("color").notNull(),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    archivedAt: integer("archived_at"),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    uniqueIndex("labels_workspace_id_unique").on(table.workspaceId, table.id),
+    uniqueIndex("labels_scope_name_unique").on(
+      table.workspaceId,
+      sql`coalesce(${table.projectId}, '')`,
+      table.comparisonKey,
+    ),
+    index("labels_workspace_project_state_idx").on(
+      table.workspaceId,
+      table.projectId,
+      table.archivedAt,
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.projectId],
+      foreignColumns: [projects.workspaceId, projects.id],
+      name: "labels_workspace_project_fk",
+    }).onDelete("cascade"),
+    check("labels_name_not_blank", sql`length(trim(${table.name})) > 0`),
+    check("labels_comparison_key_not_blank", sql`length(${table.comparisonKey}) > 0`),
+    check("labels_color_not_blank", sql`length(trim(${table.color})) > 0`),
+    check("labels_revision_positive", sql`${table.revision} > 0`),
+  ],
+);
+
+export const taskLabels = sqliteTable(
+  "task_labels",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    taskId: text("task_id").notNull(),
+    labelId: text("label_id").notNull(),
+    appliedByUserId: text("applied_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    appliedAt: integer("applied_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.labelId] }),
+    index("task_labels_label_idx").on(table.workspaceId, table.labelId, table.taskId),
+    foreignKey({
+      columns: [table.workspaceId, table.taskId],
+      foreignColumns: [tasks.workspaceId, tasks.id],
+      name: "task_labels_workspace_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.labelId],
+      foreignColumns: [labels.workspaceId, labels.id],
+      name: "task_labels_workspace_label_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
 export const auditEntries = sqliteTable(
   "audit_entries",
   {
@@ -350,11 +517,15 @@ export const databaseSchema = {
   authUsers,
   authVerifications,
   installations,
+  labels,
   outboxMessages,
   projectFolders,
   projectPreferences,
   projectStatuses,
   projects,
+  taskAssignees,
+  taskLabels,
+  tasks,
   userProfiles,
   workspaceMembers,
   workspaces,

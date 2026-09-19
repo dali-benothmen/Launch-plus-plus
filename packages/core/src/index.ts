@@ -38,6 +38,26 @@ export {
   ProjectNotFoundError,
   ProjectOrderInvalidError,
 } from "./projects/project.js";
+export { type TaskServiceDependencies, TaskService } from "./tasks/task-service.js";
+export type {
+  Label,
+  Task,
+  TaskCatalog,
+  TaskRepository,
+  TaskView,
+} from "./tasks/task.js";
+export {
+  TaskAccessDeniedError,
+  TaskAssigneeInvalidError,
+  TaskLabelInvalidError,
+  TaskLabelNameConflictError,
+  TaskNotFoundError,
+  TaskOrderInvalidError,
+  TaskParentInvalidError,
+  TaskProjectUnavailableError,
+  TaskRevisionConflictError,
+  TaskStatusInvalidError,
+} from "./tasks/task.js";
 export {
   type CreateWorkspaceDependencies,
   type CreateWorkspaceInput,

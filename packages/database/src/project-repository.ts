@@ -380,7 +380,9 @@ export class SqliteProjectRepository implements ProjectRepository {
     const update = connection.prepare(
       "UPDATE project_folders SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND workspace_id = ?",
     );
-    orderedIds.forEach((id, position) => update.run(position, updatedAt, id, workspaceId));
+    orderedIds.forEach((id, position) => {
+      update.run(position, updatedAt, id, workspaceId);
+    });
   }
 
   reorderProjects(
@@ -403,7 +405,9 @@ export class SqliteProjectRepository implements ProjectRepository {
     const update = connection.prepare(
       "UPDATE projects SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND workspace_id = ?",
     );
-    orderedIds.forEach((id, position) => update.run(position, updatedAt, id, workspaceId));
+    orderedIds.forEach((id, position) => {
+      update.run(position, updatedAt, id, workspaceId);
+    });
   }
 
   saveFolder(context: WriteContext, folder: ProjectFolder): void {
@@ -428,7 +432,7 @@ export class SqliteProjectRepository implements ProjectRepository {
       .prepare(
         `UPDATE projects
          SET folder_id = ?, name = ?, description = ?, access = ?, position = ?,
-             updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
+             next_task_number = ?, updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
          WHERE id = ? AND workspace_id = ?`,
       )
       .run(
@@ -437,6 +441,7 @@ export class SqliteProjectRepository implements ProjectRepository {
         project.description,
         project.access,
         project.position,
+        project.nextTaskNumber,
         project.updatedAt,
         project.archivedAt ?? null,
         project.deletedAt ?? null,

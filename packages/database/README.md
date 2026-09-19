@@ -25,6 +25,8 @@ Workspace names and URL slugs are unique within an installation. Name comparison
 
 Project persistence keeps navigation folders organizational and one level deep. Composite foreign keys prevent folders, projects, and statuses from crossing workspace boundaries. Active folder/project/status positions are database-constrained; archived projects leave active ordering without losing their stored position. Per-user project preferences hold favorite and last-opened state separately from shared project records. Creating a project and its ordered To do, In progress, and Done statuses is one transaction.
 
+Task persistence stores tasks and one-level subtasks over the same project statuses used by Board and List. Project-local task numbers are allocated transactionally and never reused. Composite keys keep statuses, assignments, and labels within their workspace/project scope; task revisions protect collaborative mutations from silent last-write-wins updates. Assignees reference workspace memberships, due dates remain calendar dates, and task/label changes are committed with their audit and outbox facts.
+
 Only owner membership is created or managed in the current solo slice. The schema reserves the documented admin and member values, but invitation, role-change, suspension, removal, and ownership-transfer flows are not exposed until the team phase.
 
 ```bash
