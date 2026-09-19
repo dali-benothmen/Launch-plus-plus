@@ -60,8 +60,11 @@ pnpm install --frozen-lockfile
 pnpm check
 pnpm build
 pnpm start:server
+pnpm dev:server
 pnpm dev:web
 ```
+
+Use `pnpm dev:server` while changing backend code. It incrementally rebuilds the server and its workspace dependencies, then restarts Fastify automatically after each successful emit.
 
 The root checks cover formatting, linting, TypeScript project references, unit and contract tests, migrations, and workspace architecture boundaries. Browser isolation tests are available through `pnpm test:browser`; the focused abuse suite uses `pnpm test:adversarial`, and the reproducible foundation budgets use `pnpm measure:foundation -- --check`.
 

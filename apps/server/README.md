@@ -9,6 +9,14 @@ pnpm build
 pnpm start:server
 ```
 
+For backend development, run the repository-level watcher instead:
+
+```bash
+pnpm dev:server
+```
+
+It watches the server and referenced backend workspaces, recompiles changed TypeScript, and automatically restarts Fastify. Stop both watcher processes with `Ctrl+C`.
+
 The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp.sqlite`. Liveness is available at `/health/live`; readiness is available at `/health/ready`. Readiness becomes true only after the listener and migrated SQLite composition are available, and becomes false before graceful shutdown begins. Closing the server releases the Better Auth and application database connections after in-flight work.
 
 ## Configuration
