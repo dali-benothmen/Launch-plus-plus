@@ -33,6 +33,7 @@ import { switchShowcase } from "./components/switch.showcase.js";
 import { tableShowcase } from "./components/table.showcase.js";
 import { tabsShowcase } from "./components/tabs.showcase.js";
 import { tagShowcase } from "./components/tag.showcase.js";
+import { timelineShowcase } from "./components/timeline.showcase.js";
 import { tooltipShowcase } from "./components/tooltip.showcase.js";
 import { typographyShowcase } from "./components/typography.showcase.js";
 import { uploadShowcase } from "./components/upload.showcase.js";
@@ -79,6 +80,7 @@ export const componentRegistry = defineShowcases([
   cardShowcase,
   tableShowcase,
   tagShowcase,
+  timelineShowcase,
   alertShowcase,
   dialogShowcase,
   dropdownMenuShowcase,
