@@ -1,28 +1,155 @@
-import { ApiError, type ProjectCatalog, type WorkspaceContext } from "@launchpp/api-client";
-import { Alert, Button, Card, Form, Input, Spin, Tag, Typography } from "@launchpp/ui";
+import {
+  ApiError,
+  type ProjectCatalog,
+  type ProjectSummary,
+  type TaskView,
+  type WorkspaceContext,
+} from "@launchpp/api-client";
+import { Alert, Button, Card, Empty, Form, Input, List, Spin, Tag, Typography } from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
 import { ResourceFailure } from "./route-boundaries.js";
 
+interface MyWorkProject {
+  readonly project: ProjectSummary;
+  readonly workspaceName: string;
+}
+
+interface MyWorkTask {
+  readonly project: ProjectSummary;
+  readonly statusCategory: "active" | "backlog" | "done";
+  readonly statusColor: string;
+  readonly statusName: string;
+  readonly task: TaskView;
+  readonly workspaceName: string;
+}
+
+interface MyWorkData {
+  readonly assignedTasks: readonly MyWorkTask[];
+  readonly dueSoonTasks: readonly MyWorkTask[];
+  readonly projects: readonly MyWorkProject[];
+  readonly recentTasks: readonly MyWorkTask[];
+}
+
+const myWorkItemLimit = 5;
+const dateFormatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+
+function formatDate(value: string | number) {
+  const date = typeof value === "string" ? new Date(`${value}T00:00:00`) : new Date(value);
+  return dateFormatter.format(date);
+}
+
+function todayKey() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function dueSoonLimitKey() {
+  const limit = new Date();
+  limit.setDate(limit.getDate() + 7);
+  const month = String(limit.getMonth() + 1).padStart(2, "0");
+  const day = String(limit.getDate()).padStart(2, "0");
+  return `${limit.getFullYear()}-${month}-${day}`;
+}
+
 export function MyWorkPage() {
   const api = useApiClient();
   const navigate = useNavigate();
-  const [projectCount, setProjectCount] = useState<number>();
+  const [data, setData] = useState<MyWorkData>();
   const [loadError, setLoadError] = useState<unknown>();
   const openProjectCreation = () => navigate("/app/projects/new");
 
   const load = useCallback(() => {
     setLoadError(undefined);
-    void api.workspaces
-      .list()
-      .then(async (context) => {
-        if (!context.currentWorkspaceId) return setProjectCount(0);
-        const catalog = await api.projects.list(context.currentWorkspaceId);
-        setProjectCount(
-          catalog.projects.filter((project) => project.archivedAt === undefined).length,
+    void Promise.all([api.auth.session(), api.workspaces.list({ limit: 100 })])
+      .then(async ([session, context]) => {
+        if (!session) throw new ApiError(401, "Your session has expired.");
+
+        const catalogs = await Promise.all(
+          context.workspaces.map(async (workspace) => ({
+            catalog: await api.projects.list(workspace.id, { limit: 100 }),
+            workspace,
+          })),
         );
+        const projects = catalogs.flatMap(({ catalog, workspace }) =>
+          catalog.projects
+            .filter((project) => project.archivedAt === undefined)
+            .map((project) => ({ project, workspaceName: workspace.name })),
+        );
+        const tasks = (
+          await Promise.all(
+            projects.map(async (entry) => {
+              const catalog = catalogs.find(
+                ({ workspace }) => workspace.id === entry.project.workspaceId,
+              )?.catalog;
+              const statuses = new Map(
+                catalog?.statuses
+                  .filter((status) => status.projectId === entry.project.id)
+                  .map((status) => [status.id, status]),
+              );
+              const page = await api.tasks.list(entry.project.workspaceId, entry.project.id, {
+                limit: 100,
+              });
+              return page.items.flatMap((task) => {
+                const status = statuses.get(task.statusId);
+                if (!status || task.archivedAt !== undefined) return [];
+                return [
+                  {
+                    ...entry,
+                    statusCategory: status.category,
+                    statusColor: status.color,
+                    statusName: status.name,
+                    task,
+                  } satisfies MyWorkTask,
+                ];
+              });
+            }),
+          )
+        ).flat();
+        const openTasks = tasks.filter(({ statusCategory }) => statusCategory !== "done");
+        const assignedTasks = openTasks
+          .filter(({ task }) => task.assigneeUserIds.includes(session.identity.id))
+          .toSorted((first, second) => {
+            if (first.task.dueDate && second.task.dueDate) {
+              return first.task.dueDate.localeCompare(second.task.dueDate);
+            }
+            if (first.task.dueDate) return -1;
+            if (second.task.dueDate) return 1;
+            return second.task.updatedAt - first.task.updatedAt;
+          });
+        const dueLimit = dueSoonLimitKey();
+        const recentProjects = projects
+          .filter(({ project }) => project.favorite || project.lastOpenedAt !== undefined)
+          .toSorted((first, second) => {
+            if (first.project.favorite !== second.project.favorite) {
+              return first.project.favorite ? -1 : 1;
+            }
+            return (second.project.lastOpenedAt ?? 0) - (first.project.lastOpenedAt ?? 0);
+          });
+
+        setData({
+          assignedTasks: assignedTasks.slice(0, myWorkItemLimit),
+          dueSoonTasks: assignedTasks
+            .filter(({ task }) => task.dueDate !== undefined && task.dueDate <= dueLimit)
+            .slice(0, myWorkItemLimit),
+          projects: (recentProjects.length > 0 ? recentProjects : projects).slice(
+            0,
+            myWorkItemLimit,
+          ),
+          recentTasks: openTasks
+            .filter(
+              ({ task }) =>
+                task.assigneeUserIds.includes(session.identity.id) ||
+                task.createdByUserId === session.identity.id ||
+                task.updatedByUserId === session.identity.id,
+            )
+            .toSorted((first, second) => second.task.updatedAt - first.task.updatedAt)
+            .slice(0, myWorkItemLimit),
+        });
       })
       .catch(setLoadError);
   }, [api]);
@@ -34,49 +161,147 @@ export function MyWorkPage() {
   }, [load]);
 
   if (loadError) return <ResourceFailure error={loadError} onRetry={load} />;
+  if (!data) {
+    return (
+      <div className="page-loading">
+        <Spin />
+      </div>
+    );
+  }
+
+  const openProject = (project: ProjectSummary) => {
+    void api.projects
+      .markOpened(project.workspaceId, project.id)
+      .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
+      .catch(() => undefined);
+    navigate(`/app/workspaces/${project.workspaceId}/projects/${project.id}`);
+  };
+
+  const projectHref = (project: ProjectSummary) =>
+    `/app/workspaces/${project.workspaceId}/projects/${project.id}`;
+
+  const projectLink = (project: ProjectSummary, label: string) => (
+    <Typography.Link
+      href={projectHref(project)}
+      onClick={(event) => {
+        event.preventDefault();
+        openProject(project);
+      }}
+    >
+      {label}
+    </Typography.Link>
+  );
+
+  const renderTask = ({ project, statusColor, statusName, task }: MyWorkTask) => (
+    <div className="my-work-list-item">
+      <div className="my-work-item-copy">
+        {projectLink(project, task.title)}
+        <Typography.Text type="secondary">
+          {task.reference} · {project.name}
+        </Typography.Text>
+      </div>
+      <Tag color={statusColor}>{statusName}</Tag>
+    </div>
+  );
 
   return (
     <section aria-labelledby="my-work-title" className="page-stack">
       <header className="page-header">
         <div>
-          <Typography.Text type="secondary">Workspace</Typography.Text>
+          <Typography.Text type="secondary">Overview</Typography.Text>
           <Typography.Title id="my-work-title" level={1}>
             My Work
           </Typography.Title>
-          <Typography.Text type="secondary">
-            Your projects and assigned work will appear here.
-          </Typography.Text>
+          <Typography.Text type="secondary">What should you work on next?</Typography.Text>
         </div>
         <Button onClick={openProjectCreation} variant="primary">
           Create project
         </Button>
       </header>
-      <Card className="home-empty-card">
-        <div className="home-empty-state">
-          {projectCount === undefined ? (
-            <Spin size="small" />
-          ) : projectCount === 0 ? (
-            <>
-              <Typography.Title level={3}>No projects yet</Typography.Title>
-              <Typography.Text type="secondary">
-                Create your first project to get started.
-              </Typography.Text>
-              <Button className="home-empty-action" onClick={openProjectCreation} variant="primary">
-                Create project
-              </Button>
-            </>
-          ) : (
-            <>
-              <Typography.Title level={3}>
-                {projectCount} {projectCount === 1 ? "project" : "projects"}
-              </Typography.Title>
-              <Typography.Text type="secondary">
-                Open a project from the sidebar to continue working.
-              </Typography.Text>
-            </>
-          )}
+      {data.projects.length === 0 ? (
+        <Card className="home-empty-card">
+          <Empty description="No projects yet">
+            <Button onClick={openProjectCreation} variant="primary">
+              Create project
+            </Button>
+          </Empty>
+        </Card>
+      ) : (
+        <div className="my-work-grid">
+          <Card size="small" title="Assigned to me">
+            {data.assignedTasks.length > 0 ? (
+              <List
+                itemRender={renderTask}
+                items={data.assignedTasks}
+                rowKey={({ task }) => task.id}
+              />
+            ) : (
+              <Empty description="No assigned tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+          <Card size="small" title="Due soon">
+            {data.dueSoonTasks.length > 0 ? (
+              <List
+                itemRender={(item) => (
+                  <div className="my-work-list-item">
+                    <div className="my-work-item-copy">
+                      {projectLink(item.project, item.task.title)}
+                      <Typography.Text type="secondary">
+                        {item.task.dueDate && item.task.dueDate < todayKey()
+                          ? `Overdue · ${formatDate(item.task.dueDate)}`
+                          : `Due ${formatDate(item.task.dueDate ?? "")}`}
+                      </Typography.Text>
+                    </div>
+                    <Tag color={item.statusColor}>{item.statusName}</Tag>
+                  </div>
+                )}
+                items={data.dueSoonTasks}
+                rowKey={({ task }) => task.id}
+              />
+            ) : (
+              <Empty description="Nothing due soon" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+          <Card size="small" title="Recently updated">
+            {data.recentTasks.length > 0 ? (
+              <List
+                itemRender={(item) => (
+                  <div className="my-work-list-item">
+                    <div className="my-work-item-copy">
+                      {projectLink(item.project, item.task.title)}
+                      <Typography.Text type="secondary">
+                        {item.project.name} · Updated {formatDate(item.task.updatedAt)}
+                      </Typography.Text>
+                    </div>
+                    <Tag color={item.statusColor}>{item.statusName}</Tag>
+                  </div>
+                )}
+                items={data.recentTasks}
+                rowKey={({ task }) => task.id}
+              />
+            ) : (
+              <Empty description="No recent task activity" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+          <Card size="small" title="Recent and favorite projects">
+            <List
+              itemRender={({ project, workspaceName }) => (
+                <div className="my-work-list-item">
+                  <div className="my-work-item-copy">
+                    {projectLink(project, project.name)}
+                    <Typography.Text type="secondary">
+                      {workspaceName} · {project.key}
+                    </Typography.Text>
+                  </div>
+                  {project.favorite ? <Tag>Favorite</Tag> : null}
+                </div>
+              )}
+              items={data.projects}
+              rowKey={({ project }) => project.id}
+            />
+          </Card>
         </div>
-      </Card>
+      )}
     </section>
   );
 }
