@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { InfoCircleOutlined } from "../src/icons.js";
 import {
   AutoComplete,
@@ -18,13 +18,16 @@ import {
   showcaseStages,
 } from "./registry.js";
 
-type StageFilter = "all" | ShowcaseStage;
-
 const stageDescriptions: Record<ShowcaseStage, string> = {
   dev: "Actively being built and available only in this showcase.",
   test: "Ready for manual review but not part of the public package API.",
   prod: "Approved and exported from the public @launchpp/ui package API.",
 };
+
+const searchOptions: ReadonlyArray<AutoCompleteOption> = componentRegistry.map((entry) => ({
+  label: `${entry.name} · ${entry.category}`,
+  value: entry.name,
+}));
 
 function StageBadge({ stage }: { readonly stage: ShowcaseStage }) {
   return <span className={`showcase-stage is-${stage}`}>{stage}</span>;
@@ -133,36 +136,11 @@ function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
 export function ShowcaseApp() {
   const [query, setQuery] = useState("");
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
-  const [stage, setStage] = useState<StageFilter>("all");
   const [selectedId, setSelectedId] = useState<string | undefined>(componentRegistry[0]?.id);
 
-  const searchOptions = useMemo<ReadonlyArray<AutoCompleteOption>>(
-    () =>
-      componentRegistry
-        .filter((entry) => stage === "all" || entry.stage === stage)
-        .map((entry) => ({
-          label: `${entry.name} · ${entry.category}`,
-          value: entry.name,
-        })),
-    [stage],
-  );
-
-  const visibleEntries = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-    return componentRegistry.filter((entry) => {
-      const matchesStage = stage === "all" || entry.stage === stage;
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        entry.name.toLocaleLowerCase().includes(normalizedQuery) ||
-        entry.description.toLocaleLowerCase().includes(normalizedQuery) ||
-        entry.category.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesStage && matchesQuery;
-    });
-  }, [query, stage]);
-
   const selectedEntry =
-    visibleEntries.find((entry) => entry.id === selectedId) ?? visibleEntries[0];
-  const categories = Array.from(new Set(visibleEntries.map((entry) => entry.category)));
+    componentRegistry.find((entry) => entry.id === selectedId) ?? componentRegistry[0];
+  const categories = Array.from(new Set(componentRegistry.map((entry) => entry.category)));
 
   return (
     <LaunchProvider mode="light">
@@ -184,8 +162,9 @@ export function ShowcaseApp() {
               onSelect={(name) => {
                 const selected = componentRegistry.find((entry) => entry.name === name);
                 if (selected) setSelectedId(selected.id);
+                setQuery("");
               }}
-              options={searchOptions}
+              options={query.trim().length > 0 ? searchOptions : []}
               placeholder="Search components"
               showSearch={{
                 filterOption: (inputValue, option) => {
@@ -229,25 +208,11 @@ export function ShowcaseApp() {
         </header>
 
         <aside className="showcase-sidebar">
-          <fieldset className="showcase-filters">
-            <legend className="showcase-visually-hidden">Filter by lifecycle stage</legend>
-            {(["all", ...showcaseStages] as const).map((filter) => (
-              <button
-                className={stage === filter ? "is-active" : undefined}
-                key={filter}
-                onClick={() => setStage(filter)}
-                type="button"
-              >
-                {filter}
-              </button>
-            ))}
-          </fieldset>
-
           <nav aria-label="Components" className="showcase-navigation">
             {categories.map((category) => (
               <section key={category}>
                 <h2>{category}</h2>
-                {visibleEntries
+                {componentRegistry
                   .filter((entry) => entry.category === category)
                   .map((entry) => (
                     <button
@@ -270,10 +235,7 @@ export function ShowcaseApp() {
             <ComponentDetails entry={selectedEntry} />
           ) : (
             <div className="showcase-empty">
-              <h1>No matching components</h1>
-              <p className="showcase-empty-copy">
-                Change the search or lifecycle filter to see registered components.
-              </p>
+              <h1>No components registered</h1>
             </div>
           )}
         </main>

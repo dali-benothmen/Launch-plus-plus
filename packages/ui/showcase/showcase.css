@@ -96,33 +96,6 @@ button {
   justify-content: flex-end;
 }
 
-.showcase-filters {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 3px;
-  border: 0;
-  border-radius: 8px;
-  margin: 0;
-  background: var(--launch-color-bg-subtle);
-}
-
-.showcase-filters button {
-  padding: 4px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--launch-color-text-muted);
-  cursor: pointer;
-  font-size: 11px;
-  text-transform: uppercase;
-}
-
-.showcase-filters button.is-active {
-  background: var(--launch-color-bg-elevated);
-  color: var(--launch-color-text);
-  font-weight: 600;
-}
-
 .showcase-navigation {
   overflow-y: auto;
   flex: 1;
