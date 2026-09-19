@@ -6244,15 +6244,16 @@
 }
 
 .launch-ui-alert {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid transparent;
+  border: var(--launch-ui-line-width) var(--launch-ui-line-style) transparent;
   border-radius: var(--launch-ui-radius-lg);
   color: var(--launch-ui-text);
   font-family: var(--launch-ui-font);
-  font-size: 14px;
+  font-size: var(--launch-ui-font-size);
   line-height: 22px;
 }
 
@@ -6276,38 +6277,147 @@
   background: var(--launch-ui-error-bg);
 }
 
+.launch-ui-alert.is-filled,
+.launch-ui-alert.is-banner {
+  border-color: transparent;
+}
+
+.launch-ui-alert.is-banner {
+  border-radius: 0;
+}
+
+.launch-ui-alert.has-description {
+  align-items: flex-start;
+  padding: 16px 20px;
+}
+
 .launch-ui-alert-icon {
-  display: inline-grid;
-  width: 16px;
-  height: 16px;
-  place-items: center;
-  margin-top: 3px;
-  border-radius: 50%;
-  background: var(--launch-ui-info);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
+  display: inline-flex;
+  width: 14px;
+  min-width: 14px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--launch-ui-info);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.launch-ui-alert.has-description .launch-ui-alert-icon {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  font-size: 24px;
+}
+
+.launch-ui-alert-icon > svg {
+  display: block;
 }
 
 .launch-ui-alert.is-success .launch-ui-alert-icon {
-  background: var(--launch-ui-success);
+  color: var(--launch-ui-success);
 }
 
 .launch-ui-alert.is-warning .launch-ui-alert-icon {
-  background: var(--launch-ui-warning);
+  color: var(--launch-ui-warning);
 }
 
 .launch-ui-alert.is-error .launch-ui-alert-icon {
-  background: var(--launch-ui-error);
+  color: var(--launch-ui-error);
 }
 
-.launch-ui-alert-copy {
-  display: grid;
+.launch-ui-alert-section {
+  min-width: 0;
+  flex: 1;
 }
 
-.launch-ui-alert-copy span {
-  color: var(--launch-ui-text-secondary);
+.launch-ui-alert-title {
+  color: var(--launch-ui-text);
+  font-size: var(--launch-ui-font-size);
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.launch-ui-alert.has-description .launch-ui-alert-title {
+  margin-bottom: 4px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.launch-ui-alert-description {
+  color: var(--launch-ui-text);
+  font-size: var(--launch-ui-font-size);
+  line-height: 22px;
+}
+
+.launch-ui-alert-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: center;
+  margin-inline-start: auto;
+}
+
+.launch-ui-alert.has-description .launch-ui-alert-actions {
+  align-self: flex-start;
+}
+
+.launch-ui-alert-close {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  place-items: center;
+  align-self: center;
+  background: transparent;
+  color: var(--launch-ui-text-tertiary);
+  cursor: pointer;
+  font: inherit;
+  outline: none;
+  transition: color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-alert.has-description .launch-ui-alert-close {
+  align-self: flex-start;
+}
+
+.launch-ui-alert-close:hover {
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-alert-close:focus-visible {
+  border-radius: var(--launch-ui-radius);
+  outline: 2px solid rgb(22 104 220 / 20%);
+  outline-offset: 1px;
+}
+
+.launch-ui-alert-close svg {
+  width: 12px;
+  height: 12px;
+}
+
+.launch-ui-alert.is-closing {
+  overflow: hidden;
+  pointer-events: none;
+  animation: launch-ui-alert-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+}
+
+@keyframes launch-ui-alert-out {
+  from {
+    max-height: 240px;
+    opacity: 1;
+  }
+
+  to {
+    max-height: 0;
+    padding-block: 0;
+    border-block-width: 0;
+    opacity: 0;
+    transform: scaleY(0.96);
+  }
 }
 
 .launch-ui-table-root {
@@ -7279,6 +7389,8 @@
   .launch-ui-badge-indicator,
   .launch-ui-badge-status-dot::after,
   .launch-ui-anchor-title,
+  .launch-ui-alert,
+  .launch-ui-alert-close,
   .launch-ui-breadcrumb-button,
   .launch-ui-breadcrumb-link,
   .launch-ui-card.is-hoverable,
