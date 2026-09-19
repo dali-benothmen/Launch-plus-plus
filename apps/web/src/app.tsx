@@ -18,7 +18,13 @@ import {
   SetupPage,
   SignInPage,
 } from "./auth-pages.js";
-import { MembersPage, MyWorkPage, ProjectCreationEntryPage, SettingsPage } from "./pages.js";
+import {
+  MembersPage,
+  MyWorkPage,
+  ProjectCreationEntryPage,
+  ProjectOverviewPage,
+  SettingsPage,
+} from "./pages.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
@@ -63,6 +69,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "projects/new",
         element: <ProjectCreationEntryPage />,
+      },
+      {
+        path: "workspaces/:workspaceId/projects/:projectId",
+        element: <ProjectOverviewPage />,
       },
       { path: "members", element: <MembersPage /> },
       { path: "settings", element: <SettingsPage /> },

@@ -17,6 +17,8 @@ First-owner setup atomically creates the installation, Launch++ profile, default
 
 The authenticated workspace endpoints currently support listing accessible workspaces, creating and renaming an owned workspace, and selecting the current workspace. Reads are membership-filtered, selection requires an active matching membership, and workspace-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
 
+The internal project endpoints expose the current project catalog, project and one-level folder lifecycle operations, ordering, archive/restore, and per-user favorite/recent state. Mutations use the same owner-only workspace management policy in the solo slice; catalog reads and personal preferences require active membership. Project creation writes the project, three default statuses, audit entry, and outbox fact atomically. These routes remain internal until the versioned HTTP contract milestone.
+
 ## Configuration
 
 Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP_*` variables, malformed values, and insecure production origins stop startup before a listener opens.

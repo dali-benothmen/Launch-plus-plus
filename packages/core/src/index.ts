@@ -19,6 +19,26 @@ export type {
   WriteContext,
 } from "./shared/transactions.js";
 export {
+  type ProjectCatalogDependencies,
+  ProjectCatalogService,
+} from "./projects/project-catalog.js";
+export type {
+  Project,
+  ProjectAccess,
+  ProjectCatalog,
+  ProjectFolder,
+  ProjectNavigationItem,
+  ProjectRepository,
+  ProjectStatus,
+  ProjectStatusCategory,
+} from "./projects/project.js";
+export {
+  ProjectFolderNameConflictError,
+  ProjectFolderNotFoundError,
+  ProjectNotFoundError,
+  ProjectOrderInvalidError,
+} from "./projects/project.js";
+export {
   type CreateWorkspaceDependencies,
   type CreateWorkspaceInput,
   CreateWorkspaceService,

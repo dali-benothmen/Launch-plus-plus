@@ -1,11 +1,35 @@
-import { Alert, Button, Card, Typography } from "@launchpp/ui";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import type { ProjectCatalog, WorkspaceContext } from "@launchpp/api-client";
+import { Alert, Button, Card, Form, Input, Select, Spin, Tag, Typography } from "@launchpp/ui";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import { projectNavigationChangedEvent } from "./project-sidebar.js";
+
+const ungroupedValue = "__ungrouped__";
 
 export function MyWorkPage() {
+  const api = useApiClient();
   const navigate = useNavigate();
+  const [projectCount, setProjectCount] = useState<number>();
   const openProjectCreation = () => navigate("/app/projects/new");
+
+  useEffect(() => {
+    const load = () => {
+      void api.workspaces
+        .list()
+        .then(async (context) => {
+          if (!context.currentWorkspaceId) return setProjectCount(0);
+          const catalog = await api.projects.list(context.currentWorkspaceId);
+          setProjectCount(
+            catalog.projects.filter((project) => project.archivedAt === undefined).length,
+          );
+        })
+        .catch(() => setProjectCount(0));
+    };
+    load();
+    window.addEventListener(projectNavigationChangedEvent, load);
+    return () => window.removeEventListener(projectNavigationChangedEvent, load);
+  }, [api]);
 
   return (
     <section aria-labelledby="my-work-title" className="page-stack">
@@ -25,13 +49,28 @@ export function MyWorkPage() {
       </header>
       <Card className="home-empty-card">
         <div className="home-empty-state">
-          <Typography.Title level={3}>No projects yet</Typography.Title>
-          <Typography.Text type="secondary">
-            Create your first project to get started.
-          </Typography.Text>
-          <Button className="home-empty-action" onClick={openProjectCreation} variant="primary">
-            Create project
-          </Button>
+          {projectCount === undefined ? (
+            <Spin size="small" />
+          ) : projectCount === 0 ? (
+            <>
+              <Typography.Title level={3}>No projects yet</Typography.Title>
+              <Typography.Text type="secondary">
+                Create your first project to get started.
+              </Typography.Text>
+              <Button className="home-empty-action" onClick={openProjectCreation} variant="primary">
+                Create project
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography.Title level={3}>
+                {projectCount} {projectCount === 1 ? "project" : "projects"}
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                Open a project from the sidebar to continue working.
+              </Typography.Text>
+            </>
+          )}
         </div>
       </Card>
     </section>
@@ -39,18 +78,176 @@ export function MyWorkPage() {
 }
 
 export function ProjectCreationEntryPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
+  const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext>();
+  const [catalog, setCatalog] = useState<ProjectCatalog>();
+  const [name, setName] = useState("");
+  const [folderId, setFolderId] = useState(ungroupedValue);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    void api.workspaces
+      .list()
+      .then(async (context) => {
+        setWorkspaceContext(context);
+        if (context.currentWorkspaceId) {
+          setCatalog(await api.projects.list(context.currentWorkspaceId));
+        }
+      })
+      .catch(setError);
+  }, [api]);
+
+  const createProject = async () => {
+    const workspaceId = workspaceContext?.currentWorkspaceId;
+    if (!workspaceId || saving || name.trim().length === 0) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      const project = await api.projects.create(workspaceId, {
+        ...(folderId === ungroupedValue ? {} : { folderId }),
+        name,
+      });
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+      navigate(`/app/workspaces/${workspaceId}/projects/${project.id}`, { replace: true });
+    } catch (reason) {
+      setError(reason);
+      setSaving(false);
+    }
+  };
+
+  if (!workspaceContext && !error) {
+    return (
+      <div className="page-loading">
+        <Spin />
+      </div>
+    );
+  }
+
   return (
     <section aria-labelledby="project-creation-title" className="page-stack">
       <Typography.Text type="secondary">First project</Typography.Text>
       <Typography.Title id="project-creation-title" level={1}>
         Create your first project
       </Typography.Title>
-      <Alert
-        description="Your owner account is ready. Workspace-backed project creation is the next product task."
-        showIcon
-        title="Setup complete"
-        type="success"
-      />
+      {error ? (
+        <Alert
+          showIcon
+          title={error instanceof Error ? error.message : "Could not create the project."}
+          type="error"
+        />
+      ) : null}
+      <Form layout="vertical" onFinish={createProject}>
+        <Form.Item label="Name">
+          <Input
+            maxLength={120}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError(undefined);
+            }}
+            placeholder="Project name"
+            value={name}
+          />
+        </Form.Item>
+        <Form.Item label="Folder">
+          <Select
+            onChange={(value) => setFolderId(String(value ?? ungroupedValue))}
+            options={[
+              { label: "Ungrouped", value: ungroupedValue },
+              ...(catalog?.folders.map((folder) => ({
+                label: folder.name,
+                value: folder.id,
+              })) ?? []),
+            ]}
+            value={folderId}
+          />
+        </Form.Item>
+        <Button
+          disabled={!workspaceContext?.currentWorkspaceId || name.trim().length === 0}
+          loading={saving}
+          type="submit"
+          variant="primary"
+        >
+          Create project
+        </Button>
+      </Form>
+    </section>
+  );
+}
+
+export function ProjectOverviewPage() {
+  const api = useApiClient();
+  const { projectId, workspaceId } = useParams();
+  const [catalog, setCatalog] = useState<ProjectCatalog>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    const load = () => {
+      setError(undefined);
+      void api.projects.list(workspaceId).then(setCatalog).catch(setError);
+    };
+    load();
+    window.addEventListener(projectNavigationChangedEvent, load);
+    return () => window.removeEventListener(projectNavigationChangedEvent, load);
+  }, [api, workspaceId]);
+
+  const project = catalog?.projects.find((item) => item.id === projectId);
+  const statuses = useMemo(
+    () =>
+      catalog?.statuses
+        .filter((status) => status.projectId === projectId)
+        .toSorted((first, second) => first.position - second.position) ?? [],
+    [catalog, projectId],
+  );
+
+  if (error) {
+    return (
+      <section className="page-stack">
+        <Alert
+          showIcon
+          title={error instanceof Error ? error.message : "Could not load the project."}
+          type="error"
+        />
+      </section>
+    );
+  }
+  if (!catalog) {
+    return (
+      <div className="page-loading">
+        <Spin />
+      </div>
+    );
+  }
+  if (!project) {
+    return (
+      <section className="page-stack">
+        <Alert showIcon title="Project not found." type="error" />
+      </section>
+    );
+  }
+
+  return (
+    <section aria-labelledby="project-title" className="page-stack">
+      <Typography.Text type="secondary">{project.key}</Typography.Text>
+      <Typography.Title id="project-title" level={1}>
+        {project.name}
+      </Typography.Title>
+      {project.description ? (
+        <Typography.Paragraph>{project.description}</Typography.Paragraph>
+      ) : null}
+      <Typography.Title level={3}>Workflow</Typography.Title>
+      <div className="project-status-list">
+        {statuses.map((status) => (
+          <Tag color={status.color} key={status.id}>
+            {status.name}
+          </Tag>
+        ))}
+      </div>
+      {project.archivedAt !== undefined ? (
+        <Alert showIcon title="This project is archived." type="warning" />
+      ) : null}
     </section>
   );
 }

@@ -183,6 +183,18 @@
   margin: 0 auto;
 }
 
+.page-loading {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+}
+
+.project-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .page-header {
   display: flex;
   align-items: flex-start;

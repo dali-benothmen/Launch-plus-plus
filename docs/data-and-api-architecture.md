@@ -123,6 +123,12 @@ Invariants:
 
 ### Projects and statuses
 
+`project_folders`
+
+- `id`, `workspace_id`, `name`, `position`
+- `created_by_user_id`, `created_at`, `updated_at`, `revision`
+- one navigation level only; removing a folder moves its projects to the ungrouped scope
+
 `projects`
 
 - `id`, `workspace_id`
@@ -133,6 +139,12 @@ Invariants:
 - `created_by_user_id`
 - `created_at`, `updated_at`, `archived_at`, `deleted_at`
 - `revision`
+
+`project_preferences`
+
+- `user_id`, `project_id`
+- `favorite`, optional `last_opened_at`, `updated_at`
+- personal navigation state only; it does not alter shared project ordering
 
 `project_statuses`
 
@@ -146,6 +158,8 @@ Invariants:
 Invariants:
 
 - A status and task always belong to the same workspace and project.
+- A folder and its projects always belong to the same workspace.
+- Active folder, project, and status positions are unique within their ordering scope.
 - A project retains at least one active status while active tasks exist.
 - Removing a used status requires moving its tasks in the same transaction or archiving the status.
 - `next_task_number` is incremented in the task-creation transaction; numbers are never reused.

@@ -7,6 +7,7 @@ import { openSqliteDatabase, type SqliteDatabase } from "@launchpp/database";
 import type { FastifyInstance } from "fastify";
 
 import { type BuildServerOptions, buildServer } from "./server.js";
+import { registerProjectRoutes } from "./project-routes.js";
 import { createSetupCoordinator } from "./setup-routes.js";
 import { registerWorkspaceRoutes } from "./workspace-routes.js";
 
@@ -53,6 +54,7 @@ export async function buildApplicationServer(
       );
     }
     await registerWorkspaceRoutes(app, { database, identity: identity.adapter });
+    await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerBetterAuthRoutes(app, identity.adapter);
     app.addHook("onClose", async () => {
       identity?.close();

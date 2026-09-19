@@ -2,6 +2,7 @@ export { SqliteAuditWriter } from "./audit-repository.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 export { SqliteOutboxRepository } from "./outbox-repository.js";
+export { SqliteProjectRepository } from "./project-repository.js";
 export { SqliteUserProfileRepository } from "./user-profile-repository.js";
 export { SqliteWorkspaceMembershipRepository } from "./workspace-membership-repository.js";
 export { SqliteWorkspaceRepository } from "./workspace-repository.js";
@@ -14,6 +15,10 @@ export {
   databaseSchema,
   installations,
   outboxMessages,
+  projectFolders,
+  projectPreferences,
+  projectStatuses,
+  projects,
   userProfiles,
   workspaceMembers,
   workspaces,
