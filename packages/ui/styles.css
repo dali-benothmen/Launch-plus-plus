@@ -6523,6 +6523,204 @@
   transform-origin: top center;
 }
 
+.launch-ui-notification-holder {
+  position: fixed;
+  z-index: 1010;
+  display: flex;
+  width: 384px;
+  max-width: calc(100vw - 32px);
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.launch-ui-notification-holder.is-top,
+.launch-ui-notification-holder.is-topLeft,
+.launch-ui-notification-holder.is-topRight {
+  top: var(--launch-ui-notification-top, 24px);
+}
+
+.launch-ui-notification-holder.is-bottom,
+.launch-ui-notification-holder.is-bottomLeft,
+.launch-ui-notification-holder.is-bottomRight {
+  bottom: var(--launch-ui-notification-bottom, 24px);
+}
+
+.launch-ui-notification-holder.is-top,
+.launch-ui-notification-holder.is-bottom {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.launch-ui-notification-holder.is-topLeft,
+.launch-ui-notification-holder.is-bottomLeft {
+  left: 24px;
+}
+
+.launch-ui-notification-holder.is-topRight,
+.launch-ui-notification-holder.is-bottomRight {
+  right: 24px;
+}
+
+.launch-ui-notification-item {
+  width: 100%;
+  pointer-events: none;
+}
+
+.launch-ui-notification {
+  position: relative;
+  display: grid;
+  width: 100%;
+  max-height: 320px;
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  overflow: hidden;
+  padding: 20px 24px;
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-surface);
+  box-shadow: var(--launch-ui-shadow-popup);
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+  pointer-events: auto;
+  animation: launch-ui-notification-right-in var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-notification.has-icon {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+
+.launch-ui-notification-holder.is-topLeft .launch-ui-notification,
+.launch-ui-notification-holder.is-bottomLeft .launch-ui-notification {
+  animation-name: launch-ui-notification-left-in;
+}
+
+.launch-ui-notification-holder.is-top .launch-ui-notification,
+.launch-ui-notification-holder.is-bottom .launch-ui-notification {
+  animation-name: launch-ui-notification-center-in;
+}
+
+.launch-ui-notification.is-closing {
+  pointer-events: none;
+  animation: launch-ui-notification-right-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+}
+
+.launch-ui-notification-holder.is-topLeft .launch-ui-notification.is-closing,
+.launch-ui-notification-holder.is-bottomLeft .launch-ui-notification.is-closing {
+  animation-name: launch-ui-notification-left-out;
+}
+
+.launch-ui-notification-holder.is-top .launch-ui-notification.is-closing,
+.launch-ui-notification-holder.is-bottom .launch-ui-notification.is-closing {
+  animation-name: launch-ui-notification-center-out;
+}
+
+.launch-ui-notification.is-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.launch-ui-notification.is-clickable:focus-visible {
+  box-shadow:
+    0 0 0 2px rgb(22 104 220 / 20%),
+    var(--launch-ui-shadow-popup);
+}
+
+.launch-ui-notification-icon {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--launch-ui-info);
+  font-size: 24px;
+  line-height: 24px;
+}
+
+.launch-ui-notification-icon svg {
+  display: block;
+}
+
+.launch-ui-notification.is-success .launch-ui-notification-icon {
+  color: var(--launch-ui-success);
+}
+
+.launch-ui-notification.is-warning .launch-ui-notification-icon {
+  color: var(--launch-ui-warning);
+}
+
+.launch-ui-notification.is-error .launch-ui-notification-icon {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-notification-content {
+  min-width: 0;
+}
+
+.launch-ui-notification-title {
+  padding-right: 8px;
+  margin-bottom: 6px;
+  color: var(--launch-ui-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.launch-ui-notification-description {
+  color: var(--launch-ui-text);
+  white-space: pre-line;
+}
+
+.launch-ui-notification-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.launch-ui-notification-close {
+  align-self: start;
+  margin: -6px -8px 0 0;
+  color: var(--launch-ui-text-tertiary);
+}
+
+.launch-ui-notification-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--launch-ui-primary);
+  transform-origin: left center;
+  animation: launch-ui-notification-progress var(--launch-ui-notification-duration) linear forwards;
+}
+
+.launch-ui-notification-progress.is-paused {
+  animation-play-state: paused;
+}
+
+.launch-ui-notification-holder.is-stacked {
+  min-height: 120px;
+}
+
+.launch-ui-notification-holder.is-stacked .launch-ui-notification-item {
+  position: absolute;
+  top: calc(var(--launch-ui-notification-stack-index) * 8px);
+  z-index: calc(10 - var(--launch-ui-notification-stack-index));
+  opacity: calc(1 - var(--launch-ui-notification-stack-index) * 0.2);
+  transform: scale(calc(1 - var(--launch-ui-notification-stack-index) * 0.04));
+  transform-origin: top center;
+}
+
+.launch-ui-notification-holder.is-stacked.is-bottom .launch-ui-notification-item,
+.launch-ui-notification-holder.is-stacked.is-bottomLeft .launch-ui-notification-item,
+.launch-ui-notification-holder.is-stacked.is-bottomRight .launch-ui-notification-item {
+  top: auto;
+  bottom: calc(var(--launch-ui-notification-stack-index) * 8px);
+  transform-origin: bottom center;
+}
+
 .launch-ui-table-root {
   width: 100%;
   color: var(--launch-ui-text);
@@ -7942,6 +8140,60 @@
   }
 }
 
+@keyframes launch-ui-notification-right-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes launch-ui-notification-right-out {
+  to {
+    max-height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes launch-ui-notification-left-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes launch-ui-notification-left-out {
+  to {
+    max-height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes launch-ui-notification-center-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+@keyframes launch-ui-notification-center-out {
+  to {
+    max-height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+@keyframes launch-ui-notification-progress {
+  to {
+    transform: scaleX(0);
+  }
+}
+
 @keyframes launch-ui-spin {
   to {
     transform: rotate(360deg);
@@ -8010,6 +8262,8 @@
   .launch-ui-drawer-resizer::after,
   .launch-ui-drawer-skeleton span,
   .launch-ui-message-notice,
+  .launch-ui-notification,
+  .launch-ui-notification-progress,
   .launch-ui-float-button,
   .launch-ui-float-button-group-items,
   .launch-ui-upload-actions,

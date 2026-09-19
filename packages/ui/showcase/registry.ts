@@ -25,6 +25,7 @@ import { mentionsShowcase } from "./components/mentions.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
 import { messageShowcase } from "./components/message.showcase.js";
 import { modalShowcase } from "./components/modal.showcase.js";
+import { notificationShowcase } from "./components/notification.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
 import { popoverShowcase } from "./components/popover.showcase.js";
 import { radioShowcase } from "./components/radio.showcase.js";
@@ -89,6 +90,7 @@ export const componentRegistry = defineShowcases([
   drawerShowcase,
   messageShowcase,
   modalShowcase,
+  notificationShowcase,
   dropdownMenuShowcase,
   tooltipShowcase,
 ]);
