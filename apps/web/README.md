@@ -7,11 +7,11 @@ This workspace is the React composition root. It owns routing, global providers,
 Start the API on its default port, then run the Vite client:
 
 ```bash
-pnpm start:server
+LAUNCHPP_BASE_URL=http://localhost:5173 pnpm start:server
 pnpm dev:web
 ```
 
-Vite proxies `/health` and `/api` to `http://127.0.0.1:3000`. A production client build is included in the root `pnpm build` command.
+Vite proxies `/health` and `/api` to `http://127.0.0.1:3000`. The server base URL must match the browser-visible Vite origin so authentication mutations pass the origin guard and Better Auth issues cookies for the correct origin. A production client build is included in the root `pnpm build` command.
 
 ## UI boundaries
 

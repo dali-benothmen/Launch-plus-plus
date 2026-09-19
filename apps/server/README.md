@@ -21,7 +21,7 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | --- | --- | --- |
 | `NODE_ENV` | `development` | `development`, `test`, or `production` |
 | `LAUNCHPP_AUTH_SECRET` | Development-only value | At least 32 characters and required explicitly in production |
-| `LAUNCHPP_BASE_URL` | Local bind origin | Required and HTTPS in production; origin only, with no path/query/hash |
+| `LAUNCHPP_BASE_URL` | Local bind origin | Canonical browser-visible origin; required and HTTPS in production, with no path/query/hash |
 | `LAUNCHPP_BIND_ADDRESS` | `127.0.0.1` | Explicit interface or hostname |
 | `LAUNCHPP_DATABASE_PATH` | `data/launchpp.sqlite` | File-backed SQLite path; in-memory persistence is rejected |
 | `LAUNCHPP_PORT` | `3000` | Integer from 1 through 65535 |
