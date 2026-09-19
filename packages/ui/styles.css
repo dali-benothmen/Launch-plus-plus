@@ -7389,6 +7389,200 @@
   stroke-width: 2;
 }
 
+.launch-ui-spin {
+  --launch-ui-spin-size: 20px;
+  box-sizing: border-box;
+  color: var(--launch-ui-primary);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-spin.is-small {
+  --launch-ui-spin-size: 14px;
+}
+
+.launch-ui-spin.is-large {
+  --launch-ui-spin-size: 32px;
+}
+
+.launch-ui-spin:not(.is-nested) {
+  display: inline-flex;
+}
+
+.launch-ui-spin-section {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: inherit;
+  text-align: center;
+}
+
+.launch-ui-spin-indicator {
+  display: inline-flex;
+  width: var(--launch-ui-spin-size);
+  height: var(--launch-ui-spin-size);
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: var(--launch-ui-spin-size);
+  line-height: 1;
+}
+
+.launch-ui-spin-default-indicator {
+  position: relative;
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+
+.launch-ui-spin-dots {
+  position: absolute;
+  inset: 0;
+  display: block;
+  animation: launch-ui-spin 1.2s linear infinite;
+  transform: rotate(45deg);
+}
+
+.launch-ui-spin-dots i {
+  position: absolute;
+  display: block;
+  width: 42%;
+  height: 42%;
+  border-radius: 100%;
+  animation: launch-ui-spin-dot 1s linear infinite alternate;
+  background-color: currentcolor;
+  opacity: 0.3;
+}
+
+.launch-ui-spin-dots i:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+
+.launch-ui-spin-dots i:nth-child(2) {
+  top: 0;
+  right: 0;
+  animation-delay: 0.4s;
+}
+
+.launch-ui-spin-dots i:nth-child(3) {
+  right: 0;
+  bottom: 0;
+  animation-delay: 0.8s;
+}
+
+.launch-ui-spin-dots i:nth-child(4) {
+  bottom: 0;
+  left: 0;
+  animation-delay: 1.2s;
+}
+
+.launch-ui-spin-progress {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  opacity: 0;
+  transform: rotate(-90deg);
+  transition: opacity 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-spin-progress-rail,
+.launch-ui-spin-progress-track {
+  stroke-width: 14;
+}
+
+.launch-ui-spin-progress-rail {
+  stroke: var(--launch-ui-fill-secondary);
+}
+
+.launch-ui-spin-progress-track {
+  stroke: currentcolor;
+  stroke-linecap: round;
+  transition: stroke-dasharray 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-spin-default-indicator.is-progress .launch-ui-spin-dots {
+  opacity: 0;
+}
+
+.launch-ui-spin-default-indicator.is-progress .launch-ui-spin-progress {
+  opacity: 1;
+}
+
+.launch-ui-spin-description {
+  color: currentcolor;
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+}
+
+.launch-ui-spin.is-nested {
+  position: relative;
+  display: block;
+}
+
+.launch-ui-spin.is-nested > .launch-ui-spin-section {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  max-width: 80%;
+  transform: translate(-50%, -50%);
+}
+
+.launch-ui-spin-container {
+  position: relative;
+  transition: opacity 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-spin-container::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: var(--launch-ui-surface);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-spin.is-spinning > .launch-ui-spin-container {
+  cursor: progress;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.launch-ui-spin.is-spinning > .launch-ui-spin-container::after {
+  opacity: 0.4;
+}
+
+.launch-ui-spin.is-fullscreen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: block;
+  background: rgb(0 0 0 / 45%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--launch-ui-ease);
+}
+
+.launch-ui-spin.is-fullscreen.is-spinning {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.launch-ui-spin.is-fullscreen > .launch-ui-spin-section {
+  color: #fff;
+}
+
 .launch-ui-modal-root {
   position: fixed;
   inset: 0;
@@ -8646,6 +8840,12 @@
   }
 }
 
+@keyframes launch-ui-spin-dot {
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .launch-ui-button,
   .launch-ui-avatar-popover,
@@ -8709,6 +8909,13 @@
   .launch-ui-skeleton.is-active .launch-ui-skeleton-title,
   .launch-ui-skeleton.is-active .launch-ui-skeleton-paragraph-row,
   .launch-ui-skeleton-element.is-active .launch-ui-skeleton-element-content,
+  .launch-ui-spin-dots,
+  .launch-ui-spin-dots i,
+  .launch-ui-spin-progress,
+  .launch-ui-spin-progress-track,
+  .launch-ui-spin-container,
+  .launch-ui-spin-container::after,
+  .launch-ui-spin.is-fullscreen,
   .launch-ui-modal-mask,
   .launch-ui-modal-container,
   .launch-ui-modal-skeleton span,

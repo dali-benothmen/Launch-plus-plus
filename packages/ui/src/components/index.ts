@@ -34,6 +34,7 @@ export * from "./segmented/index.js";
 export * from "./select/index.js";
 export * from "./skeleton/index.js";
 export * from "./space/index.js";
+export * from "./spin/index.js";
 export * from "./switch/index.js";
 export * from "./table/index.js";
 export * from "./tabs/index.js";
