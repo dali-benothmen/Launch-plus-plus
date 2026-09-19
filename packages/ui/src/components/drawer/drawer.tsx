@@ -179,7 +179,10 @@ export function Drawer(drawerProps: DrawerProps) {
     placement: _closePlacement,
     ...closeButtonAria
   } = closableConfig ?? {};
-  const keepMounted = forceRender || (!destroyOnHidden && hasOpened);
+  // Keeping a modal Radix overlay mounted also keeps its scroll and pointer locks mounted.
+  // Preserve hidden content only for drawers without a modal mask; masked drawers unmount after
+  // their exit animation so the page is always restored completely.
+  const keepMounted = !maskEnabled && (forceRender || (!destroyOnHidden && hasOpened));
   const container = resolveContainer(getContainer);
   const resizedSize =
     resizeState?.placement === placement && Object.is(resizeState.size, size)
