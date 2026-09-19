@@ -12,6 +12,7 @@ export * from "./divider/index.js";
 export * from "./drawer/index.js";
 export * from "./dropdown/index.js";
 export * from "./dropdown-menu/index.js";
+export * from "./empty/index.js";
 export * from "./flex/index.js";
 export * from "./float-button/index.js";
 export * from "./form/index.js";

@@ -7389,6 +7389,46 @@
   stroke-width: 2;
 }
 
+.launch-ui-empty {
+  box-sizing: border-box;
+  margin-inline: 8px;
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+  text-align: center;
+}
+
+.launch-ui-empty-image {
+  height: 100px;
+  margin-bottom: 8px;
+  color: var(--launch-ui-text-tertiary);
+}
+
+.launch-ui-empty-image img,
+.launch-ui-empty-image svg {
+  display: block;
+  max-width: 100%;
+  height: 100%;
+  margin: auto;
+}
+
+.launch-ui-empty-description {
+  color: var(--launch-ui-text-tertiary);
+}
+
+.launch-ui-empty-footer {
+  margin-top: 16px;
+}
+
+.launch-ui-empty.is-simple {
+  margin-block: 32px;
+}
+
+.launch-ui-empty.is-simple .launch-ui-empty-image {
+  height: 40px;
+}
+
 .launch-ui-spin {
   --launch-ui-spin-size: 20px;
   box-sizing: border-box;

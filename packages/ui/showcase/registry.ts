@@ -12,6 +12,7 @@ import { dividerShowcase } from "./components/divider.showcase.js";
 import { drawerShowcase } from "./components/drawer.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
+import { emptyShowcase } from "./components/empty.showcase.js";
 import { flexShowcase } from "./components/flex.showcase.js";
 import { floatButtonShowcase } from "./components/float-button.showcase.js";
 import { formShowcase } from "./components/form.showcase.js";
@@ -82,6 +83,7 @@ export const componentRegistry = defineShowcases([
   uploadShowcase,
   avatarShowcase,
   badgeShowcase,
+  emptyShowcase,
   listShowcase,
   popoverShowcase,
   segmentedShowcase,
