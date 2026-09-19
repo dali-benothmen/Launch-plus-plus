@@ -7,14 +7,17 @@ import type {
 import {
   AddIcon,
   Button,
+  CollapseNavigationIcon,
   Drawer,
   Dropdown,
   type DropdownMenuItem,
+  ExpandNavigationIcon,
   Form,
   Input,
   message,
   Modal,
   Spin,
+  Tooltip,
   Tree,
   type TreeDataNode,
   Typography,
@@ -98,11 +101,18 @@ function workspaceNodes(
 }
 
 export interface ProjectSidebarProps {
+  readonly collapsed?: boolean;
   readonly embedded?: boolean;
+  readonly onCollapseToggle?: () => void;
   readonly onNavigate?: () => void;
 }
 
-export function ProjectSidebar({ embedded = false, onNavigate }: ProjectSidebarProps) {
+export function ProjectSidebar({
+  collapsed = false,
+  embedded = false,
+  onCollapseToggle,
+  onNavigate,
+}: ProjectSidebarProps) {
   const api = useApiClient();
   const navigate = useNavigate();
   const [messageApi, messageHolder] = message.useMessage();
@@ -377,22 +387,41 @@ export function ProjectSidebar({ embedded = false, onNavigate }: ProjectSidebarP
       {messageHolder}
       <aside
         aria-label="Workspaces and projects"
-        className={`project-sidebar${embedded ? " is-embedded" : ""}`}
+        className={`project-sidebar${embedded ? " is-embedded" : ""}${collapsed ? " is-collapsed" : ""}`}
       >
         <div className="project-sidebar-actions">
-          <Button
-            block
-            icon={<AddIcon />}
-            onClick={() => {
-              setWorkspaceCreateError(undefined);
-              setWorkspaceCreateOpen(true);
-            }}
-            size="small"
-          >
-            Create workspace
-          </Button>
+          {collapsed ? null : (
+            <div className="project-sidebar-create-action">
+              <Button
+                block
+                icon={<AddIcon />}
+                onClick={() => {
+                  setWorkspaceCreateError(undefined);
+                  setWorkspaceCreateOpen(true);
+                }}
+                size="small"
+              >
+                Create workspace
+              </Button>
+            </div>
+          )}
+          {onCollapseToggle ? (
+            <Tooltip
+              placement={collapsed ? "right" : "bottom"}
+              title={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
+            >
+              <Button
+                aria-label={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
+                icon={collapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />}
+                iconOnly
+                onClick={onCollapseToggle}
+                size="small"
+                variant="text"
+              />
+            </Tooltip>
+          ) : null}
         </div>
-        {loadError ? (
+        {collapsed ? null : loadError ? (
           <div className="project-tree-status">
             <Typography.Text type="danger">Could not load projects.</Typography.Text>
             <Button onClick={() => void loadNavigation()} size="small">

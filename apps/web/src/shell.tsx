@@ -1,6 +1,5 @@
 import {
   Button,
-  CollapseNavigationIcon,
   DarkThemeIcon,
   Drawer,
   ExpandNavigationIcon,
@@ -40,16 +39,6 @@ export function AppShell() {
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const toggleProjectNavigation = () => {
-    if (compact) setProjectNavigationOpen(true);
-    else setSidebarCollapsed((current) => !current);
-  };
-  const projectNavigationLabel = compact
-    ? "Open project navigation"
-    : sidebarCollapsed
-      ? "Show project navigation"
-      : "Hide project navigation";
-
   return (
     <div className={`app-shell${sidebarCollapsed && !compact ? " is-sidebar-collapsed" : ""}`}>
       <a className="skip-link" href="#main-content">
@@ -59,17 +48,17 @@ export function AppShell() {
         <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
           L+
         </NavLink>
-        <Tooltip placement="right" title={projectNavigationLabel}>
-          <Button
-            aria-label={projectNavigationLabel}
-            icon={
-              compact || sidebarCollapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />
-            }
-            iconOnly
-            onClick={toggleProjectNavigation}
-            variant="text"
-          />
-        </Tooltip>
+        {compact ? (
+          <Tooltip placement="right" title="Open workspace sidebar">
+            <Button
+              aria-label="Open workspace sidebar"
+              icon={<ExpandNavigationIcon />}
+              iconOnly
+              onClick={() => setProjectNavigationOpen(true)}
+              variant="text"
+            />
+          </Tooltip>
+        ) : null}
         <nav className="rail-links">
           {iconLinks.map((item) => (
             <Tooltip key={item.to} placement="right" title={item.label}>
@@ -105,10 +94,17 @@ export function AppShell() {
           size="min(86vw, 320px)"
           title="Workspaces and projects"
         >
-          <ProjectSidebar embedded onNavigate={() => setProjectNavigationOpen(false)} />
+          <ProjectSidebar
+            embedded
+            onCollapseToggle={() => setProjectNavigationOpen(false)}
+            onNavigate={() => setProjectNavigationOpen(false)}
+          />
         </Drawer>
-      ) : sidebarCollapsed ? null : (
-        <ProjectSidebar />
+      ) : (
+        <ProjectSidebar
+          collapsed={sidebarCollapsed}
+          onCollapseToggle={() => setSidebarCollapsed((current) => !current)}
+        />
       )}
 
       <main id="main-content" tabIndex={-1}>

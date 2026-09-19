@@ -110,7 +110,9 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
   if (mode === "production" && !configuredBaseUrl) {
     throw new ConfigurationError("LAUNCHPP_BASE_URL is required in production");
   }
-  const baseUrl = parseBaseUrl(configuredBaseUrl || `http://${bindAddress}:${port}`);
+  const defaultBaseUrl =
+    mode === "development" ? "http://localhost:5173" : `http://${bindAddress}:${port}`;
+  const baseUrl = parseBaseUrl(configuredBaseUrl || defaultBaseUrl);
   if (mode === "production" && new URL(baseUrl).protocol !== "https:") {
     throw new ConfigurationError("LAUNCHPP_BASE_URL must use HTTPS in production");
   }

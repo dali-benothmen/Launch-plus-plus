@@ -81,7 +81,7 @@
 }
 
 .app-shell.is-sidebar-collapsed {
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 64px 52px minmax(0, 1fr);
 }
 
 .skip-link {
@@ -159,9 +159,24 @@
   border-right: 0;
 }
 
+.project-sidebar.is-collapsed {
+  padding-inline: 10px;
+}
+
 .project-sidebar-actions {
   display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
+}
+
+.project-sidebar.is-collapsed .project-sidebar-actions {
+  justify-content: center;
+}
+
+.project-sidebar-create-action {
+  min-width: 0;
+  flex: 1;
 }
 
 .project-tree-context-surface {
