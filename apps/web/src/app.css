@@ -80,6 +80,10 @@
   background: var(--launch-color-bg-canvas);
 }
 
+.app-shell.is-sidebar-collapsed {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
 .skip-link {
   position: fixed;
   z-index: 100;
@@ -148,6 +152,11 @@
   padding: 22px 16px;
   border-right: 1px solid var(--launch-color-border);
   background: var(--launch-color-bg-elevated);
+}
+
+.project-sidebar.is-embedded {
+  padding: 0;
+  border-right: 0;
 }
 
 .project-sidebar-actions {
@@ -267,7 +276,7 @@
     grid-template-columns: 56px minmax(0, 1fr);
   }
 
-  .project-sidebar {
+  .project-sidebar:not(.is-embedded) {
     display: none;
   }
 

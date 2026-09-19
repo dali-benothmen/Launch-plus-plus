@@ -3,6 +3,8 @@ import "../styles.css";
 export {
   AppstoreOutlined as ProjectsIcon,
   HomeOutlined as HomeIcon,
+  MenuFoldOutlined as CollapseNavigationIcon,
+  MenuUnfoldOutlined as ExpandNavigationIcon,
   MoonOutlined as DarkThemeIcon,
   PlusOutlined as AddIcon,
   SettingOutlined as SettingsIcon,

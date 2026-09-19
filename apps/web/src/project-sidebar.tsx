@@ -42,6 +42,7 @@ interface NavigationTarget {
 
 const emptyCatalog: ProjectCatalog = { folders: [], projects: [], statuses: [] };
 export const projectNavigationChangedEvent = "launchpp:project-navigation-changed";
+const defer = (action: () => void) => window.setTimeout(action, 0);
 
 function targetFromKey(key: string): NavigationTarget | undefined {
   const [kind, workspaceId, resourceId] = key.split(":");
@@ -96,7 +97,12 @@ function workspaceNodes(
   return nodes;
 }
 
-export function ProjectSidebar() {
+export interface ProjectSidebarProps {
+  readonly embedded?: boolean;
+  readonly onNavigate?: () => void;
+}
+
+export function ProjectSidebar({ embedded = false, onNavigate }: ProjectSidebarProps) {
   const api = useApiClient();
   const navigate = useNavigate();
   const [messageApi, messageHolder] = message.useMessage();
@@ -164,18 +170,23 @@ export function ProjectSidebar() {
     [catalogs, workspaceContext],
   );
 
-  const defer = (action: () => void) => window.setTimeout(action, 0);
-  const catalogFor = (workspaceId: string) => catalogs[workspaceId] ?? emptyCatalog;
-  const projectFor = (workspaceId: string, projectId: string) =>
-    catalogFor(workspaceId).projects.find((project) => project.id === projectId);
+  const catalogFor = useCallback(
+    (workspaceId: string) => catalogs[workspaceId] ?? emptyCatalog,
+    [catalogs],
+  );
+  const projectFor = useCallback(
+    (workspaceId: string, projectId: string) =>
+      catalogFor(workspaceId).projects.find((project) => project.id === projectId),
+    [catalogFor],
+  );
 
-  const openEditor = (state: EditorState) => {
+  const openEditor = useCallback((state: EditorState) => {
     defer(() => {
       setEditorError(undefined);
       setEditor(state);
       setEditorName(state.kind === "rename-project" ? state.project.name : "");
     });
-  };
+  }, []);
 
   const closeEditor = () => {
     setEditor(undefined);
@@ -183,13 +194,17 @@ export function ProjectSidebar() {
     setEditorError(undefined);
   };
 
-  const openProject = (workspaceId: string, projectId: string) => {
-    void api.projects
-      .markOpened(workspaceId, projectId)
-      .then(loadNavigation)
-      .catch(() => undefined);
-    navigate(`/app/workspaces/${workspaceId}/projects/${projectId}`);
-  };
+  const openProject = useCallback(
+    (workspaceId: string, projectId: string) => {
+      void api.projects
+        .markOpened(workspaceId, projectId)
+        .then(loadNavigation)
+        .catch(() => undefined);
+      navigate(`/app/workspaces/${workspaceId}/projects/${projectId}`);
+      onNavigate?.();
+    },
+    [api, loadNavigation, navigate, onNavigate],
+  );
 
   const contextMenuItems = useMemo<ReadonlyArray<DropdownMenuItem>>(() => {
     if (!contextNode) return [];
@@ -279,7 +294,7 @@ export function ProjectSidebar() {
     }
 
     return [];
-  }, [api, catalogs, contextNode, expandedKeys, workspaceContext]);
+  }, [contextNode, expandedKeys, openEditor, openProject, projectFor, workspaceContext]);
 
   const createWorkspace = async () => {
     if (creatingWorkspace || workspaceName.trim().length === 0) return;
@@ -360,7 +375,10 @@ export function ProjectSidebar() {
   return (
     <>
       {messageHolder}
-      <aside aria-label="Workspaces and projects" className="project-sidebar">
+      <aside
+        aria-label="Workspaces and projects"
+        className={`project-sidebar${embedded ? " is-embedded" : ""}`}
+      >
         <div className="project-sidebar-actions">
           <Button
             block
@@ -383,19 +401,17 @@ export function ProjectSidebar() {
           </div>
         ) : workspaceContext ? (
           <Dropdown menu={{ items: contextMenuItems }} trigger={["contextMenu"]}>
-            <div
-              className="project-tree-context-surface"
-              onContextMenu={(event) => {
-                const target = event.target;
-                if (!(target instanceof Element) || !target.closest('[role="treeitem"]')) {
-                  event.preventDefault();
-                }
-              }}
-            >
+            <div className="project-tree-context-surface">
               <Tree.DirectoryTree
                 aria-label="Workspace and project tree"
                 blockNode
                 expandedKeys={expandedKeys}
+                onContextMenu={(event) => {
+                  const target = event.target;
+                  if (!(target instanceof Element) || !target.closest('[role="treeitem"]')) {
+                    event.preventDefault();
+                  }
+                }}
                 onExpand={(keys) => setExpandedKeys(keys.map(String))}
                 onRightClick={({ event, node }) => {
                   const source = event.target;
@@ -423,6 +439,7 @@ export function ProjectSidebar() {
                           ),
                         )
                         .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
+                        .then(() => onNavigate?.())
                         .catch((reason: unknown) =>
                           messageApi.error(errorMessage(reason, "Could not switch workspace.")),
                         );

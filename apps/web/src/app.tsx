@@ -26,6 +26,7 @@ import {
   SettingsPage,
 } from "./pages.js";
 import { AppShell } from "./shell.js";
+import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
 export const appRoutes: RouteObject[] = [
@@ -64,22 +65,26 @@ export const appRoutes: RouteObject[] = [
         <AppShell />
       </AuthenticatedRoute>
     ),
+    errorElement: <RouteFailurePage />,
     children: [
-      { index: true, element: <MyWorkPage /> },
+      { index: true, element: <MyWorkPage />, errorElement: <RouteFailurePage /> },
       {
         path: "projects/new",
         element: <ProjectCreationEntryPage />,
+        errorElement: <RouteFailurePage />,
       },
       {
         path: "workspaces/:workspaceId/projects/:projectId",
         element: <ProjectOverviewPage />,
+        errorElement: <RouteFailurePage />,
       },
-      { path: "members", element: <MembersPage /> },
-      { path: "settings", element: <SettingsPage /> },
+      { path: "members", element: <MembersPage />, errorElement: <RouteFailurePage /> },
+      { path: "settings", element: <SettingsPage />, errorElement: <RouteFailurePage /> },
       ...(import.meta.env.VITE_ENABLE_PLUGIN_PROOF === "true"
         ? [
             {
               path: "__proofs/plugin-surfaces",
+              errorElement: <RouteFailurePage />,
               lazy: async () => {
                 const { PluginSurfaceProofPage } = await import("./plugin-host/proof-page.js");
                 return { Component: PluginSurfaceProofPage };
@@ -87,6 +92,7 @@ export const appRoutes: RouteObject[] = [
             },
           ]
         : []),
+      { path: "*", element: <RouteNotFoundPage /> },
     ],
   },
 ];

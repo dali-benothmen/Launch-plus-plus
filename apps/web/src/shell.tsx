@@ -1,12 +1,16 @@
 import {
   Button,
+  CollapseNavigationIcon,
   DarkThemeIcon,
+  Drawer,
+  ExpandNavigationIcon,
   HomeIcon,
   LightThemeIcon,
   MembersIcon,
   SettingsIcon,
   Tooltip,
 } from "@launchpp/ui";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { ProjectSidebar } from "./project-sidebar.js";
 import { useThemeController } from "./theme-context.js";
@@ -19,9 +23,35 @@ const iconLinks = [
 
 export function AppShell() {
   const theme = useThemeController();
+  const [compact, setCompact] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(max-width: 760px)").matches,
+  );
+  const [projectNavigationOpen, setProjectNavigationOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 760px)");
+    const update = () => {
+      setCompact(media.matches);
+      if (!media.matches) setProjectNavigationOpen(false);
+    };
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  const toggleProjectNavigation = () => {
+    if (compact) setProjectNavigationOpen(true);
+    else setSidebarCollapsed((current) => !current);
+  };
+  const projectNavigationLabel = compact
+    ? "Open project navigation"
+    : sidebarCollapsed
+      ? "Show project navigation"
+      : "Hide project navigation";
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${sidebarCollapsed && !compact ? " is-sidebar-collapsed" : ""}`}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -29,6 +59,17 @@ export function AppShell() {
         <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
           L+
         </NavLink>
+        <Tooltip placement="right" title={projectNavigationLabel}>
+          <Button
+            aria-label={projectNavigationLabel}
+            icon={
+              compact || sidebarCollapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />
+            }
+            iconOnly
+            onClick={toggleProjectNavigation}
+            variant="text"
+          />
+        </Tooltip>
         <nav className="rail-links">
           {iconLinks.map((item) => (
             <Tooltip key={item.to} placement="right" title={item.label}>
@@ -55,7 +96,20 @@ export function AppShell() {
         </Tooltip>
       </aside>
 
-      <ProjectSidebar />
+      {compact ? (
+        <Drawer
+          mask
+          onClose={() => setProjectNavigationOpen(false)}
+          open={projectNavigationOpen}
+          placement="left"
+          size="min(86vw, 320px)"
+          title="Workspaces and projects"
+        >
+          <ProjectSidebar embedded onNavigate={() => setProjectNavigationOpen(false)} />
+        </Drawer>
+      ) : sidebarCollapsed ? null : (
+        <ProjectSidebar />
+      )}
 
       <main id="main-content" tabIndex={-1}>
         <Outlet />

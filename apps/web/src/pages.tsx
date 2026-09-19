@@ -1,33 +1,39 @@
-import type { ProjectCatalog, WorkspaceContext } from "@launchpp/api-client";
+import { ApiError, type ProjectCatalog, type WorkspaceContext } from "@launchpp/api-client";
 import { Alert, Button, Card, Form, Input, Spin, Tag, Typography } from "@launchpp/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
+import { ResourceFailure } from "./route-boundaries.js";
 
 export function MyWorkPage() {
   const api = useApiClient();
   const navigate = useNavigate();
   const [projectCount, setProjectCount] = useState<number>();
+  const [loadError, setLoadError] = useState<unknown>();
   const openProjectCreation = () => navigate("/app/projects/new");
 
+  const load = useCallback(() => {
+    setLoadError(undefined);
+    void api.workspaces
+      .list()
+      .then(async (context) => {
+        if (!context.currentWorkspaceId) return setProjectCount(0);
+        const catalog = await api.projects.list(context.currentWorkspaceId);
+        setProjectCount(
+          catalog.projects.filter((project) => project.archivedAt === undefined).length,
+        );
+      })
+      .catch(setLoadError);
+  }, [api]);
+
   useEffect(() => {
-    const load = () => {
-      void api.workspaces
-        .list()
-        .then(async (context) => {
-          if (!context.currentWorkspaceId) return setProjectCount(0);
-          const catalog = await api.projects.list(context.currentWorkspaceId);
-          setProjectCount(
-            catalog.projects.filter((project) => project.archivedAt === undefined).length,
-          );
-        })
-        .catch(() => setProjectCount(0));
-    };
     load();
     window.addEventListener(projectNavigationChangedEvent, load);
     return () => window.removeEventListener(projectNavigationChangedEvent, load);
-  }, [api]);
+  }, [load]);
+
+  if (loadError) return <ResourceFailure error={loadError} onRetry={load} />;
 
   return (
     <section aria-labelledby="my-work-title" className="page-stack">
@@ -83,9 +89,12 @@ export function ProjectCreationEntryPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>();
 
-  useEffect(() => {
+  const loadWorkspace = useCallback(() => {
+    setError(undefined);
     void api.workspaces.list().then(setWorkspaceContext).catch(setError);
   }, [api]);
+
+  useEffect(() => loadWorkspace(), [loadWorkspace]);
 
   const createProject = async () => {
     const workspaceId = workspaceContext?.currentWorkspaceId;
@@ -108,6 +117,9 @@ export function ProjectCreationEntryPage() {
         <Spin />
       </div>
     );
+  }
+  if (!workspaceContext && error) {
+    return <ResourceFailure error={error} onRetry={loadWorkspace} />;
   }
 
   return (
@@ -154,16 +166,17 @@ export function ProjectOverviewPage() {
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [error, setError] = useState<unknown>();
 
-  useEffect(() => {
+  const loadProject = useCallback(() => {
     if (!workspaceId) return;
-    const load = () => {
-      setError(undefined);
-      void api.projects.list(workspaceId).then(setCatalog).catch(setError);
-    };
-    load();
-    window.addEventListener(projectNavigationChangedEvent, load);
-    return () => window.removeEventListener(projectNavigationChangedEvent, load);
+    setError(undefined);
+    void api.projects.list(workspaceId).then(setCatalog).catch(setError);
   }, [api, workspaceId]);
+
+  useEffect(() => {
+    loadProject();
+    window.addEventListener(projectNavigationChangedEvent, loadProject);
+    return () => window.removeEventListener(projectNavigationChangedEvent, loadProject);
+  }, [loadProject]);
 
   const project = catalog?.projects.find((item) => item.id === projectId);
   const statuses = useMemo(
@@ -175,15 +188,7 @@ export function ProjectOverviewPage() {
   );
 
   if (error) {
-    return (
-      <section className="page-stack">
-        <Alert
-          showIcon
-          title={error instanceof Error ? error.message : "Could not load the project."}
-          type="error"
-        />
-      </section>
-    );
+    return <ResourceFailure error={error} onRetry={loadProject} />;
   }
   if (!catalog) {
     return (
@@ -193,11 +198,7 @@ export function ProjectOverviewPage() {
     );
   }
   if (!project) {
-    return (
-      <section className="page-stack">
-        <Alert showIcon title="Project not found." type="error" />
-      </section>
-    );
+    return <ResourceFailure error={new ApiError(404, "Project not found.")} />;
   }
 
   return (
