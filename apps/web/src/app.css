@@ -78,6 +78,7 @@
   grid-template-columns: 64px 248px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--launch-color-bg-canvas);
+  transition: grid-template-columns var(--launch-motion-slow) var(--launch-ease-in-out);
 }
 
 .app-shell.is-sidebar-collapsed {
@@ -149,9 +150,12 @@
 }
 
 .project-sidebar {
+  min-width: 0;
+  overflow: hidden;
   padding: 22px 16px;
   border-right: 1px solid var(--launch-color-border);
   background: var(--launch-color-bg-elevated);
+  transition: padding-inline var(--launch-motion-slow) var(--launch-ease-in-out);
 }
 
 .project-sidebar.is-embedded {
@@ -168,15 +172,52 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+  transition: gap var(--launch-motion-slow) var(--launch-ease-in-out);
 }
 
 .project-sidebar.is-collapsed .project-sidebar-actions {
+  gap: 0;
   justify-content: center;
 }
 
 .project-sidebar-create-action {
   min-width: 0;
+  max-width: 176px;
+  overflow: hidden;
   flex: 1;
+  opacity: 1;
+  transition:
+    max-width var(--launch-motion-slow) var(--launch-ease-in-out),
+    opacity var(--launch-motion-mid) var(--launch-ease-in-out);
+}
+
+.project-sidebar.is-collapsed .project-sidebar-create-action {
+  max-width: 0;
+  opacity: 0;
+}
+
+.project-sidebar-body {
+  opacity: 1;
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    opacity var(--launch-motion-mid) var(--launch-ease-in-out),
+    transform var(--launch-motion-slow) var(--launch-ease-in-out),
+    visibility 0s;
+}
+
+.project-sidebar:not(.is-embedded) .project-sidebar-body {
+  width: 216px;
+}
+
+.project-sidebar.is-collapsed .project-sidebar-body {
+  opacity: 0;
+  transform: translateX(-8px);
+  visibility: hidden;
+  transition:
+    opacity var(--launch-motion-mid) var(--launch-ease-in-out),
+    transform var(--launch-motion-slow) var(--launch-ease-in-out),
+    visibility 0s var(--launch-motion-slow);
 }
 
 .project-tree-context-surface {
@@ -273,6 +314,16 @@
   height: 360px;
   border: 0;
   background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell,
+  .project-sidebar,
+  .project-sidebar-actions,
+  .project-sidebar-create-action,
+  .project-sidebar-body {
+    transition: none;
+  }
 }
 
 @media (max-width: 760px) {

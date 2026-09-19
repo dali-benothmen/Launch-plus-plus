@@ -23,6 +23,9 @@
   --launch-line-style: solid;
   --launch-radius: 6px;
   --launch-radius-lg: 8px;
+  --launch-motion-mid: 200ms;
+  --launch-motion-slow: 300ms;
+  --launch-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
   --launch-motion-hover-duration: 1s;
   --launch-motion-hover-ease: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
