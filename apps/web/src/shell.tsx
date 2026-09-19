@@ -101,8 +101,11 @@ export function AppShell() {
     const key = String(contextNode.key);
     const isExpanded = expandedKeys.includes(key);
     const openProperties = () => {
-      setPropertiesNode(contextNode);
-      setPropertiesOpen(true);
+      const selectedNode = contextNode;
+      window.setTimeout(() => {
+        setPropertiesNode(selectedNode);
+        setPropertiesOpen(true);
+      }, 0);
     };
 
     if (key.startsWith("workspace:")) {
@@ -110,7 +113,7 @@ export function AppShell() {
         { disabled: true, key: "create-project", label: "Create project" },
         {
           key: "toggle-workspace",
-          label: isExpanded ? "Shrink" : "Expand",
+          label: isExpanded ? "Close" : "Open",
           onClick: () =>
             setExpandedKeys((current) =>
               isExpanded ? current.filter((item) => item !== key) : [...current, key],
