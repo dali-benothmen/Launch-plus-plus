@@ -26,6 +26,7 @@ export * from "./pagination/index.js";
 export * from "./popover/index.js";
 export * from "./radio/index.js";
 export * from "./select/index.js";
+export * from "./segmented/index.js";
 export * from "./space/index.js";
 export * from "./switch/index.js";
 export * from "./table/index.js";

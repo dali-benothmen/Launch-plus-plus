@@ -26,6 +26,7 @@ import { menuShowcase } from "./components/menu.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
 import { popoverShowcase } from "./components/popover.showcase.js";
 import { radioShowcase } from "./components/radio.showcase.js";
+import { segmentedShowcase } from "./components/segmented.showcase.js";
 import { selectShowcase } from "./components/select.showcase.js";
 import { spaceShowcase } from "./components/space.showcase.js";
 import { switchShowcase } from "./components/switch.showcase.js";
@@ -74,6 +75,7 @@ export const componentRegistry = defineShowcases([
   badgeShowcase,
   listShowcase,
   popoverShowcase,
+  segmentedShowcase,
   cardShowcase,
   tableShowcase,
   tagShowcase,

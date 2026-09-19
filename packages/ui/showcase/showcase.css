@@ -1161,6 +1161,25 @@ button {
   padding: 10px;
 }
 
+.showcase-segmented-user-option,
+.showcase-segmented-season {
+  padding: 4px;
+}
+
+.showcase-segmented-user-option {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.showcase-segmented-season > div:last-child {
+  color: var(--launch-ui-text-tertiary);
+}
+
+.showcase-segmented-semantic {
+  padding: 2px;
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }
