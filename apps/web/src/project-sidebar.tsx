@@ -397,7 +397,14 @@ export function ProjectSidebar() {
                 blockNode
                 expandedKeys={expandedKeys}
                 onExpand={(keys) => setExpandedKeys(keys.map(String))}
-                onRightClick={({ node }) => {
+                onRightClick={({ event, node }) => {
+                  const source = event.target;
+                  if (
+                    !(source instanceof Element) ||
+                    source.closest('[role="treeitem"]') !== event.currentTarget
+                  ) {
+                    return;
+                  }
                   flushSync(() => setContextNode(node));
                 }}
                 onSelect={(_, info) => {
