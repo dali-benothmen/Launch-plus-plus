@@ -15,7 +15,7 @@ On an empty database, local loopback access authorizes the setup browser automat
 
 First-owner setup atomically creates the installation, Launch++ profile, default workspace, active owner membership, audit facts, and outbox facts after Better Auth creates the identity. Existing development databases from the earlier authentication slice are repaired lazily on the first authenticated workspace read by creating the missing profile and owner workspace.
 
-The authenticated workspace endpoints currently support listing accessible workspaces, creating an owned workspace, and selecting the current workspace. Reads are membership-filtered, selection requires an active matching membership, and workspace-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
+The authenticated workspace endpoints currently support listing accessible workspaces, creating and renaming an owned workspace, and selecting the current workspace. Reads are membership-filtered, selection requires an active matching membership, and workspace-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
 
 ## Configuration
 

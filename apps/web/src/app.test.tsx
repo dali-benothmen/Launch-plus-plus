@@ -35,6 +35,12 @@ const apiClient: ApiClient = {
       currentWorkspaceId: "workspace-1",
       workspaces: [{ id: "workspace-1", name: "My Workspace", revision: 1, slug: "my-workspace" }],
     })),
+    rename: vi.fn(async (_workspaceId, name) => ({
+      id: "workspace-1",
+      name,
+      revision: 2,
+      slug: "my-workspace",
+    })),
     select: vi.fn(async () => undefined),
   },
 };

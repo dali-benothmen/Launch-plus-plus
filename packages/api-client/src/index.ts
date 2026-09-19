@@ -68,6 +68,7 @@ export interface ApiClient {
   readonly workspaces: {
     create(name: string): Promise<WorkspaceSummary>;
     list(): Promise<WorkspaceContext>;
+    rename(workspaceId: string, name: string): Promise<WorkspaceSummary>;
     select(workspaceId: string): Promise<void>;
   };
 }
@@ -172,6 +173,12 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
           method: "POST",
         }),
       list: () => json<WorkspaceContext>("/api/workspaces"),
+      rename: (workspaceId: string, name: string) =>
+        json<WorkspaceSummary>(`/api/workspaces/${encodeURIComponent(workspaceId)}`, {
+          body: JSON.stringify({ name }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
+        }),
       async select(workspaceId: string): Promise<void> {
         await json("/api/workspaces/current", {
           body: JSON.stringify({ workspaceId }),

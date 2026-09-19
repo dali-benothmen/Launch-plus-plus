@@ -102,4 +102,22 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
       .all(userId)
       .map(mapWorkspace);
   }
+
+  updateName(
+    context: WriteContext,
+    input: Readonly<{
+      name: string;
+      revision: number;
+      updatedAt: number;
+      workspaceId: string;
+    }>,
+  ): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `UPDATE workspaces
+         SET name = ?, updated_at = ?, revision = ?
+         WHERE id = ?`,
+      )
+      .run(input.name, input.updatedAt, input.revision, input.workspaceId);
+  }
 }

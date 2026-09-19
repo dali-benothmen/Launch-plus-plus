@@ -67,6 +67,15 @@ export interface WorkspaceRepository {
   findByName(context: ReadContext, installationId: string, name: string): Workspace | undefined;
   findBySlug(context: ReadContext, installationId: string, slug: string): Workspace | undefined;
   listForUser(context: ReadContext, userId: string): readonly Workspace[];
+  updateName(
+    context: WriteContext,
+    input: Readonly<{
+      name: string;
+      revision: number;
+      updatedAt: number;
+      workspaceId: string;
+    }>,
+  ): void;
 }
 
 export interface WorkspaceMembershipRepository {
@@ -88,4 +97,8 @@ export class UserProfileMissingError extends Error {
 
 export class WorkspaceNameAlreadyExistsError extends Error {
   override readonly name = "WorkspaceNameAlreadyExistsError";
+}
+
+export class WorkspaceNotFoundError extends Error {
+  override readonly name = "WorkspaceNotFoundError";
 }

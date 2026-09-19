@@ -1,4 +1,4 @@
-import type { WorkspaceContext } from "@launchpp/api-client";
+import type { WorkspaceContext, WorkspaceSummary } from "@launchpp/api-client";
 import {
   AddIcon,
   Button,
@@ -45,10 +45,20 @@ export function AppShell() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<WorkspaceSummary>();
+  const [renameName, setRenameName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [workspaceRenameError, setWorkspaceRenameError] = useState<unknown>();
   const workspaceCreateErrorMessage = workspaceCreateError
     ? workspaceCreateError instanceof Error
       ? workspaceCreateError.message
       : "Could not create workspace."
+    : undefined;
+  const workspaceRenameErrorMessage = workspaceRenameError
+    ? workspaceRenameError instanceof Error
+      ? workspaceRenameError.message
+      : "Could not rename workspace."
     : undefined;
 
   const loadWorkspaces = useCallback(async () => {
@@ -107,6 +117,19 @@ export function AppShell() {
         setPropertiesOpen(true);
       }, 0);
     };
+    const openRenamer = () => {
+      if (!key.startsWith("workspace:")) return;
+      const workspace = workspaceContext?.workspaces.find(
+        (item) => item.id === key.slice("workspace:".length),
+      );
+      if (!workspace) return;
+      window.setTimeout(() => {
+        setWorkspaceRenameError(undefined);
+        setRenameTarget(workspace);
+        setRenameName(workspace.name);
+        setRenameOpen(true);
+      }, 0);
+    };
 
     if (key.startsWith("workspace:")) {
       return [
@@ -120,7 +143,7 @@ export function AppShell() {
             ),
         },
         { type: "divider" },
-        { disabled: true, key: "rename-workspace", label: "Rename" },
+        { key: "rename-workspace", label: "Rename", onClick: openRenamer },
         { danger: true, disabled: true, key: "delete-workspace", label: "Delete workspace" },
         { type: "divider" },
         { key: "workspace-properties", label: "Properties", onClick: openProperties },
@@ -138,7 +161,7 @@ export function AppShell() {
     }
 
     return [];
-  }, [contextNode, expandedKeys]);
+  }, [contextNode, expandedKeys, workspaceContext]);
 
   const createWorkspace = async () => {
     if (creating || workspaceName.trim().length === 0) return;
@@ -154,6 +177,24 @@ export function AppShell() {
       setWorkspaceCreateError(reason);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const renameWorkspace = async () => {
+    if (!renameTarget || renaming || renameName.trim().length === 0) return;
+    setRenaming(true);
+    setWorkspaceRenameError(undefined);
+    try {
+      const workspace = await api.workspaces.rename(renameTarget.id, renameName);
+      setRenameOpen(false);
+      setRenameTarget(undefined);
+      setRenameName("");
+      await loadWorkspaces();
+      messageApi.success(`${workspace.name} renamed.`);
+    } catch (reason) {
+      setWorkspaceRenameError(reason);
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -276,6 +317,45 @@ export function AppShell() {
               placeholder="Workspace name"
               {...(workspaceCreateErrorMessage ? { status: "error" as const } : {})}
               value={workspaceName}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        confirmLoading={renaming}
+        okButtonProps={{
+          disabled:
+            renameName.trim().length === 0 ||
+            renameName.trim().replace(/\s+/g, " ") === renameTarget?.name,
+        }}
+        okText="Rename"
+        onCancel={() => {
+          setRenameOpen(false);
+          setRenameTarget(undefined);
+          setRenameName("");
+          setWorkspaceRenameError(undefined);
+        }}
+        onOk={() => void renameWorkspace()}
+        open={renameOpen}
+        title="Rename workspace"
+      >
+        <Form layout="vertical" onFinish={renameWorkspace}>
+          <Form.Item
+            label="Name"
+            {...(workspaceRenameErrorMessage
+              ? { help: workspaceRenameErrorMessage, validateStatus: "error" as const }
+              : {})}
+          >
+            <Input
+              autoComplete="organization"
+              maxLength={80}
+              onChange={(event) => {
+                setRenameName(event.target.value);
+                setWorkspaceRenameError(undefined);
+              }}
+              placeholder="Workspace name"
+              {...(workspaceRenameErrorMessage ? { status: "error" as const } : {})}
+              value={renameName}
             />
           </Form.Item>
         </Form>

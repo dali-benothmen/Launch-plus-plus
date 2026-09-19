@@ -8,9 +8,11 @@ import {
 import {
   CreateWorkspaceService,
   EnsureOwnerWorkspaceService,
+  RenameWorkspaceService,
   SelectCurrentWorkspaceService,
   type Workspace,
   WorkspaceNameAlreadyExistsError,
+  WorkspaceNotFoundError,
   WorkspaceQueryService,
 } from "@launchpp/core";
 import {
@@ -65,6 +67,7 @@ export async function registerWorkspaceRoutes(
   };
   const createWorkspace = new CreateWorkspaceService(shared);
   const ensureWorkspace = new EnsureOwnerWorkspaceService(shared);
+  const renameWorkspace = new RenameWorkspaceService(shared);
   const selectWorkspace = new SelectCurrentWorkspaceService({
     clock: Date.now,
     memberships,
@@ -181,6 +184,71 @@ export async function registerWorkspaceRoutes(
         workspaceId: request.body.workspaceId,
       });
       return { currentWorkspaceId: request.body.workspaceId };
+    },
+  );
+
+  app.patch<{
+    Body: { readonly name: string };
+    Params: { readonly workspaceId: string };
+  }>(
+    "/api/workspaces/:workspaceId",
+    {
+      schema: {
+        body: {
+          additionalProperties: false,
+          required: ["name"],
+          type: "object",
+          properties: {
+            name: { maxLength: 80, minLength: 1, pattern: "\\S", type: "string" },
+          },
+        },
+        params: {
+          additionalProperties: false,
+          required: ["workspaceId"],
+          type: "object",
+          properties: {
+            workspaceId: { maxLength: 100, minLength: 1, type: "string" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const session = await sessionFor(request);
+      const actor = actorFromIdentitySession(session);
+      if (!session) return reply.status(401).send({ code: "unauthenticated" });
+      const membership = input.database.read((context) =>
+        memberships.find(context, request.params.workspaceId, session.identity.id),
+      );
+      if (!canAccessWorkspace(actor, membership, "workspace.manage")) {
+        return reply.status(403).send({
+          code: "workspace_management_denied",
+          message: "Workspace ownership is required to rename this workspace.",
+        });
+      }
+
+      try {
+        const workspace = await renameWorkspace.execute({
+          correlationId: request.id,
+          name: request.body.name,
+          userId: session.identity.id,
+          workspaceId: request.params.workspaceId,
+        });
+        return workspaceSummary(workspace);
+      } catch (error) {
+        if (error instanceof WorkspaceNameAlreadyExistsError) {
+          return reply.status(409).send({
+            code: "workspace_name_conflict",
+            message: error.message,
+          });
+        }
+        if (error instanceof WorkspaceNotFoundError) {
+          return reply.status(404).send({
+            code: "workspace_not_found",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
     },
   );
 }

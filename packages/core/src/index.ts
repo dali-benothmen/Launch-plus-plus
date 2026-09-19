@@ -36,6 +36,11 @@ export {
   type SelectCurrentWorkspaceDependencies,
   SelectCurrentWorkspaceService,
 } from "./workspaces/select-current-workspace.js";
+export {
+  type RenameWorkspaceDependencies,
+  type RenameWorkspaceInput,
+  RenameWorkspaceService,
+} from "./workspaces/rename-workspace.js";
 export type {
   AuditEntry,
   AuditWriter,
@@ -52,6 +57,7 @@ export {
   UserProfileMissingError,
   WorkspaceMembershipRequiredError,
   WorkspaceNameAlreadyExistsError,
+  WorkspaceNotFoundError,
 } from "./workspaces/workspace.js";
 export {
   type WorkspaceContext,
