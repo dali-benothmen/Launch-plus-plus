@@ -23,6 +23,7 @@ export * from "./list/index.js";
 export * from "./masonry/index.js";
 export * from "./mentions/index.js";
 export * from "./menu/index.js";
+export * from "./message/index.js";
 export * from "./pagination/index.js";
 export * from "./popover/index.js";
 export * from "./radio/index.js";

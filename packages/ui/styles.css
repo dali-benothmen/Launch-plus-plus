@@ -6420,6 +6420,103 @@
   }
 }
 
+.launch-ui-message-holder {
+  position: fixed;
+  z-index: 1010;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.launch-ui-message-item {
+  display: flex;
+  max-width: min(100%, calc(100vw - 32px));
+  justify-content: center;
+}
+
+.launch-ui-message-notice {
+  display: inline-flex;
+  min-height: 40px;
+  max-height: 160px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  padding: 9px 12px;
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-surface);
+  box-shadow: var(--launch-ui-shadow-popup);
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: 22px;
+  pointer-events: auto;
+  animation: launch-ui-message-in var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-message-notice.is-closing {
+  pointer-events: none;
+  animation: launch-ui-message-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+}
+
+.launch-ui-message-notice.is-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.launch-ui-message-notice.is-clickable:focus-visible {
+  box-shadow:
+    0 0 0 2px rgb(22 104 220 / 20%),
+    var(--launch-ui-shadow-popup);
+}
+
+.launch-ui-message-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--launch-ui-info);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.launch-ui-message-icon svg {
+  display: block;
+}
+
+.launch-ui-message-notice.is-success .launch-ui-message-icon {
+  color: var(--launch-ui-success);
+}
+
+.launch-ui-message-notice.is-warning .launch-ui-message-icon {
+  color: var(--launch-ui-warning);
+}
+
+.launch-ui-message-notice.is-error .launch-ui-message-icon {
+  color: var(--launch-ui-error);
+}
+
+.launch-ui-message-title {
+  min-width: 0;
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-message-holder.is-stacked {
+  min-height: 56px;
+}
+
+.launch-ui-message-holder.is-stacked .launch-ui-message-item {
+  position: absolute;
+  top: calc(var(--launch-ui-message-stack-index) * 4px);
+  z-index: calc(10 - var(--launch-ui-message-stack-index));
+  opacity: calc(1 - var(--launch-ui-message-stack-index) * 0.22);
+  transform: scale(calc(1 - var(--launch-ui-message-stack-index) * 0.04));
+  transform-origin: top center;
+}
+
 .launch-ui-table-root {
   width: 100%;
   color: var(--launch-ui-text);
@@ -7722,6 +7819,23 @@
   }
 }
 
+@keyframes launch-ui-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+@keyframes launch-ui-message-out {
+  to {
+    max-height: 0;
+    min-height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
 @keyframes launch-ui-spin {
   to {
     transform: rotate(360deg);
@@ -7787,6 +7901,7 @@
   .launch-ui-drawer-content,
   .launch-ui-drawer-resizer::after,
   .launch-ui-drawer-skeleton span,
+  .launch-ui-message-notice,
   .launch-ui-float-button,
   .launch-ui-float-button-group-items,
   .launch-ui-upload-actions,

@@ -24,6 +24,7 @@ import { listShowcase } from "./components/list.showcase.js";
 import { masonryShowcase } from "./components/masonry.showcase.js";
 import { mentionsShowcase } from "./components/mentions.showcase.js";
 import { menuShowcase } from "./components/menu.showcase.js";
+import { messageShowcase } from "./components/message.showcase.js";
 import { paginationShowcase } from "./components/pagination.showcase.js";
 import { popoverShowcase } from "./components/popover.showcase.js";
 import { radioShowcase } from "./components/radio.showcase.js";
@@ -86,6 +87,7 @@ export const componentRegistry = defineShowcases([
   treeShowcase,
   alertShowcase,
   drawerShowcase,
+  messageShowcase,
   dialogShowcase,
   dropdownMenuShowcase,
   tooltipShowcase,
