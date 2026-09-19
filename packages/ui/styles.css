@@ -6288,6 +6288,7 @@
 
 .launch-ui-alert.has-description {
   align-items: flex-start;
+  padding: 20px 24px;
 }
 
 .launch-ui-alert-icon {
