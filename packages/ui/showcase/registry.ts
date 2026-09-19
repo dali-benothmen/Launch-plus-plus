@@ -8,6 +8,7 @@ import { buttonShowcase } from "./components/button.showcase.js";
 import { cardShowcase } from "./components/card.showcase.js";
 import { checkboxShowcase } from "./components/checkbox.showcase.js";
 import { datePickerShowcase } from "./components/date-picker.showcase.js";
+import { descriptionsShowcase } from "./components/descriptions.showcase.js";
 import { dividerShowcase } from "./components/divider.showcase.js";
 import { drawerShowcase } from "./components/drawer.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
@@ -83,6 +84,7 @@ export const componentRegistry = defineShowcases([
   uploadShowcase,
   avatarShowcase,
   badgeShowcase,
+  descriptionsShowcase,
   emptyShowcase,
   listShowcase,
   popoverShowcase,
