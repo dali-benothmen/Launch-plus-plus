@@ -98,6 +98,33 @@ const apiClient: ApiClient = {
     createOwner: vi.fn(async () => undefined),
     status: vi.fn(async () => ({ requiresSetup: false, setupAuthorized: false })),
   },
+  tasks: {
+    archive: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    create: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    createLabel: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    list: vi.fn(async () => ({ items: [], labels: [] })),
+    move: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    replaceAssignees: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    replaceLabels: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    restore: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    update: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+  },
   workspaces: {
     create: vi.fn(async () => ({
       id: "workspace-1",

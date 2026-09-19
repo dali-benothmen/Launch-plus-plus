@@ -1,4 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
+import type {
+  CreateWorkspaceInput,
+  CursorPageQuery,
+  RenameWorkspaceInput,
+  SelectWorkspaceInput,
+} from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import {
   actorFromIdentitySession,
@@ -19,12 +26,25 @@ import {
   type SqliteDatabase,
   SqliteAuditWriter,
   SqliteInstallationRepository,
+  SqliteIdempotencyRepository,
   SqliteOutboxRepository,
   SqliteUserProfileRepository,
   SqliteWorkspaceMembershipRepository,
   SqliteWorkspaceRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+
+import { cursorPage, executeIdempotent } from "./http-contract.js";
+import { sendProblem } from "./problem-details.js";
+
+const problemResponses = {
+  400: { $ref: "LaunchppProblemDetailsV1#" },
+  401: { $ref: "LaunchppProblemDetailsV1#" },
+  403: { $ref: "LaunchppProblemDetailsV1#" },
+  404: { $ref: "LaunchppProblemDetailsV1#" },
+  409: { $ref: "LaunchppProblemDetailsV1#" },
+  503: { $ref: "LaunchppProblemDetailsV1#" },
+} as const;
 
 function webHeaders(headers: FastifyRequest["headers"]): Headers {
   const result = new Headers();
@@ -51,6 +71,7 @@ export async function registerWorkspaceRoutes(
 ): Promise<void> {
   const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
+  const idempotency = new SqliteIdempotencyRepository(input.database);
   const memberships = new SqliteWorkspaceMembershipRepository();
   const outbox = new SqliteOutboxRepository();
   const profiles = new SqliteUserProfileRepository();
@@ -84,146 +105,233 @@ export async function registerWorkspaceRoutes(
     input.identity.resolveSession(webHeaders(request.headers));
   const installation = () => input.database.read((context) => installations.findFirst(context));
 
-  app.get("/api/workspaces", async (request, reply) => {
-    const session = await sessionFor(request);
-    if (!session) return reply.status(401).send({ code: "unauthenticated" });
-    const currentInstallation = installation();
-    if (!currentInstallation) {
-      return reply.status(503).send({ code: "setup_required", message: "Setup is incomplete." });
-    }
-
-    let result = queryWorkspaces.forUser(session.identity.id);
-    if (result.workspaces.length === 0 || !result.currentWorkspaceId) {
-      await ensureWorkspace.execute({
-        correlationId: request.id,
-        displayName: session.identity.name,
-        installationId: currentInstallation.id,
-        userId: session.identity.id,
-      });
-      result = queryWorkspaces.forUser(session.identity.id);
-    }
-    return {
-      ...(result.currentWorkspaceId ? { currentWorkspaceId: result.currentWorkspaceId } : {}),
-      workspaces: result.workspaces.map(workspaceSummary),
-    };
-  });
-
-  app.post<{ Body: { readonly name: string } }>(
-    "/api/workspaces",
+  app.get<{ Querystring: CursorPageQuery }>(
+    "/api/v1/workspaces",
     {
       schema: {
-        body: {
-          additionalProperties: false,
-          required: ["name"],
-          type: "object",
-          properties: {
-            name: { maxLength: 80, minLength: 1, pattern: "\\S", type: "string" },
-          },
-        },
+        operationId: "listWorkspaces",
+        querystring: { $ref: "LaunchppCursorPageQueryV1#" },
+        response: { 200: { $ref: "LaunchppWorkspaceContextV1#" }, ...problemResponses },
+        summary: "List accessible workspaces",
+        tags: ["Workspaces"],
+      },
+    },
+    async (request, reply) => {
+      const session = await sessionFor(request);
+      if (!session) {
+        return sendProblem(
+          reply,
+          request,
+          401,
+          "unauthenticated",
+          "Authentication required",
+          "Sign in to access workspaces.",
+        );
+      }
+      const currentInstallation = installation();
+      if (!currentInstallation) {
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
+      }
+
+      let result = queryWorkspaces.forUser(session.identity.id);
+      if (result.workspaces.length === 0 || !result.currentWorkspaceId) {
+        await ensureWorkspace.execute({
+          correlationId: request.id,
+          displayName: session.identity.name,
+          installationId: currentInstallation.id,
+          userId: session.identity.id,
+        });
+        result = queryWorkspaces.forUser(session.identity.id);
+      }
+      const page = cursorPage(
+        result.workspaces,
+        { ...request.query, scope: `workspaces:${session.identity.id}` },
+        (workspace) => workspace.id,
+      );
+      return {
+        ...(result.currentWorkspaceId ? { currentWorkspaceId: result.currentWorkspaceId } : {}),
+        ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+        workspaces: page.items.map(workspaceSummary),
+      };
+    },
+  );
+
+  app.post<{ Body: CreateWorkspaceInput }>(
+    "/api/v1/workspaces",
+    {
+      schema: {
+        body: { $ref: "LaunchppCreateWorkspaceInputV1#" },
+        headers: IdempotencyHeadersSchema,
+        operationId: "createWorkspace",
+        response: { 201: { $ref: "LaunchppWorkspaceSummaryV1#" }, ...problemResponses },
+        summary: "Create a workspace",
+        tags: ["Workspaces"],
       },
     },
     async (request, reply) => {
       const session = await sessionFor(request);
       const actor = actorFromIdentitySession(session);
-      if (!session) return reply.status(401).send({ code: "unauthenticated" });
+      if (!session) {
+        return sendProblem(
+          reply,
+          request,
+          401,
+          "unauthenticated",
+          "Authentication required",
+          "Sign in to create a workspace.",
+        );
+      }
       if (!canCreateWorkspace(actor)) {
-        return reply.status(403).send({ code: "forbidden", message: "Workspace creation denied." });
+        return sendProblem(
+          reply,
+          request,
+          403,
+          "forbidden",
+          "Workspace creation denied",
+          "The current actor cannot create workspaces.",
+        );
       }
       const currentInstallation = installation();
       if (!currentInstallation) {
-        return reply.status(503).send({ code: "setup_required", message: "Setup is incomplete." });
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
       }
       try {
-        const workspace = await createWorkspace.execute({
-          correlationId: request.id,
-          displayName: session.identity.name,
-          installationId: currentInstallation.id,
-          name: request.body.name,
-          userId: session.identity.id,
-        });
-        return reply.status(201).send(workspaceSummary(workspace));
+        return await executeIdempotent(
+          request,
+          reply,
+          idempotency,
+          {
+            actorUserId: session.identity.id,
+            operation: "workspace.create",
+            payload: request.body,
+            scopeKey: `installation:${currentInstallation.id}`,
+          },
+          async () => {
+            const workspace = await createWorkspace.execute({
+              correlationId: request.id,
+              displayName: session.identity.name,
+              installationId: currentInstallation.id,
+              name: request.body.name,
+              userId: session.identity.id,
+            });
+            return { body: workspaceSummary(workspace), status: 201 };
+          },
+        );
       } catch (error) {
         if (error instanceof WorkspaceNameAlreadyExistsError) {
-          return reply.status(409).send({
-            code: "workspace_name_conflict",
-            message: error.message,
-          });
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "workspace_name_conflict",
+            "Workspace name conflict",
+            error.message,
+          );
         }
         throw error;
       }
     },
   );
 
-  app.put<{ Body: { readonly workspaceId: string } }>(
-    "/api/workspaces/current",
+  app.put<{ Body: SelectWorkspaceInput }>(
+    "/api/v1/workspaces/current",
     {
       schema: {
-        body: {
-          additionalProperties: false,
-          required: ["workspaceId"],
-          type: "object",
-          properties: { workspaceId: { maxLength: 100, minLength: 1, type: "string" } },
-        },
+        body: { $ref: "LaunchppSelectWorkspaceInputV1#" },
+        operationId: "selectWorkspace",
+        response: { 204: { type: "null" }, ...problemResponses },
+        summary: "Select the current workspace",
+        tags: ["Workspaces"],
       },
     },
     async (request, reply) => {
       const session = await sessionFor(request);
       const actor = actorFromIdentitySession(session);
-      if (!session) return reply.status(401).send({ code: "unauthenticated" });
+      if (!session) {
+        return sendProblem(
+          reply,
+          request,
+          401,
+          "unauthenticated",
+          "Authentication required",
+          "Sign in to select a workspace.",
+        );
+      }
       const membership = input.database.read((context) =>
         memberships.find(context, request.body.workspaceId, session.identity.id),
       );
       if (!canAccessWorkspace(actor, membership, "workspace.select")) {
-        return reply.status(403).send({
-          code: "workspace_access_denied",
-          message: "Active membership is required to select this workspace.",
-        });
+        return sendProblem(
+          reply,
+          request,
+          403,
+          "workspace_access_denied",
+          "Workspace access denied",
+          "Active membership is required to select this workspace.",
+        );
       }
       await selectWorkspace.execute({
         userId: session.identity.id,
         workspaceId: request.body.workspaceId,
       });
-      return { currentWorkspaceId: request.body.workspaceId };
+      return reply.status(204).send();
     },
   );
 
   app.patch<{
-    Body: { readonly name: string };
+    Body: RenameWorkspaceInput;
     Params: { readonly workspaceId: string };
   }>(
-    "/api/workspaces/:workspaceId",
+    "/api/v1/workspaces/:workspaceId",
     {
       schema: {
-        body: {
-          additionalProperties: false,
-          required: ["name"],
-          type: "object",
-          properties: {
-            name: { maxLength: 80, minLength: 1, pattern: "\\S", type: "string" },
-          },
-        },
-        params: {
-          additionalProperties: false,
-          required: ["workspaceId"],
-          type: "object",
-          properties: {
-            workspaceId: { maxLength: 100, minLength: 1, type: "string" },
-          },
-        },
+        body: { $ref: "LaunchppRenameWorkspaceInputV1#" },
+        operationId: "renameWorkspace",
+        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        response: { 200: { $ref: "LaunchppWorkspaceSummaryV1#" }, ...problemResponses },
+        summary: "Rename a workspace",
+        tags: ["Workspaces"],
       },
     },
     async (request, reply) => {
       const session = await sessionFor(request);
       const actor = actorFromIdentitySession(session);
-      if (!session) return reply.status(401).send({ code: "unauthenticated" });
+      if (!session) {
+        return sendProblem(
+          reply,
+          request,
+          401,
+          "unauthenticated",
+          "Authentication required",
+          "Sign in to rename a workspace.",
+        );
+      }
       const membership = input.database.read((context) =>
         memberships.find(context, request.params.workspaceId, session.identity.id),
       );
       if (!canAccessWorkspace(actor, membership, "workspace.manage")) {
-        return reply.status(403).send({
-          code: "workspace_management_denied",
-          message: "Workspace ownership is required to rename this workspace.",
-        });
+        return sendProblem(
+          reply,
+          request,
+          403,
+          "workspace_management_denied",
+          "Workspace management denied",
+          "Workspace ownership is required to rename this workspace.",
+        );
       }
 
       try {
@@ -236,16 +344,24 @@ export async function registerWorkspaceRoutes(
         return workspaceSummary(workspace);
       } catch (error) {
         if (error instanceof WorkspaceNameAlreadyExistsError) {
-          return reply.status(409).send({
-            code: "workspace_name_conflict",
-            message: error.message,
-          });
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "workspace_name_conflict",
+            "Workspace name conflict",
+            error.message,
+          );
         }
         if (error instanceof WorkspaceNotFoundError) {
-          return reply.status(404).send({
-            code: "workspace_not_found",
-            message: error.message,
-          });
+          return sendProblem(
+            reply,
+            request,
+            404,
+            "workspace_not_found",
+            "Workspace not found",
+            error.message,
+          );
         }
         throw error;
       }

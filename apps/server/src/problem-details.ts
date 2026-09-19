@@ -4,6 +4,7 @@ export interface ProblemDetails {
   readonly code: string;
   readonly correlationId: string;
   readonly detail: string;
+  readonly extensions?: Readonly<Record<string, unknown>>;
   readonly status: number;
   readonly title: string;
   readonly type: string;
@@ -28,11 +29,13 @@ export function sendProblem(
   code: string,
   title: string,
   detail: string,
+  extensions?: Readonly<Record<string, unknown>>,
 ) {
   const problem: ProblemDetails = {
     code,
     correlationId: request.id,
     detail,
+    ...(extensions ? { extensions } : {}),
     status,
     title,
     type: `https://launchpp.dev/problems/${code}`,

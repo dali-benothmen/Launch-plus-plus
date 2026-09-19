@@ -482,6 +482,35 @@ export const taskLabels = sqliteTable(
   ],
 );
 
+export const idempotencyRecords = sqliteTable(
+  "idempotency_records",
+  {
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    scopeKey: text("scope_key").notNull(),
+    operation: text("operation").notNull(),
+    key: text("idempotency_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    state: text("state", { enum: ["pending", "completed"] }).notNull(),
+    responseStatus: integer("response_status"),
+    responseJson: text("response_json"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.actorUserId, table.scopeKey, table.operation, table.key] }),
+    index("idempotency_records_expiry_idx").on(table.expiresAt),
+    check("idempotency_records_state_valid", sql`${table.state} in ('pending', 'completed')`),
+    check(
+      "idempotency_records_response_complete",
+      sql`(${table.state} = 'pending' and ${table.responseStatus} is null and ${table.responseJson} is null)
+          or (${table.state} = 'completed' and ${table.responseStatus} is not null and ${table.responseJson} is not null)`,
+    ),
+  ],
+);
+
 export const auditEntries = sqliteTable(
   "audit_entries",
   {
@@ -517,6 +546,7 @@ export const databaseSchema = {
   authUsers,
   authVerifications,
   installations,
+  idempotencyRecords,
   labels,
   outboxMessages,
   projectFolders,

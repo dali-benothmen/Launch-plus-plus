@@ -1,5 +1,10 @@
 export { SqliteAuditWriter } from "./audit-repository.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
+export {
+  type IdempotencyReservation,
+  type IdempotencyScope,
+  SqliteIdempotencyRepository,
+} from "./idempotency-repository.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 export { SqliteOutboxRepository } from "./outbox-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
@@ -15,6 +20,7 @@ export {
   authVerifications,
   databaseSchema,
   installations,
+  idempotencyRecords,
   labels,
   outboxMessages,
   projectFolders,
