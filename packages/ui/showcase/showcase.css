@@ -1140,6 +1140,27 @@ button {
   color: var(--launch-ui-primary);
 }
 
+.showcase-popover-copy p {
+  margin: 0;
+}
+
+.showcase-popover-placements {
+  width: min(100%, 432px);
+  padding-block: 84px;
+}
+
+.showcase-popover-placement-middle {
+  width: 100%;
+}
+
+.showcase-popover-placement-button {
+  width: 80px;
+}
+
+.showcase-popover-semantic {
+  padding: 10px;
+}
+
 .launch-ui-select-custom-tag .launch-ui-tag {
   gap: 4px;
 }

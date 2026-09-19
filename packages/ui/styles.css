@@ -5560,6 +5560,47 @@
   fill: rgb(0 0 0 / 85%);
 }
 
+.launch-ui-popover-container {
+  --launch-ui-popover-bg: var(--launch-ui-surface);
+
+  z-index: 1030;
+  box-sizing: border-box;
+  min-width: 177px;
+  max-width: min(420px, calc(100vw - 16px));
+  padding: 12px;
+  border-radius: var(--launch-ui-radius-lg);
+  background: var(--launch-ui-popover-bg);
+  box-shadow: var(--launch-ui-shadow-popup);
+  color: var(--launch-ui-text);
+  font-family: var(--launch-ui-font);
+  font-size: var(--launch-ui-font-size);
+  line-height: var(--launch-ui-line-height);
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+.launch-ui-popover-container[data-state="open"] {
+  animation: launch-ui-popup-in var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.launch-ui-popover-container[data-state="closed"] {
+  pointer-events: none;
+  animation: launch-ui-popup-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
+}
+
+.launch-ui-popover-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.launch-ui-popover-content {
+  color: var(--launch-ui-text);
+}
+
+.launch-ui-popover-arrow {
+  fill: var(--launch-ui-popover-bg);
+  filter: drop-shadow(0 2px 1px rgb(0 0 0 / 5%));
+}
+
 .launch-ui-dialog-overlay {
   position: fixed;
   z-index: 1000;
@@ -6318,6 +6359,7 @@
   .launch-ui-tab,
   .launch-ui-tab::after,
   .launch-ui-tooltip,
+  .launch-ui-popover-container,
   .launch-ui-dialog-overlay,
   .launch-ui-dialog-content,
   .launch-ui-float-button,
