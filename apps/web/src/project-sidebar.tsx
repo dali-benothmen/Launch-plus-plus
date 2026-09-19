@@ -441,19 +441,27 @@ export function ProjectSidebar({
             </Button>
           </div>
           {onCollapseToggle ? (
-            <Tooltip
-              placement={collapsed ? "right" : "bottom"}
-              title={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
-            >
+            collapsed ? (
               <Button
-                aria-label={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
-                icon={collapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />}
+                aria-label="Expand workspace sidebar"
+                icon={<ExpandNavigationIcon />}
                 iconOnly
                 onClick={onCollapseToggle}
                 size="small"
                 variant="text"
               />
-            </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title="Collapse workspace sidebar">
+                <Button
+                  aria-label="Collapse workspace sidebar"
+                  icon={<CollapseNavigationIcon />}
+                  iconOnly
+                  onClick={onCollapseToggle}
+                  size="small"
+                  variant="text"
+                />
+              </Tooltip>
+            )
           ) : null}
         </div>
         <div aria-hidden={collapsed} className="project-sidebar-body" inert={collapsed}>
