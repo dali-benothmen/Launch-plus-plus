@@ -7,8 +7,8 @@ export const semanticThemeValues = Object.freeze({
     accent: "#1668dc",
     background: "#f5f5f5",
     elevated: "#ffffff",
-    text: "rgb(0 0 0 / 88%)",
-    textMuted: "rgb(0 0 0 / 65%)",
+    text: "rgba(0, 0, 0, 0.88)",
+    textMuted: "rgba(0, 0, 0, 0.88)",
   }),
   dark: Object.freeze({
     accent: "#165bbe",

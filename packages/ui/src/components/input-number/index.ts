@@ -1,0 +1,15 @@
+export {
+  InputNumber,
+  type InputNumberClassNames,
+  type InputNumberControls,
+  type InputNumberMode,
+  type InputNumberProps,
+  type InputNumberRef,
+  type InputNumberSemanticName,
+  type InputNumberSize,
+  type InputNumberStatus,
+  type InputNumberStepInfo,
+  type InputNumberStyles,
+  type InputNumberValue,
+  type InputNumberVariant,
+} from "./input-number.js";

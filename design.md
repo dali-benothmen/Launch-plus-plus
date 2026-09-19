@@ -1,7 +1,7 @@
 ---
 name: Launch++ Design System
 version: 0.1.0
-updatedAt: 2026-09-18
+updatedAt: 2026-09-19
 scope: Default light theme and component behavior
 purpose: Source of truth for implementing the Launch++ visual language with Radix primitives and CSS
 referenceRuntime:
@@ -58,10 +58,55 @@ componentTokens:
     iconGap: 8px
     fontWeight: 400
     borderRadius: 6px
+    shapeRound: 9999px
+  floatButton:
+    size: 40px
+    viewportInset: 24px
+    groupGap: 12px
+    squareRadius: 8px
+  avatar:
+    sizeExtraLarge: 63px
+    sizeLarge: 40px
+    sizeDefault: 32px
+    sizeSmall: 23px
+    sizeExtraSmall: 14px
+    groupSize: 32px
+  badge:
+    countSize: 16px
+    countSizeSmall: 14px
+    dotSize: 6px
+  divider:
+    color: "rgba(5, 5, 5, 0.06)"
+    lineWidth: 1px
+    titleFontSize: 13px
+    textPaddingInline: 1em
+    spacingSmall: 12px
+    spacingMedium: 16px
+    spacingLarge: 24px
+  flex:
+    gapSmall: 8px
+    gapMedium: 16px
+    gapLarge: 24px
+  grid:
+    columns: 24
+    breakpointSm: 576px
+    breakpointMd: 768px
+    breakpointLg: 992px
+    breakpointXl: 1200px
+    breakpointXxl: 1600px
+    breakpointXxxl: 1920px
   input:
-    transitionDuration: 200ms
+    transitionDuration: 1s
     transitionProperties: border-color, background-color, box-shadow
-  dialog:
+    shapeRound: 9999px
+  card:
+    bodyPadding: 24px
+    bodyPaddingSmall: 12px
+    border: "1px solid #f0f0f0"
+    borderRadius: 8px
+    headerHeight: 56px
+    headerHeightSmall: 38px
+  modal:
     enterDuration: 200ms
     exitDuration: 200ms
     exitDistance: 6px
@@ -88,7 +133,7 @@ tokens:
     infoBg: "#e6f4ff"
     infoBorder: "#91caff"
     text: "rgba(0, 0, 0, 0.88)"
-    textSecondary: "rgba(0, 0, 0, 0.65)"
+    textSecondary: "rgba(0, 0, 0, 0.88)"
     textTertiary: "rgba(0, 0, 0, 0.45)"
     textQuaternary: "rgba(0, 0, 0, 0.25)"
     textDisabled: "rgba(0, 0, 0, 0.25)"
@@ -109,7 +154,7 @@ tokens:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
     fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace"
     fontSizeSm: 12px
-    fontSize: 14px
+    fontSize: 13px
     fontSizeLg: 16px
     fontSizeXl: 20px
     heading1: 38px/46px
@@ -145,6 +190,8 @@ tokens:
     fast: 0.1s
     mid: 0.2s
     slow: 0.3s
+    hover: 1s
+    hoverEase: "cubic-bezier(0.075, 0.82, 0.165, 1)"
     easeInOut: "cubic-bezier(0.645, 0.045, 0.355, 1)"
     easeOut: "cubic-bezier(0.215, 0.61, 0.355, 1)"
     easeOutCirc: "cubic-bezier(0.08, 0.82, 0.17, 1)"
@@ -155,6 +202,7 @@ tokens:
     easeOutQuint: "cubic-bezier(0.23, 1, 0.32, 1)"
   elevation:
     raised: "0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.03)"
+    card: "0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09)"
     popup: "0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)"
     drawerDownDark: "0 -6px 16px rgba(255, 255, 255, 0.016), 0 -3px 6px -4px rgba(255, 255, 255, 0.024), 0 -9px 28px 8px rgba(255, 255, 255, 0.01)"
   breakpoint:
@@ -202,6 +250,10 @@ The visual system is compact, stable, and extensible. Its implementation rules a
 - Components expose stable semantic slots through `classNames` and `styles`; consumers should not target internal DOM structure.
 - Component APIs increasingly use consistent concepts such as `variant`, `placement`, `orientation`, `open`, `destroyOnHidden`, `title`, and `content`.
 - Inputs and containers use named variants rather than a simple `bordered` boolean.
+- Inputs support a `round` shape for search and other compact discovery controls.
+- Icons use the dedicated `@launchpp/ui/icons` entry point and inherit the surrounding text color.
+- Typography includes document structure, semantic text styles, links, inline editing, copying, and
+  expandable ellipsis behavior.
 - Tags distinguish filled and solid variants; Card distinguishes outlined and borderless variants.
 - Static CSS output must remain possible for plugin packaging and predictable runtime performance.
 - Focus visibility is a first-class seed setting through `focusOutline`.
@@ -286,7 +338,9 @@ Default popup z-index begins at 1000. Component layers then use small, intention
 
 ### Motion
 
-- 100 ms: hover, focus, pressed, and color changes.
+- 1 second with `cubic-bezier(0.075, 0.82, 0.165, 1)`: hover-facing background, border,
+  shadow, and color changes.
+- 100 ms: immediate pressed-state feedback and small utility effects.
 - 200 ms: fades and component-level open/close transitions.
 - 300 ms: larger surface entrance, exit, and movement.
 
@@ -315,7 +369,7 @@ Validation appears close to its field and combines color with text or iconograph
 
 ### Button
 
-Launch++ treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. Primary is a solid brand button, default is neutral outlined, dashed is neutral dashed, and text/link are low-chrome actions.
+Launch++ treats button appearance as a combination of semantic color and visual variant. The important variants are solid, outlined, dashed, filled, text, and link. The `primary` and `default` variants remain concise shorthands for the most common solid-brand and neutral-outlined treatments. Semantic color is independent of visual treatment and currently supports default, primary, danger, pink, purple, and cyan.
 
 Default geometry:
 
@@ -324,15 +378,68 @@ Default geometry:
 - Radius: 6 px.
 - Horizontal padding: 12 px; small 7 px. The 12 px default is a Launch++ compact override.
 - Icon-to-label gap: 8 px.
+- Shapes: default uses the shared 6 px radius, round uses a pill radius, and circle keeps equal width and height.
 - Default border: `#d9d9d9`; default background: white.
 - Default hover text and border: `#3c8ae8`; active: `#094bb5`.
 - Primary background: `#1668dc`; hover: `#3c8ae8`; active: `#094bb5`; text: white.
 - Default shadow: `0 2px 0 rgba(0, 0, 0, 0.02)`.
 - Primary shadow: `0 2px 0 rgba(22, 104, 220, 0.14)`.
 
-The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and transitions with the medium duration and standard ease-in-out curve. Focus-visible styling supplies the accessible outline.
+The base button is `position: relative` and `display: inline-flex`, centers its content on both axes, prevents wrapping and text selection, uses `touch-action: manipulation`, has no background image or native outline, and uses the shared one-second hover transition. Focus-visible styling supplies the accessible outline. Icons can appear at the start or end. Loading replaces the icon with a spinner, disables activation, and may accept a custom loading icon. Block buttons fill their container; ghost buttons remove the fill for contrasting surfaces. Providing `href` renders link semantics with the same visual contract.
 
 Use one primary button per action group. Icon-only buttons require an accessible name and normally a tooltip. A danger button communicates consequence, not priority.
+
+### Divider
+
+Dividers separate related content without introducing another container. Horizontal is the default orientation; vertical dividers are reserved for short inline labels, links, or actions.
+
+- Default line: 1 px solid `rgba(5, 5, 5, 0.06)`.
+- Variants: solid, dotted, and dashed.
+- Horizontal spacing: 12 px small, 16 px medium, and 24 px large. The default is 24 px.
+- Titled dividers use 13 px medium-weight text with `1em` inline spacing. Plain titles use the same 13 px size at regular weight.
+- Start and end titles leave a short 5% rail on their aligned side; centered titles divide the available width evenly.
+- Vertical dividers are `0.9em` high with 8 px inline spacing.
+
+The root exposes native separator semantics and its orientation. Public `root`, `content`, and `rail` slots may be customized through the component API; consumers should not target private DOM structure.
+
+### Flex
+
+Flex is the low-level layout primitive for arranging block-level children. It renders no wrappers around individual children and supports horizontal or vertical direction, wrapping, alignment, distribution, and preset or custom gaps.
+
+- Horizontal is the default orientation and aligns children to the cross-axis start.
+- Vertical orientation uses a column direction and keeps the browser's default stretch behavior.
+- Preset gaps are 8 px small, 16 px medium, and 24 px large. Numeric and CSS length values are also accepted.
+- `wrap` enables additional rows; explicit CSS wrap values remain available for advanced layouts.
+- `justify`, `align`, and `flex` map directly to their corresponding CSS properties.
+- The root element defaults to `div` and may be replaced with a more meaningful semantic element through `component`.
+
+Use Flex when layout direction or alignment matters. Use Space when a group only needs consistent spacing between inline elements.
+
+### Space
+
+Space provides consistent separation between inline elements and adds one semantic wrapper around each child. Horizontal orientation is the default and vertically centers items; vertical orientation stacks items from the cross-axis start.
+
+- Preset sizes are 8 px small, 16 px medium, and 24 px large. Numeric values and `[horizontal, vertical]` pairs are also supported.
+- `align` supports start, center, end, and baseline alignment.
+- Horizontal groups may wrap, and both orientations may render a decorative separator between items.
+- Public `root`, `item`, and `separator` slots may be customized through `classNames` and `styles`.
+- `Space.Compact` keeps controls as direct children, collapses shared borders, and supports horizontal or vertical orientation, small/medium/large control sizes, and full-width layout.
+- `Space.Addon` creates a custom labeled cell inside a compact group.
+
+Use regular Space for visual rhythm between separate elements. Use `Space.Compact` only when controls form one connected operation.
+
+### Grid
+
+Grid provides a responsive 24-column layout through `Row` and `Col`. Content belongs inside columns, and columns belong directly inside rows. When fixed column spans total more than 24, the overflowing column moves to a new line unless wrapping is disabled.
+
+- A span represents a fraction of 24: 6 is 25%, 8 is one third, 12 is 50%, and 24 is full width.
+- Rows default to wrapping, top alignment, and start justification.
+- Gutters accept pixel numbers, CSS lengths, responsive maps, or a `[horizontal, vertical]` pair.
+- Columns support span, offset, order, push, pull, and flex behavior.
+- Responsive column settings use `xs`, `sm`, `md`, `lg`, `xl`, `xxl`, and `xxxl` at 0, 576, 768, 992, 1200, 1600, and 1920 px.
+- Prefer one to four major regions in a row. The grid is a layout aid, not a reason to maximize information density.
+
+Responsive layout is CSS-driven. Use `Grid.useBreakpoint` only when behavior cannot be expressed through responsive grid properties or CSS.
 
 ### Input, textarea, and input-like controls
 
@@ -350,7 +457,7 @@ Default outlined input:
 - Add-on background: `rgba(0, 0, 0, 0.02)`.
 - Error focus ring: `0 0 0 2px rgba(255, 38, 5, 0.06)`.
 - Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
-- Border, background, and focus-ring changes transition over 200 ms with the standard ease-in-out curve.
+- Border, background, and focus-ring changes use the shared one-second hover transition.
 
 Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
 
@@ -383,9 +490,15 @@ Use Switch for immediate settings and Checkbox for selection or acknowledgement.
 
 ### Card
 
-Cards are white 8 px-radius containers. Default cards may use a subtle border; raised cards use the light raised shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
+Cards are white 8 px-radius containers. The structural card shell has no padding and uses a 1 px
+solid secondary border; its body owns the standard 24 px padding. Raised cards use the light raised
+shadow. Treat outlined and borderless as explicit variants rather than a `bordered` toggle.
 
-Typical body padding is 24 px. Separate header, body, cover, action, and tab regions semantically so plugins can style supported slots without reaching into internal markup.
+The medium header is 56 px tall with 24 px horizontal padding. Small cards use a 38 px header and
+12 px header and body padding. `title` and `extra` share the header; `cover` renders media before the
+body; and `Card.Meta` groups an optional avatar, title, and description. Hoverable cards transition
+to the dedicated card shadow. Separate header, body, cover, action, and tab regions semantically so
+plugins can style supported slots without reaching into internal markup.
 
 ### Tabs
 
@@ -399,6 +512,34 @@ Tabs use text and a primary ink bar rather than a filled background in their sta
 - Hover: `#3c8ae8`; selected: `#1668dc`; active: `#094bb5`.
 
 Use tabs for peer views of the same context, not for a full application hierarchy. Keep the active view stable on refresh where the product expects deep linking.
+
+### Anchor
+
+Anchor provides an in-page table of contents for long, scrollable views. Vertical orientation is the default and supports shallow nested links; horizontal orientation is reserved for a flat set of peer sections.
+
+- Links use 4 px vertical and 16 px leading padding in vertical orientation.
+- The resting rail uses the secondary border color; the active indicator is a 2 px primary line.
+- Active text uses the primary color, while hover uses the primary hover color.
+- The horizontal variant uses 24 px spacing and an active bottom indicator.
+- Smooth scrolling respects reduced-motion preferences and supports window or element scroll containers.
+- Sticky positioning, section bounds, shared and item-specific offsets, history replacement, and custom active-link resolution are public behavior.
+- Public `root`, `item`, `itemTitle`, and `indicator` slots may be customized through `classNames` and `styles`.
+
+Use Anchor for destinations within one rendered page. Use Tabs when selecting one peer view hides the others.
+
+### Breadcrumb
+
+Breadcrumb communicates the current location inside a hierarchy and provides a path back to parent levels. Use it only when the hierarchy contains more than two meaningful layers.
+
+- Text uses the default 13 px type size and 22 px line height.
+- Parent items and separators use tertiary text; the current location uses the primary text color.
+- Separators have 8 px inline margins and default to `/`.
+- Links transition to the primary text color on hover and retain visible keyboard focus.
+- Icons align with labels at a 4 px gap. A dedicated dropdown button exposes sibling destinations without nesting interactive elements.
+- String titles, href values, and connected route paths support named parameter replacement.
+- Public `root`, `item`, and `separator` slots may be customized through `classNames` and `styles`.
+
+Keep labels short, preserve the hierarchy's order, and do not use Breadcrumb as a replacement for primary navigation.
 
 ### Menu and navigation
 
@@ -444,9 +585,9 @@ Keep the title actionable and the description concise. A closable alert needs a 
 
 Modal content is white with an 8 px radius and the popup shadow. The mask is `rgba(0, 0, 0, 0.45)`. Titles are 16 px / 24 px at weight 600. Header and footer backgrounds remain transparent so the modal reads as one surface.
 
-Focus moves into the dialog, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
+Focus moves into the modal, is trapped while open, and returns to the trigger on close. Escape and mask-close behavior must be intentional for destructive or incomplete workflows. Use a drawer for contextual work that benefits from preserving the underlying page; use a modal for a bounded decision.
 
-Open and close are symmetrical 200 ms transitions. The mask fades in and out; the surface fades and moves no more than 6 px while scaling subtly. The dialog remains mounted until its exit animation completes, preventing an abrupt disappearance.
+Open and close are symmetrical 200 ms transitions. The mask fades in and out; the surface fades and moves no more than 6 px while scaling subtly. The modal remains mounted until its exit animation completes, preventing an abrupt disappearance.
 
 ### Dropdown, popover, and tooltip
 
@@ -476,16 +617,15 @@ Do not stack several feedback mechanisms for one event.
 Our Radix/CSS components use stable semantic slots rather than exposing internal class names. Each component should provide a small, documented anatomy such as:
 
 ```text
-Dialog
+Modal
 ├── root
 ├── mask
-├── wrapper
-├── section
-│   ├── header
-│   │   ├── title
-│   │   └── close
-│   ├── body
-│   └── footer
+└── container
+    ├── header
+    │   ├── title
+    │   └── close
+    ├── body
+    └── footer
 ```
 
 The public styling surface should target these roles. DOM changes underneath must not break plugin styling. Prefer component props and tokens over descendant selectors.
@@ -507,7 +647,7 @@ This subset is enough to establish the default visual language in plain CSS:
   --launch-color-error: #ff4d4f;
 
   --launch-color-text: rgba(0, 0, 0, 0.88);
-  --launch-color-text-secondary: rgba(0, 0, 0, 0.65);
+  --launch-color-text-secondary: rgba(0, 0, 0, 0.88);
   --launch-color-text-tertiary: rgba(0, 0, 0, 0.45);
   --launch-color-text-disabled: rgba(0, 0, 0, 0.25);
   --launch-color-border: #d9d9d9;
@@ -517,7 +657,7 @@ This subset is enough to establish the default visual language in plain CSS:
 
   --launch-font-family: AlibabaSans, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --launch-font-size: 14px;
+  --launch-font-size: 13px;
   --launch-line-height: 1.5714285714;
 
   --launch-control-height: 32px;
@@ -545,7 +685,7 @@ Recommended MVP order:
 2. Input, textarea, select/combobox, checkbox, radio, switch, form field.
 3. Card, avatar, tag, badge, empty, skeleton, spinner.
 4. Menu, dropdown, tooltip, popover, tabs, breadcrumb.
-5. Dialog, drawer, alert, message, notification, confirm.
+5. Modal, drawer, alert, message, notification, confirm.
 6. Table and pagination.
 
 Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color pickers, QR codes, and advanced layout helpers should wait until a real Launch++ or plugin use case needs them.
@@ -555,7 +695,7 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 - Use semantic HTML first; Radix supplies behavior where native elements are insufficient.
 - Every control is keyboard operable and has a visible focus state.
 - Icon-only controls have accessible names.
-- Dialogs, popovers, menus, and comboboxes follow their expected ARIA patterns.
+- Modals, popovers, menus, and comboboxes follow their expected ARIA patterns.
 - Error, success, and selection never rely on color alone.
 - Touch targets may exceed the visible 24–32 px control through padding or a larger hit area.
 - Text and control contrast must be checked in our final Launch++ theme. Matching a source token does not waive our accessibility target.

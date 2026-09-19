@@ -1,0 +1,245 @@
+import { useState } from "react";
+import { InfoCircleOutlined } from "../src/icons.js";
+import {
+  AutoComplete,
+  type AutoCompleteOption,
+  Button,
+  Card,
+  Input,
+  LaunchProvider,
+  Modal,
+  Table,
+} from "../src/index.js";
+import { CodeBlock } from "./code-block.js";
+import {
+  type ComponentShowcase,
+  componentRegistry,
+  type ShowcaseStage,
+  showcaseStages,
+} from "./registry.js";
+
+const stageDescriptions: Record<ShowcaseStage, string> = {
+  dev: "Actively being built and available only in this showcase.",
+  test: "Ready for manual review but not part of the public package API.",
+  prod: "Approved and exported from the public @launchpp/ui package API.",
+};
+
+const searchOptions: ReadonlyArray<AutoCompleteOption> = componentRegistry.map((entry) => ({
+  label: `${entry.name} · ${entry.category}`,
+  value: entry.name,
+}));
+
+function StageBadge({ stage }: { readonly stage: ShowcaseStage }) {
+  return <span className={`showcase-stage is-${stage}`}>{stage}</span>;
+}
+
+function ComponentDetails({ entry }: { readonly entry: ComponentShowcase }) {
+  return (
+    <article className="showcase-component">
+      <header className="showcase-component-header">
+        <div>
+          <div className="showcase-component-labels">
+            <span>{entry.category}</span>
+            <StageBadge stage={entry.stage} />
+          </div>
+          <h1>{entry.name}</h1>
+          <p>{entry.description}</p>
+        </div>
+      </header>
+
+      {entry.usage ? (
+        <section className="showcase-section showcase-usage">
+          <h2>Usage</h2>
+          <CodeBlock code={entry.usage} />
+        </section>
+      ) : null}
+
+      {entry.whenToUse && entry.whenToUse.length > 0 ? (
+        <section className="showcase-guidance">
+          <h2>When to use</h2>
+          <ul>
+            {entry.whenToUse.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="showcase-section">
+        <h2>Examples</h2>
+        <div className="showcase-examples">
+          {entry.examples.map((example) => {
+            const Preview = example.preview;
+            return (
+              <Card
+                className={`showcase-example is-${example.presentation ?? "default"}`}
+                key={example.id}
+              >
+                <header>
+                  <h3>{example.name}</h3>
+                  {example.description ? <p>{example.description}</p> : null}
+                </header>
+                <div className="showcase-preview">
+                  <Preview />
+                </div>
+                {example.code ? <CodeBlock code={example.code} /> : null}
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      {entry.api && entry.api.length > 0 ? (
+        <section className="showcase-section">
+          <h2>Essential API</h2>
+          <Table className="showcase-api">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entry.api.map((item) => (
+                <tr key={item.name}>
+                  <td>
+                    <code>{item.name}</code>
+                  </td>
+                  <td>{item.description}</td>
+                  <td>
+                    <code>{item.type}</code>
+                  </td>
+                  <td>{item.defaultValue ? <code>{item.defaultValue}</code> : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+      ) : null}
+
+      {entry.accessibility && entry.accessibility.length > 0 ? (
+        <section className="showcase-guidance">
+          <h2>Accessibility</h2>
+          <ul>
+            {entry.accessibility.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </article>
+  );
+}
+
+export function ShowcaseApp() {
+  const [query, setQuery] = useState("");
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | undefined>(componentRegistry[0]?.id);
+
+  const selectedEntry =
+    componentRegistry.find((entry) => entry.id === selectedId) ?? componentRegistry[0];
+  const categories = Array.from(new Set(componentRegistry.map((entry) => entry.category)));
+
+  return (
+    <LaunchProvider mode="light">
+      <div className="showcase-shell">
+        <header className="showcase-header">
+          <div className="showcase-brand">
+            <span className="showcase-brand-mark">L+</span>
+            <div>
+              <strong>Launch++ UI</strong>
+              <span>Component showcase</span>
+            </div>
+          </div>
+
+          <label className="showcase-search" htmlFor="showcase-search-input">
+            <span className="showcase-visually-hidden">Search components</span>
+            <AutoComplete
+              allowClear
+              onChange={setQuery}
+              onSelect={(name) => {
+                const selected = componentRegistry.find((entry) => entry.name === name);
+                if (selected) setSelectedId(selected.id);
+                setQuery("");
+              }}
+              options={query.trim().length > 0 ? searchOptions : []}
+              placeholder="Search components"
+              showSearch={{
+                filterOption: (inputValue, option) => {
+                  const entry = componentRegistry.find(
+                    (component) => component.name === option.value,
+                  );
+                  if (!entry) return false;
+                  const searchableText = `${entry.name} ${entry.category} ${entry.description}`;
+                  return searchableText
+                    .toLocaleLowerCase()
+                    .includes(inputValue.toLocaleLowerCase());
+                },
+              }}
+              value={query}
+            >
+              <Input id="showcase-search-input" placeholder="Search components" type="search" />
+            </AutoComplete>
+          </label>
+
+          <div className="showcase-header-actions">
+            <Button icon={<InfoCircleOutlined />} onClick={() => setLifecycleOpen(true)}>
+              Lifecycle stages
+            </Button>
+            <Modal
+              footer={null}
+              onCancel={() => setLifecycleOpen(false)}
+              open={lifecycleOpen}
+              title="Lifecycle stages"
+            >
+              <div className="showcase-stage-dialog">
+                <p>Lifecycle labels communicate how ready a component is for public use.</p>
+                {showcaseStages.map((item) => (
+                  <div key={item}>
+                    <StageBadge stage={item} />
+                    <p>{stageDescriptions[item]}</p>
+                  </div>
+                ))}
+              </div>
+            </Modal>
+          </div>
+        </header>
+
+        <aside className="showcase-sidebar">
+          <nav aria-label="Components" className="showcase-navigation">
+            {categories.map((category) => (
+              <section key={category}>
+                <h2>{category}</h2>
+                {componentRegistry
+                  .filter((entry) => entry.category === category)
+                  .map((entry) => (
+                    <button
+                      className={selectedEntry?.id === entry.id ? "is-active" : undefined}
+                      key={entry.id}
+                      onClick={() => setSelectedId(entry.id)}
+                      type="button"
+                    >
+                      <span>{entry.name}</span>
+                      <StageBadge stage={entry.stage} />
+                    </button>
+                  ))}
+              </section>
+            ))}
+          </nav>
+        </aside>
+
+        <main className="showcase-main">
+          {selectedEntry ? (
+            <ComponentDetails entry={selectedEntry} />
+          ) : (
+            <div className="showcase-empty">
+              <h1>No components registered</h1>
+            </div>
+          )}
+        </main>
+      </div>
+    </LaunchProvider>
+  );
+}

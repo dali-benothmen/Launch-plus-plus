@@ -7,10 +7,24 @@
   --launch-color-bg-elevated: #ffffff;
   --launch-color-bg-subtle: #fafafa;
   --launch-color-border: #d9d9d9;
-  --launch-color-text: rgb(0 0 0 / 88%);
-  --launch-color-text-muted: rgb(0 0 0 / 65%);
+  --launch-color-border-secondary: #f0f0f0;
+  --launch-color-text: rgba(0, 0, 0, 0.88);
+  --launch-color-text-muted: rgba(0, 0, 0, 0.88);
   --launch-color-focus: #1668dc;
   --launch-shadow-surface: none;
+  --launch-font-family:
+    AlibabaSans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
+  --launch-font-family-code:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  --launch-font-size: 13px;
+  --launch-line-height: 1.5714285714285714;
+  --launch-line-width: 1px;
+  --launch-line-style: solid;
+  --launch-radius: 6px;
+  --launch-radius-lg: 8px;
+  --launch-motion-hover-duration: 1s;
+  --launch-motion-hover-ease: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 [data-launch-theme="dark"] {
@@ -21,6 +35,7 @@
   --launch-color-bg-elevated: #141414;
   --launch-color-bg-subtle: rgb(255 255 255 / 4%);
   --launch-color-border: #424242;
+  --launch-color-border-secondary: #303030;
   --launch-color-text: rgb(255 255 255 / 85%);
   --launch-color-text-muted: rgb(255 255 255 / 65%);
   --launch-color-focus: #387ed3;

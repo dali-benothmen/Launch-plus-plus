@@ -20,6 +20,8 @@
     "measure:foundation": "pnpm build && node ./scripts/measure-foundation.mjs",
     "plugin:pack": "pnpm --filter @launchpp/plugin-testkit exec tsc -b && node ./packages/plugin-testkit/dist/pack-cli.js",
     "runtime:check": "node ./scripts/check-runtime.mjs",
+    "ui:showcase": "pnpm --filter @launchpp/ui showcase",
+    "ui:showcase:build": "pnpm --filter @launchpp/ui showcase:build",
     "dev:web": "pnpm --filter @launchpp-internal/web dev",
     "start:server": "pnpm --filter @launchpp-internal/server start",
     "typecheck": "tsc -b --pretty false",
