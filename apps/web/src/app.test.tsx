@@ -1,14 +1,28 @@
 // @vitest-environment jsdom
 
+import type { ApiClient } from "@launchpp/api-client";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createMemoryRouter } from "react-router-dom";
-import type { ApiClient } from "@launchpp/api-client";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { App, appRoutes } from "./app.js";
 
 const apiClient: ApiClient = {
+  auth: {
+    recoveryCapabilities: vi.fn(async () => ({ email: false, operatorRecovery: true })),
+    session: vi.fn(async () => ({
+      expiresAt: Date.now() + 60_000,
+      id: "session-1",
+      identity: { email: "owner@example.com", id: "owner-1", name: "Owner" },
+    })),
+    signIn: vi.fn(async () => undefined),
+    signOut: vi.fn(async () => undefined),
+  },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
+  setup: {
+    createOwner: vi.fn(async () => undefined),
+    status: vi.fn(async () => ({ requiresSetup: false })),
+  },
 };
 
 beforeAll(() => {

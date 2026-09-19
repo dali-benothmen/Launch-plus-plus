@@ -1,4 +1,6 @@
 import { Button, Card, Typography } from "@launchpp/ui";
+import { useNavigate } from "react-router-dom";
+import { useApiClient } from "./api-client-context.js";
 
 export function MyWorkPage() {
   return (
@@ -44,6 +46,8 @@ export function MembersPage() {
 }
 
 export function SettingsPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
   return (
     <section aria-labelledby="settings-title" className="page-stack">
       <Typography.Title id="settings-title" level={1}>
@@ -52,6 +56,15 @@ export function SettingsPage() {
       <Typography.Text type="secondary">
         Account, workspace, appearance, and plugin settings will live here.
       </Typography.Text>
+      <div className="settings-actions">
+        <Button
+          onClick={() => {
+            void api.auth.signOut().then(() => navigate("/sign-in", { replace: true }));
+          }}
+        >
+          Sign out
+        </Button>
+      </div>
     </section>
   );
 }

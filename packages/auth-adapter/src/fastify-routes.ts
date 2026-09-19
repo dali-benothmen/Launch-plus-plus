@@ -1,5 +1,5 @@
-import type { FastifyInstance } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
+import type { FastifyInstance } from "fastify";
 import type { BetterAuthIdentityAdapter } from "./identity-adapter.js";
 
 function responseBody(request: { body?: unknown; method: string }): BodyInit | undefined {
@@ -18,6 +18,13 @@ export async function registerBetterAuthRoutes(
     url: "/api/auth/*",
     async preHandler(request, reply) {
       if (request.method !== "POST") return;
+
+      if (request.url.startsWith("/api/auth/sign-up")) {
+        return reply.status(403).send({
+          code: "registration_disabled",
+          message: "Accounts can only be created through installation setup or an invitation.",
+        });
+      }
 
       let origin: string | undefined;
       try {

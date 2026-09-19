@@ -11,6 +11,8 @@ pnpm start:server
 
 The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp.sqlite`. Liveness is available at `/health/live`; readiness is available at `/health/ready`. Readiness becomes true only after the listener and migrated SQLite composition are available, and becomes false before graceful shutdown begins. Closing the server releases the Better Auth and application database connections after in-flight work.
 
+On an empty database, startup logs a one-time first-owner setup token that expires after 30 minutes. Open the web application, enter that token on the setup screen, and create the owner account. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.
+
 ## Configuration
 
 Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP_*` variables, malformed values, and insecure production origins stop startup before a listener opens.
@@ -29,6 +31,6 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | `LAUNCHPP_RATE_LIMIT_WINDOW_MS` | `60000` | 1000 through 3600000 milliseconds |
 | `LAUNCHPP_SHUTDOWN_GRACE_MS` | `10000` | 100 through 120000 milliseconds |
 
-State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library.
+State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library. Email recovery is intentionally unavailable until an email provider is configured, so the recovery screen directs users to the installation operator.
 
 Logs are structured JSON. Authorization, cookie, and CSRF headers are redacted. Public error and health responses never include stack traces, filesystem paths, or dependency details.

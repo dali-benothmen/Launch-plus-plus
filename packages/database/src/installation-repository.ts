@@ -18,6 +18,15 @@ export class SqliteInstallationRepository implements InstallationRepository {
       .run(installation.id, installation.createdAt);
   }
 
+  findFirst(context: ReadContext): Installation | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[], InstallationRow>(
+        "SELECT id, created_at FROM installations ORDER BY created_at ASC LIMIT 1",
+      )
+      .get();
+    return row ? { createdAt: row.created_at, id: row.id } : undefined;
+  }
+
   findById(context: ReadContext, id: string): Installation | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string], InstallationRow>(

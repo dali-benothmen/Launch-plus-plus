@@ -1,12 +1,13 @@
-import type { FastifyInstance } from "fastify";
 import {
   type BetterAuthIdentityAdapter,
   openBetterAuthIdentityAdapter,
   registerBetterAuthRoutes,
 } from "@launchpp/auth-adapter";
 import { openSqliteDatabase, type SqliteDatabase } from "@launchpp/database";
+import type { FastifyInstance } from "fastify";
 
-import { buildServer, type BuildServerOptions } from "./server.js";
+import { type BuildServerOptions, buildServer } from "./server.js";
+import { createSetupCoordinator } from "./setup-routes.js";
 
 export interface ApplicationResources {
   readonly database: SqliteDatabase;
@@ -34,6 +35,18 @@ export async function buildApplicationServer(
       secret: options.config.authSecret,
     });
     app = await buildServer(options);
+    const setup = createSetupCoordinator({
+      baseUrl: options.config.baseUrl,
+      database,
+      identity: identity.adapter,
+    });
+    await setup.register(app);
+    if (setup.token) {
+      app.log.warn(
+        { expiresInMinutes: 30, setupToken: setup.token },
+        "first-owner setup token generated",
+      );
+    }
     await registerBetterAuthRoutes(app, identity.adapter);
     app.addHook("onClose", async () => {
       identity?.close();
