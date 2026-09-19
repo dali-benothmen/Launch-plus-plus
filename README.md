@@ -57,12 +57,15 @@ Phase 0 implementation uses the exact Node.js version in `.node-version` / `.nvm
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm dev
 pnpm check
 pnpm build
 pnpm start:server
 pnpm dev:server
 pnpm dev:web
 ```
+
+`pnpm dev` opens the interactive Launch++ development launcher. Backend and Web are selected by default, while the UI component showcase can be selected when needed. Each running service keeps its own colored log prefix and all selected services stop together with `Ctrl+C`.
 
 Use `pnpm dev:server` while changing backend code. It incrementally rebuilds the server and its workspace dependencies, then restarts Fastify automatically after each successful emit.
 

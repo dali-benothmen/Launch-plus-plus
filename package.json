@@ -13,6 +13,7 @@
     "preinstall": "node ./scripts/check-runtime.mjs",
     "build": "tsc -b --pretty false && pnpm --filter @launchpp-internal/web build",
     "check": "pnpm runtime:check && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:arch && pnpm test:migrations",
+    "dev": "node ./scripts/dev-launcher.mjs",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@clack/prompts": "1.8.1",
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.5",
     "concurrently": "10.0.5",
