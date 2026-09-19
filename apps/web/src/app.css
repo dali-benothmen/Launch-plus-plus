@@ -150,29 +150,19 @@
   background: var(--launch-color-bg-elevated);
 }
 
-.project-sidebar-workspace,
-.workspace-create-field {
-  display: grid;
-  gap: 6px;
-}
-
-.project-sidebar-workspace {
-  margin-bottom: 20px;
-}
-
-.project-sidebar-header {
+.project-sidebar-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
-.project-tree-empty {
+.project-tree-status {
   display: flex;
+  min-height: 96px;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-  margin-top: 28px;
-  padding: 10px;
-  font-size: 15px;
+  justify-content: center;
+  gap: 10px;
 }
 
 #main-content {

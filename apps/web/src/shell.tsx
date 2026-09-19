@@ -1,18 +1,22 @@
 import type { WorkspaceContext } from "@launchpp/api-client";
 import {
   AddIcon,
-  Alert,
   Button,
   DarkThemeIcon,
-  DropdownMenu,
+  FolderIcon,
+  FolderOpenIcon,
+  Form,
   HomeIcon,
   Input,
   LightThemeIcon,
   MembersIcon,
+  message,
   Modal,
-  ProjectsIcon,
   SettingsIcon,
+  Spin,
   Tooltip,
+  Tree,
+  type TreeDataNode,
   Typography,
 } from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -29,18 +33,25 @@ const iconLinks = [
 export function AppShell() {
   const api = useApiClient();
   const theme = useThemeController();
+  const [messageApi, messageHolder] = message.useMessage();
   const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext>();
-  const [workspaceError, setWorkspaceError] = useState<unknown>();
+  const [workspaceLoadError, setWorkspaceLoadError] = useState<unknown>();
+  const [workspaceCreateError, setWorkspaceCreateError] = useState<unknown>();
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
+  const workspaceCreateErrorMessage = workspaceCreateError
+    ? workspaceCreateError instanceof Error
+      ? workspaceCreateError.message
+      : "Could not create workspace."
+    : undefined;
 
   const loadWorkspaces = useCallback(async () => {
-    setWorkspaceError(undefined);
+    setWorkspaceLoadError(undefined);
     try {
       setWorkspaceContext(await api.workspaces.list());
     } catch (reason) {
-      setWorkspaceError(reason);
+      setWorkspaceLoadError(reason);
     }
   }, [api]);
 
@@ -48,47 +59,41 @@ export function AppShell() {
     void loadWorkspaces();
   }, [loadWorkspaces]);
 
-  const currentWorkspace = workspaceContext?.workspaces.find(
-    (workspace) => workspace.id === workspaceContext.currentWorkspaceId,
+  const workspaceTree = useMemo<ReadonlyArray<TreeDataNode>>(
+    () =>
+      workspaceContext?.workspaces.map((workspace) => ({
+        children: [],
+        icon: ({ expanded }) => (expanded ? <FolderOpenIcon /> : <FolderIcon />),
+        key: `workspace:${workspace.id}`,
+        title: workspace.name,
+      })) ?? [],
+    [workspaceContext],
   );
-  const workspaceItems = useMemo(
-    () => [
-      ...(workspaceContext?.workspaces.map((workspace) => ({
-        id: workspace.id,
-        label: `${workspace.id === workspaceContext.currentWorkspaceId ? "✓ " : ""}${workspace.name}`,
-        onSelect: () => {
-          if (workspace.id === workspaceContext.currentWorkspaceId) return;
-          setWorkspaceError(undefined);
-          void api.workspaces
-            .select(workspace.id)
-            .then(() =>
-              setWorkspaceContext((current) =>
-                current ? { ...current, currentWorkspaceId: workspace.id } : current,
-              ),
-            )
-            .catch((reason: unknown) => setWorkspaceError(reason));
-        },
-      })) ?? []),
-      {
-        id: "create-workspace",
-        label: "Create workspace",
-        onSelect: () => setCreateOpen(true),
-        separatorBefore: true,
-      },
-    ],
-    [api, workspaceContext],
-  );
+
+  const selectWorkspace = (workspaceId: string) => {
+    if (workspaceId === workspaceContext?.currentWorkspaceId) return;
+    void api.workspaces
+      .select(workspaceId)
+      .then(() =>
+        setWorkspaceContext((current) =>
+          current ? { ...current, currentWorkspaceId: workspaceId } : current,
+        ),
+      )
+      .catch((reason: unknown) => {
+        messageApi.error(reason instanceof Error ? reason.message : "Could not switch workspace.");
+      });
+  };
 
   const createWorkspace = async () => {
     setCreating(true);
-    setWorkspaceError(undefined);
+    setWorkspaceCreateError(undefined);
     try {
       await api.workspaces.create(workspaceName);
       setWorkspaceName("");
       setCreateOpen(false);
       await loadWorkspaces();
     } catch (reason) {
-      setWorkspaceError(reason);
+      setWorkspaceCreateError(reason);
     } finally {
       setCreating(false);
     }
@@ -96,6 +101,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      {messageHolder}
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -129,42 +135,50 @@ export function AppShell() {
         </Tooltip>
       </aside>
 
-      <aside aria-label="Projects" className="project-sidebar">
-        <div className="project-sidebar-workspace">
-          <Typography.Text type="secondary">Workspace</Typography.Text>
-          <DropdownMenu
-            align="start"
-            items={workspaceItems}
-            trigger={
-              <Button
-                aria-label={`Switch workspace${currentWorkspace ? `, current workspace ${currentWorkspace.name}` : ""}`}
-                loading={!workspaceContext && !workspaceError}
-                variant="text"
-              >
-                {currentWorkspace?.name ?? "Unavailable"}
-              </Button>
-            }
-          />
-        </div>
-        <header className="project-sidebar-header">
-          <Typography.Text strong>Projects</Typography.Text>
-          <Tooltip title="Create project">
+      <aside aria-label="Workspaces and projects" className="project-sidebar">
+        <div className="project-sidebar-actions">
+          <Tooltip title="Create workspace">
             <Button
-              aria-label="Create project"
+              aria-label="Create workspace"
               icon={<AddIcon />}
               iconOnly
+              onClick={() => {
+                setWorkspaceCreateError(undefined);
+                setCreateOpen(true);
+              }}
               size="small"
               variant="text"
             />
           </Tooltip>
-        </header>
-        <div className="project-tree-empty">
-          <ProjectsIcon aria-hidden />
-          <Typography.Text type="secondary">No projects yet</Typography.Text>
         </div>
-        {workspaceError instanceof Error ? (
-          <Alert title={workspaceError.message} type="error" />
-        ) : null}
+        {workspaceLoadError ? (
+          <div className="project-tree-status">
+            <Typography.Text type="danger">Could not load workspaces.</Typography.Text>
+            <Button onClick={() => void loadWorkspaces()} size="small">
+              Retry
+            </Button>
+          </div>
+        ) : workspaceContext ? (
+          <Tree.DirectoryTree
+            aria-label="Workspace and project tree"
+            blockNode
+            onSelect={(_, info) => {
+              if (!info.selected) return;
+              const key = String(info.node.key);
+              if (key.startsWith("workspace:")) selectWorkspace(key.slice("workspace:".length));
+            }}
+            selectedKeys={
+              workspaceContext.currentWorkspaceId
+                ? [`workspace:${workspaceContext.currentWorkspaceId}`]
+                : []
+            }
+            treeData={workspaceTree}
+          />
+        ) : (
+          <div className="project-tree-status">
+            <Spin size="small" />
+          </div>
+        )}
       </aside>
 
       <main id="main-content" tabIndex={-1}>
@@ -174,25 +188,35 @@ export function AppShell() {
         confirmLoading={creating}
         okButtonProps={{ disabled: workspaceName.trim().length === 0 }}
         okText="Create workspace"
-        onCancel={() => setCreateOpen(false)}
+        onCancel={() => {
+          setCreateOpen(false);
+          setWorkspaceCreateError(undefined);
+          setWorkspaceName("");
+        }}
         onOk={() => void createWorkspace()}
         open={createOpen}
         title="Create workspace"
       >
-        {workspaceError instanceof Error ? (
-          <Alert title={workspaceError.message} type="error" />
-        ) : null}
-        <label className="workspace-create-field" htmlFor="workspace-name">
-          <Typography.Text>Name</Typography.Text>
-          <Input
-            autoComplete="organization"
-            id="workspace-name"
-            maxLength={80}
-            onChange={(event) => setWorkspaceName(event.target.value)}
-            placeholder="Workspace name"
-            value={workspaceName}
-          />
-        </label>
+        <Form layout="vertical">
+          <Form.Item
+            label="Name"
+            {...(workspaceCreateErrorMessage
+              ? { help: workspaceCreateErrorMessage, validateStatus: "error" as const }
+              : {})}
+          >
+            <Input
+              autoComplete="organization"
+              maxLength={80}
+              onChange={(event) => {
+                setWorkspaceName(event.target.value);
+                setWorkspaceCreateError(undefined);
+              }}
+              placeholder="Workspace name"
+              {...(workspaceCreateErrorMessage ? { status: "error" as const } : {})}
+              value={workspaceName}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

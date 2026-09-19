@@ -71,8 +71,9 @@ During ordinary work, the contextual sidebar is the project browser. A separate 
 
 The project sidebar contains:
 
-- Projects heading.
-- Primary Create project button.
+- Workspace roots represented as folders.
+- Projects represented as files beneath their workspace.
+- A compact create-workspace action; project creation is added with the project slice.
 - Project search.
 - Favorites or recent projects.
 - Workspace project folders.
@@ -83,23 +84,19 @@ The project sidebar contains:
 An example structure is:
 
 ```text
-PROJECTS                                  +
+Personal Workspace
+  Favorites
+    Launch++
+  Product
+    Launch++ Web
+    Launch++ API
+  Ungrouped
+    Internal tools
 
-Favorites
-  Launch++
-
-Product
-  Launch++ Web
-  Launch++ API
-
-Clients
-  Acme Website
-  Northstar App
-
-Ungrouped
-  Internal tools
-
-Archived
+Client Workspace
+  Clients
+    Acme Website
+    Northstar App
 ```
 
 V1 folders have a deliberately small contract:
@@ -455,4 +452,3 @@ The first usability review should verify:
 - Whether the two-row project header remains calm after several plugin views are enabled.
 - Whether the route-backed task panel preserves enough Board/List context at common laptop widths.
 - Whether package installation versus workspace enablement is understandable to self-hosted administrators.
-
