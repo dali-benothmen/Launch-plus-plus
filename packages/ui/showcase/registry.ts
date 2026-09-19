@@ -10,6 +10,7 @@ import { checkboxShowcase } from "./components/checkbox.showcase.js";
 import { datePickerShowcase } from "./components/date-picker.showcase.js";
 import { dialogShowcase } from "./components/dialog.showcase.js";
 import { dividerShowcase } from "./components/divider.showcase.js";
+import { drawerShowcase } from "./components/drawer.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
 import { flexShowcase } from "./components/flex.showcase.js";
@@ -84,6 +85,7 @@ export const componentRegistry = defineShowcases([
   timelineShowcase,
   treeShowcase,
   alertShowcase,
+  drawerShowcase,
   dialogShowcase,
   dropdownMenuShowcase,
   tooltipShowcase,
