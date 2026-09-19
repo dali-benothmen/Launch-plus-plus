@@ -179,11 +179,12 @@ export function Modal(modalProps: ModalProps) {
   const resolvedCloseIcon = configuredCloseIcon ?? <CloseIcon />;
   const resolvedConfirmLoading = confirmLoading || internalConfirmLoading;
   const container = resolveContainer(getContainer);
-  const keepMounted =
-    forceRender ||
-    resolvedOpen ||
-    (!destroyOnHidden && hasOpened) ||
-    (!resolvedOpen && !exitComplete);
+  // A masked modal stays mounted only while its exit animation runs. Keeping a closed Radix
+  // modal force-mounted also retains its scroll and pointer locks, which breaks the page and the
+  // next open interaction.
+  const keepMounted = maskEnabled
+    ? !resolvedOpen && !exitComplete
+    : forceRender || (!destroyOnHidden && hasOpened);
   const resolvedWidth = typeof width === "number" ? `${width}px` : width;
   const {
     closeIcon: _configuredCloseIcon,
