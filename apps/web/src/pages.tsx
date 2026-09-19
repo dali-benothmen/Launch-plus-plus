@@ -18,14 +18,14 @@ import {
   List,
   message,
   Spin,
-  Tabs,
   Tag,
   Typography,
 } from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
+import { ProjectTaskWorkspace } from "./project-tasks.js";
 import { ResourceFailure } from "./route-boundaries.js";
 
 interface MyWorkProject {
@@ -428,12 +428,10 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { projectId, view, workspaceId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
+  const [memberId, setMemberId] = useState("");
   const [memberName, setMemberName] = useState("");
-  const [searchDraft, setSearchDraft] = useState(() => searchParams.get("q") ?? "");
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
   const [messageApi, messageHolder] = message.useMessage();
@@ -445,6 +443,7 @@ export function ProjectOverviewPage() {
       .then(([nextCatalog, session]) => {
         if (!session) throw new ApiError(401, "Your session has expired.");
         setCatalog(nextCatalog);
+        setMemberId(session.identity.id);
         setMemberName(session.identity.name);
       })
       .catch(setError);
@@ -455,8 +454,6 @@ export function ProjectOverviewPage() {
     window.addEventListener(projectNavigationChangedEvent, loadProject);
     return () => window.removeEventListener(projectNavigationChangedEvent, loadProject);
   }, [loadProject]);
-
-  useEffect(() => setSearchDraft(searchParams.get("q") ?? ""), [searchParams]);
 
   const project = catalog?.projects.find((item) => item.id === projectId);
   const statuses = useMemo(
@@ -525,29 +522,6 @@ export function ProjectOverviewPage() {
     },
   ];
 
-  const submitSearch = (value: string) => {
-    const next = new URLSearchParams(searchParams);
-    const query = value.trim();
-    if (query.length > 0) next.set("q", query);
-    else next.delete("q");
-    setSearchParams(next, { replace: true });
-  };
-
-  const board = (
-    <div className="project-board-grid">
-      {statuses.map((status) => (
-        <Card key={status.id} size="small" title={<Tag color={status.color}>{status.name}</Tag>}>
-          <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-        </Card>
-      ))}
-    </div>
-  );
-  const list = (
-    <Card className="project-view-empty" size="small">
-      <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-    </Card>
-  );
-
   return (
     <section aria-labelledby="project-title" className="page-stack">
       {messageHolder}
@@ -586,29 +560,13 @@ export function ProjectOverviewPage() {
       {project.archivedAt !== undefined ? (
         <Alert showIcon title="This project is archived." type="warning" />
       ) : null}
-      <Tabs
-        activeKey={activeView}
-        ariaLabel="Project views"
-        items={[
-          { children: board, key: "board", label: "Board" },
-          { children: list, key: "list", label: "List" },
-        ]}
-        onChange={(nextView) => {
-          const query = searchParams.toString();
-          navigate(
-            `/app/workspaces/${workspaceId}/projects/${project.id}/${nextView}${query ? `?${query}` : ""}`,
-          );
-        }}
-        tabBarExtraContent={
-          <Input.Search
-            allowClear
-            aria-label="Search project tasks"
-            onChange={(event) => setSearchDraft(event.target.value)}
-            onSearch={submitSearch}
-            placeholder="Search tasks"
-            value={searchDraft}
-          />
-        }
+      <ProjectTaskWorkspace
+        archived={project.archivedAt !== undefined}
+        currentUserId={memberId}
+        projectId={project.id}
+        statuses={statuses}
+        view={activeView}
+        workspaceId={workspaceId ?? project.workspaceId}
       />
     </section>
   );
