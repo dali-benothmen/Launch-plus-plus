@@ -155,9 +155,12 @@
   margin-bottom: 8px;
 }
 
-.project-tree-node-title {
-  display: block;
-  width: 100%;
+.project-tree-context-surface {
+  min-height: 1px;
+}
+
+.project-tree-workspace + .project-tree-workspace {
+  margin-top: 8px;
 }
 
 .project-tree-status {

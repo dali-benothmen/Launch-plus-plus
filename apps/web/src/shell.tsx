@@ -3,7 +3,9 @@ import {
   AddIcon,
   Button,
   DarkThemeIcon,
+  Drawer,
   Dropdown,
+  type DropdownMenuItem,
   Form,
   HomeIcon,
   Input,
@@ -36,6 +38,10 @@ export function AppShell() {
   const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext>();
   const [workspaceLoadError, setWorkspaceLoadError] = useState<unknown>();
   const [workspaceCreateError, setWorkspaceCreateError] = useState<unknown>();
+  const [contextNode, setContextNode] = useState<TreeDataNode>();
+  const [expandedKeys, setExpandedKeys] = useState<ReadonlyArray<string>>([]);
+  const [propertiesNode, setPropertiesNode] = useState<TreeDataNode>();
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
@@ -66,6 +72,7 @@ export function AppShell() {
   const workspaceTree = useMemo<ReadonlyArray<TreeDataNode>>(
     () =>
       workspaceContext?.workspaces.map((workspace) => ({
+        className: "project-tree-workspace",
         children: [],
         isLeaf: false,
         key: `workspace:${workspace.id}`,
@@ -87,6 +94,47 @@ export function AppShell() {
         messageApi.error(reason instanceof Error ? reason.message : "Could not switch workspace.");
       });
   };
+
+  const contextMenuItems = useMemo<ReadonlyArray<DropdownMenuItem>>(() => {
+    if (!contextNode) return [];
+    const key = String(contextNode.key);
+    const isExpanded = expandedKeys.includes(key);
+    const openProperties = () => {
+      setPropertiesNode(contextNode);
+      setPropertiesOpen(true);
+    };
+
+    if (key.startsWith("workspace:")) {
+      return [
+        { disabled: true, key: "create-project", label: "Create project" },
+        {
+          key: "toggle-workspace",
+          label: isExpanded ? "Shrink" : "Expand",
+          onClick: () =>
+            setExpandedKeys((current) =>
+              isExpanded ? current.filter((item) => item !== key) : [...current, key],
+            ),
+        },
+        { type: "divider" },
+        { disabled: true, key: "rename-workspace", label: "Rename" },
+        { danger: true, disabled: true, key: "delete-workspace", label: "Delete workspace" },
+        { type: "divider" },
+        { key: "workspace-properties", label: "Properties", onClick: openProperties },
+      ];
+    }
+
+    if (key.startsWith("project:")) {
+      return [
+        { disabled: true, key: "open-project", label: "Open" },
+        { disabled: true, key: "rename-project", label: "Rename" },
+        { danger: true, disabled: true, key: "delete-project", label: "Delete" },
+        { type: "divider" },
+        { key: "project-properties", label: "Properties", onClick: openProperties },
+      ];
+    }
+
+    return [];
+  }, [contextNode, expandedKeys]);
 
   const createWorkspace = async () => {
     if (creating || workspaceName.trim().length === 0) return;
@@ -155,50 +203,35 @@ export function AppShell() {
             </Button>
           </div>
         ) : workspaceContext ? (
-          <Tree.DirectoryTree
-            aria-label="Workspace and project tree"
-            blockNode
-            onSelect={(_, info) => {
-              if (!info.selected) return;
-              const key = String(info.node.key);
-              if (key.startsWith("workspace:")) selectWorkspace(key.slice("workspace:".length));
-            }}
-            selectedKeys={
-              workspaceContext.currentWorkspaceId
-                ? [`workspace:${workspaceContext.currentWorkspaceId}`]
-                : []
-            }
-            titleRender={(node) => {
-              const key = String(node.key);
-              if (!key.startsWith("workspace:")) return node.title;
-              const workspaceId = key.slice("workspace:".length);
-              const isCurrent = workspaceId === workspaceContext.currentWorkspaceId;
-              return (
-                <Dropdown
-                  menu={{
-                    items: [
-                      {
-                        disabled: isCurrent,
-                        key: "open-workspace",
-                        label: "Open workspace",
-                        onClick: () => selectWorkspace(workspaceId),
-                      },
-                      { type: "divider" },
-                      {
-                        key: "create-workspace",
-                        label: "Create workspace",
-                        onClick: openWorkspaceCreator,
-                      },
-                    ],
-                  }}
-                  trigger={["contextMenu"]}
-                >
-                  <span className="project-tree-node-title">{node.title}</span>
-                </Dropdown>
-              );
-            }}
-            treeData={workspaceTree}
-          />
+          <Dropdown menu={{ items: contextMenuItems }} trigger={["contextMenu"]}>
+            <div
+              className="project-tree-context-surface"
+              onContextMenu={(event) => {
+                const target = event.target;
+                if (!(target instanceof Element) || !target.closest('[role="treeitem"]')) {
+                  event.preventDefault();
+                }
+              }}
+            >
+              <Tree.DirectoryTree
+                aria-label="Workspace and project tree"
+                blockNode
+                expandedKeys={expandedKeys}
+                onExpand={(keys) => setExpandedKeys(keys.map(String))}
+                onRightClick={({ node }) => setContextNode(node)}
+                onSelect={(_, info) => {
+                  if (!info.selected) return;
+                  const key = String(info.node.key);
+                  if (key.startsWith("workspace:")) {
+                    selectWorkspace(key.slice("workspace:".length));
+                  }
+                }}
+                selectedKeys={[]}
+                showLine
+                treeData={workspaceTree}
+              />
+            </div>
+          </Dropdown>
         ) : (
           <div className="project-tree-status">
             <Spin size="small" />
@@ -243,6 +276,20 @@ export function AppShell() {
           </Form.Item>
         </Form>
       </Modal>
+      <Drawer
+        onClose={() => setPropertiesOpen(false)}
+        open={propertiesOpen}
+        placement="right"
+        title={
+          String(propertiesNode?.key).startsWith("project:")
+            ? "Project properties"
+            : "Workspace properties"
+        }
+      >
+        <Typography.Paragraph>
+          Properties for {propertiesNode?.title ?? "this item"} will appear here.
+        </Typography.Paragraph>
+      </Drawer>
     </div>
   );
 }
