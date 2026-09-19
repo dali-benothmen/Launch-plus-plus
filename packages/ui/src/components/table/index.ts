@@ -1,1 +1,18 @@
-export { Table, type TableProps } from "./table.js";
+export {
+  Table,
+  type TableAction,
+  type TableChangeExtra,
+  type TableClassNames,
+  type TableColumn,
+  type TableDataIndex,
+  type TableFilterItem,
+  type TablePaginationConfig,
+  type TablePaginationInfo,
+  type TableProps,
+  type TableRowSelection,
+  type TableSemanticName,
+  type TableSize,
+  type TableSorterResult,
+  type TableSortOrder,
+  type TableStyles,
+} from "./table.js";

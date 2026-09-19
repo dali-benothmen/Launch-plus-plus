@@ -13,6 +13,7 @@ These instructions apply to the entire repository.
 ## UI implementation
 
 - Use components exported by `@launchpp/ui` as provided. Compose them; do not recreate, restyle, wrap, or override their internal appearance unless the user explicitly requests that change.
+- When building a new shared component, reuse existing `@launchpp/ui` components for any required subcontrols instead of implementing duplicate controls locally.
 - Do not target component-library internals, generated class names, or private DOM structure.
 - Do not add custom shadows, radii, gradients, backgrounds, colors, control sizes, or typography to shared components unless explicitly requested.
 - Use the default shared theme for now. The only intentional brand override is the primary color documented in `design.md`.
