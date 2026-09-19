@@ -3,6 +3,7 @@ import type { ThemeMode } from "@launchpp/ui-tokens";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createBrowserRouter,
+  Navigate,
   type RouteObject,
   RouterProvider,
   type RouterProviderProps,
@@ -25,8 +26,8 @@ import {
   ProjectOverviewPage,
   SettingsPage,
 } from "./pages.js";
-import { AppShell } from "./shell.js";
 import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
+import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
 export const appRoutes: RouteObject[] = [
@@ -75,6 +76,11 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: "workspaces/:workspaceId/projects/:projectId",
+        element: <Navigate replace to="board" />,
+        errorElement: <RouteFailurePage />,
+      },
+      {
+        path: "workspaces/:workspaceId/projects/:projectId/:view",
         element: <ProjectOverviewPage />,
         errorElement: <RouteFailurePage />,
       },

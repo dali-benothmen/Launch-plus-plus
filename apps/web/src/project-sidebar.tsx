@@ -14,8 +14,8 @@ import {
   ExpandNavigationIcon,
   Form,
   Input,
-  message,
   Modal,
+  message,
   Spin,
   Tree,
   type TreeDataNode,
@@ -217,7 +217,7 @@ export function ProjectSidebar({
         .markOpened(workspaceId, projectId)
         .then(loadNavigation)
         .catch(() => undefined);
-      navigate(`/app/workspaces/${workspaceId}/projects/${projectId}`);
+      navigate(`/app/workspaces/${workspaceId}/projects/${projectId}/board`);
       onNavigate?.();
     },
     [api, loadNavigation, navigate, onNavigate],
@@ -385,14 +385,17 @@ export function ProjectSidebar({
           name: editorName,
         });
         messageApi.success(`${project.name} created.`);
+        closeEditor();
+        window.dispatchEvent(new Event(projectNavigationChangedEvent));
+        openProject(editor.workspaceId, project.id);
       } else {
         const project = await api.projects.update(editor.workspaceId, editor.project.id, {
           name: editorName,
         });
         messageApi.success(`${project.name} updated.`);
+        closeEditor();
+        window.dispatchEvent(new Event(projectNavigationChangedEvent));
       }
-      closeEditor();
-      window.dispatchEvent(new Event(projectNavigationChangedEvent));
     } catch (reason) {
       setEditorError(reason);
     } finally {

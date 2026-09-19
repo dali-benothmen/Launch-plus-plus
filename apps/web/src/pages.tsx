@@ -5,9 +5,25 @@ import {
   type TaskView,
   type WorkspaceContext,
 } from "@launchpp/api-client";
-import { Alert, Button, Card, Empty, Form, Input, List, Spin, Tag, Typography } from "@launchpp/ui";
+import {
+  Alert,
+  Avatar,
+  Button,
+  Card,
+  Dropdown,
+  type DropdownMenuItem,
+  Empty,
+  Form,
+  Input,
+  List,
+  message,
+  Spin,
+  Tabs,
+  Tag,
+  Typography,
+} from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
 import { ResourceFailure } from "./route-boundaries.js";
@@ -54,6 +70,15 @@ function dueSoonLimitKey() {
   const month = String(limit.getMonth() + 1).padStart(2, "0");
   const day = String(limit.getDate()).padStart(2, "0");
   return `${limit.getFullYear()}-${month}-${day}`;
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
 export function MyWorkPage() {
@@ -174,11 +199,11 @@ export function MyWorkPage() {
       .markOpened(project.workspaceId, project.id)
       .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
       .catch(() => undefined);
-    navigate(`/app/workspaces/${project.workspaceId}/projects/${project.id}`);
+    navigate(`/app/workspaces/${project.workspaceId}/projects/${project.id}/board`);
   };
 
   const projectHref = (project: ProjectSummary) =>
-    `/app/workspaces/${project.workspaceId}/projects/${project.id}`;
+    `/app/workspaces/${project.workspaceId}/projects/${project.id}/board`;
 
   const projectLink = (project: ProjectSummary, label: string) => (
     <Typography.Link
@@ -329,7 +354,8 @@ export function ProjectCreationEntryPage() {
     try {
       const project = await api.projects.create(workspaceId, { name });
       window.dispatchEvent(new Event(projectNavigationChangedEvent));
-      navigate(`/app/workspaces/${workspaceId}/projects/${project.id}`, { replace: true });
+      void api.projects.markOpened(workspaceId, project.id).catch(() => undefined);
+      navigate(`/app/workspaces/${workspaceId}/projects/${project.id}/board`, { replace: true });
     } catch (reason) {
       setError(reason);
       setSaving(false);
@@ -347,12 +373,19 @@ export function ProjectCreationEntryPage() {
     return <ResourceFailure error={error} onRetry={loadWorkspace} />;
   }
 
+  const currentWorkspace = workspaceContext?.workspaces.find(
+    (workspace) => workspace.id === workspaceContext.currentWorkspaceId,
+  );
+
   return (
     <section aria-labelledby="project-creation-title" className="page-stack">
-      <Typography.Text type="secondary">First project</Typography.Text>
+      <Typography.Text type="secondary">{currentWorkspace?.name ?? "Workspace"}</Typography.Text>
       <Typography.Title id="project-creation-title" level={1}>
-        Create your first project
+        Create project
       </Typography.Title>
+      <Typography.Text type="secondary">
+        Start with a simple workflow. You can refine the project as it grows.
+      </Typography.Text>
       {error ? (
         <Alert
           showIcon
@@ -360,9 +393,10 @@ export function ProjectCreationEntryPage() {
           type="error"
         />
       ) : null}
-      <Form layout="vertical" onFinish={createProject}>
+      <Form className="project-creation-form" layout="vertical" onFinish={createProject}>
         <Form.Item label="Name">
           <Input
+            autoFocus
             maxLength={120}
             onChange={(event) => {
               setName(event.target.value);
@@ -371,6 +405,13 @@ export function ProjectCreationEntryPage() {
             placeholder="Project name"
             value={name}
           />
+        </Form.Item>
+        <Form.Item label="Default workflow">
+          <div className="project-status-list">
+            <Tag color="#8c8c8c">To do</Tag>
+            <Tag color="#1668dc">In progress</Tag>
+            <Tag color="#52c41a">Done</Tag>
+          </div>
         </Form.Item>
         <Button
           disabled={!workspaceContext?.currentWorkspaceId || name.trim().length === 0}
@@ -387,14 +428,26 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
-  const { projectId, workspaceId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { projectId, view, workspaceId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
+  const [memberName, setMemberName] = useState("");
+  const [searchDraft, setSearchDraft] = useState(() => searchParams.get("q") ?? "");
+  const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [messageApi, messageHolder] = message.useMessage();
 
   const loadProject = useCallback(() => {
     if (!workspaceId) return;
     setError(undefined);
-    void api.projects.list(workspaceId).then(setCatalog).catch(setError);
+    void Promise.all([api.projects.list(workspaceId), api.auth.session()])
+      .then(([nextCatalog, session]) => {
+        if (!session) throw new ApiError(401, "Your session has expired.");
+        setCatalog(nextCatalog);
+        setMemberName(session.identity.name);
+      })
+      .catch(setError);
   }, [api, workspaceId]);
 
   useEffect(() => {
@@ -402,6 +455,8 @@ export function ProjectOverviewPage() {
     window.addEventListener(projectNavigationChangedEvent, loadProject);
     return () => window.removeEventListener(projectNavigationChangedEvent, loadProject);
   }, [loadProject]);
+
+  useEffect(() => setSearchDraft(searchParams.get("q") ?? ""), [searchParams]);
 
   const project = catalog?.projects.find((item) => item.id === projectId);
   const statuses = useMemo(
@@ -411,6 +466,7 @@ export function ProjectOverviewPage() {
         .toSorted((first, second) => first.position - second.position) ?? [],
     [catalog, projectId],
   );
+  const activeView = view === "board" || view === "list" ? view : undefined;
 
   if (error) {
     return <ResourceFailure error={error} onRetry={loadProject} />;
@@ -425,27 +481,135 @@ export function ProjectOverviewPage() {
   if (!project) {
     return <ResourceFailure error={new ApiError(404, "Project not found.")} />;
   }
+  if (!activeView) {
+    return <ResourceFailure error={new ApiError(404, "Project view not found.")} />;
+  }
+
+  const toggleFavorite = async () => {
+    if (savingFavorite || !workspaceId) return;
+    setSavingFavorite(true);
+    try {
+      await api.projects.setFavorite(workspaceId, project.id, !project.favorite);
+      setCatalog((current) =>
+        current
+          ? {
+              ...current,
+              projects: current.projects.map((item) =>
+                item.id === project.id ? { ...item, favorite: !project.favorite } : item,
+              ),
+            }
+          : current,
+      );
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+    } catch (reason) {
+      messageApi.error(reason instanceof Error ? reason.message : "Could not update the project.");
+    } finally {
+      setSavingFavorite(false);
+    }
+  };
+
+  const copyProjectLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      messageApi.success("Project link copied.");
+    } catch {
+      messageApi.error("Could not copy the project link.");
+    }
+  };
+
+  const projectMenuItems: readonly DropdownMenuItem[] = [
+    {
+      key: "copy-link",
+      label: "Copy project link",
+      onClick: () => void copyProjectLink(),
+    },
+  ];
+
+  const submitSearch = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    const query = value.trim();
+    if (query.length > 0) next.set("q", query);
+    else next.delete("q");
+    setSearchParams(next, { replace: true });
+  };
+
+  const board = (
+    <div className="project-board-grid">
+      {statuses.map((status) => (
+        <Card key={status.id} size="small" title={<Tag color={status.color}>{status.name}</Tag>}>
+          <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        </Card>
+      ))}
+    </div>
+  );
+  const list = (
+    <Card className="project-view-empty" size="small">
+      <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </Card>
+  );
 
   return (
     <section aria-labelledby="project-title" className="page-stack">
-      <Typography.Text type="secondary">{project.key}</Typography.Text>
-      <Typography.Title id="project-title" level={1}>
-        {project.name}
-      </Typography.Title>
-      {project.description ? (
-        <Typography.Paragraph>{project.description}</Typography.Paragraph>
-      ) : null}
-      <Typography.Title level={3}>Workflow</Typography.Title>
-      <div className="project-status-list">
-        {statuses.map((status) => (
-          <Tag color={status.color} key={status.id}>
-            {status.name}
-          </Tag>
-        ))}
-      </div>
+      {messageHolder}
+      <header className="project-page-header">
+        <div className="project-heading">
+          <Typography.Text type="secondary">{project.key}</Typography.Text>
+          <div className="project-title-row">
+            <Typography.Title id="project-title" level={1}>
+              {project.name}
+            </Typography.Title>
+            <Button
+              aria-pressed={project.favorite}
+              loading={savingFavorite}
+              onClick={() => void toggleFavorite()}
+              size="small"
+            >
+              {project.favorite ? "Favorited" : "Add favorite"}
+            </Button>
+            <Dropdown menu={{ items: projectMenuItems }} trigger={["click"]}>
+              <Button size="small">More</Button>
+            </Dropdown>
+          </div>
+          {project.description ? (
+            <Typography.Text type="secondary">{project.description}</Typography.Text>
+          ) : null}
+        </div>
+        <div className="project-member-actions">
+          <Avatar.Group size="medium">
+            <Avatar title={memberName}>{initials(memberName) || "U"}</Avatar>
+          </Avatar.Group>
+          <Button disabled size="small" title="Member invitations are not available yet">
+            Add member
+          </Button>
+        </div>
+      </header>
       {project.archivedAt !== undefined ? (
         <Alert showIcon title="This project is archived." type="warning" />
       ) : null}
+      <Tabs
+        activeKey={activeView}
+        ariaLabel="Project views"
+        items={[
+          { children: board, key: "board", label: "Board" },
+          { children: list, key: "list", label: "List" },
+        ]}
+        onChange={(nextView) => {
+          const query = searchParams.toString();
+          navigate(
+            `/app/workspaces/${workspaceId}/projects/${project.id}/${nextView}${query ? `?${query}` : ""}`,
+          );
+        }}
+        tabBarExtraContent={
+          <Input.Search
+            allowClear
+            aria-label="Search project tasks"
+            onChange={(event) => setSearchDraft(event.target.value)}
+            onSearch={submitSearch}
+            placeholder="Search tasks"
+            value={searchDraft}
+          />
+        }
+      />
     </section>
   );
 }
