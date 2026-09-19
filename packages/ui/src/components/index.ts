@@ -27,6 +27,7 @@ export * from "./modal/index.js";
 export * from "./notification/index.js";
 export * from "./pagination/index.js";
 export * from "./popover/index.js";
+export * from "./popconfirm/index.js";
 export * from "./radio/index.js";
 export * from "./segmented/index.js";
 export * from "./select/index.js";
