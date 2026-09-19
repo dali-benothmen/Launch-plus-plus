@@ -766,19 +766,16 @@ function TreeInner(treeProps: TreeProps, forwardedRef: ForwardedRef<TreeRef>) {
                   {displayedIcon}
                 </span>
               ) : null}
-              <button
+              <span
                 className={classes("launch-ui-tree-title", resolvedClassNames.itemTitle)}
-                disabled={nodeDisabled}
                 onClick={(event) => {
                   selectNode(node, event);
                   if (expandAction === "click" && expandable) void toggleExpanded(node);
                 }}
                 style={resolvedStyles.itemTitle}
-                tabIndex={-1}
-                type="button"
               >
                 {title}
-              </button>
+              </span>
             </div>
             {hasChildren ? (
               <div

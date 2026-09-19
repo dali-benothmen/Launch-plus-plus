@@ -152,8 +152,12 @@
 
 .project-sidebar-actions {
   display: flex;
-  justify-content: flex-end;
   margin-bottom: 8px;
+}
+
+.project-tree-node-title {
+  display: block;
+  width: 100%;
 }
 
 .project-tree-status {

@@ -3,6 +3,7 @@ import {
   AddIcon,
   Button,
   DarkThemeIcon,
+  Dropdown,
   Form,
   HomeIcon,
   Input,
@@ -57,6 +58,11 @@ export function AppShell() {
     void loadWorkspaces();
   }, [loadWorkspaces]);
 
+  const openWorkspaceCreator = () => {
+    setWorkspaceCreateError(undefined);
+    setCreateOpen(true);
+  };
+
   const workspaceTree = useMemo<ReadonlyArray<TreeDataNode>>(
     () =>
       workspaceContext?.workspaces.map((workspace) => ({
@@ -83,13 +89,15 @@ export function AppShell() {
   };
 
   const createWorkspace = async () => {
+    if (creating || workspaceName.trim().length === 0) return;
     setCreating(true);
     setWorkspaceCreateError(undefined);
     try {
-      await api.workspaces.create(workspaceName);
+      const workspace = await api.workspaces.create(workspaceName);
       setWorkspaceName("");
       setCreateOpen(false);
       await loadWorkspaces();
+      messageApi.success(`${workspace.name} created.`);
     } catch (reason) {
       setWorkspaceCreateError(reason);
     } finally {
@@ -135,19 +143,9 @@ export function AppShell() {
 
       <aside aria-label="Workspaces and projects" className="project-sidebar">
         <div className="project-sidebar-actions">
-          <Tooltip title="Create workspace">
-            <Button
-              aria-label="Create workspace"
-              icon={<AddIcon />}
-              iconOnly
-              onClick={() => {
-                setWorkspaceCreateError(undefined);
-                setCreateOpen(true);
-              }}
-              size="small"
-              variant="text"
-            />
-          </Tooltip>
+          <Button block icon={<AddIcon />} onClick={openWorkspaceCreator} size="small">
+            Create workspace
+          </Button>
         </div>
         {workspaceLoadError ? (
           <div className="project-tree-status">
@@ -170,6 +168,35 @@ export function AppShell() {
                 ? [`workspace:${workspaceContext.currentWorkspaceId}`]
                 : []
             }
+            titleRender={(node) => {
+              const key = String(node.key);
+              if (!key.startsWith("workspace:")) return node.title;
+              const workspaceId = key.slice("workspace:".length);
+              const isCurrent = workspaceId === workspaceContext.currentWorkspaceId;
+              return (
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        disabled: isCurrent,
+                        key: "open-workspace",
+                        label: "Open workspace",
+                        onClick: () => selectWorkspace(workspaceId),
+                      },
+                      { type: "divider" },
+                      {
+                        key: "create-workspace",
+                        label: "Create workspace",
+                        onClick: openWorkspaceCreator,
+                      },
+                    ],
+                  }}
+                  trigger={["contextMenu"]}
+                >
+                  <span className="project-tree-node-title">{node.title}</span>
+                </Dropdown>
+              );
+            }}
             treeData={workspaceTree}
           />
         ) : (
@@ -195,7 +222,7 @@ export function AppShell() {
         open={createOpen}
         title="Create workspace"
       >
-        <Form layout="vertical">
+        <Form layout="vertical" onFinish={createWorkspace}>
           <Form.Item
             label="Name"
             {...(workspaceCreateErrorMessage
