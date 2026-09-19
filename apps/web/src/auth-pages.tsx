@@ -183,6 +183,9 @@ export function SetupPage() {
         return;
       }
       const status = await api.setup.status();
+      if (typeof status.setupAuthorized !== "boolean") {
+        throw new Error("The Launch++ server is out of date. Rebuild and restart it to continue.");
+      }
       if (active) setAuthorized(status.setupAuthorized);
     })().catch((reason: unknown) => {
       if (!active) return;
