@@ -51,6 +51,7 @@ export type {
 export {
   UserProfileMissingError,
   WorkspaceMembershipRequiredError,
+  WorkspaceNameAlreadyExistsError,
 } from "./workspaces/workspace.js";
 export {
   type WorkspaceContext,

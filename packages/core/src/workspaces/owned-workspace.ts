@@ -8,6 +8,7 @@ import type {
   WorkspaceMembershipRepository,
   WorkspaceRepository,
 } from "./workspace.js";
+import { WorkspaceNameAlreadyExistsError } from "./workspace.js";
 
 export interface OwnedWorkspaceDependencies {
   readonly audit: AuditWriter;
@@ -33,6 +34,9 @@ export function createOwnedWorkspace(
   input: CreateOwnedWorkspaceInput,
 ): Workspace {
   const name = normalizeWorkspaceName(input.name);
+  if (dependencies.workspaces.findByName(context, input.installationId, name)) {
+    throw new WorkspaceNameAlreadyExistsError("A workspace with this name already exists.");
+  }
   const workspace: Workspace = Object.freeze({
     createdAt: input.now,
     createdByUserId: input.userId,

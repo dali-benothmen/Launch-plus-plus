@@ -117,6 +117,7 @@ Invariants:
 
 - Every active workspace has at least one owner.
 - The final owner cannot leave, be removed, or be demoted without an ownership transfer.
+- Workspace names are case-insensitively unique within an installation.
 - Workspace slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
 - Membership changes invalidate relevant sessions/query scopes and produce audit activity.
 

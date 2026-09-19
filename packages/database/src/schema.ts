@@ -124,6 +124,10 @@ export const workspaces = sqliteTable(
     revision: integer("revision").notNull().default(1),
   },
   (table) => [
+    uniqueIndex("workspaces_installation_name_unique").on(
+      table.installationId,
+      sql`lower(${table.name})`,
+    ),
     uniqueIndex("workspaces_installation_slug_unique").on(table.installationId, table.slug),
     index("workspaces_installation_updated_idx").on(table.installationId, table.updatedAt),
     check("workspaces_name_not_blank", sql`length(trim(${table.name})) > 0`),

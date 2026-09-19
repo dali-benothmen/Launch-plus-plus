@@ -72,6 +72,16 @@ export class SqliteWorkspaceRepository implements WorkspaceRepository {
     return row ? mapWorkspace(row) : undefined;
   }
 
+  findByName(context: ReadContext, installationId: string, name: string): Workspace | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[string, string], WorkspaceRow>(
+        `${selection}
+         WHERE workspaces.installation_id = ? AND lower(workspaces.name) = lower(?)`,
+      )
+      .get(installationId, name);
+    return row ? mapWorkspace(row) : undefined;
+  }
+
   findBySlug(context: ReadContext, installationId: string, slug: string): Workspace | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], WorkspaceRow>(

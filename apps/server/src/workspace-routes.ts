@@ -10,6 +10,7 @@ import {
   EnsureOwnerWorkspaceService,
   SelectCurrentWorkspaceService,
   type Workspace,
+  WorkspaceNameAlreadyExistsError,
   WorkspaceQueryService,
 } from "@launchpp/core";
 import {
@@ -129,14 +130,24 @@ export async function registerWorkspaceRoutes(
       if (!currentInstallation) {
         return reply.status(503).send({ code: "setup_required", message: "Setup is incomplete." });
       }
-      const workspace = await createWorkspace.execute({
-        correlationId: request.id,
-        displayName: session.identity.name,
-        installationId: currentInstallation.id,
-        name: request.body.name,
-        userId: session.identity.id,
-      });
-      return reply.status(201).send(workspaceSummary(workspace));
+      try {
+        const workspace = await createWorkspace.execute({
+          correlationId: request.id,
+          displayName: session.identity.name,
+          installationId: currentInstallation.id,
+          name: request.body.name,
+          userId: session.identity.id,
+        });
+        return reply.status(201).send(workspaceSummary(workspace));
+      } catch (error) {
+        if (error instanceof WorkspaceNameAlreadyExistsError) {
+          return reply.status(409).send({
+            code: "workspace_name_conflict",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
     },
   );
 

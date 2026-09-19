@@ -21,6 +21,8 @@ The identity tables are physically owned here even though Better Auth is isolate
 
 Workspace persistence keeps product identity separate from authentication. `user_profiles` links an auth user to Launch++ preferences and their current workspace, `workspaces` owns the durable workspace record, and `workspace_members` is the authorization boundary. A new workspace and its active owner membership are written in the same transaction. Security-relevant setup and workspace creation facts are appended to `audit_entries`; post-commit work is represented separately in the transactional outbox.
 
+Workspace names and URL slugs are unique within an installation. Name comparison is case-insensitive, so names such as `Acme` and `acme` cannot create two indistinguishable entries.
+
 Only owner membership is created or managed in the current solo slice. The schema reserves the documented admin and member values, but invitation, role-change, suspension, removal, and ownership-transfer flows are not exposed until the team phase.
 
 ```bash

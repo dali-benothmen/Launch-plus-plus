@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `workspaces_installation_name_unique` ON `workspaces` (`installation_id`,lower("name"));

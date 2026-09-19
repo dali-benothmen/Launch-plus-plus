@@ -64,6 +64,7 @@ export interface UserProfileRepository {
 export interface WorkspaceRepository {
   create(context: WriteContext, workspace: Workspace): void;
   findById(context: ReadContext, workspaceId: string): Workspace | undefined;
+  findByName(context: ReadContext, installationId: string, name: string): Workspace | undefined;
   findBySlug(context: ReadContext, installationId: string, slug: string): Workspace | undefined;
   listForUser(context: ReadContext, userId: string): readonly Workspace[];
 }
@@ -83,4 +84,8 @@ export class WorkspaceMembershipRequiredError extends Error {
 
 export class UserProfileMissingError extends Error {
   override readonly name = "UserProfileMissingError";
+}
+
+export class WorkspaceNameAlreadyExistsError extends Error {
+  override readonly name = "WorkspaceNameAlreadyExistsError";
 }
