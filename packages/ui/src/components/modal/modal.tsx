@@ -115,6 +115,10 @@ function ModalSkeleton() {
   );
 }
 
+function isLaunchPopupTarget(target: EventTarget | null) {
+  return target instanceof Element && target.closest("[data-launch-ui-popup]") !== null;
+}
+
 export function Modal(modalProps: ModalProps) {
   const {
     afterClose,
@@ -162,6 +166,10 @@ export function Modal(modalProps: ModalProps) {
   const [exitComplete, setExitComplete] = useState(!resolvedOpen);
   const lastCloseEvent = useRef<ModalCloseEvent | undefined>(undefined);
   const lastAnimationState = useRef<boolean | undefined>(undefined);
+  const presentation = useRef({ centered, mask, width });
+  if (resolvedOpen) presentation.current = { centered, mask, width };
+  const isExiting = !resolvedOpen && !exitComplete;
+  const resolvedPresentation = isExiting ? presentation.current : { centered, mask, width };
   const resolvedClassNames =
     typeof classNamesProp === "function"
       ? classNamesProp({ props: modalProps })
@@ -169,8 +177,10 @@ export function Modal(modalProps: ModalProps) {
   const resolvedStyles =
     typeof stylesProp === "function" ? stylesProp({ props: modalProps }) : (stylesProp ?? {});
   const closableConfig = typeof closable === "object" ? closable : undefined;
-  const maskConfig = typeof mask === "object" ? mask : undefined;
-  const maskEnabled = typeof mask === "boolean" ? mask : (maskConfig?.enabled ?? true);
+  const resolvedMask = resolvedPresentation.mask;
+  const maskConfig = typeof resolvedMask === "object" ? resolvedMask : undefined;
+  const maskEnabled =
+    typeof resolvedMask === "boolean" ? resolvedMask : (maskConfig?.enabled ?? true);
   const maskClosable = maskEnabled && (maskConfig?.closable ?? true);
   const configuredCloseIcon =
     closableConfig && "closeIcon" in closableConfig ? closableConfig.closeIcon : closeIcon;
@@ -185,7 +195,11 @@ export function Modal(modalProps: ModalProps) {
   const keepMounted = maskEnabled
     ? !resolvedOpen && !exitComplete
     : forceRender || (!destroyOnHidden && hasOpened);
-  const resolvedWidth = typeof width === "number" ? `${width}px` : width;
+  const resolvedCentered = resolvedPresentation.centered;
+  const resolvedWidth =
+    typeof resolvedPresentation.width === "number"
+      ? `${resolvedPresentation.width}px`
+      : resolvedPresentation.width;
   const {
     closeIcon: _configuredCloseIcon,
     disabled: closeDisabled,
@@ -300,7 +314,7 @@ export function Modal(modalProps: ModalProps) {
       aria-describedby={undefined}
       className={classes(
         "launch-ui-modal-container",
-        centered && "is-centered",
+        resolvedCentered && "is-centered",
         loading && "is-loading",
         className,
         resolvedClassNames.container,
@@ -326,6 +340,10 @@ export function Modal(modalProps: ModalProps) {
         if (!keyboard) event.preventDefault();
       }}
       onPointerDownOutside={(event) => {
+        if (isLaunchPopupTarget(event.detail.originalEvent.target)) {
+          event.preventDefault();
+          return;
+        }
         lastCloseEvent.current = event;
         if (!maskClosable) event.preventDefault();
       }}
@@ -370,7 +388,7 @@ export function Modal(modalProps: ModalProps) {
     <div
       className={classes(
         "launch-ui-modal-root",
-        centered && "is-centered",
+        resolvedCentered && "is-centered",
         !resolvedOpen && exitComplete && "is-hidden",
         rootClassName,
         wrapClassName,

@@ -628,6 +628,7 @@ export const Select = forwardRef<SelectRef, SelectProps>(
           placement.startsWith("top") ? "is-top" : "is-bottom",
           resolvedClassNames.popup,
         )}
+        data-launch-ui-popup="select"
         id={listboxId}
         ref={popupRef}
         role="listbox"
