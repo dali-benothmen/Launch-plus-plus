@@ -9,6 +9,14 @@ pnpm build
 pnpm start:server
 ```
 
+For backend development, run the repository-level watcher instead:
+
+```bash
+pnpm dev:server
+```
+
+It watches the server and referenced backend workspaces, recompiles changed TypeScript, and automatically restarts Fastify. Stop both watcher processes with `Ctrl+C`.
+
 The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp.sqlite`. Liveness is available at `/health/live`; readiness is available at `/health/ready`. Readiness becomes true only after the listener and migrated SQLite composition are available, and becomes false before graceful shutdown begins. Closing the server releases the Better Auth and application database connections after in-flight work.
 
 On an empty database, local loopback access authorizes the setup browser automatically with a short-lived `HttpOnly` cookie. Startup also logs a one-time setup URL for remote/VPS operators; its fragment is exchanged for the same cookie and removed from the browser address before account creation. Both methods expire after 30 minutes, raw secrets are released after use, and only hashes remain in server memory. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.

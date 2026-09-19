@@ -22,6 +22,7 @@
     "runtime:check": "node ./scripts/check-runtime.mjs",
     "ui:showcase": "pnpm --filter @launchpp/ui showcase",
     "ui:showcase:build": "pnpm --filter @launchpp/ui showcase:build",
+    "dev:server": "pnpm exec tsc -b apps/server --pretty false && concurrently --kill-others-on-fail --names compiler,server --prefix-colors cyan,green \"pnpm exec tsc -b apps/server --watch --preserveWatchOutput --pretty false\" \"pnpm --filter @launchpp-internal/server dev\"",
     "dev:web": "pnpm --filter @launchpp-internal/web dev",
     "start:server": "pnpm --filter @launchpp-internal/server start",
     "typecheck": "tsc -b --pretty false",
@@ -37,6 +38,7 @@
     "@biomejs/biome": "2.5.14",
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.5",
+    "concurrently": "10.0.5",
     "typescript": "7.0.2",
     "vitest": "5.0.1"
   },
