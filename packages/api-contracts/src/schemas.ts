@@ -343,6 +343,55 @@ export const CreateTaskCommentInputSchema = StrictObject(
 );
 export type CreateTaskCommentInput = Type.Static<typeof CreateTaskCommentInputSchema>;
 
+export const SearchQuerySchema = StrictObject(
+  {
+    limit: Type.Optional(Type.Integer({ maximum: 50, minimum: 1 })),
+    projectId: Type.Optional(IdentifierSchema),
+    q: Type.String({ maxLength: 200, minLength: 1, pattern: "\\S" }),
+    workspaceId: Type.Optional(IdentifierSchema),
+  },
+  { $id: "LaunchppSearchQueryV1" },
+);
+export type SearchQuery = Type.Static<typeof SearchQuerySchema>;
+
+export const SearchResultSchema = StrictObject(
+  {
+    kind: Type.Union([Type.Literal("project"), Type.Literal("task")]),
+    projectId: IdentifierSchema,
+    resourceId: IdentifierSchema,
+    subtitle: Type.String({ maxLength: 500 }),
+    title: Type.String({ maxLength: 500, minLength: 1 }),
+    workspaceId: IdentifierSchema,
+  },
+  { $id: "LaunchppSearchResultV1" },
+);
+export type SearchResult = Type.Static<typeof SearchResultSchema>;
+
+export const SearchResponseSchema = StrictObject(
+  {
+    items: Type.Array(
+      Type.Unsafe<Type.Static<typeof SearchResultSchema>>(Type.Ref("LaunchppSearchResultV1")),
+      { maxItems: 50 },
+    ),
+  },
+  { $id: "LaunchppSearchResponseV1" },
+);
+export type SearchResponse = Type.Static<typeof SearchResponseSchema>;
+
+export const InvalidationEventSchema = StrictObject(
+  {
+    occurredAt: TimestampSchema,
+    projectId: Type.Optional(IdentifierSchema),
+    resourceId: IdentifierSchema,
+    resourceType: Type.String({ maxLength: 100, minLength: 1 }),
+    sequence: Type.Integer({ minimum: 1 }),
+    topic: Type.String({ maxLength: 100, minLength: 1 }),
+    workspaceId: IdentifierSchema,
+  },
+  { $id: "LaunchppInvalidationEventV1" },
+);
+export type InvalidationEvent = Type.Static<typeof InvalidationEventSchema>;
+
 export const UpdateTaskInputSchema = StrictObject(
   {
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
@@ -445,6 +494,10 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskPageSchema,
   CreateTaskInputSchema,
   CreateTaskCommentInputSchema,
+  SearchQuerySchema,
+  SearchResultSchema,
+  SearchResponseSchema,
+  InvalidationEventSchema,
   UpdateTaskInputSchema,
   MoveTaskInputSchema,
   ReplaceTaskAssigneesInputSchema,

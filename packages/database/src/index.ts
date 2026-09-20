@@ -6,9 +6,14 @@ export {
 } from "./idempotency-repository.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
-export { SqliteOutboxRepository } from "./outbox-repository.js";
+export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
 export {
+  type InvalidationEvent,
+  SqliteProjectionRepository,
+} from "./projection-repository.js";
+export {
+  activityEntries,
   auditEntries,
   authAccounts,
   authSessions,
@@ -17,6 +22,7 @@ export {
   databaseSchema,
   idempotencyRecords,
   installations,
+  invalidationEvents,
   labels,
   outboxMessages,
   projectFolders,
@@ -31,6 +37,7 @@ export {
   workspaceMembers,
   workspaces,
 } from "./schema.js";
+export { SqliteSearchRepository } from "./search-repository.js";
 export {
   type OpenSqliteDatabaseOptions,
   openSqliteDatabase,

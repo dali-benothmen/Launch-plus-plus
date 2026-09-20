@@ -36,12 +36,53 @@ export const outboxMessages = sqliteTable(
     availableAt: integer("available_at").notNull(),
     correlationId: text("correlation_id").notNull(),
     attempts: integer("attempts").notNull().default(0),
+    leaseOwner: text("lease_owner"),
     leasedUntil: integer("leased_until"),
     processedAt: integer("processed_at"),
   },
   (table) => [
     index("outbox_pending_idx").on(table.processedAt, table.availableAt),
     index("outbox_installation_idx").on(table.installationId, table.occurredAt),
+  ],
+);
+
+export const activityEntries = sqliteTable(
+  "activity_entries",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: text("project_id"),
+    taskId: text("task_id"),
+    actorUserId: text("actor_user_id"),
+    operation: text("operation").notNull(),
+    metadataJson: text("metadata_json").notNull(),
+    occurredAt: integer("occurred_at").notNull(),
+  },
+  (table) => [
+    index("activity_entries_workspace_time_idx").on(table.workspaceId, table.occurredAt),
+    index("activity_entries_project_time_idx").on(table.projectId, table.occurredAt),
+    index("activity_entries_task_time_idx").on(table.taskId, table.occurredAt),
+  ],
+);
+
+export const invalidationEvents = sqliteTable(
+  "invalidation_events",
+  {
+    sequence: integer("sequence").primaryKey({ autoIncrement: true }),
+    outboxId: text("outbox_id").notNull().unique(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: text("project_id"),
+    resourceId: text("resource_id").notNull(),
+    resourceType: text("resource_type").notNull(),
+    topic: text("topic").notNull(),
+    occurredAt: integer("occurred_at").notNull(),
+  },
+  (table) => [
+    index("invalidation_events_workspace_sequence_idx").on(table.workspaceId, table.sequence),
   ],
 );
 
@@ -577,6 +618,7 @@ export const auditEntries = sqliteTable(
 );
 
 export const databaseSchema = {
+  activityEntries,
   auditEntries,
   authAccounts,
   authSessions,
@@ -584,6 +626,7 @@ export const databaseSchema = {
   authVerifications,
   installations,
   idempotencyRecords,
+  invalidationEvents,
   labels,
   outboxMessages,
   projectFolders,

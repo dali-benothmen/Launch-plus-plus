@@ -28,6 +28,7 @@ import {
 } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import { invalidationEventName } from "./invalidation.js";
 import { TaskDetailPanel } from "./task-detail.js";
 
 type ProjectView = "board" | "list";
@@ -189,6 +190,20 @@ export function ProjectTaskWorkspace({
     setNextCursor(undefined);
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    const reload = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectId?: string; workspaceId: string }>).detail;
+      if (
+        detail.workspaceId === workspaceId &&
+        (!detail.projectId || detail.projectId === projectId)
+      ) {
+        void loadTasks(undefined, true);
+      }
+    };
+    window.addEventListener(invalidationEventName, reload);
+    return () => window.removeEventListener(invalidationEventName, reload);
+  }, [loadTasks, projectId, workspaceId]);
 
   useEffect(() => setSearchDraft(searchParams.get("q") ?? ""), [searchParams]);
 

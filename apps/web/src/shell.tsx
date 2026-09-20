@@ -6,11 +6,14 @@ import {
   HomeIcon,
   LightThemeIcon,
   MembersIcon,
+  SearchIcon,
   SettingsIcon,
   Tooltip,
 } from "@launchpp/ui";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { GlobalSearch } from "./global-search.js";
+import { InvalidationListener } from "./invalidation.js";
 import { ProjectSidebar } from "./project-sidebar.js";
 import { useThemeController } from "./theme-context.js";
 
@@ -27,6 +30,7 @@ export function AppShell() {
   );
   const [projectNavigationOpen, setProjectNavigationOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
@@ -39,8 +43,20 @@ export function AppShell() {
     return () => media.removeEventListener("change", update);
   }, []);
 
+  useEffect(() => {
+    const openSearch = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", openSearch);
+    return () => window.removeEventListener("keydown", openSearch);
+  }, []);
+
   return (
     <div className={`app-shell${sidebarCollapsed && !compact ? " is-sidebar-collapsed" : ""}`}>
+      <InvalidationListener />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -60,6 +76,15 @@ export function AppShell() {
           </Tooltip>
         ) : null}
         <nav className="rail-links">
+          <Tooltip placement="right" title="Search">
+            <Button
+              aria-label="Search"
+              icon={<SearchIcon />}
+              iconOnly
+              onClick={() => setSearchOpen(true)}
+              variant="text"
+            />
+          </Tooltip>
           {iconLinks.map((item) => (
             <Tooltip key={item.to} placement="right" title={item.label}>
               <NavLink
@@ -110,6 +135,7 @@ export function AppShell() {
       <main id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
+      <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />
     </div>
   );
 }

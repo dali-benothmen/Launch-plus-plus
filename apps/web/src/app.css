@@ -459,6 +459,34 @@
   gap: 8px;
 }
 
+.global-search {
+  display: grid;
+  gap: 16px;
+}
+
+.global-search-state {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.global-search-results {
+  max-height: min(440px, 60vh);
+  overflow-y: auto;
+}
+
+.global-search-result {
+  justify-content: space-between;
+  height: auto;
+  text-align: start;
+}
+
+.global-search-result > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
 .plugin-proof-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

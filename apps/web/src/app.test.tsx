@@ -19,6 +19,7 @@ const apiClient: ApiClient = {
     signOut: vi.fn(async () => undefined),
   },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
+  search: vi.fn(async () => ({ items: [] })),
   projects: {
     archive: vi.fn(async () => ({
       access: "workspace" as const,

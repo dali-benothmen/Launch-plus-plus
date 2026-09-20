@@ -24,6 +24,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-sidebar.js";
 import { ProjectTaskWorkspace } from "./project-tasks.js";
 import { ResourceFailure } from "./route-boundaries.js";
@@ -182,7 +183,11 @@ export function MyWorkPage() {
   useEffect(() => {
     load();
     window.addEventListener(projectNavigationChangedEvent, load);
-    return () => window.removeEventListener(projectNavigationChangedEvent, load);
+    window.addEventListener(invalidationEventName, load);
+    return () => {
+      window.removeEventListener(projectNavigationChangedEvent, load);
+      window.removeEventListener(invalidationEventName, load);
+    };
   }, [load]);
 
   if (loadError) return <ResourceFailure error={loadError} onRetry={load} />;
@@ -463,9 +468,24 @@ export function ProjectOverviewPage() {
 
   useEffect(() => {
     loadProject();
+    const reloadInvalidated = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ projectId?: string; resourceType: string; workspaceId: string }>
+      ).detail;
+      if (
+        detail.workspaceId === workspaceId &&
+        (detail.resourceType === "workspace" || detail.projectId === projectId)
+      ) {
+        loadProject();
+      }
+    };
     window.addEventListener(projectNavigationChangedEvent, loadProject);
-    return () => window.removeEventListener(projectNavigationChangedEvent, loadProject);
-  }, [loadProject]);
+    window.addEventListener(invalidationEventName, reloadInvalidated);
+    return () => {
+      window.removeEventListener(projectNavigationChangedEvent, loadProject);
+      window.removeEventListener(invalidationEventName, reloadInvalidated);
+    };
+  }, [loadProject, projectId, workspaceId]);
 
   const project = catalog?.projects.find((item) => item.id === projectId);
   const statuses = useMemo(

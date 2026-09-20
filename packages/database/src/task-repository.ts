@@ -295,10 +295,9 @@ export class SqliteTaskRepository implements TaskRepository {
   ): readonly TaskActivity[] {
     return requireSqliteConnection(context)
       .prepare<[string, string], ActivityRow>(
-        `SELECT id, actor_id, operation, metadata_json, occurred_at
-         FROM audit_entries
-         WHERE workspace_id = ? AND target_type = 'task' AND target_id = ?
-           AND outcome = 'succeeded'
+        `SELECT id, actor_user_id AS actor_id, operation, metadata_json, occurred_at
+         FROM activity_entries
+         WHERE workspace_id = ? AND task_id = ?
          ORDER BY occurred_at DESC, id DESC
          LIMIT 100`,
       )

@@ -7,6 +7,7 @@ export {
   MenuUnfoldOutlined as ExpandNavigationIcon,
   MoonOutlined as DarkThemeIcon,
   PlusOutlined as AddIcon,
+  SearchOutlined as SearchIcon,
   SettingOutlined as SettingsIcon,
   SunOutlined as LightThemeIcon,
   TeamOutlined as MembersIcon,

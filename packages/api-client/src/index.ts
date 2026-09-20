@@ -4,12 +4,16 @@ import { type CoreApiClient, createCoreApiClient } from "./generated.js";
 
 export type {
   CursorPageQuery,
+  InvalidationEvent,
   LabelSummary,
   ProblemDetails,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusSummary,
   ProjectSummary,
+  SearchQuery,
+  SearchResponse,
+  SearchResult,
   TaskActivity,
   TaskComment,
   TaskDetail,
@@ -185,6 +189,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
       },
     }),
     projects: core.projects,
+    search: core.search,
     setup: Object.freeze({
       async claim(token: string): Promise<void> {
         await json("/api/setup/claim", {

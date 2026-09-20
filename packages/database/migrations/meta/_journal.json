@@ -57,6 +57,13 @@
       "when": 1789862557206,
       "tag": "0007_busy_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1789863205863,
+      "tag": "0008_perfect_iron_fist",
+      "breakpoints": true
     }
   ]
 }

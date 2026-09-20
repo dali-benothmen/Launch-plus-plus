@@ -32,6 +32,12 @@ export {
   type ProjectCatalogDependencies,
   ProjectCatalogService,
 } from "./projects/project-catalog.js";
+export {
+  type SearchRepository,
+  type SearchResult,
+  SearchService,
+  type SearchServiceDependencies,
+} from "./search/search.js";
 export type { OutboxMessage, OutboxWriter } from "./shared/outbox.js";
 export type {
   ReadContext,

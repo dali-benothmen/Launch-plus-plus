@@ -14,6 +14,8 @@ import type {
   ProjectSummary,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
+  SearchQuery,
+  SearchResponse,
   TaskComment,
   TaskDetail,
   TaskPage,
@@ -56,6 +58,7 @@ function taskPath(workspaceId: string, projectId: string, taskId?: string): stri
 }
 
 export interface CoreApiClient {
+  readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
     archive(workspaceId: string, projectId: string): Promise<ProjectSummary>;
     create(
@@ -155,6 +158,13 @@ export interface CoreApiClient {
 
 export function createCoreApiClient(json: RequestJson): CoreApiClient {
   return Object.freeze({
+    search: (query: SearchQuery) => {
+      const parameters = new URLSearchParams({ q: query.q });
+      if (query.limit !== undefined) parameters.set("limit", String(query.limit));
+      if (query.projectId) parameters.set("projectId", query.projectId);
+      if (query.workspaceId) parameters.set("workspaceId", query.workspaceId);
+      return json<SearchResponse>(`/api/v1/search?${parameters.toString()}`);
+    },
     projects: Object.freeze({
       archive: (workspaceId: string, projectId: string) =>
         json<ProjectSummary>(`${projectPath(workspaceId, projectId)}/archive`, { method: "POST" }),

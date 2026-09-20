@@ -6,8 +6,12 @@ import {
 import { openSqliteDatabase, type SqliteDatabase } from "@launchpp/database";
 import type { FastifyInstance } from "fastify";
 
-import { type BuildServerOptions, buildServer } from "./server.js";
+import { registerEventRoutes } from "./event-routes.js";
+import { InvalidationHub } from "./invalidation-hub.js";
+import { createOutboxDispatcher } from "./outbox-dispatcher.js";
 import { registerProjectRoutes } from "./project-routes.js";
+import { registerSearchRoutes } from "./search-routes.js";
+import { type BuildServerOptions, buildServer } from "./server.js";
 import { createSetupCoordinator } from "./setup-routes.js";
 import { registerTaskRoutes } from "./task-routes.js";
 import { registerWorkspaceRoutes } from "./workspace-routes.js";
@@ -30,6 +34,7 @@ export async function buildApplicationServer(
   const database = openSqliteDatabase({ filePath: options.config.databasePath });
   let app: FastifyInstance | undefined;
   let identity: ReturnType<typeof openBetterAuthIdentityAdapter> | undefined;
+  let dispatcher: ReturnType<typeof createOutboxDispatcher> | undefined;
 
   try {
     identity = openBetterAuthIdentityAdapter({
@@ -57,11 +62,17 @@ export async function buildApplicationServer(
     await registerWorkspaceRoutes(app, { database, identity: identity.adapter });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
+    const hub = new InvalidationHub();
+    await registerSearchRoutes(app, { database, identity: identity.adapter });
+    await registerEventRoutes(app, { database, hub, identity: identity.adapter });
     await registerBetterAuthRoutes(app, identity.adapter);
+    dispatcher = createOutboxDispatcher({ database, hub, logger: app.log });
     app.addHook("onClose", async () => {
+      await dispatcher?.stop();
       identity?.close();
       await database.close();
     });
+    await dispatcher.start();
     await options.configure?.(app, { database, identity: identity.adapter });
     return app;
   } catch (error) {

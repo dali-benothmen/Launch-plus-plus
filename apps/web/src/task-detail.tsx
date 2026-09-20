@@ -23,6 +23,7 @@ import {
 } from "@launchpp/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApiClient } from "./api-client-context.js";
+import { invalidationEventName } from "./invalidation.js";
 
 interface TaskDetailPanelProps {
   readonly archived: boolean;
@@ -152,6 +153,23 @@ export function TaskDetailPanel({
     setSubtaskTitle("");
     void load();
   }, [load, taskId]);
+
+  useEffect(() => {
+    if (!taskId) return;
+    const reload = (event: Event) => {
+      const next = (
+        event as CustomEvent<{ projectId?: string; resourceId: string; resourceType: string }>
+      ).detail;
+      if (
+        next.projectId === projectId &&
+        (next.resourceType !== "task" || next.resourceId === taskId)
+      ) {
+        void load();
+      }
+    };
+    window.addEventListener(invalidationEventName, reload);
+    return () => window.removeEventListener(invalidationEventName, reload);
+  }, [load, projectId, taskId]);
 
   const statusOptions = useMemo(
     () => statuses.map((status) => ({ label: status.name, value: status.id })),

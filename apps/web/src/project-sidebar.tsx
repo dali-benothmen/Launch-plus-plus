@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import { invalidationEventName } from "./invalidation.js";
 
 type EditorState =
   | Readonly<{ kind: "create-project"; workspaceId: string }>
@@ -170,8 +171,16 @@ export function ProjectSidebar({
 
   useEffect(() => {
     const reload = () => void loadNavigation();
+    const reloadInvalidated = (event: Event) => {
+      const type = (event as CustomEvent<{ resourceType: string }>).detail.resourceType;
+      if (type === "project" || type === "project_folder" || type === "workspace") reload();
+    };
     window.addEventListener(projectNavigationChangedEvent, reload);
-    return () => window.removeEventListener(projectNavigationChangedEvent, reload);
+    window.addEventListener(invalidationEventName, reloadInvalidated);
+    return () => {
+      window.removeEventListener(projectNavigationChangedEvent, reload);
+      window.removeEventListener(invalidationEventName, reloadInvalidated);
+    };
   }, [loadNavigation]);
 
   const treeData = useMemo<ReadonlyArray<TreeDataNode>>(
