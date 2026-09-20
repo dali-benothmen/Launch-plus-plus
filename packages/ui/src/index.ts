@@ -3,6 +3,7 @@ import "../styles.css";
 export {
   AppstoreOutlined as ProjectsIcon,
   BgColorsOutlined as ThemeIcon,
+  FolderOutlined as FolderIcon,
   HomeOutlined as HomeIcon,
   MenuFoldOutlined as CollapseNavigationIcon,
   MenuUnfoldOutlined as ExpandNavigationIcon,

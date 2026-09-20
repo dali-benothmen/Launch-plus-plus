@@ -4,6 +4,7 @@ import {
   type DropdownMenuItem,
   HomeIcon,
   MembersIcon,
+  ProjectsIcon,
   SearchIcon,
   SettingsIcon,
   ThemeIcon,
@@ -17,6 +18,7 @@ import { themeOptions, useThemeController } from "./theme-context.js";
 
 const iconLinks = [
   { icon: <HomeIcon aria-hidden />, label: "Home", to: "/app" },
+  { icon: <ProjectsIcon aria-hidden />, label: "Projects", to: "/app/projects" },
   { icon: <MembersIcon aria-hidden />, label: "Members", to: "/app/members" },
   { icon: <SettingsIcon aria-hidden />, label: "Settings", to: "/app/settings" },
 ] as const;
@@ -66,7 +68,7 @@ export function AppShell() {
               <NavLink
                 aria-label={item.label}
                 className={({ isActive }) => `rail-link${isActive ? " is-active" : ""}`}
-                end={item.to === "/app"}
+                end={item.to === "/app" || item.to === "/app/projects"}
                 to={item.to}
               >
                 {item.icon}

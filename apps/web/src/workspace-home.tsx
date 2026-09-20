@@ -11,6 +11,7 @@ import {
   Dropdown,
   type DropdownMenuItem,
   Empty,
+  FolderIcon,
   Form,
   Input,
   message,
@@ -54,7 +55,7 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function WorkspaceHomePage() {
+function WorkspaceProjectExperience({ page }: { readonly page: "home" | "projects" }) {
   const api = useApiClient();
   const navigate = useNavigate();
   const [data, setData] = useState<HomeData>();
@@ -382,141 +383,172 @@ export function WorkspaceHomePage() {
           : "Rename project";
 
   return (
-    <section aria-labelledby="home-title" className="page-stack workspace-home">
+    <section
+      aria-labelledby={page === "home" ? "home-title" : "projects-title"}
+      className="page-stack workspace-home"
+    >
       {messageHolder}
-      <Card className="workspace-welcome" variant="borderless">
-        <div className="workspace-welcome-content">
-          <div>
-            <Typography.Text type="secondary">{data.workspace.name}</Typography.Text>
-            <Typography.Title id="home-title" level={1}>
-              {activeProjects.length === 0
-                ? "Create your first project"
-                : `Welcome back, ${data.ownerName}`}
-            </Typography.Title>
-            <Typography.Text type="secondary">
-              {activeProjects.length === 0
-                ? "Start with one project. You can organize it into folders whenever you need to."
-                : "Open a recent project or organize your workspace."}
-            </Typography.Text>
-          </div>
-          <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
-            Create project
-          </Button>
-        </div>
-      </Card>
-
-      {recentProjects.length > 0 ? (
-        <section className="workspace-section" aria-labelledby="quick-access-title">
-          <Typography.Title id="quick-access-title" level={2}>
-            Quick access
-          </Typography.Title>
-          <div className="project-card-grid">{recentProjects.map(renderProjectCard)}</div>
-        </section>
-      ) : null}
-
-      {pinnedProjects.length > 0 ? (
-        <section className="workspace-section" aria-labelledby="pinned-title">
-          <Typography.Title id="pinned-title" level={2}>
-            Pinned
-          </Typography.Title>
-          <div className="project-card-grid">{pinnedProjects.map(renderProjectCard)}</div>
-        </section>
-      ) : null}
-
-      <section
-        className="workspace-section"
-        aria-labelledby="all-projects-title"
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={() => {
-          if (draggedProjectId && !openFolderId) void moveProject(draggedProjectId);
-        }}
-      >
-        <div className="workspace-section-heading">
-          <div>
-            {currentFolder ? (
-              <div className="workspace-breadcrumb">
-                <Button
-                  onClick={() => setOpenFolderId(undefined)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.stopPropagation();
-                    if (draggedProjectId) void moveProject(draggedProjectId);
-                  }}
-                  size="small"
-                  variant="link"
-                >
-                  Projects
-                </Button>
-                <Typography.Text type="secondary">/</Typography.Text>
-                <Typography.Text>{currentFolder.name}</Typography.Text>
+      {page === "home" ? (
+        <>
+          <Card className="workspace-welcome" variant="borderless">
+            <div className="workspace-welcome-content">
+              <div>
+                <Typography.Text type="secondary">{data.workspace.name}</Typography.Text>
+                <Typography.Title id="home-title" level={1}>
+                  {activeProjects.length === 0
+                    ? "Create your first project"
+                    : `Welcome back, ${data.ownerName}`}
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  {activeProjects.length === 0
+                    ? "Start with one project. You can organize it whenever you need to."
+                    : "Open a recent project or continue from something you pinned."}
+                </Typography.Text>
               </div>
-            ) : null}
-            <Typography.Title id="all-projects-title" level={2}>
-              {currentFolder?.name ?? "All projects"}
-            </Typography.Title>
-          </div>
-          <div className="workspace-actions">
-            {!currentFolder ? (
+              <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
+                Create project
+              </Button>
+            </div>
+          </Card>
+
+          {recentProjects.length > 0 ? (
+            <section className="workspace-section" aria-labelledby="quick-access-title">
+              <Typography.Title id="quick-access-title" level={2}>
+                Quick access
+              </Typography.Title>
+              <div className="project-card-grid">{recentProjects.map(renderProjectCard)}</div>
+            </section>
+          ) : null}
+
+          {pinnedProjects.length > 0 ? (
+            <section className="workspace-section" aria-labelledby="pinned-title">
+              <Typography.Title id="pinned-title" level={2}>
+                Pinned
+              </Typography.Title>
+              <div className="project-card-grid">{pinnedProjects.map(renderProjectCard)}</div>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <header className="workspace-section-heading">
+            <div>
+              <Typography.Text type="secondary">{data.workspace.name}</Typography.Text>
+              <Typography.Title id="projects-title" level={1}>
+                Projects
+              </Typography.Title>
+            </div>
+            <div className="workspace-actions">
               <Button onClick={() => openEditor({ kind: "create-folder" })}>New folder</Button>
-            ) : null}
-            <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
-              New project
-            </Button>
-          </div>
-        </div>
+              <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
+                New project
+              </Button>
+            </div>
+          </header>
 
-        {!currentFolder && data.catalog.folders.length > 0 ? (
-          <div className="folder-grid">
-            {data.catalog.folders
-              .toSorted((first, second) => first.position - second.position)
-              .map((folder) => (
-                <Dropdown
-                  key={folder.id}
-                  menu={{ items: folderMenu(folder) }}
-                  trigger={["contextMenu"]}
-                >
-                  <Card
-                    hoverable
-                    onDoubleClick={() => setOpenFolderId(folder.id)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.stopPropagation();
-                      if (draggedProjectId) void moveProject(draggedProjectId, folder.id);
-                    }}
-                    size="small"
-                  >
-                    <Button block onClick={() => setOpenFolderId(folder.id)} variant="text">
-                      {folder.name} ·{" "}
-                      {activeProjects.filter((project) => project.folderId === folder.id).length}{" "}
-                      projects
+          <section className="workspace-section" aria-labelledby="folders-title">
+            <Typography.Title id="folders-title" level={2}>
+              Folders
+            </Typography.Title>
+            {data.catalog.folders.length > 0 ? (
+              <div className="folder-grid">
+                {data.catalog.folders
+                  .toSorted((first, second) => first.position - second.position)
+                  .map((folder) => (
+                    <Dropdown
+                      key={folder.id}
+                      menu={{ items: folderMenu(folder) }}
+                      trigger={["contextMenu"]}
+                    >
+                      <Card
+                        hoverable
+                        onDoubleClick={() => setOpenFolderId(folder.id)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.stopPropagation();
+                          if (draggedProjectId) void moveProject(draggedProjectId, folder.id);
+                        }}
+                        size="small"
+                      >
+                        <Button
+                          block
+                          icon={<FolderIcon />}
+                          onClick={() => setOpenFolderId(folder.id)}
+                          variant="text"
+                        >
+                          {folder.name} ·{" "}
+                          {
+                            activeProjects.filter((project) => project.folderId === folder.id)
+                              .length
+                          }{" "}
+                          projects
+                        </Button>
+                      </Card>
+                    </Dropdown>
+                  ))}
+              </div>
+            ) : (
+              <Empty description="No folders yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </section>
+
+          <section
+            className="workspace-section"
+            aria-labelledby="all-projects-title"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={() => {
+              if (draggedProjectId && !openFolderId) void moveProject(draggedProjectId);
+            }}
+          >
+            <div className="workspace-section-heading">
+              <div>
+                {currentFolder ? (
+                  <div className="workspace-breadcrumb">
+                    <Button
+                      onClick={() => setOpenFolderId(undefined)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.stopPropagation();
+                        if (draggedProjectId) void moveProject(draggedProjectId);
+                      }}
+                      size="small"
+                      variant="link"
+                    >
+                      All projects
                     </Button>
-                  </Card>
-                </Dropdown>
-              ))}
-          </div>
-        ) : null}
+                    <Typography.Text type="secondary">/</Typography.Text>
+                    <Typography.Text>{currentFolder.name}</Typography.Text>
+                  </div>
+                ) : null}
+                <Typography.Title id="all-projects-title" level={2}>
+                  {currentFolder?.name ?? "All projects"}
+                </Typography.Title>
+              </div>
+            </div>
 
-        {visibleProjects.length > 0 ? (
-          <Table<ProjectSummary>
-            columns={columns}
-            dataSource={visibleProjects}
-            onRow={(project) => ({
-              draggable: true,
-              onDragEnd: () => setDraggedProjectId(undefined),
-              onDragStart: () => setDraggedProjectId(project.id),
-              onDoubleClick: () => openProject(project),
-            })}
-            pagination={false}
-            rowKey="id"
-          />
-        ) : (
-          <Empty description={currentFolder ? "This folder is empty" : "No projects here yet"}>
-            <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
-              Create project
-            </Button>
-          </Empty>
-        )}
-      </section>
+            {visibleProjects.length > 0 ? (
+              <Table<ProjectSummary>
+                columns={columns}
+                dataSource={visibleProjects}
+                onRow={(project) => ({
+                  draggable: true,
+                  onDragEnd: () => setDraggedProjectId(undefined),
+                  onDragStart: () => setDraggedProjectId(project.id),
+                  onDoubleClick: () => openProject(project),
+                })}
+                pagination={false}
+                rowKey="id"
+              />
+            ) : (
+              <Empty description={currentFolder ? "This folder is empty" : "No projects here yet"}>
+                <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
+                  Create project
+                </Button>
+              </Empty>
+            )}
+          </section>
+        </>
+      )}
 
       <Modal
         confirmLoading={saving}
@@ -569,4 +601,12 @@ export function WorkspaceHomePage() {
       </Modal>
     </section>
   );
+}
+
+export function WorkspaceHomePage() {
+  return <WorkspaceProjectExperience page="home" />;
+}
+
+export function WorkspaceProjectsPage() {
+  return <WorkspaceProjectExperience page="projects" />;
 }

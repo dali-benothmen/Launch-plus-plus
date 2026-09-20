@@ -10,7 +10,7 @@ Launch++ should feel small when first installed and remain understandable as pro
 
 - One stable application shell.
 - A narrow global icon rail for product areas.
-- A Home page that serves as the workspace project explorer.
+- Separate Home and Projects pages with distinct responsibilities.
 - A single project page whose core and plugin views share the same header.
 - Route-backed task details that preserve project context.
 - One settings system divided by personal, workspace, project, and installation authority.
@@ -25,36 +25,41 @@ Authenticated desktop layouts have two stable columns:
 ```text
 ┌─────────────┬──────────────────────────────────────────────────────┐
 │ Global rail │ Main content                                         │
-│ Icon-only   │ Home, project, members, settings, or plugin page      │
+│ Icon-only   │ Home, Projects, selected project, settings, or plugin │
 │ navigation  │                                                      │
 └─────────────┴──────────────────────────────────────────────────────┘
 ```
 
-The global rail remains visually narrow. Project discovery lives on Home rather than consuming permanent horizontal space. On narrower layouts, task-detail panels become full pages. The information hierarchy and route identity remain the same; responsive behavior must not create a second mobile-only product model.
+The global rail remains visually narrow. Project discovery lives on a dedicated Projects page rather than consuming permanent horizontal space. On narrower layouts, task-detail panels become full pages. The information hierarchy and route identity remain the same; responsive behavior must not create a second mobile-only product model.
 
 ### Global icon rail
 
 The rail contains icons with accessible names and visible tooltips:
 
 1. Home.
-2. Global search.
-3. Calendar when the official Calendar plugin is enabled.
-4. Members.
-5. Approved plugin-contributed workspace pages.
-6. Settings near the bottom.
-7. User/avatar menu at the bottom.
+2. Projects.
+3. Global search.
+4. Calendar when the official Calendar plugin is enabled.
+5. Members.
+6. Approved plugin-contributed workspace pages.
+7. Settings near the bottom.
+8. User/avatar menu at the bottom.
 
 Global search and notifications belong in application chrome rather than taking permanent rail positions. Board and List never appear in the global rail because they are views of a selected project.
 
 The host controls icon order, active state, overflow, accessibility, permissions, and whether a plugin contribution is visible. Plugins cannot create an additional global rail.
 
-## Home and project explorer
+## Home
 
-Home is the default authenticated page and the project browser. It contains an adaptive welcome banner, recent projects in Quick access, pinned projects when any exist, and an all-projects area.
+Home is the default authenticated page. It contains an adaptive welcome banner, recent projects in Quick access, and pinned projects when any exist. A first-time owner sees one clear action to create the first project and enter its Board.
 
-The all-projects area behaves like a small file explorer:
+Home is not the project organizer and does not contain folders or the complete project table.
 
-- Users create projects and optional folders.
+## Projects
+
+Projects is a dedicated rail destination and behaves like a small file explorer. Folders appear at the top of the page and the project table appears below them.
+
+- Users create projects and optional folders from this page.
 - Folders are one level deep and contain projects only.
 - Projects can be moved into and out of folders by context menu or drag and drop.
 - Folder and project actions are available through right-click menus.
@@ -338,7 +343,8 @@ All primary operations work without drag and drop. URLs identify workspace, proj
 
 ### Authenticated core
 
-- Home and its project explorer.
+- Home.
+- Projects explorer.
 - Project page with Board and List.
 - Route-backed task detail.
 - Members.
@@ -370,7 +376,7 @@ These may be introduced later or through plugins without changing the stable she
 ## Decisions captured
 
 - Desktop uses a narrow global icon rail and a flexible main-content region.
-- Home owns project discovery and organization instead of a permanent project sidebar.
+- Projects owns project discovery and organization instead of a permanent project sidebar.
 - Workspaces contain projects and optional one-level folders.
 - Authentication uses a split form/presentation layout on wide screens.
 - Onboarding is path-aware and ends at useful project work quickly.
