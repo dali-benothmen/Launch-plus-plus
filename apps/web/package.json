@@ -11,6 +11,7 @@
   "dependencies": {
     "@launchpp/api-client": "workspace:*",
     "@launchpp/plugin-protocol": "workspace:*",
+    "@launchpp/theme-runtime": "workspace:*",
     "@launchpp/ui": "workspace:*",
     "@launchpp/ui-tokens": "workspace:*",
     "@tanstack/react-query": "5.103.1",

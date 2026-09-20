@@ -5,8 +5,8 @@
     "rootDir": "src",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "jsx": "react-jsx"
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "references": [{ "path": "../theme-runtime" }, { "path": "../ui-tokens" }]
+  "include": ["src/**/*.ts"],
+  "references": []
 }

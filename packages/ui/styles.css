@@ -1,34 +1,66 @@
 :root {
   --launch-ui-primary: var(--launch-color-accent, #1668dc);
   --launch-ui-primary-hover: var(--launch-color-accent-hover, #3c8ae8);
-  --launch-ui-primary-active: #094bb5;
-  --launch-ui-primary-bg: #e6f4ff;
-  --launch-ui-primary-bg-hover: #bde1ff;
-  --launch-ui-primary-border: #94cbff;
-  --launch-ui-info: #1677ff;
-  --launch-ui-info-bg: #e6f4ff;
-  --launch-ui-info-border: #91caff;
-  --launch-ui-info-text: #0958d9;
-  --launch-ui-success: #52c41a;
-  --launch-ui-success-bg: #f6ffed;
-  --launch-ui-success-border: #b7eb8f;
-  --launch-ui-warning: #faad14;
-  --launch-ui-warning-bg: #fffbe6;
-  --launch-ui-warning-border: #ffe58f;
-  --launch-ui-error: #ff4d4f;
-  --launch-ui-error-hover: #ff7875;
-  --launch-ui-error-active: #d9363e;
-  --launch-ui-error-bg: #fff2f0;
-  --launch-ui-error-border: #ffccc7;
+  --launch-ui-primary-active: color-mix(in srgb, var(--launch-color-accent) 80%, #000);
+  --launch-ui-primary-bg: color-mix(
+    in srgb,
+    var(--launch-color-accent) 10%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-primary-bg-hover: color-mix(
+    in srgb,
+    var(--launch-color-accent) 18%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-primary-border: color-mix(
+    in srgb,
+    var(--launch-color-accent) 45%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-info: var(--launch-color-accent);
+  --launch-ui-info-bg: var(--launch-ui-primary-bg);
+  --launch-ui-info-border: var(--launch-ui-primary-border);
+  --launch-ui-info-text: var(--launch-color-accent);
+  --launch-ui-success: var(--launch-color-success, #52c41a);
+  --launch-ui-success-bg: color-mix(
+    in srgb,
+    var(--launch-ui-success) 10%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-success-border: color-mix(
+    in srgb,
+    var(--launch-ui-success) 45%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-warning: var(--launch-color-warning, #faad14);
+  --launch-ui-warning-bg: color-mix(
+    in srgb,
+    var(--launch-ui-warning) 10%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-warning-border: color-mix(
+    in srgb,
+    var(--launch-ui-warning) 45%,
+    var(--launch-color-surface)
+  );
+  --launch-ui-error: var(--launch-color-danger, #ff4d4f);
+  --launch-ui-error-hover: color-mix(in srgb, var(--launch-ui-error) 75%, #fff);
+  --launch-ui-error-active: color-mix(in srgb, var(--launch-ui-error) 80%, #000);
+  --launch-ui-error-bg: color-mix(in srgb, var(--launch-ui-error) 10%, var(--launch-color-surface));
+  --launch-ui-error-border: color-mix(
+    in srgb,
+    var(--launch-ui-error) 45%,
+    var(--launch-color-surface)
+  );
   --launch-ui-surface: var(--launch-color-bg-elevated, #fff);
   --launch-ui-surface-subtle: var(--launch-color-bg-subtle, #fafafa);
   --launch-ui-text: var(--launch-color-text, rgba(0, 0, 0, 0.88));
-  --launch-ui-text-secondary: var(--launch-color-text-muted, rgba(0, 0, 0, 0.88));
-  --launch-ui-text-tertiary: rgb(0 0 0 / 45%);
-  --launch-ui-text-disabled: rgb(0 0 0 / 25%);
-  --launch-ui-fill-secondary: rgb(0 0 0 / 6%);
-  --launch-ui-fill-tertiary: rgb(0 0 0 / 4%);
-  --launch-ui-fill-quaternary: rgb(0 0 0 / 2%);
+  --launch-ui-text-secondary: var(--launch-color-text-secondary, rgba(0, 0, 0, 0.88));
+  --launch-ui-text-tertiary: var(--launch-color-text-muted, rgb(0 0 0 / 45%));
+  --launch-ui-text-disabled: color-mix(in srgb, var(--launch-color-text) 25%, transparent);
+  --launch-ui-fill-secondary: color-mix(in srgb, var(--launch-color-text) 6%, transparent);
+  --launch-ui-fill-tertiary: color-mix(in srgb, var(--launch-color-text) 4%, transparent);
+  --launch-ui-fill-quaternary: color-mix(in srgb, var(--launch-color-text) 2%, transparent);
   --launch-ui-border: var(--launch-color-border, #d9d9d9);
   --launch-ui-border-soft: var(--launch-color-border-secondary, #f0f0f0);
   --launch-ui-line-width: var(--launch-line-width, 1px);
@@ -79,7 +111,7 @@
   --launch-ui-button-bg: var(--launch-ui-fill-tertiary);
   --launch-ui-button-bg-hover: var(--launch-ui-fill-secondary);
   --launch-ui-button-border: var(--launch-ui-border);
-  --launch-ui-button-solid-text: #fff;
+  --launch-ui-button-solid-text: var(--launch-color-on-accent, #fff);
   position: relative;
   display: inline-flex;
   height: var(--launch-ui-control-height);
@@ -127,7 +159,7 @@
 .launch-ui-select-trigger:focus-visible,
 .launch-ui-switch:focus-visible,
 .launch-ui-tab:focus-visible {
-  outline: 2px solid rgb(22 104 220 / 20%);
+  outline: 2px solid var(--launch-color-focus);
   outline-offset: 2px;
 }
 
@@ -135,13 +167,13 @@
   border-color: var(--launch-ui-primary);
   background: var(--launch-ui-primary);
   box-shadow: 0 2px 0 rgb(22 104 220 / 14%);
-  color: #fff;
+  color: var(--launch-ui-button-solid-text);
 }
 
 .launch-ui-button.is-primary:hover {
   border-color: var(--launch-ui-primary-hover);
   background: var(--launch-ui-primary-hover);
-  color: #fff;
+  color: var(--launch-ui-button-solid-text);
 }
 
 .launch-ui-button.is-primary:active {

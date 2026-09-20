@@ -4,8 +4,7 @@
     "composite": true,
     "rootDir": "src",
     "outDir": "dist",
-    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "types": ["node"]
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "references": [{ "path": "../theme-schema" }]

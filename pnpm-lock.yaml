@@ -74,6 +74,9 @@ importers:
       '@launchpp/plugin-protocol':
         specifier: workspace:*
         version: link:../../packages/plugin-protocol
+      '@launchpp/theme-runtime':
+        specifier: workspace:*
+        version: link:../../packages/theme-runtime
       '@launchpp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -220,11 +223,30 @@ importers:
         specifier: 24.13.5
         version: 24.13.5
 
+  packages/theme-runtime:
+    dependencies:
+      '@launchpp/theme-schema':
+        specifier: workspace:*
+        version: link:../theme-schema
+
+  packages/theme-schema:
+    dependencies:
+      typebox:
+        specifier: 1.3.33
+        version: 1.3.33
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.5
+        version: 24.13.5
+
   packages/ui:
     dependencies:
       '@ant-design/icons':
         specifier: 6.3.4
         version: 6.3.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@launchpp/theme-runtime':
+        specifier: workspace:*
+        version: link:../theme-runtime
       '@launchpp/ui-tokens':
         specifier: workspace:*
         version: link:../ui-tokens
@@ -276,6 +298,10 @@ importers:
         version: 8.3.0(@types/node@24.13.5)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1)
 
   packages/ui-tokens:
+    dependencies:
+      '@launchpp/theme-schema':
+        specifier: workspace:*
+        version: link:../theme-schema
     devDependencies:
       '@types/node':
         specifier: 24.13.5

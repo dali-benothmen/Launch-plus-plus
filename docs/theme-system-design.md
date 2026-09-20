@@ -1,6 +1,6 @@
 # Launch++ theme system
 
-Status: architecture proposal for review. No theme runtime, schema, or authoring tools have been implemented.
+Status: base theme contract and runtime implemented. JSON import, server persistence, preview tooling, and the authoring CLI remain later delivery work.
 
 This subsystem design is part of the [Launch++ architecture documentation](./README.md). The [system architecture](./system-architecture.md) defines the application host; this document owns theme authoring, validation, resolution, and distribution.
 

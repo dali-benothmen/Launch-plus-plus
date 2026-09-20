@@ -169,7 +169,11 @@ export const PluginContextSchema = StrictObject(
     surfaceId: IdentifierSchema,
     theme: StrictObject({
       id: Type.String({ maxLength: 120, minLength: 1 }),
-      mode: Type.Union([Type.Literal("light"), Type.Literal("dark")]),
+      mode: Type.Union([
+        Type.Literal("light"),
+        Type.Literal("dark"),
+        Type.Literal("high-contrast"),
+      ]),
       tokens: Type.Record(
         Type.String({ pattern: "^--launch-[a-z0-9-]+$" }),
         Type.String({ maxLength: 256 }),

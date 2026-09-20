@@ -2,6 +2,7 @@ import "../styles.css";
 
 export {
   AppstoreOutlined as ProjectsIcon,
+  BgColorsOutlined as ThemeIcon,
   HomeOutlined as HomeIcon,
   MenuFoldOutlined as CollapseNavigationIcon,
   MenuUnfoldOutlined as ExpandNavigationIcon,

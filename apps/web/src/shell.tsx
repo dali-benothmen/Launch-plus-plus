@@ -1,13 +1,14 @@
 import {
   Button,
-  DarkThemeIcon,
   Drawer,
+  Dropdown,
+  type DropdownMenuItem,
   ExpandNavigationIcon,
   HomeIcon,
-  LightThemeIcon,
   MembersIcon,
   SearchIcon,
   SettingsIcon,
+  ThemeIcon,
   Tooltip,
 } from "@launchpp/ui";
 import { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { GlobalSearch } from "./global-search.js";
 import { InvalidationListener } from "./invalidation.js";
 import { ProjectSidebar } from "./project-sidebar.js";
-import { useThemeController } from "./theme-context.js";
+import { themeOptions, useThemeController } from "./theme-context.js";
 
 const iconLinks = [
   { icon: <HomeIcon aria-hidden />, label: "My Work", to: "/app" },
@@ -31,6 +32,11 @@ export function AppShell() {
   const [projectNavigationOpen, setProjectNavigationOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const themeItems: readonly DropdownMenuItem[] = themeOptions.map((option) => ({
+    key: option.value,
+    label: option.value === theme.themeId ? `${option.label} (current)` : option.label,
+    onClick: () => theme.setTheme(option.value),
+  }));
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
@@ -98,16 +104,16 @@ export function AppShell() {
             </Tooltip>
           ))}
         </nav>
-        <Tooltip placement="right" title={`Use ${theme.mode === "light" ? "dark" : "light"} theme`}>
+        <Dropdown menu={{ items: themeItems }} placement="rightBottom" trigger={["click"]}>
           <Button
-            aria-label={`Use ${theme.mode === "light" ? "dark" : "light"} theme`}
-            icon={theme.mode === "light" ? <DarkThemeIcon /> : <LightThemeIcon />}
+            aria-label="Choose appearance"
+            icon={<ThemeIcon />}
             iconOnly
-            onClick={theme.toggle}
             size="large"
+            title={theme.theme.name}
             variant="text"
           />
-        </Tooltip>
+        </Dropdown>
       </aside>
 
       {compact ? (

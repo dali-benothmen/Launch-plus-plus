@@ -30,7 +30,8 @@ function requiredHostOrigin(): string {
 }
 
 function applyTheme(context: PluginContext): void {
-  document.documentElement.setAttribute("data-launch-theme", context.theme.mode);
+  document.documentElement.setAttribute("data-launch-theme", context.theme.id);
+  document.documentElement.setAttribute("data-launch-theme-appearance", context.theme.mode);
   for (const [name, value] of Object.entries(context.theme.tokens)) {
     document.documentElement.style.setProperty(name, value);
   }
