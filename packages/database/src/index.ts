@@ -4,7 +4,24 @@ export {
   type IdempotencyScope,
   SqliteIdempotencyRepository,
 } from "./idempotency-repository.js";
+export {
+  acquireInstallationLock,
+  type InstallationLock,
+  InstallationLockedError,
+  installationLockPath,
+} from "./installation-lock.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
+export {
+  createInstallationBackup,
+  type DatabaseVerification,
+  defaultBackupPath,
+  type InstallationBackupResult,
+  type InstallationRestoreResult,
+  migrateInstallationDatabase,
+  restoreInstallationBackup,
+  verifyInstallationBackup,
+  verifySqliteDatabase,
+} from "./local-operations.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";

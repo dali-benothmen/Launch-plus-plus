@@ -1,0 +1,22 @@
+services:
+  launchpp:
+    build:
+      context: .
+    environment:
+      LAUNCHPP_AUTH_SECRET: "${LAUNCHPP_AUTH_SECRET:?Set LAUNCHPP_AUTH_SECRET to at least 32 characters}"
+      LAUNCHPP_BASE_URL: "${LAUNCHPP_BASE_URL:?Set LAUNCHPP_BASE_URL to the public HTTPS origin}"
+      LAUNCHPP_LOG_LEVEL: "${LAUNCHPP_LOG_LEVEL:-info}"
+      LAUNCHPP_TRUSTED_PROXIES: "${LAUNCHPP_TRUSTED_PROXIES:-}"
+    init: true
+    ports:
+      - "${LAUNCHPP_HOST_ADDRESS:-127.0.0.1}:${LAUNCHPP_HOST_PORT:-3000}:3000"
+    read_only: true
+    restart: unless-stopped
+    stop_grace_period: 20s
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - launchpp-data:/data
+
+volumes:
+  launchpp-data:

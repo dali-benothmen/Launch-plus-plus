@@ -94,12 +94,19 @@ export async function registerEventRoutes(
         );
       };
 
-      const unsubscribe = input.hub.subscribe((event) => {
-        const membership = input.database.read((context) =>
-          memberships.find(context, event.workspaceId, session.identity.id),
-        );
-        if (membership?.state === "active") write(event);
-      });
+      const unsubscribe = input.hub.subscribe(
+        (event) => {
+          const membership = input.database.read((context) =>
+            memberships.find(context, event.workspaceId, session.identity.id),
+          );
+          if (membership?.state === "active") write(event);
+        },
+        () => {
+          if (reply.raw.destroyed) return;
+          reply.raw.write('event: reconnect\ndata: {"reason":"server_shutdown"}\n\n');
+          reply.raw.end();
+        },
+      );
       let replay: ReturnType<SqliteProjectionRepository["listInvalidations"]>;
       do {
         replay = input.database.read((context) =>

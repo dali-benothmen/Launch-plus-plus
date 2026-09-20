@@ -15,6 +15,7 @@ interface LaunchEnvironment extends NodeJS.ProcessEnv {
   LAUNCHPP_RATE_LIMIT_WINDOW_MS?: string;
   LAUNCHPP_SHUTDOWN_GRACE_MS?: string;
   LAUNCHPP_TRUSTED_PROXIES?: string;
+  LAUNCHPP_WEB_ROOT?: string;
   NODE_ENV?: string;
 }
 
@@ -29,6 +30,7 @@ const launchEnvironmentKeys = new Set([
   "LAUNCHPP_RATE_LIMIT_WINDOW_MS",
   "LAUNCHPP_SHUTDOWN_GRACE_MS",
   "LAUNCHPP_TRUSTED_PROXIES",
+  "LAUNCHPP_WEB_ROOT",
 ]);
 
 export interface ServerConfig {
@@ -42,6 +44,7 @@ export interface ServerConfig {
   readonly rateLimit: Readonly<{ max: number; windowMs: number }>;
   readonly shutdownGraceMs: number;
   readonly trustedProxies: readonly string[];
+  readonly webRoot?: string;
 }
 
 export class ConfigurationError extends Error {
@@ -137,6 +140,8 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
       .filter(Boolean),
   );
 
+  const webRoot = variables.LAUNCHPP_WEB_ROOT?.trim();
+
   return Object.freeze({
     authSecret,
     baseUrl,
@@ -166,5 +171,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
       120_000,
     ),
     trustedProxies,
+    ...(webRoot ? { webRoot } : {}),
   });
 }

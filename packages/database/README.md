@@ -36,4 +36,6 @@ pnpm test:migrations
 
 Runtime startup uses Drizzle's synchronous migrator. All pending migration statements run inside one SQLite transaction. If any statement fails, the set rolls back; startup closes the connection and remains unavailable. Fix or restore the migration input, then retry against the unchanged pre-migration schema. Never edit a migration that has shipped—add a new ordered migration.
 
-The migration metadata table can exist after an initial failure because Drizzle creates it before the migration transaction; it contains no applied entry for the rolled-back set. Backups and installation-level recovery are added with the supported local operations milestone.
+The migration metadata table can exist after an initial failure because Drizzle creates it before the migration transaction; it contains no applied entry for the rolled-back set.
+
+The local operations API uses SQLite's online backup mechanism, emits a SHA-256 manifest, and verifies integrity plus foreign keys before declaring a backup valid. Restore requires exclusive ownership through the same installation lock used by the server, preserves the current database as a recovery backup, migrates a temporary copy, verifies it, and only then replaces the destination. The supported operator commands are documented in the [local operations guide](../../docs/local-operations.md).

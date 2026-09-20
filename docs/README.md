@@ -1,6 +1,6 @@
 # Launch++ architecture documentation
 
-Status: target architecture for the first implementation. The repository does not yet contain application code.
+Status: target architecture with the core-alpha implementation in progress.
 
 Launch++ is a minimal, open-source project manager that grows through plugins and themes. The architecture is designed around a small domain core, a stable extension platform, a clean React client, and a single self-hostable server that works on a laptop or VPS.
 
@@ -18,6 +18,7 @@ Launch++ is a minimal, open-source project manager that grows through plugins an
 | [Plugin CLI](./plugin-cli-design.md) | Scaffolding, disposable/connected live development, build adapters, generation, validation, tests, normalized packaging, inspection, and SDK upgrades |
 | [Theme system](./theme-system-design.md) | Semantic tokens, JSON format, runtime resolution, installation, accessibility, and plugin integration |
 | [Security and operations](./security-and-operations.md) | Trust boundaries, authentication, authorization, secrets, deployment, backups, observability, and recovery |
+| [Local operations](./local-operations.md) | Implemented local/container startup, migration, backup, verification, restore, and shutdown commands |
 | [Development and delivery](./development-and-delivery.md) | Proposed monorepo, dependency rules, developer workflow, testing, CI, releases, and implementation phases |
 | [Package boundaries](./package-boundaries.md) | Active workspace ownership, visibility, and allowed dependency directions |
 | [Implementation roadmap](./implementation-roadmap.md) | Ordered phases, task IDs, dependencies, release boundaries, verification, and exit gates |
@@ -79,7 +80,7 @@ If two documents conflict, resolve the conflict before implementation rather tha
 
 ## Current repository state
 
-Only design documents and a placeholder npm package exist. Commands, packages, endpoints, schemas, directory trees, and performance targets in these documents are proposed. They become real contracts only after implementation, tests, and an explicit supported release.
+The repository contains the implemented Phase 0 foundation and an in-progress core alpha. The implementation roadmap and package guides identify what is operational today; later-phase commands and structures in design documents remain proposals until implemented. Nothing is an explicitly supported public release yet.
 
 ## External technical references
 

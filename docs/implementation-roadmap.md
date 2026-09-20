@@ -125,7 +125,7 @@ All Phase 0 exit conditions pass on a clean machine.
 - [x] **P1-09 — Build route-backed task detail.** Add identity/state, description, subtasks, labels, assignees, due date, comments, and activity. Use a desktop panel and narrow-screen page with predictable focus restoration.
 - [x] **P1-10 — Add search, activity, outbox dispatch, and SSE invalidation.** Implement permission-filtered SQLite FTS, activity projection, durable dispatch, SSE reconnect behavior, and authoritative query invalidation.
 - [x] **P1-11 — Complete the base theme system.** Implement theme schema/resolution and built-in Light, Dark, and High Contrast documents. Map resolved tokens into stable CSS variables and Ant Design configuration.
-- [ ] **P1-12 — Add local operations.** Produce the first runnable local/container distribution, migration runner, installation backup, restore verification, safe shutdown, and operator-facing failure messages.
+- [x] **P1-12 — Add local operations.** Produce the first runnable local/container distribution, migration runner, installation backup, restore verification, safe shutdown, and operator-facing failure messages.
 - [ ] **P1-13 — Qualify the solo journey.** Cover setup → project → tasks → Board/List → task detail → search → backup/restore with Playwright, accessibility checks, migration fixtures, and reference performance measurements.
 
 ### Exit gate — Core alpha
