@@ -1,9 +1,7 @@
 import {
   Button,
-  Drawer,
   Dropdown,
   type DropdownMenuItem,
-  ExpandNavigationIcon,
   HomeIcon,
   MembersIcon,
   SearchIcon,
@@ -15,39 +13,22 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { GlobalSearch } from "./global-search.js";
 import { InvalidationListener } from "./invalidation.js";
-import { ProjectSidebar } from "./project-sidebar.js";
 import { themeOptions, useThemeController } from "./theme-context.js";
 
 const iconLinks = [
-  { icon: <HomeIcon aria-hidden />, label: "My Work", to: "/app" },
+  { icon: <HomeIcon aria-hidden />, label: "Home", to: "/app" },
   { icon: <MembersIcon aria-hidden />, label: "Members", to: "/app/members" },
   { icon: <SettingsIcon aria-hidden />, label: "Settings", to: "/app/settings" },
 ] as const;
 
 export function AppShell() {
   const theme = useThemeController();
-  const [compact, setCompact] = useState(() =>
-    typeof window === "undefined" ? false : window.matchMedia("(max-width: 760px)").matches,
-  );
-  const [projectNavigationOpen, setProjectNavigationOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const themeItems: readonly DropdownMenuItem[] = themeOptions.map((option) => ({
     key: option.value,
     label: option.value === theme.themeId ? `${option.label} (current)` : option.label,
     onClick: () => theme.setTheme(option.value),
   }));
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 760px)");
-    const update = () => {
-      setCompact(media.matches);
-      if (!media.matches) setProjectNavigationOpen(false);
-    };
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
 
   useEffect(() => {
     const openSearch = (event: KeyboardEvent) => {
@@ -61,7 +42,7 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className={`app-shell${sidebarCollapsed && !compact ? " is-sidebar-collapsed" : ""}`}>
+    <div className="app-shell">
       <InvalidationListener />
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -70,17 +51,6 @@ export function AppShell() {
         <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
           L+
         </NavLink>
-        {compact ? (
-          <Tooltip placement="right" title="Open workspace sidebar">
-            <Button
-              aria-label="Open workspace sidebar"
-              icon={<ExpandNavigationIcon />}
-              iconOnly
-              onClick={() => setProjectNavigationOpen(true)}
-              variant="text"
-            />
-          </Tooltip>
-        ) : null}
         <nav className="rail-links">
           <Tooltip placement="right" title="Search">
             <Button
@@ -115,28 +85,6 @@ export function AppShell() {
           />
         </Dropdown>
       </aside>
-
-      {compact ? (
-        <Drawer
-          mask
-          onClose={() => setProjectNavigationOpen(false)}
-          open={projectNavigationOpen}
-          placement="left"
-          size="min(86vw, 320px)"
-          title="Workspaces and projects"
-        >
-          <ProjectSidebar
-            embedded
-            onCollapseToggle={() => setProjectNavigationOpen(false)}
-            onNavigate={() => setProjectNavigationOpen(false)}
-          />
-        </Drawer>
-      ) : (
-        <ProjectSidebar
-          collapsed={sidebarCollapsed}
-          onCollapseToggle={() => setSidebarCollapsed((current) => !current)}
-        />
-      )}
 
       <main id="main-content" tabIndex={-1}>
         <Outlet />

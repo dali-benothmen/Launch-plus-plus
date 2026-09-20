@@ -36,9 +36,3 @@ export function availableWorkspaceSlug(
   }
   return candidate;
 }
-
-export function defaultWorkspaceName(displayName: string): string {
-  const name = displayName.trim().replace(/\s+/g, " ");
-  if (name.length === 0) return "My Workspace";
-  return normalizeWorkspaceName(`${name.slice(0, 66)}'s Workspace`);
-}

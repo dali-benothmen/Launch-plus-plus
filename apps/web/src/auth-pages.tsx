@@ -160,6 +160,38 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
   return children;
 }
 
+export function WorkspaceRequiredRoute({ children }: PropsWithChildren) {
+  const api = useApiClient();
+  const [hasWorkspace, setHasWorkspace] = useState<boolean>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    let active = true;
+    void api.workspaces
+      .list()
+      .then((context) => {
+        if (active) setHasWorkspace(Boolean(context.currentWorkspaceId));
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(reason);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  if (error) {
+    return (
+      <AuthLayout title="Unable to open your workspace">
+        <ErrorMessage error={error} />
+      </AuthLayout>
+    );
+  }
+  if (hasWorkspace === undefined) return <Spin fullscreen description="Loading workspace" />;
+  if (!hasWorkspace) return <Navigate replace to="/workspace-setup" />;
+  return children;
+}
+
 export function SetupPage() {
   const api = useApiClient();
   const navigate = useNavigate();
@@ -208,7 +240,7 @@ export function SetupPage() {
         name: String(data.get("name") ?? ""),
         password: String(data.get("password") ?? ""),
       });
-      navigate("/app/projects/new", { replace: true });
+      navigate("/workspace-setup", { replace: true });
     } catch (reason) {
       setError(reason);
     } finally {
@@ -258,6 +290,78 @@ export function SetupPage() {
         </Field>
         <Button block loading={loading} type="submit" variant="primary">
           Create owner account
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export function WorkspaceSetupPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [error, setError] = useState<unknown>();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void api.workspaces
+      .list()
+      .then((context) => {
+        if (!active) return;
+        if (context.currentWorkspaceId) {
+          navigate("/app", { replace: true });
+          return;
+        }
+        setChecking(false);
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason);
+        setChecking(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, navigate]);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get("workspaceName") ?? "").trim();
+    if (!name) return;
+    setError(undefined);
+    setLoading(true);
+    try {
+      await api.workspaces.create(name);
+      navigate("/app", { replace: true });
+    } catch (reason) {
+      setError(reason);
+      setLoading(false);
+    }
+  };
+
+  if (checking) return <Spin fullscreen description="Preparing your workspace" />;
+
+  return (
+    <AuthLayout title="Create your workspace">
+      <Typography.Paragraph type="secondary">
+        Give the place where your projects live a clear name. You can change it later.
+      </Typography.Paragraph>
+      <form className="auth-form" onSubmit={submit}>
+        <ErrorMessage error={error} />
+        <Field htmlFor="workspace-name" label="Workspace name">
+          <Input
+            autoFocus
+            id="workspace-name"
+            maxLength={80}
+            name="workspaceName"
+            placeholder="Acme"
+            required
+          />
+        </Field>
+        <Button block loading={loading} type="submit" variant="primary">
+          Continue
         </Button>
       </form>
     </AuthLayout>

@@ -18,10 +18,11 @@ import {
   RecoveryPage,
   SetupPage,
   SignInPage,
+  WorkspaceRequiredRoute,
+  WorkspaceSetupPage,
 } from "./auth-pages.js";
 import {
   MembersPage,
-  MyWorkPage,
   ProjectCreationEntryPage,
   ProjectOverviewPage,
   SettingsPage,
@@ -29,6 +30,7 @@ import {
 import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
+import { WorkspaceHomePage } from "./workspace-home.js";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -60,15 +62,25 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: "/workspace-setup",
+    element: (
+      <AuthenticatedRoute>
+        <WorkspaceSetupPage />
+      </AuthenticatedRoute>
+    ),
+  },
+  {
     path: "/app",
     element: (
       <AuthenticatedRoute>
-        <AppShell />
+        <WorkspaceRequiredRoute>
+          <AppShell />
+        </WorkspaceRequiredRoute>
       </AuthenticatedRoute>
     ),
     errorElement: <RouteFailurePage />,
     children: [
-      { index: true, element: <MyWorkPage />, errorElement: <RouteFailurePage /> },
+      { index: true, element: <WorkspaceHomePage />, errorElement: <RouteFailurePage /> },
       {
         path: "projects/new",
         element: <ProjectCreationEntryPage />,

@@ -111,6 +111,7 @@ export const ProjectSummarySchema = StrictObject(
   {
     access: Type.Union([Type.Literal("restricted"), Type.Literal("workspace")]),
     archivedAt: Type.Optional(TimestampSchema),
+    createdByUserId: Type.Optional(IdentifierSchema),
     description: Type.String({ maxLength: 20_000 }),
     favorite: Type.Boolean(),
     folderId: Type.Optional(IdentifierSchema),
@@ -121,6 +122,7 @@ export const ProjectSummarySchema = StrictObject(
     position: Type.Integer({ minimum: 0 }),
     revision: RevisionSchema,
     slug: Type.String({ maxLength: 160, minLength: 1 }),
+    updatedAt: Type.Optional(TimestampSchema),
     workspaceId: IdentifierSchema,
   },
   { $id: "LaunchppProjectSummaryV1" },

@@ -73,14 +73,10 @@ export {
   CreateWorkspaceService,
 } from "./workspaces/create-workspace.js";
 export {
-  type EnsureOwnerWorkspaceDependencies,
-  EnsureOwnerWorkspaceService,
-} from "./workspaces/ensure-owner-workspace.js";
-export {
-  type InitializeOwnerWorkspaceDependencies,
-  type InitializeOwnerWorkspaceInput,
-  InitializeOwnerWorkspaceService,
-} from "./workspaces/initialize-owner-workspace.js";
+  type InitializeOwnerDependencies,
+  type InitializeOwnerInput,
+  InitializeOwnerService,
+} from "./workspaces/initialize-owner.js";
 export {
   type RenameWorkspaceDependencies,
   type RenameWorkspaceInput,

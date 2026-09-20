@@ -71,6 +71,7 @@ function projectSummary(
   return {
     access: project.access,
     ...(project.archivedAt === undefined ? {} : { archivedAt: project.archivedAt }),
+    createdByUserId: project.createdByUserId,
     description: project.description,
     favorite: project.favorite ?? false,
     ...(project.folderId === undefined ? {} : { folderId: project.folderId }),
@@ -81,6 +82,7 @@ function projectSummary(
     position: project.position,
     revision: project.revision,
     slug: project.slug,
+    updatedAt: project.updatedAt,
     workspaceId: project.workspaceId,
   };
 }

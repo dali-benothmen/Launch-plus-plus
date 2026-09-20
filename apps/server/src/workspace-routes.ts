@@ -14,7 +14,6 @@ import {
 } from "@launchpp/authorization";
 import {
   CreateWorkspaceService,
-  EnsureOwnerWorkspaceService,
   RenameWorkspaceService,
   SelectCurrentWorkspaceService,
   type Workspace,
@@ -87,7 +86,6 @@ export async function registerWorkspaceRoutes(
     workspaces,
   };
   const createWorkspace = new CreateWorkspaceService(shared);
-  const ensureWorkspace = new EnsureOwnerWorkspaceService(shared);
   const renameWorkspace = new RenameWorkspaceService(shared);
   const selectWorkspace = new SelectCurrentWorkspaceService({
     clock: Date.now,
@@ -140,16 +138,7 @@ export async function registerWorkspaceRoutes(
         );
       }
 
-      let result = queryWorkspaces.forUser(session.identity.id);
-      if (result.workspaces.length === 0 || !result.currentWorkspaceId) {
-        await ensureWorkspace.execute({
-          correlationId: request.id,
-          displayName: session.identity.name,
-          installationId: currentInstallation.id,
-          userId: session.identity.id,
-        });
-        result = queryWorkspaces.forUser(session.identity.id);
-      }
+      const result = queryWorkspaces.forUser(session.identity.id);
       const page = cursorPage(
         result.workspaces,
         { ...request.query, scope: `workspaces:${session.identity.id}` },

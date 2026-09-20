@@ -75,14 +75,9 @@
 
 .app-shell {
   display: grid;
-  grid-template-columns: 64px 248px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--launch-color-bg-canvas);
-  transition: grid-template-columns var(--launch-motion-slow) var(--launch-ease-in-out);
-}
-
-.app-shell.is-sidebar-collapsed {
-  grid-template-columns: 64px 52px minmax(0, 1fr);
 }
 
 .skip-link {
@@ -147,95 +142,6 @@
 .rail-link.is-active {
   background: var(--launch-color-bg-subtle);
   color: var(--launch-color-accent);
-}
-
-.project-sidebar {
-  min-width: 0;
-  overflow: hidden;
-  padding: 22px 16px;
-  border-right: 1px solid var(--launch-color-border);
-  background: var(--launch-color-bg-elevated);
-  transition: padding-inline var(--launch-motion-slow) var(--launch-ease-in-out);
-}
-
-.project-sidebar.is-embedded {
-  padding: 0;
-  border-right: 0;
-}
-
-.project-sidebar.is-collapsed {
-  padding-inline: 10px;
-}
-
-.project-sidebar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  transition: gap var(--launch-motion-slow) var(--launch-ease-in-out);
-}
-
-.project-sidebar.is-collapsed .project-sidebar-actions {
-  gap: 0;
-  justify-content: center;
-}
-
-.project-sidebar-create-action {
-  min-width: 0;
-  max-width: 176px;
-  overflow: hidden;
-  flex: 1;
-  opacity: 1;
-  transition:
-    max-width var(--launch-motion-slow) var(--launch-ease-in-out),
-    opacity var(--launch-motion-mid) var(--launch-ease-in-out);
-}
-
-.project-sidebar.is-collapsed .project-sidebar-create-action {
-  max-width: 0;
-  opacity: 0;
-}
-
-.project-sidebar-body {
-  opacity: 1;
-  transform: translateX(0);
-  visibility: visible;
-  transition:
-    opacity var(--launch-motion-mid) var(--launch-ease-in-out),
-    transform var(--launch-motion-slow) var(--launch-ease-in-out),
-    visibility 0s;
-}
-
-.project-sidebar:not(.is-embedded) .project-sidebar-body {
-  width: 216px;
-}
-
-.project-sidebar.is-collapsed .project-sidebar-body {
-  opacity: 0;
-  transform: translateX(-8px);
-  visibility: hidden;
-  transition:
-    opacity var(--launch-motion-mid) var(--launch-ease-in-out),
-    transform var(--launch-motion-slow) var(--launch-ease-in-out),
-    visibility 0s var(--launch-motion-slow);
-}
-
-.project-tree-context-surface {
-  min-height: 1px;
-  overflow: hidden;
-}
-
-.project-tree-workspace + .project-tree-workspace {
-  margin-top: 8px;
-}
-
-.project-tree-status {
-  display: flex;
-  min-height: 96px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
 }
 
 #main-content {
@@ -335,6 +241,53 @@
 .my-work-item-copy {
   display: grid;
   min-width: 0;
+  gap: 2px;
+}
+
+.workspace-home {
+  display: grid;
+  gap: 40px;
+}
+
+.workspace-welcome-content,
+.workspace-section-heading,
+.workspace-actions,
+.workspace-breadcrumb {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-welcome-content,
+.workspace-section-heading {
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.workspace-welcome-content > :first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.workspace-section {
+  display: grid;
+  gap: 18px;
+}
+
+.workspace-actions,
+.workspace-breadcrumb {
+  gap: 8px;
+}
+
+.project-card-grid,
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.project-card-copy,
+.project-table-name {
+  display: grid;
   gap: 2px;
 }
 
@@ -518,16 +471,6 @@
   background: transparent;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .app-shell,
-  .project-sidebar,
-  .project-sidebar-actions,
-  .project-sidebar-create-action,
-  .project-sidebar-body {
-    transition: none;
-  }
-}
-
 @media (max-width: 760px) {
   .auth-layout {
     grid-template-columns: 1fr;
@@ -542,10 +485,6 @@
   }
   .app-shell {
     grid-template-columns: 56px minmax(0, 1fr);
-  }
-
-  .project-sidebar:not(.is-embedded) {
-    display: none;
   }
 
   .icon-rail {
@@ -585,5 +524,15 @@
 
   .my-work-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workspace-welcome-content,
+  .workspace-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workspace-actions {
+    flex-wrap: wrap;
   }
 }

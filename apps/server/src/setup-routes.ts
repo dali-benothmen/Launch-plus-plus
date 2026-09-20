@@ -1,14 +1,12 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
-import { InitializeOwnerWorkspaceService } from "@launchpp/core";
+import { InitializeOwnerService } from "@launchpp/core";
 import {
   type SqliteDatabase,
   SqliteAuditWriter,
   SqliteInstallationRepository,
   SqliteOutboxRepository,
   SqliteUserProfileRepository,
-  SqliteWorkspaceMembershipRepository,
-  SqliteWorkspaceRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -100,8 +98,6 @@ export function createSetupCoordinator(input: {
   const installations = new SqliteInstallationRepository();
   const outbox = new SqliteOutboxRepository();
   const profiles = new SqliteUserProfileRepository();
-  const workspaces = new SqliteWorkspaceRepository();
-  const memberships = new SqliteWorkspaceMembershipRepository();
   const audit = new SqliteAuditWriter();
   let initialized = input.database.read(
     (context) => installations.findFirst(context) !== undefined,
@@ -113,16 +109,14 @@ export function createSetupCoordinator(input: {
   const setupClaimHashes: Buffer[] = [];
   const expiresAt = Date.now() + 30 * 60 * 1000;
   let setupInProgress = false;
-  const service = new InitializeOwnerWorkspaceService({
+  const service = new InitializeOwnerService({
     audit,
     clock: Date.now,
     generateId: randomUUID,
     installations,
-    memberships,
     outbox,
     profiles,
     transactions: input.database,
-    workspaces,
   });
   const secureCookie = new URL(input.baseUrl).protocol === "https:";
   const localSetupOrigin = isLoopbackOrigin(input.baseUrl);

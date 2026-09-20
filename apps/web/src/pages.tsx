@@ -25,7 +25,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
-import { projectNavigationChangedEvent } from "./project-sidebar.js";
+import { projectNavigationChangedEvent } from "./project-navigation.js";
 import { ProjectTaskWorkspace } from "./project-tasks.js";
 import { ResourceFailure } from "./route-boundaries.js";
 
