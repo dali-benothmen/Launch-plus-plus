@@ -126,16 +126,16 @@ All Phase 0 exit conditions pass on a clean machine.
 - [x] **P1-10 — Add search, activity, outbox dispatch, and SSE invalidation.** Implement permission-filtered SQLite FTS, activity projection, durable dispatch, SSE reconnect behavior, and authoritative query invalidation.
 - [x] **P1-11 — Complete the base theme system.** Implement theme schema/resolution and built-in Light, Dark, and High Contrast documents. Map resolved tokens into stable CSS variables and Ant Design configuration.
 - [x] **P1-12 — Add local operations.** Produce the first runnable local/container distribution, migration runner, installation backup, restore verification, safe shutdown, and operator-facing failure messages.
-- [ ] **P1-13 — Qualify the solo journey.** Cover setup → project → tasks → Board/List → task detail → search → backup/restore with Playwright, accessibility checks, migration fixtures, and reference performance measurements.
+- [x] **P1-13 — Qualify the solo journey.** Cover setup → project → tasks → Board/List → task detail → search → backup/restore with Playwright, accessibility checks, migration fixtures, and reference performance measurements.
 
 ### Exit gate — Core alpha
 
-- [ ] A fresh installation reaches a usable Board without documentation or onboarding questions.
-- [ ] Board, List, task detail, search, and activity agree on the same underlying task state.
-- [ ] Keyboard-only users can complete the primary task journey.
-- [ ] A concurrent update produces a recoverable conflict rather than silent data loss.
-- [ ] Backup and restore reproduce the workspace on a clean installation.
-- [ ] The product remains fully usable with the plugin platform disabled.
+- [x] A fresh installation reaches a usable Board without documentation or onboarding questions.
+- [x] Board, List, task detail, search, and activity agree on the same underlying task state.
+- [x] Keyboard-only users can complete the primary task journey.
+- [x] A concurrent update produces a recoverable conflict rather than silent data loss.
+- [x] Backup and restore reproduce the workspace on a clean installation.
+- [x] The product remains fully usable with the plugin platform disabled.
 
 ## Phase 2 — plugin author preview
 

@@ -6,7 +6,7 @@ This document defines where Launch++ is expected to run, what data shapes qualif
 
 ## Browser support policy
 
-The current automated feasibility reference is the Playwright-bundled desktop Chromium used by `pnpm test:browser`. It proves the iframe protocol and containment behavior; it does not yet qualify the complete application in every target browser.
+The current automated reference is the Playwright-bundled desktop Chromium. `pnpm test:browser` proves the iframe protocol and containment behavior, while `pnpm test:solo` qualifies the core solo application journey. It does not qualify the complete application in every target browser.
 
 The v1 support target is:
 
@@ -40,6 +40,7 @@ Dataset generators will use a fixed seed, stable timestamps, realistic text-size
 | Dataset | Shape | Use |
 | --- | --- | --- |
 | Foundation | Empty migrated database; 200 installation-plus-outbox transactions; 500 indexed reads; one 983-byte normalized plugin fixture; 15 fresh isolated handler invocations; 250 readiness injections | Current repeatable architecture baseline |
+| Core alpha | 250 tasks in one solo project; 250 indexed task-page reads; five fresh migrations; five backups and restores; twenty backup verifications | Current solo operations and artifact baseline |
 | Small team | 25 members, 20 projects, 10,000 active tasks, 2,000 archived tasks, 50,000 comments, 250,000 activity/outbox facts, 20 installed plugins, 100,000 plugin-owned records, five concurrent custom surfaces | v1 supported local/VPS qualification target |
 | Stress | 100 members, 100 projects, 100,000 active tasks, 25,000 archived tasks, 500,000 comments, 2,000,000 activity/outbox facts, 50 installed plugins, 1,000,000 plugin-owned records, 20 concurrent custom surfaces | Find degradation and safety limits; not a supported capacity claim |
 
@@ -124,3 +125,17 @@ The immutable observation is stored at `tests/performance/baselines/foundation-l
 
 Performance work is prioritized when a gate fails, an operation approaches 80% of its gate in repeated captures, or a real workload exposes a metric absent from this document. Passing these foundation gates does not imply the future Small team dataset will pass.
 
+## Core alpha measurement gates
+
+The executable gates live in `tests/performance/core-alpha-budgets.json`. `pnpm measure:core-alpha` builds production artifacts, runs the fixed solo workload, prints a machine-readable report, and exits non-zero when a maximum is exceeded.
+
+| Metric | Observed | Maximum gate |
+| --- | ---: | ---: |
+| Fresh database migration, p95 | 95.018 ms | 1000 ms |
+| Indexed 50-task page read, p95 | 0.141 ms | 25 ms |
+| Online backup, p95 | 38.821 ms | 1000 ms |
+| Backup verification, p95 | 7.285 ms | 500 ms |
+| Restore into a clean installation, p95 | 19.598 ms | 1000 ms |
+| Web production distribution, per-file gzip sum | 237.5 KiB | 312.5 KiB |
+
+The retained observation is `tests/performance/baselines/core-alpha-local-2026-09-20.json`. These deliberately broad alpha gates detect severe regressions on developer hardware; they are not user-facing latency promises or a substitute for the future small-team reference tier.
