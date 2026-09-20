@@ -220,7 +220,19 @@ export function MyWorkPage() {
   const renderTask = ({ project, statusColor, statusName, task }: MyWorkTask) => (
     <div className="my-work-list-item">
       <div className="my-work-item-copy">
-        {projectLink(project, task.title)}
+        <Typography.Link
+          href={`${projectHref(project)}/tasks/${task.id}`}
+          onClick={(event) => {
+            event.preventDefault();
+            void api.projects
+              .markOpened(project.workspaceId, project.id)
+              .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
+              .catch(() => undefined);
+            navigate(`${projectHref(project)}/tasks/${task.id}`);
+          }}
+        >
+          {task.title}
+        </Typography.Link>
         <Typography.Text type="secondary">
           {task.reference} · {project.name}
         </Typography.Text>
@@ -428,7 +440,7 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
-  const { projectId, view, workspaceId } = useParams();
+  const { projectId, taskId, view, workspaceId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
   const [memberName, setMemberName] = useState("");
@@ -564,7 +576,9 @@ export function ProjectOverviewPage() {
         archived={project.archivedAt !== undefined}
         currentUserId={memberId}
         projectId={project.id}
+        projectName={project.name}
         statuses={statuses}
+        taskId={taskId}
         view={activeView}
         workspaceId={workspaceId ?? project.workspaceId}
       />

@@ -1,6 +1,6 @@
 import type { ProblemDetails } from "@launchpp/api-contracts";
 
-import { createCoreApiClient, type CoreApiClient } from "./generated.js";
+import { type CoreApiClient, createCoreApiClient } from "./generated.js";
 
 export type {
   CursorPageQuery,
@@ -10,6 +10,9 @@ export type {
   ProjectFolderSummary,
   ProjectStatusSummary,
   ProjectSummary,
+  TaskActivity,
+  TaskComment,
+  TaskDetail,
   TaskPage,
   TaskView,
   WorkspaceContext,

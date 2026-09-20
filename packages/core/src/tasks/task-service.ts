@@ -1,8 +1,16 @@
+import type { Project, ProjectRepository, ProjectStatus } from "../projects/project.js";
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { ReadContext, TransactionManager, WriteContext } from "../shared/transactions.js";
-import type { Project, ProjectRepository, ProjectStatus } from "../projects/project.js";
 import type { AuditWriter, WorkspaceMembershipRepository } from "../workspaces/workspace.js";
-import type { Label, Task, TaskCatalog, TaskRepository, TaskView } from "./task.js";
+import type {
+  Label,
+  Task,
+  TaskCatalog,
+  TaskComment,
+  TaskDetail,
+  TaskRepository,
+  TaskView,
+} from "./task.js";
 import {
   TaskAccessDeniedError,
   TaskAssigneeInvalidError,
@@ -73,6 +81,13 @@ function normalizeDescription(value: string | undefined) {
   return description;
 }
 
+function normalizeComment(value: string) {
+  const body = value.trim();
+  if (body.length === 0) throw new TypeError("Comment text is required.");
+  if (body.length > 20_000) throw new TypeError("Comments cannot exceed 20,000 characters.");
+  return body;
+}
+
 function normalizeDueDate(value: null | string | undefined): string | undefined {
   if (value === null || value === undefined || value.length === 0) return undefined;
   const match = datePattern.exec(value);
@@ -135,6 +150,66 @@ export class TaskService {
         labels: this.dependencies.tasks.listLabels(context, input.workspaceId, input.projectId),
         tasks,
       });
+    });
+  }
+
+  getDetail(
+    input: Readonly<{ projectId: string; taskId: string; userId: string; workspaceId: string }>,
+  ): TaskDetail {
+    if (
+      input.projectId.length === 0 ||
+      input.taskId.length === 0 ||
+      input.userId.length === 0 ||
+      input.workspaceId.length === 0
+    ) {
+      throw new TypeError("Workspace, project, task, and user identifiers are required.");
+    }
+    return this.dependencies.transactions.read((context) => {
+      this.requireActor(context, input.workspaceId, input.userId);
+      const project = this.requireProject(context, input.workspaceId, input.projectId);
+      const task = this.requireTask(context, input, input.taskId);
+      const subtasks = this.dependencies.tasks
+        .listTasks(context, input.workspaceId, input.projectId)
+        .filter((item) => item.parentTaskId === task.id)
+        .map((item) => this.toView(context, item, project));
+      return Object.freeze({
+        activity: this.dependencies.tasks.listTaskActivity(context, input.workspaceId, task.id),
+        availableLabels: this.dependencies.tasks.listLabels(
+          context,
+          input.workspaceId,
+          input.projectId,
+        ),
+        comments: this.dependencies.tasks.listComments(context, task.id),
+        subtasks,
+        task: this.toView(context, task, project),
+      });
+    });
+  }
+
+  createComment(
+    input: CommandContext & Readonly<{ body: string; taskId: string }>,
+  ): Promise<TaskComment> {
+    validateContext(input);
+    const body = normalizeComment(input.body);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.workspaceId, input.userId);
+      this.requireProject(context, input.workspaceId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const now = this.dependencies.clock();
+      const comment: TaskComment = Object.freeze({
+        authorUserId: input.userId,
+        body,
+        createdAt: now,
+        id: this.dependencies.generateId(),
+        projectId: input.projectId,
+        revision: 1,
+        taskId: task.id,
+        updatedAt: now,
+        workspaceId: input.workspaceId,
+      });
+      this.dependencies.tasks.createComment(context, comment);
+      this.record(context, input, "comment.created", task.id, { commentId: comment.id });
+      return comment;
     });
   }
 

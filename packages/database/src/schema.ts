@@ -388,6 +388,43 @@ export const tasks = sqliteTable(
   ],
 );
 
+export const taskComments = sqliteTable(
+  "task_comments",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    projectId: text("project_id").notNull(),
+    taskId: text("task_id").notNull(),
+    authorUserId: text("author_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    body: text("body_markdown").notNull(),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    index("task_comments_task_time_idx").on(table.taskId, table.createdAt),
+    foreignKey({
+      columns: [table.workspaceId, table.projectId],
+      foreignColumns: [projects.workspaceId, projects.id],
+      name: "task_comments_workspace_project_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.taskId],
+      foreignColumns: [tasks.workspaceId, tasks.id],
+      name: "task_comments_workspace_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.authorUserId],
+      foreignColumns: [workspaceMembers.workspaceId, workspaceMembers.userId],
+      name: "task_comments_workspace_author_fk",
+    }).onDelete("restrict"),
+    check("task_comments_body_not_blank", sql`length(trim(${table.body})) > 0`),
+    check("task_comments_revision_positive", sql`${table.revision} > 0`),
+  ],
+);
+
 export const taskAssignees = sqliteTable(
   "task_assignees",
   {
@@ -554,6 +591,7 @@ export const databaseSchema = {
   projectStatuses,
   projects,
   taskAssignees,
+  taskComments,
   taskLabels,
   tasks,
   userProfiles,

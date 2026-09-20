@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
 import type {
   ArchiveTaskInput,
   CreateLabelInput,
+  CreateTaskCommentInput,
   CreateTaskInput,
   CursorPageQuery,
   MoveTaskInput,
@@ -10,11 +10,13 @@ import type {
   ReplaceTaskLabelsInput,
   UpdateTaskInput,
 } from "@launchpp/api-contracts";
+import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import {
   type Label,
   TaskAccessDeniedError,
   TaskAssigneeInvalidError,
+  type TaskComment,
   TaskLabelInvalidError,
   TaskLabelNameConflictError,
   TaskNotFoundError,
@@ -27,8 +29,8 @@ import {
   type TaskView,
 } from "@launchpp/core";
 import {
-  type SqliteDatabase,
   SqliteAuditWriter,
+  type SqliteDatabase,
   SqliteIdempotencyRepository,
   SqliteInstallationRepository,
   SqliteOutboxRepository,
@@ -104,6 +106,20 @@ function taskSummary(task: TaskView) {
     updatedAt: task.updatedAt,
     updatedByUserId: task.updatedByUserId,
     workspaceId: task.workspaceId,
+  };
+}
+
+function commentSummary(comment: TaskComment) {
+  return {
+    authorUserId: comment.authorUserId,
+    body: comment.body,
+    createdAt: comment.createdAt,
+    id: comment.id,
+    projectId: comment.projectId,
+    revision: comment.revision,
+    taskId: comment.taskId,
+    updatedAt: comment.updatedAt,
+    workspaceId: comment.workspaceId,
   };
 }
 
@@ -226,6 +242,87 @@ export async function registerTaskRoutes(
           labels: catalog.labels.map(labelSummary),
           ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
         };
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.get<{ Params: TaskParams }>(
+    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId",
+    {
+      schema: {
+        operationId: "getTaskDetail",
+        params: { $ref: "LaunchppTaskParamsV1#" },
+        response: { 200: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Get task detail",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        const detail = service.getDetail({
+          projectId: request.params.projectId,
+          taskId: request.params.taskId,
+          userId: context.userId,
+          workspaceId: request.params.workspaceId,
+        });
+        return {
+          activity: detail.activity,
+          availableLabels: detail.availableLabels.map(labelSummary),
+          comments: detail.comments.map(commentSummary),
+          subtasks: detail.subtasks.map(taskSummary),
+          task: taskSummary(detail.task),
+        };
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: CreateTaskCommentInput; Params: TaskParams }>(
+    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/comments",
+    {
+      schema: {
+        body: { $ref: "LaunchppCreateTaskCommentInputV1#" },
+        headers: IdempotencyHeadersSchema,
+        operationId: "createTaskComment",
+        params: { $ref: "LaunchppTaskParamsV1#" },
+        response: { 201: { $ref: "LaunchppTaskCommentV1#" }, ...problemResponses },
+        summary: "Create a task comment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        return await executeIdempotent(
+          request,
+          reply,
+          idempotency,
+          {
+            actorUserId: context.userId,
+            operation: "task.comment.create",
+            payload: request.body,
+            scopeKey: `task:${request.params.taskId}`,
+          },
+          async () => {
+            const comment = await service.createComment({
+              ...context,
+              ...request.body,
+              correlationId: request.id,
+              projectId: request.params.projectId,
+              taskId: request.params.taskId,
+              workspaceId: request.params.workspaceId,
+            });
+            return { body: commentSummary(comment), status: 201 };
+          },
+        );
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;

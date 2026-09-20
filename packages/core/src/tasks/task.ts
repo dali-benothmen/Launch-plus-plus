@@ -39,12 +39,41 @@ export interface TaskView extends Task {
   readonly reference: string;
 }
 
+export interface TaskComment {
+  readonly authorUserId: string;
+  readonly body: string;
+  readonly createdAt: number;
+  readonly id: string;
+  readonly projectId: string;
+  readonly revision: number;
+  readonly taskId: string;
+  readonly updatedAt: number;
+  readonly workspaceId: string;
+}
+
+export interface TaskActivity {
+  readonly actorUserId?: string;
+  readonly id: string;
+  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly occurredAt: number;
+  readonly operation: string;
+}
+
+export interface TaskDetail {
+  readonly activity: readonly TaskActivity[];
+  readonly availableLabels: readonly Label[];
+  readonly comments: readonly TaskComment[];
+  readonly subtasks: readonly TaskView[];
+  readonly task: TaskView;
+}
+
 export interface TaskCatalog {
   readonly labels: readonly Label[];
   readonly tasks: readonly TaskView[];
 }
 
 export interface TaskRepository {
+  createComment(context: WriteContext, comment: TaskComment): void;
   createLabel(context: WriteContext, label: Label): void;
   createTask(context: WriteContext, task: Task): void;
   findLabelById(context: ReadContext, labelId: string): Label | undefined;
@@ -56,8 +85,14 @@ export interface TaskRepository {
   ): Label | undefined;
   findTaskById(context: ReadContext, taskId: string): Task | undefined;
   listAssigneeUserIds(context: ReadContext, taskId: string): readonly string[];
+  listComments(context: ReadContext, taskId: string): readonly TaskComment[];
   listLabels(context: ReadContext, workspaceId: string, projectId: string): readonly Label[];
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[];
+  listTaskActivity(
+    context: ReadContext,
+    workspaceId: string,
+    taskId: string,
+  ): readonly TaskActivity[];
   listTasks(
     context: ReadContext,
     workspaceId: string,

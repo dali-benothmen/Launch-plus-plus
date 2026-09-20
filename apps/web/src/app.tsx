@@ -84,6 +84,11 @@ export const appRoutes: RouteObject[] = [
         element: <ProjectOverviewPage />,
         errorElement: <RouteFailurePage />,
       },
+      {
+        path: "workspaces/:workspaceId/projects/:projectId/:view/tasks/:taskId",
+        element: <ProjectOverviewPage />,
+        errorElement: <RouteFailurePage />,
+      },
       { path: "members", element: <MembersPage />, errorElement: <RouteFailurePage /> },
       { path: "settings", element: <SettingsPage />, errorElement: <RouteFailurePage /> },
       ...(import.meta.env.VITE_ENABLE_PLUGIN_PROOF === "true"

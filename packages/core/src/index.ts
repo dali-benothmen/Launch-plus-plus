@@ -1,27 +1,17 @@
 export type {
-  Installation,
-  InstallationRepository,
-} from "./installations/installation.js";
+  AuthenticatedIdentity,
+  IdentityProvider,
+  IdentitySession,
+} from "./identity/identity-provider.js";
 export {
   type CreateInstallationDependencies,
   type CreateInstallationInput,
   CreateInstallationService,
 } from "./installations/create-installation.js";
 export type {
-  AuthenticatedIdentity,
-  IdentityProvider,
-  IdentitySession,
-} from "./identity/identity-provider.js";
-export type { OutboxMessage, OutboxWriter } from "./shared/outbox.js";
-export type {
-  ReadContext,
-  TransactionManager,
-  WriteContext,
-} from "./shared/transactions.js";
-export {
-  type ProjectCatalogDependencies,
-  ProjectCatalogService,
-} from "./projects/project-catalog.js";
+  Installation,
+  InstallationRepository,
+} from "./installations/installation.js";
 export type {
   Project,
   ProjectAccess,
@@ -38,11 +28,23 @@ export {
   ProjectNotFoundError,
   ProjectOrderInvalidError,
 } from "./projects/project.js";
-export { type TaskServiceDependencies, TaskService } from "./tasks/task-service.js";
+export {
+  type ProjectCatalogDependencies,
+  ProjectCatalogService,
+} from "./projects/project-catalog.js";
+export type { OutboxMessage, OutboxWriter } from "./shared/outbox.js";
+export type {
+  ReadContext,
+  TransactionManager,
+  WriteContext,
+} from "./shared/transactions.js";
 export type {
   Label,
   Task,
+  TaskActivity,
   TaskCatalog,
+  TaskComment,
+  TaskDetail,
   TaskRepository,
   TaskView,
 } from "./tasks/task.js";
@@ -58,6 +60,7 @@ export {
   TaskRevisionConflictError,
   TaskStatusInvalidError,
 } from "./tasks/task.js";
+export { TaskService, type TaskServiceDependencies } from "./tasks/task-service.js";
 export {
   type CreateWorkspaceDependencies,
   type CreateWorkspaceInput,
@@ -73,24 +76,24 @@ export {
   InitializeOwnerWorkspaceService,
 } from "./workspaces/initialize-owner-workspace.js";
 export {
-  type SelectCurrentWorkspaceDependencies,
-  SelectCurrentWorkspaceService,
-} from "./workspaces/select-current-workspace.js";
-export {
   type RenameWorkspaceDependencies,
   type RenameWorkspaceInput,
   RenameWorkspaceService,
 } from "./workspaces/rename-workspace.js";
+export {
+  type SelectCurrentWorkspaceDependencies,
+  SelectCurrentWorkspaceService,
+} from "./workspaces/select-current-workspace.js";
 export type {
   AuditEntry,
   AuditWriter,
   UserProfile,
   UserProfileRepository,
   Workspace,
-  WorkspaceMembership,
-  WorkspaceMembershipRepository,
   WorkspaceMemberRole,
   WorkspaceMemberState,
+  WorkspaceMembership,
+  WorkspaceMembershipRepository,
   WorkspaceRepository,
 } from "./workspaces/workspace.js";
 export {

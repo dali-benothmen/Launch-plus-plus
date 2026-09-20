@@ -4,6 +4,7 @@ import type {
   ArchiveTaskInput,
   CreateLabelInput,
   CreateProjectInput,
+  CreateTaskCommentInput,
   CreateTaskInput,
   CursorPageQuery,
   LabelSummary,
@@ -13,6 +14,8 @@ import type {
   ProjectSummary,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
+  TaskComment,
+  TaskDetail,
   TaskPage,
   TaskView,
   UpdateProjectInput,
@@ -96,12 +99,20 @@ export interface CoreApiClient {
       input: CreateTaskInput,
       options?: RequestOptions,
     ): Promise<TaskView>;
+    createComment(
+      workspaceId: string,
+      projectId: string,
+      taskId: string,
+      input: CreateTaskCommentInput,
+      options?: RequestOptions,
+    ): Promise<TaskComment>;
     createLabel(
       workspaceId: string,
       projectId: string,
       input: CreateLabelInput,
       options?: RequestOptions,
     ): Promise<LabelSummary>;
+    get(workspaceId: string, projectId: string, taskId: string): Promise<TaskDetail>;
     list(workspaceId: string, projectId: string, query?: CursorPageQuery): Promise<TaskPage>;
     move(
       workspaceId: string,
@@ -239,6 +250,18 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+      createComment: (
+        workspaceId: string,
+        projectId: string,
+        taskId: string,
+        input: CreateTaskCommentInput,
+        options?: RequestOptions,
+      ) =>
+        json<TaskComment>(`${taskPath(workspaceId, projectId, taskId)}/comments`, {
+          body: JSON.stringify(input),
+          headers: idempotencyHeaders(options),
+          method: "POST",
+        }),
       createLabel: (
         workspaceId: string,
         projectId: string,
@@ -250,6 +273,8 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+      get: (workspaceId: string, projectId: string, taskId: string) =>
+        json<TaskDetail>(taskPath(workspaceId, projectId, taskId)),
       list: (workspaceId: string, projectId: string, query?: CursorPageQuery) =>
         json<TaskPage>(`${taskPath(workspaceId, projectId)}${queryString(query)}`),
       move: (workspaceId: string, projectId: string, taskId: string, input: MoveTaskInput) =>

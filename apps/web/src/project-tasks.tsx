@@ -17,9 +17,18 @@ import {
   Tag,
   Typography,
 } from "@launchpp/ui";
-import { type DragEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type DragEvent,
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import { TaskDetailPanel } from "./task-detail.js";
 
 type ProjectView = "board" | "list";
 type TaskSort = "due" | "order" | "title" | "updated";
@@ -29,7 +38,9 @@ interface ProjectTaskWorkspaceProps {
   readonly archived: boolean;
   readonly currentUserId: string;
   readonly projectId: string;
+  readonly projectName: string;
   readonly statuses: readonly ProjectStatusSummary[];
+  readonly taskId?: string | undefined;
   readonly view: ProjectView;
   readonly workspaceId: string;
 }
@@ -113,7 +124,9 @@ export function ProjectTaskWorkspace({
   archived,
   currentUserId,
   projectId,
+  projectName,
   statuses,
+  taskId,
   view,
   workspaceId,
 }: ProjectTaskWorkspaceProps) {
@@ -141,6 +154,7 @@ export function ProjectTaskWorkspace({
   });
   const [editorError, setEditorError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
+  const taskOpenerRef = useRef<HTMLElement | null>(null);
 
   const loadTasks = useCallback(
     async (cursor?: string, background = false) => {
@@ -235,6 +249,19 @@ export function ProjectTaskWorkspace({
     });
     setEditorError(undefined);
     setEditor({ kind: "edit", task });
+  };
+
+  const projectViewPath = `/app/workspaces/${workspaceId}/projects/${projectId}/${view}`;
+  const openTask = (task: TaskView, event: ReactMouseEvent<HTMLElement>) => {
+    taskOpenerRef.current = event.currentTarget;
+    const parameters = searchParams.toString();
+    navigate(`${projectViewPath}/tasks/${task.id}${parameters ? `?${parameters}` : ""}`);
+  };
+
+  const closeTask = () => {
+    const parameters = searchParams.toString();
+    navigate(`${projectViewPath}${parameters ? `?${parameters}` : ""}`);
+    window.requestAnimationFrame(() => taskOpenerRef.current?.focus());
   };
 
   const moveTask = async (task: TaskView, statusId: string, beforeTaskId?: string) => {
@@ -457,7 +484,11 @@ export function ProjectTaskWorkspace({
                             </Button>
                           }
                           size="small"
-                          title={task.title}
+                          title={
+                            <Button onClick={(event) => openTask(task, event)} variant="link">
+                              {task.title}
+                            </Button>
+                          }
                         >
                           <div className="task-card-content">
                             <Typography.Text type="secondary">{task.reference}</Typography.Text>
@@ -515,7 +546,7 @@ export function ProjectTaskWorkspace({
       dataIndex: "title",
       key: "title",
       render: (_value, task) => (
-        <Button disabled={archived} onClick={() => openEdit(task)} variant="link">
+        <Button onClick={(event) => openTask(task, event)} variant="link">
           {task.title}
         </Button>
       ),
@@ -701,6 +732,21 @@ export function ProjectTaskWorkspace({
           </Form.Item>
         </Form>
       </Modal>
+
+      <TaskDetailPanel
+        archived={archived}
+        currentUserId={currentUserId}
+        onAfterClose={() => taskOpenerRef.current?.focus()}
+        onClose={closeTask}
+        onTaskChanged={(updated) =>
+          setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)))
+        }
+        projectId={projectId}
+        projectName={projectName}
+        statuses={statuses}
+        taskId={taskId}
+        workspaceId={workspaceId}
+      />
     </>
   );
 }

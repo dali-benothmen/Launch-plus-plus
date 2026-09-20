@@ -1,4 +1,12 @@
-import type { Label, ReadContext, Task, TaskRepository, WriteContext } from "@launchpp/core";
+import type {
+  Label,
+  ReadContext,
+  Task,
+  TaskActivity,
+  TaskComment,
+  TaskRepository,
+  WriteContext,
+} from "@launchpp/core";
 import { requireSqliteConnection } from "./context.js";
 
 interface TaskRow {
@@ -32,6 +40,26 @@ interface LabelRow {
   readonly revision: number;
   readonly updated_at: number;
   readonly workspace_id: string;
+}
+
+interface CommentRow {
+  readonly author_user_id: string;
+  readonly body_markdown: string;
+  readonly created_at: number;
+  readonly id: string;
+  readonly project_id: string;
+  readonly revision: number;
+  readonly task_id: string;
+  readonly updated_at: number;
+  readonly workspace_id: string;
+}
+
+interface ActivityRow {
+  readonly actor_id: null | string;
+  readonly id: string;
+  readonly metadata_json: string;
+  readonly occurred_at: number;
+  readonly operation: string;
 }
 
 const taskSelection = `SELECT id, workspace_id, project_id, number, parent_task_id, status_id,
@@ -78,11 +106,57 @@ function mapLabel(row: LabelRow): Label {
   });
 }
 
+function mapComment(row: CommentRow): TaskComment {
+  return Object.freeze({
+    authorUserId: row.author_user_id,
+    body: row.body_markdown,
+    createdAt: row.created_at,
+    id: row.id,
+    projectId: row.project_id,
+    revision: row.revision,
+    taskId: row.task_id,
+    updatedAt: row.updated_at,
+    workspaceId: row.workspace_id,
+  });
+}
+
+function mapActivity(row: ActivityRow): TaskActivity {
+  const metadata = JSON.parse(row.metadata_json) as Readonly<Record<string, unknown>>;
+  return Object.freeze({
+    ...(row.actor_id === null ? {} : { actorUserId: row.actor_id }),
+    id: row.id,
+    metadata,
+    occurredAt: row.occurred_at,
+    operation: row.operation,
+  });
+}
+
 function parentClause(parentTaskId: string | undefined) {
   return parentTaskId === undefined ? "parent_task_id IS NULL" : "parent_task_id = ?";
 }
 
 export class SqliteTaskRepository implements TaskRepository {
+  createComment(context: WriteContext, comment: TaskComment): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `INSERT INTO task_comments (
+          id, workspace_id, project_id, task_id, author_user_id,
+          body_markdown, created_at, updated_at, revision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        comment.id,
+        comment.workspaceId,
+        comment.projectId,
+        comment.taskId,
+        comment.authorUserId,
+        comment.body,
+        comment.createdAt,
+        comment.updatedAt,
+        comment.revision,
+      );
+  }
+
   createLabel(context: WriteContext, label: Label): void {
     requireSqliteConnection(context)
       .prepare(
@@ -177,6 +251,17 @@ export class SqliteTaskRepository implements TaskRepository {
       .map((row) => row.user_id);
   }
 
+  listComments(context: ReadContext, taskId: string): readonly TaskComment[] {
+    return requireSqliteConnection(context)
+      .prepare<[string], CommentRow>(
+        `SELECT id, workspace_id, project_id, task_id, author_user_id,
+                body_markdown, created_at, updated_at, revision
+         FROM task_comments WHERE task_id = ? ORDER BY created_at ASC, id ASC`,
+      )
+      .all(taskId)
+      .map(mapComment);
+  }
+
   listLabels(context: ReadContext, workspaceId: string, projectId: string): readonly Label[] {
     return requireSqliteConnection(context)
       .prepare<[string, string], LabelRow>(
@@ -201,6 +286,24 @@ export class SqliteTaskRepository implements TaskRepository {
       )
       .all(taskId)
       .map(mapLabel);
+  }
+
+  listTaskActivity(
+    context: ReadContext,
+    workspaceId: string,
+    taskId: string,
+  ): readonly TaskActivity[] {
+    return requireSqliteConnection(context)
+      .prepare<[string, string], ActivityRow>(
+        `SELECT id, actor_id, operation, metadata_json, occurred_at
+         FROM audit_entries
+         WHERE workspace_id = ? AND target_type = 'task' AND target_id = ?
+           AND outcome = 'succeeded'
+         ORDER BY occurred_at DESC, id DESC
+         LIMIT 100`,
+      )
+      .all(workspaceId, taskId)
+      .map(mapActivity);
   }
 
   listTasks(
