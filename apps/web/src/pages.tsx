@@ -7,7 +7,6 @@ import {
 } from "@launchpp/api-client";
 import {
   Alert,
-  Avatar,
   Button,
   Card,
   Dropdown,
@@ -16,6 +15,7 @@ import {
   Form,
   Input,
   List,
+  MoreIcon,
   message,
   Spin,
   Tag,
@@ -71,15 +71,6 @@ function dueSoonLimitKey() {
   const month = String(limit.getMonth() + 1).padStart(2, "0");
   const day = String(limit.getDate()).padStart(2, "0");
   return `${limit.getFullYear()}-${month}-${day}`;
-}
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 }
 
 export function MyWorkPage() {
@@ -453,7 +444,7 @@ export function ProjectOverviewPage() {
   const { projectId, taskId, view, organizationId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
-  const [memberName, setMemberName] = useState("");
+  const [organizationName, setOrganizationName] = useState("Organization");
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
   const [messageApi, messageHolder] = message.useMessage();
@@ -461,12 +452,17 @@ export function ProjectOverviewPage() {
   const loadProject = useCallback(() => {
     if (!organizationId) return;
     setError(undefined);
-    void Promise.all([api.projects.list(organizationId), api.auth.session()])
-      .then(([nextCatalog, session]) => {
+    void Promise.all([
+      api.projects.list(organizationId),
+      api.auth.session(),
+      api.organizations.list({ limit: 100 }),
+    ])
+      .then(([nextCatalog, session, context]) => {
         if (!session) throw new ApiError(401, "Your session has expired.");
         setCatalog(nextCatalog);
         setMemberId(session.identity.id);
-        setMemberName(session.identity.name);
+        const organization = context.organizations.find((item) => item.id === organizationId);
+        if (organization) setOrganizationName(organization.name);
       })
       .catch(setError);
   }, [api, organizationId]);
@@ -569,34 +565,31 @@ export function ProjectOverviewPage() {
       {messageHolder}
       <header className="project-page-header">
         <div className="project-heading">
-          <Typography.Text type="secondary">{project.key}</Typography.Text>
           <div className="project-title-row">
             <Typography.Title id="project-title" level={1}>
-              {project.name}
+              {organizationName} - {project.name}
             </Typography.Title>
           </div>
-          {project.description ? (
-            <Typography.Text type="secondary">{project.description}</Typography.Text>
-          ) : null}
+          <Typography.Text className="project-description" type="secondary">
+            {project.description || "Manage tasks, ownership, and progress for this project."}
+          </Typography.Text>
         </div>
         <div className="project-member-actions">
           <Button disabled size="small" title="Activity is coming with collaboration">
             Activity
           </Button>
           <Button onClick={() => navigate("/app/members")} size="small">
-            Members
+            Member
           </Button>
-          <Avatar.Group size="medium">
-            <Avatar title={memberName}>{initials(memberName) || "U"}</Avatar>
-          </Avatar.Group>
           <Dropdown menu={{ items: projectMenuItems }} trigger={["click"]}>
-            <Button loading={savingFavorite} size="small">
-              More
-            </Button>
+            <Button
+              aria-label="Project actions"
+              icon={<MoreIcon />}
+              iconOnly
+              loading={savingFavorite}
+              size="small"
+            />
           </Dropdown>
-          <Button onClick={() => navigate("/app/projects/new")} size="small" variant="primary">
-            New project
-          </Button>
         </div>
       </header>
       {project.archivedAt !== undefined ? (

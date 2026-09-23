@@ -12,7 +12,6 @@ import {
   NotificationsIcon,
   OrganizationIcon,
   PluginsIcon,
-  ProjectsIcon,
   SearchIcon,
   SettingsIcon,
   TasksIcon,
@@ -47,6 +46,17 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function headerTitle(pathname: string) {
+  if (pathname.includes("/projects/") && pathname.includes("/organizations/")) return "Tasks";
+  if (pathname === "/app/projects") return "Organization";
+  if (pathname === "/app/my-tasks") return "My tasks";
+  if (pathname === "/app/inbox") return "Inbox";
+  if (pathname === "/app/members") return "Team settings";
+  if (pathname === "/app/plugins") return "Plugins";
+  if (pathname === "/app/settings") return "Settings";
+  return "Home";
 }
 
 export function AppShell() {
@@ -134,7 +144,7 @@ export function AppShell() {
 
       <aside aria-label="Global navigation" className="icon-rail">
         <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
-          L+
+          <span aria-hidden className="brand-glyph" />
         </NavLink>
         <nav className="rail-links">
           {globalLinks.map((item) => (
@@ -173,6 +183,7 @@ export function AppShell() {
               iconOnly
               loading={signingOut}
               onClick={() => void signOut()}
+              size="small"
               variant="text"
             />
           </Tooltip>
@@ -181,8 +192,13 @@ export function AppShell() {
 
       <aside aria-label="Organization navigation" className="organization-sidebar">
         <div className="organization-identity">
-          <Typography.Text strong>{organizationName}</Typography.Text>
-          <Typography.Text type="secondary">Organization</Typography.Text>
+          <div className="organization-identity-copy">
+            <Typography.Text strong>{organizationName}</Typography.Text>
+            <Typography.Text type="secondary">Team plan</Typography.Text>
+          </div>
+          <span aria-hidden className="organization-switcher-mark">
+            ⌃
+          </span>
         </div>
 
         <nav className="organization-menu" aria-label="Organization menu">
@@ -216,13 +232,15 @@ export function AppShell() {
             </Button>
           </div>
           <nav className="sidebar-projects" aria-label="Projects">
-            {projects.map((project) => (
+            {projects.map((project, index) => (
               <NavLink
                 className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
                 key={project.id}
                 to={`/app/organizations/${project.organizationId}/projects/${project.id}`}
               >
-                <ProjectsIcon aria-hidden />
+                <span aria-hidden className={`project-nav-icon is-color-${(index % 3) + 1}`}>
+                  {project.name.slice(0, 1).toUpperCase()}
+                </span>
                 <span>{project.name}</span>
               </NavLink>
             ))}
@@ -240,14 +258,16 @@ export function AppShell() {
             </Typography.Text>
           </div>
           <Typography.Text className="sidebar-empty-copy" type="secondary">
-            No teams yet
+            + New team
           </Typography.Text>
         </div>
       </aside>
 
       <div className="app-workspace">
         <header className="app-header">
-          <Typography.Text className="app-header-title">Launch++</Typography.Text>
+          <Typography.Text className="app-header-title">
+            {headerTitle(location.pathname)}
+          </Typography.Text>
           <Input
             aria-label="Search"
             className="app-header-search"
@@ -258,6 +278,8 @@ export function AppShell() {
             placeholder="Search"
             prefix={<SearchIcon aria-hidden />}
             readOnly
+            shape="round"
+            size="small"
             value=""
           />
           <div className="app-header-actions">
@@ -266,6 +288,7 @@ export function AppShell() {
                 aria-label="Choose appearance"
                 icon={<ThemeIcon />}
                 iconOnly
+                size="small"
                 title={theme.theme.name}
                 variant="text"
               />
@@ -279,10 +302,11 @@ export function AppShell() {
                 aria-label="Notifications"
                 icon={<NotificationsIcon />}
                 iconOnly
+                size="small"
                 variant="text"
               />
             </Dropdown>
-            <Avatar size="medium" title={memberName}>
+            <Avatar size="small" title={memberName}>
               {initials(memberName) || "U"}
             </Avatar>
           </div>

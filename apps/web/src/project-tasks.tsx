@@ -137,7 +137,7 @@ export function ProjectTaskOrganization({
 }: ProjectTaskOrganizationProps) {
   const api = useApiClient();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [messageApi, messageHolder] = message.useMessage();
   const [tasks, setTasks] = useState<readonly TaskView[]>([]);
   const [nextCursor, setNextCursor] = useState<string>();
@@ -152,7 +152,6 @@ export function ProjectTaskOrganization({
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
   const [sort, setSort] = useState<TaskSort>("order");
-  const [searchDraft, setSearchDraft] = useState(() => searchParams.get("q") ?? "");
   const [editor, setEditor] = useState<TaskEditor>();
   const [draft, setDraft] = useState<TaskDraft>({
     description: "",
@@ -211,8 +210,6 @@ export function ProjectTaskOrganization({
     window.addEventListener(invalidationEventName, reload);
     return () => window.removeEventListener(invalidationEventName, reload);
   }, [loadTasks, projectId, organizationId]);
-
-  useEffect(() => setSearchDraft(searchParams.get("q") ?? ""), [searchParams]);
 
   const statusOptions = useMemo(
     () => statuses.map((status) => ({ label: status.name, value: status.id })),
@@ -391,50 +388,47 @@ export function ProjectTaskOrganization({
     }
   };
 
-  const submitSearch = (value: string) => {
-    const next = new URLSearchParams(searchParams);
-    const nextQuery = value.trim();
-    if (nextQuery) next.set("q", nextQuery);
-    else next.delete("q");
-    setSearchParams(next, { replace: true });
-  };
-
-  const viewControls = (
-    <div className="task-view-controls">
-      <Select
-        ariaLabel="Filter tasks by status"
-        onChange={(value) => typeof value === "string" && setStatusFilter(value)}
-        options={[{ label: "All statuses", value: "all" }, ...statusOptions]}
-        value={statusFilter}
-      />
-      <Select
-        ariaLabel="Filter tasks by assignment"
-        onChange={(value) =>
-          typeof value === "string" && setAssignmentFilter(value as AssignmentFilter)
-        }
-        options={[
-          { label: "All assignments", value: "all" },
-          { label: "Assigned to me", value: "mine" },
-          { label: "Unassigned", value: "unassigned" },
-        ]}
-        value={assignmentFilter}
-      />
-      <Select
-        ariaLabel="Sort tasks"
-        onChange={(value) => typeof value === "string" && setSort(value as TaskSort)}
-        options={[
-          { label: "Board order", value: "order" },
-          { label: "Due date", value: "due" },
-          { label: "Recently updated", value: "updated" },
-          { label: "Title", value: "title" },
-        ]}
-        value={sort}
-      />
-      <Typography.Text type="secondary">
-        {visibleTasks.length} {visibleTasks.length === 1 ? "task" : "tasks"}
-      </Typography.Text>
-    </div>
-  );
+  const customizeItems: readonly DropdownMenuItem[] = [
+    {
+      key: "all-statuses",
+      label: statusFilter === "all" ? "All statuses ✓" : "All statuses",
+      onClick: () => setStatusFilter("all"),
+    },
+    ...statuses.map((status) => ({
+      key: `status-${status.id}`,
+      label: statusFilter === status.id ? `${status.name} ✓` : status.name,
+      onClick: () => setStatusFilter(status.id),
+    })),
+    { type: "divider" },
+    {
+      key: "all-assignments",
+      label: assignmentFilter === "all" ? "All assignments ✓" : "All assignments",
+      onClick: () => setAssignmentFilter("all"),
+    },
+    {
+      key: "mine",
+      label: assignmentFilter === "mine" ? "Assigned to me ✓" : "Assigned to me",
+      onClick: () => setAssignmentFilter("mine"),
+    },
+    {
+      key: "unassigned",
+      label: assignmentFilter === "unassigned" ? "Unassigned ✓" : "Unassigned",
+      onClick: () => setAssignmentFilter("unassigned"),
+    },
+    { type: "divider" },
+    ...(
+      [
+        ["order", "Board order"],
+        ["due", "Due date"],
+        ["updated", "Recently updated"],
+        ["title", "Title"],
+      ] as const
+    ).map(([value, label]) => ({
+      key: `sort-${value}`,
+      label: sort === value ? `${label} ✓` : label,
+      onClick: () => setSort(value),
+    })),
+  ];
 
   const loadMore = nextCursor ? (
     <div className="task-load-more">
@@ -458,7 +452,6 @@ export function ProjectTaskOrganization({
   const board = (
     <>
       {loadWarning}
-      {viewControls}
       <div className="task-board-grid">
         {boardStatuses.map((status) => {
           const columnTasks = visibleTasks.filter((task) => task.statusId === status.id);
@@ -476,9 +469,18 @@ export function ProjectTaskOrganization({
               role="listbox"
             >
               <header className="task-column-header">
-                <span className="task-status-dot" style={{ backgroundColor: status.color }} />
                 <Typography.Text>{status.name}</Typography.Text>
-                <Typography.Text type="secondary">{columnTasks.length}</Typography.Text>
+                <span className="task-column-count" style={{ backgroundColor: status.color }}>
+                  {columnTasks.length}
+                </span>
+                <Button
+                  aria-label={`${status.name} actions`}
+                  className="task-column-menu"
+                  icon={<MoreIcon />}
+                  iconOnly
+                  size="small"
+                  variant="text"
+                />
               </header>
               <div className="task-column-list">
                 {columnTasks.map((task) => (
@@ -506,39 +508,40 @@ export function ProjectTaskOrganization({
                     tabIndex={0}
                     title={sort === "order" ? "Drag to reorder" : "Use board order to drag"}
                   >
-                    <Card
-                      extra={
-                        <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
-                          <Button
-                            aria-label={`Actions for ${task.title}`}
-                            disabled={archived}
-                            icon={<MoreIcon />}
-                            iconOnly
-                            size="small"
-                            variant="text"
-                          />
-                        </Dropdown>
-                      }
-                      size="small"
-                      title={
-                        <Button onClick={(event) => openTask(task, event)} variant="link">
-                          {task.title}
-                        </Button>
-                      }
-                    >
+                    <Card size="small">
                       <div className="task-card-content">
+                        <div className="task-card-heading">
+                          <Button
+                            className="task-title-button"
+                            onClick={(event) => openTask(task, event)}
+                            size="small"
+                            variant="link"
+                          >
+                            {task.title}
+                          </Button>
+                          <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+                            <Button
+                              aria-label={`Actions for ${task.title}`}
+                              disabled={archived}
+                              icon={<MoreIcon />}
+                              iconOnly
+                              size="small"
+                              variant="text"
+                            />
+                          </Dropdown>
+                        </div>
                         {task.description ? (
                           <Typography.Text className="task-card-description" type="secondary">
                             {task.description}
                           </Typography.Text>
                         ) : null}
-                        <div className="task-card-summary">
-                          <Typography.Text type="secondary">{task.reference}</Typography.Text>
-                          {task.dueDate ? (
-                            <Typography.Text type="secondary">
-                              Due {formatDate(task.dueDate)}
-                            </Typography.Text>
-                          ) : null}
+                        <div className="task-card-status">
+                          <Typography.Text type="secondary">{status.name}</Typography.Text>
+                          <span
+                            aria-hidden
+                            className="task-status-line"
+                            style={{ backgroundColor: status.color }}
+                          />
                         </div>
                         {task.labels.length > 0 ? (
                           <div className="task-card-meta">
@@ -562,6 +565,14 @@ export function ProjectTaskOrganization({
                           ) : (
                             <Typography.Text type="secondary">Unassigned</Typography.Text>
                           )}
+                        </div>
+                        <div className="task-card-summary">
+                          <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                          {task.dueDate ? (
+                            <Typography.Text type="secondary">
+                              {formatDate(task.dueDate)}
+                            </Typography.Text>
+                          ) : null}
                         </div>
                       </div>
                     </Card>
@@ -663,7 +674,6 @@ export function ProjectTaskOrganization({
   const list = (
     <>
       {loadWarning}
-      {viewControls}
       <div className="task-list-groups">
         {boardStatuses.map((status) => {
           const statusTasks = visibleTasks.filter((task) => task.statusId === status.id);
@@ -732,6 +742,7 @@ export function ProjectTaskOrganization({
       <Tabs
         activeKey={view}
         ariaLabel="Project views"
+        className="project-tabs"
         items={[
           { children: content ?? board, key: "board", label: "Board view" },
           { children: content ?? list, key: "list", label: "List view" },
@@ -742,23 +753,14 @@ export function ProjectTaskOrganization({
             `/app/organizations/${organizationId}/projects/${projectId}/${nextView}${parameters ? `?${parameters}` : ""}`,
           );
         }}
+        size="small"
         tabBarExtraContent={
           <div className="task-header-actions">
-            <Input.Search
-              allowClear
-              aria-label="Search project tasks"
-              className="task-search"
-              onChange={(event) => setSearchDraft(event.target.value)}
-              onSearch={submitSearch}
-              placeholder="Search tasks"
-              value={searchDraft}
-            />
-            <Button
-              disabled={archived || statuses.length === 0}
-              onClick={() => openCreate()}
-              variant="primary"
-            >
-              New task
+            <Dropdown menu={{ items: customizeItems }} placement="bottomRight" trigger={["click"]}>
+              <Button size="small">Customize</Button>
+            </Dropdown>
+            <Button onClick={() => navigate("/app/projects/new")} size="small" variant="primary">
+              + New project
             </Button>
           </div>
         }
