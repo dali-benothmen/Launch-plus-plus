@@ -15,14 +15,18 @@ import {
   AuthenticatedRoute,
   EntryRedirect,
   InstallationBoundary,
+  OrganizationRequiredRoute,
+  OrganizationSetupPage,
   RecoveryPage,
   SetupPage,
   SignInPage,
-  OrganizationRequiredRoute,
-  OrganizationSetupPage,
 } from "./auth-pages.js";
+import { OrganizationHomePage, OrganizationProjectsPage } from "./organization-home.js";
 import {
+  InboxPage,
   MembersPage,
+  MyWorkPage,
+  PluginsPage,
   ProjectCreationEntryPage,
   ProjectOverviewPage,
   SettingsPage,
@@ -30,7 +34,6 @@ import {
 import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
-import { OrganizationHomePage, OrganizationProjectsPage } from "./organization-home.js";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -91,6 +94,9 @@ export const appRoutes: RouteObject[] = [
         element: <ProjectCreationEntryPage />,
         errorElement: <RouteFailurePage />,
       },
+      { path: "inbox", element: <InboxPage />, errorElement: <RouteFailurePage /> },
+      { path: "my-tasks", element: <MyWorkPage />, errorElement: <RouteFailurePage /> },
+      { path: "plugins", element: <PluginsPage />, errorElement: <RouteFailurePage /> },
       {
         path: "organizations/:organizationId/projects/:projectId",
         element: <Navigate replace to="board" />,

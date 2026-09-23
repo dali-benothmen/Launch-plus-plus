@@ -1,13 +1,17 @@
 import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/api-client";
 import {
   Alert,
+  Avatar,
   Button,
   Card,
   DatePicker,
+  Dropdown,
+  type DropdownMenuItem,
   Empty,
   Form,
   Input,
   Modal,
+  MoreIcon,
   message,
   Select,
   Spin,
@@ -142,6 +146,9 @@ export function ProjectTaskOrganization({
   const [loadError, setLoadError] = useState<unknown>();
   const [movingTaskId, setMovingTaskId] = useState<string>();
   const [draggedTaskId, setDraggedTaskId] = useState<string>();
+  const [collapsedStatusIds, setCollapsedStatusIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
   const [sort, setSort] = useState<TaskSort>("order");
@@ -305,6 +312,25 @@ export function ProjectTaskOrganization({
     }
   };
 
+  const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
+    {
+      key: "edit",
+      label: "Edit task",
+      onClick: () => openEdit(task),
+    },
+    {
+      children: statuses
+        .filter((status) => status.id !== task.statusId)
+        .map((status) => ({
+          key: `move-${status.id}`,
+          label: status.name,
+          onClick: () => void moveTask(task, status.id),
+        })),
+      key: "move",
+      label: "Move to",
+    },
+  ];
+
   const saveTask = async () => {
     if (!editor || saving || draft.title.trim().length === 0 || !draft.statusId) return;
     setSaving(true);
@@ -439,6 +465,7 @@ export function ProjectTaskOrganization({
           return (
             <div
               aria-label={`${status.name} tasks`}
+              className="task-board-column"
               key={status.id}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
@@ -448,100 +475,108 @@ export function ProjectTaskOrganization({
               }}
               role="listbox"
             >
-              <Card
-                extra={
-                  <div className="task-column-actions">
-                    <Typography.Text type="secondary">{columnTasks.length}</Typography.Text>
-                    <Button disabled={archived} onClick={() => openCreate(status.id)} size="small">
-                      Add
-                    </Button>
-                  </div>
-                }
-                size="small"
-                title={<Tag color={status.color}>{status.name}</Tag>}
-              >
-                {columnTasks.length > 0 ? (
-                  <div className="task-column-list">
-                    {columnTasks.map((task) => (
-                      <div
-                        aria-label={`Move ${task.title}`}
-                        aria-selected={false}
-                        className="task-card-shell"
-                        draggable={!archived && sort === "order" && movingTaskId === undefined}
-                        key={task.id}
-                        onDragEnd={() => setDraggedTaskId(undefined)}
-                        onDragStart={(event: DragEvent<HTMLDivElement>) => {
-                          event.dataTransfer.effectAllowed = "move";
-                          setDraggedTaskId(task.id);
-                        }}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const dragged = tasks.find((item) => item.id === draggedTaskId);
-                          if (dragged && dragged.id !== task.id) {
-                            void moveTask(dragged, status.id, task.id);
-                          }
-                        }}
-                        role="option"
-                        tabIndex={0}
-                        title={sort === "order" ? "Drag to reorder" : "Use board order to drag"}
-                      >
-                        <Card
-                          extra={
-                            <Button
-                              disabled={archived}
-                              onClick={() => openEdit(task)}
-                              size="small"
-                              variant="link"
-                            >
-                              Edit
-                            </Button>
-                          }
-                          size="small"
-                          title={
-                            <Button onClick={(event) => openTask(task, event)} variant="link">
-                              {task.title}
-                            </Button>
-                          }
-                        >
-                          <div className="task-card-content">
-                            <Typography.Text type="secondary">{task.reference}</Typography.Text>
-                            {task.dueDate ? (
-                              <Typography.Text type="secondary">
-                                Due {formatDate(task.dueDate)}
-                              </Typography.Text>
-                            ) : null}
-                            {task.labels.length > 0 ? (
-                              <div className="task-card-meta">
-                                {task.labels.map((label) => (
-                                  <Tag color={label.color} key={label.id}>
-                                    {label.name}
-                                  </Tag>
-                                ))}
-                              </div>
-                            ) : null}
-                            <Select
-                              ariaLabel={`Move ${task.title}`}
-                              disabled={archived || movingTaskId !== undefined}
-                              onChange={(value) => {
-                                if (typeof value === "string" && value !== task.statusId) {
-                                  void moveTask(task, value);
-                                }
-                              }}
-                              options={statusOptions}
-                              size="small"
-                              value={task.statusId}
-                            />
+              <header className="task-column-header">
+                <span className="task-status-dot" style={{ backgroundColor: status.color }} />
+                <Typography.Text>{status.name}</Typography.Text>
+                <Typography.Text type="secondary">{columnTasks.length}</Typography.Text>
+              </header>
+              <div className="task-column-list">
+                {columnTasks.map((task) => (
+                  <div
+                    aria-label={`Move ${task.title}`}
+                    aria-selected={false}
+                    className="task-card-shell"
+                    draggable={!archived && sort === "order" && movingTaskId === undefined}
+                    key={task.id}
+                    onDragEnd={() => setDraggedTaskId(undefined)}
+                    onDragStart={(event: DragEvent<HTMLDivElement>) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      setDraggedTaskId(task.id);
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      const dragged = tasks.find((item) => item.id === draggedTaskId);
+                      if (dragged && dragged.id !== task.id) {
+                        void moveTask(dragged, status.id, task.id);
+                      }
+                    }}
+                    role="option"
+                    tabIndex={0}
+                    title={sort === "order" ? "Drag to reorder" : "Use board order to drag"}
+                  >
+                    <Card
+                      extra={
+                        <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+                          <Button
+                            aria-label={`Actions for ${task.title}`}
+                            disabled={archived}
+                            icon={<MoreIcon />}
+                            iconOnly
+                            size="small"
+                            variant="text"
+                          />
+                        </Dropdown>
+                      }
+                      size="small"
+                      title={
+                        <Button onClick={(event) => openTask(task, event)} variant="link">
+                          {task.title}
+                        </Button>
+                      }
+                    >
+                      <div className="task-card-content">
+                        {task.description ? (
+                          <Typography.Text className="task-card-description" type="secondary">
+                            {task.description}
+                          </Typography.Text>
+                        ) : null}
+                        <div className="task-card-summary">
+                          <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                          {task.dueDate ? (
+                            <Typography.Text type="secondary">
+                              Due {formatDate(task.dueDate)}
+                            </Typography.Text>
+                          ) : null}
+                        </div>
+                        {task.labels.length > 0 ? (
+                          <div className="task-card-meta">
+                            {task.labels.map((label) => (
+                              <Tag color={label.color} key={label.id}>
+                                {label.name}
+                              </Tag>
+                            ))}
                           </div>
-                        </Card>
+                        ) : null}
+                        <div className="task-assignees">
+                          <Typography.Text type="secondary">Assigned to</Typography.Text>
+                          {task.assigneeUserIds.length > 0 ? (
+                            <Avatar.Group max={{ count: 3 }} size="small">
+                              {task.assigneeUserIds.map((userId) => (
+                                <Avatar key={userId}>
+                                  {userId === currentUserId ? "Me" : "M"}
+                                </Avatar>
+                              ))}
+                            </Avatar.Group>
+                          ) : (
+                            <Typography.Text type="secondary">Unassigned</Typography.Text>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    </Card>
                   </div>
-                ) : (
-                  <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                )}
-              </Card>
+                ))}
+              </div>
+              <Button
+                block
+                disabled={archived}
+                onClick={() => openCreate(status.id)}
+                size="small"
+                variant="dashed"
+              >
+                Add task
+              </Button>
             </div>
           );
         })}
@@ -552,46 +587,34 @@ export function ProjectTaskOrganization({
 
   const columns: ReadonlyArray<TableColumn<TaskView>> = [
     {
-      dataIndex: "reference",
-      key: "reference",
-      title: "ID",
-      width: 100,
-    },
-    {
-      dataIndex: "title",
-      key: "title",
+      key: "task",
       render: (_value, task) => (
-        <Button onClick={(event) => openTask(task, event)} variant="link">
-          {task.title}
-        </Button>
+        <div className="task-table-title">
+          <Button onClick={(event) => openTask(task, event)} variant="link">
+            {task.title}
+          </Button>
+          <Typography.Text type="secondary">{task.reference}</Typography.Text>
+          {task.labels.map((label) => (
+            <Tag color={label.color} key={label.id}>
+              {label.name}
+            </Tag>
+          ))}
+        </div>
       ),
       title: "Task",
     },
     {
-      key: "status",
-      render: (_value, task) => (
-        <Select
-          ariaLabel={`Status for ${task.title}`}
-          disabled={archived || movingTaskId !== undefined}
-          onChange={(value) => {
-            if (typeof value === "string" && value !== task.statusId) void moveTask(task, value);
-          }}
-          options={statusOptions}
-          size="small"
-          value={task.statusId}
-        />
-      ),
-      title: "Status",
-      width: 170,
-    },
-    {
       key: "assignee",
       render: (_value, task) =>
-        task.assigneeUserIds.includes(currentUserId)
-          ? "Me"
-          : task.assigneeUserIds.length > 0
-            ? `${task.assigneeUserIds.length} members`
-            : "Unassigned",
+        task.assigneeUserIds.length > 0 ? (
+          <Avatar.Group max={{ count: 3 }} size="small">
+            {task.assigneeUserIds.map((userId) => (
+              <Avatar key={userId}>{userId === currentUserId ? "Me" : "M"}</Avatar>
+            ))}
+          </Avatar.Group>
+        ) : (
+          <Typography.Text type="secondary">Unassigned</Typography.Text>
+        ),
       title: "Assignee",
       width: 120,
     },
@@ -609,22 +632,81 @@ export function ProjectTaskOrganization({
       title: "Updated",
       width: 110,
     },
+    {
+      key: "actions",
+      render: (_value, task) => (
+        <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+          <Button
+            aria-label={`Actions for ${task.title}`}
+            disabled={archived}
+            icon={<MoreIcon />}
+            iconOnly
+            size="small"
+            variant="text"
+          />
+        </Dropdown>
+      ),
+      title: "",
+      width: 48,
+    },
   ];
+
+  const toggleStatusGroup = (statusId: string) => {
+    setCollapsedStatusIds((current) => {
+      const next = new Set(current);
+      if (next.has(statusId)) next.delete(statusId);
+      else next.add(statusId);
+      return next;
+    });
+  };
+
   const list = (
     <>
       {loadWarning}
       {viewControls}
-      <Table
-        columns={columns}
-        dataSource={visibleTasks}
-        locale={{
-          emptyText: <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />,
-        }}
-        pagination={false}
-        rowKey="id"
-        scroll={{ x: 760 }}
-        size="small"
-      />
+      <div className="task-list-groups">
+        {boardStatuses.map((status) => {
+          const statusTasks = visibleTasks.filter((task) => task.statusId === status.id);
+          const collapsed = collapsedStatusIds.has(status.id);
+          return (
+            <section className="task-list-group" key={status.id}>
+              <header className="task-list-group-header">
+                <Button onClick={() => toggleStatusGroup(status.id)} size="small" variant="text">
+                  <span aria-hidden>{collapsed ? "›" : "⌄"}</span>
+                  <span className="task-status-dot" style={{ backgroundColor: status.color }} />
+                  {status.name}
+                </Button>
+                <Typography.Text type="secondary">{statusTasks.length}</Typography.Text>
+              </header>
+              {collapsed ? null : (
+                <>
+                  <Table
+                    columns={columns}
+                    dataSource={statusTasks}
+                    locale={{
+                      emptyText: (
+                        <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                      ),
+                    }}
+                    pagination={false}
+                    rowKey="id"
+                    scroll={{ x: 680 }}
+                    size="small"
+                  />
+                  <Button
+                    disabled={archived}
+                    onClick={() => openCreate(status.id)}
+                    size="small"
+                    variant="text"
+                  >
+                    + Add task
+                  </Button>
+                </>
+              )}
+            </section>
+          );
+        })}
+      </div>
       {loadMore}
     </>
   );
@@ -651,8 +733,8 @@ export function ProjectTaskOrganization({
         activeKey={view}
         ariaLabel="Project views"
         items={[
-          { children: content ?? board, key: "board", label: "Board" },
-          { children: content ?? list, key: "list", label: "List" },
+          { children: content ?? board, key: "board", label: "Board view" },
+          { children: content ?? list, key: "list", label: "List view" },
         ]}
         onChange={(nextView) => {
           const parameters = searchParams.toString();

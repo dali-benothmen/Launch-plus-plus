@@ -1,9 +1,9 @@
 import {
   ApiError,
+  type OrganizationContext,
   type ProjectCatalog,
   type ProjectSummary,
   type TaskView,
-  type OrganizationContext,
 } from "@launchpp/api-client";
 import {
   Alert,
@@ -449,6 +449,7 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
+  const navigate = useNavigate();
   const { projectId, taskId, view, organizationId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
@@ -552,6 +553,11 @@ export function ProjectOverviewPage() {
 
   const projectMenuItems: readonly DropdownMenuItem[] = [
     {
+      key: "favorite",
+      label: project.favorite ? "Remove from favorites" : "Add to favorites",
+      onClick: () => void toggleFavorite(),
+    },
+    {
       key: "copy-link",
       label: "Copy project link",
       onClick: () => void copyProjectLink(),
@@ -559,7 +565,7 @@ export function ProjectOverviewPage() {
   ];
 
   return (
-    <section aria-labelledby="project-title" className="page-stack">
+    <section aria-labelledby="project-title" className="page-stack project-workspace">
       {messageHolder}
       <header className="project-page-header">
         <div className="project-heading">
@@ -568,28 +574,28 @@ export function ProjectOverviewPage() {
             <Typography.Title id="project-title" level={1}>
               {project.name}
             </Typography.Title>
-            <Button
-              aria-pressed={project.favorite}
-              loading={savingFavorite}
-              onClick={() => void toggleFavorite()}
-              size="small"
-            >
-              {project.favorite ? "Favorited" : "Add favorite"}
-            </Button>
-            <Dropdown menu={{ items: projectMenuItems }} trigger={["click"]}>
-              <Button size="small">More</Button>
-            </Dropdown>
           </div>
           {project.description ? (
             <Typography.Text type="secondary">{project.description}</Typography.Text>
           ) : null}
         </div>
         <div className="project-member-actions">
+          <Button disabled size="small" title="Activity is coming with collaboration">
+            Activity
+          </Button>
+          <Button onClick={() => navigate("/app/members")} size="small">
+            Members
+          </Button>
           <Avatar.Group size="medium">
             <Avatar title={memberName}>{initials(memberName) || "U"}</Avatar>
           </Avatar.Group>
-          <Button disabled size="small" title="Member invitations are not available yet">
-            Add member
+          <Dropdown menu={{ items: projectMenuItems }} trigger={["click"]}>
+            <Button loading={savingFavorite} size="small">
+              More
+            </Button>
+          </Dropdown>
+          <Button onClick={() => navigate("/app/projects/new")} size="small" variant="primary">
+            New project
           </Button>
         </div>
       </header>
@@ -606,6 +612,32 @@ export function ProjectOverviewPage() {
         view={activeView}
         organizationId={organizationId ?? project.organizationId}
       />
+    </section>
+  );
+}
+
+export function InboxPage() {
+  return (
+    <section aria-labelledby="inbox-title" className="page-stack">
+      <Typography.Text type="secondary">Organization</Typography.Text>
+      <Typography.Title id="inbox-title" level={1}>
+        Inbox
+      </Typography.Title>
+      <Empty description="You have no notifications" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </section>
+  );
+}
+
+export function PluginsPage() {
+  return (
+    <section aria-labelledby="plugins-title" className="page-stack">
+      <Typography.Text type="secondary">Launch++</Typography.Text>
+      <Typography.Title id="plugins-title" level={1}>
+        Plugins
+      </Typography.Title>
+      <Typography.Text type="secondary">
+        Installed plugins and the plugin marketplace will live here.
+      </Typography.Text>
     </section>
   );
 }
