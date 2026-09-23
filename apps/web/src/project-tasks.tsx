@@ -4,7 +4,6 @@ import {
   type DragEndEvent,
   DragDropProvider,
   type DragOverEvent,
-  DragOverlay,
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
@@ -149,11 +148,6 @@ function taskError(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
-function dragLabel(data: Record<string, unknown>) {
-  const { label } = data;
-  return String(label ?? "");
-}
-
 function createTaskLayout(
   statuses: readonly ProjectStatusSummary[],
   tasks: readonly TaskView[],
@@ -172,6 +166,18 @@ function createTaskLayout(
         .map((task) => task.id),
     ]),
   );
+}
+
+function taskLayoutsEqual(first: TaskLayout, second: TaskLayout) {
+  const statusIds = new Set([...Object.keys(first), ...Object.keys(second)]);
+  return [...statusIds].every((statusId) => {
+    const firstTasks = first[statusId] ?? [];
+    const secondTasks = second[statusId] ?? [];
+    return (
+      firstTasks.length === secondTasks.length &&
+      firstTasks.every((taskId, index) => taskId === secondTasks[index])
+    );
+  });
 }
 
 function SortableColumnShell({ children, disabled, id, index, label }: SortableShellProps) {
@@ -198,9 +204,14 @@ function SortableColumnShell({ children, disabled, id, index, label }: SortableS
   );
 }
 
-function TaskDropZone({ children, statusId }: Readonly<{ children: ReactNode; statusId: string }>) {
+function TaskDropZone({
+  children,
+  empty,
+  statusId,
+}: Readonly<{ children: ReactNode; empty: boolean; statusId: string }>) {
   const droppable = useDroppable({
     accept: "task",
+    collisionPriority: 1,
     data: { statusId },
     id: statusId,
     type: "task-container",
@@ -208,7 +219,7 @@ function TaskDropZone({ children, statusId }: Readonly<{ children: ReactNode; st
 
   return (
     <div
-      className={`task-column-list${droppable.isDropTarget ? " is-drop-target" : ""}`}
+      className={`task-column-list${empty ? " is-empty" : ""}${droppable.isDropTarget ? " is-drop-target" : ""}`}
       ref={droppable.ref}
     >
       {children}
@@ -606,7 +617,7 @@ export function ProjectTaskOrganization({
     const source = event.operation.source;
     if (!source) return;
 
-    if (event.canceled || !event.operation.target) {
+    if (event.canceled) {
       if (source.type === "task") {
         taskLayoutRef.current = taskLayoutSnapshotRef.current;
         setTaskLayout(taskLayoutSnapshotRef.current);
@@ -615,6 +626,7 @@ export function ProjectTaskOrganization({
     }
 
     if (source.type === "column") {
+      if (!event.operation.target) return;
       const snapshot = orderedStatusIds;
       const next = move([...snapshot], event);
       setOrderedStatusIds(next);
@@ -623,6 +635,7 @@ export function ProjectTaskOrganization({
     }
 
     if (source.type === "task") {
+      if (taskLayoutsEqual(taskLayoutSnapshotRef.current, taskLayoutRef.current)) return;
       const taskId = String(source.id);
       const destination = Object.entries(taskLayoutRef.current).find(([, ids]) =>
         ids.includes(taskId),
@@ -672,7 +685,7 @@ export function ProjectTaskOrganization({
                     variant="text"
                   />
                 </header>
-                <TaskDropZone statusId={status.id}>
+                <TaskDropZone empty={columnTasks.length === 0} statusId={status.id}>
                   {columnTasks.map((task, taskIndex) => (
                     <SortableTaskShell
                       disabled={archived || movingTaskId !== undefined || Boolean(query)}
@@ -766,22 +779,6 @@ export function ProjectTaskOrganization({
             );
           })}
         </div>
-        <DragOverlay
-          className="board-drag-overlay"
-          dropAnimation={{ duration: 180, easing: "cubic-bezier(0.25, 1, 0.5, 1)" }}
-        >
-          {(source) =>
-            source.type === "column" ? (
-              <Card className="column-drag-preview" size="small">
-                <Typography.Text strong>{dragLabel(source.data)}</Typography.Text>
-              </Card>
-            ) : source.type === "task" ? (
-              <Card className="task-drag-preview" size="small">
-                <Typography.Text strong>{dragLabel(source.data)}</Typography.Text>
-              </Card>
-            ) : null
-          }
-        </DragOverlay>
       </DragDropProvider>
       {loadMore}
     </>
