@@ -85,8 +85,9 @@ interface SortableTaskShellProps extends SortableShellProps {
 const taskPageSize = 50;
 const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 const emptyColumnStyles = {
+  description: { color: "rgb(0 0 0 / 45%)" },
   image: { height: 24, marginBottom: 0 },
-  root: { margin: 0 },
+  root: { margin: "0 0 6px" },
 } as const;
 
 function dateFromKey(value?: string) {
