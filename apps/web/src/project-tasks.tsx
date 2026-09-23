@@ -223,6 +223,11 @@ function TaskDropZone({
       ref={droppable.ref}
     >
       {children}
+      {empty ? (
+        <span className="task-column-empty">
+          {droppable.isDropTarget ? "Drop task here" : "No tasks"}
+        </span>
+      ) : null}
     </div>
   );
 }
