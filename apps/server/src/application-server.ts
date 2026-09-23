@@ -19,7 +19,7 @@ import { type BuildServerOptions, buildServer } from "./server.js";
 import { createSetupCoordinator } from "./setup-routes.js";
 import { registerStaticWeb } from "./static-web.js";
 import { registerTaskRoutes } from "./task-routes.js";
-import { registerWorkspaceRoutes } from "./workspace-routes.js";
+import { registerOrganizationRoutes } from "./organization-routes.js";
 
 export interface ApplicationResources {
   readonly database: SqliteDatabase;
@@ -97,7 +97,7 @@ export async function buildApplicationServer(
         "first-owner setup link generated",
       );
     }
-    await registerWorkspaceRoutes(app, { database, identity: identity.adapter });
+    await registerOrganizationRoutes(app, { database, identity: identity.adapter });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
     await registerSearchRoutes(app, { database, identity: identity.adapter });

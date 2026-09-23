@@ -1,6 +1,6 @@
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { TransactionManager, WriteContext } from "../shared/transactions.js";
-import type { AuditWriter } from "../workspaces/workspace.js";
+import type { AuditWriter } from "../organizations/organization.js";
 import {
   availableProjectKey,
   availableProjectSlug,
@@ -35,7 +35,7 @@ interface CommandContext {
   readonly correlationId: string;
   readonly installationId: string;
   readonly userId: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 interface DefaultStatus {
@@ -55,9 +55,9 @@ function validateContext(input: CommandContext) {
     input.correlationId.length === 0 ||
     input.installationId.length === 0 ||
     input.userId.length === 0 ||
-    input.workspaceId.length === 0
+    input.organizationId.length === 0
   ) {
-    throw new TypeError("Workspace, user, and correlation identifiers are required.");
+    throw new TypeError("Organization, user, and correlation identifiers are required.");
   }
 }
 
@@ -72,14 +72,14 @@ function sameIds(actual: readonly string[], requested: readonly string[]): boole
 export class ProjectCatalogService {
   constructor(private readonly dependencies: ProjectCatalogDependencies) {}
 
-  list(workspaceId: string, userId: string): ProjectCatalog {
-    if (workspaceId.length === 0 || userId.length === 0) {
-      throw new TypeError("Workspace and user identifiers are required.");
+  list(organizationId: string, userId: string): ProjectCatalog {
+    if (organizationId.length === 0 || userId.length === 0) {
+      throw new TypeError("Organization and user identifiers are required.");
     }
     return this.dependencies.transactions.read((context) => ({
-      folders: this.dependencies.projects.listFolders(context, workspaceId),
-      projects: this.dependencies.projects.listProjects(context, workspaceId, userId),
-      statuses: this.dependencies.projects.listStatuses(context, workspaceId),
+      folders: this.dependencies.projects.listFolders(context, organizationId),
+      projects: this.dependencies.projects.listProjects(context, organizationId, userId),
+      statuses: this.dependencies.projects.listStatuses(context, organizationId),
     }));
   }
 
@@ -87,7 +87,7 @@ export class ProjectCatalogService {
     validateContext(input);
     const name = normalizeFolderName(input.name);
     return this.dependencies.transactions.write((context) => {
-      if (this.dependencies.projects.findFolderByName(context, input.workspaceId, name)) {
+      if (this.dependencies.projects.findFolderByName(context, input.organizationId, name)) {
         throw new ProjectFolderNameConflictError("A folder with this name already exists.");
       }
       const now = this.dependencies.clock();
@@ -96,10 +96,10 @@ export class ProjectCatalogService {
         createdByUserId: input.userId,
         id: this.dependencies.generateId(),
         name,
-        position: this.dependencies.projects.nextFolderPosition(context, input.workspaceId),
+        position: this.dependencies.projects.nextFolderPosition(context, input.organizationId),
         revision: 1,
         updatedAt: now,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       this.dependencies.projects.createFolder(context, folder);
       this.record(context, input, "project_folder.created", folder.id, { name });
@@ -113,11 +113,11 @@ export class ProjectCatalogService {
     validateContext(input);
     const name = normalizeFolderName(input.name);
     return this.dependencies.transactions.write((context) => {
-      const folder = this.requireFolder(context, input.workspaceId, input.folderId);
+      const folder = this.requireFolder(context, input.organizationId, input.folderId);
       if (folder.name === name) return folder;
       const conflict = this.dependencies.projects.findFolderByName(
         context,
-        input.workspaceId,
+        input.organizationId,
         name,
       );
       if (conflict && conflict.id !== folder.id) {
@@ -141,9 +141,9 @@ export class ProjectCatalogService {
   deleteFolder(input: CommandContext & Readonly<{ folderId: string }>): Promise<void> {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
-      const folder = this.requireFolder(context, input.workspaceId, input.folderId);
+      const folder = this.requireFolder(context, input.organizationId, input.folderId);
       const now = this.dependencies.clock();
-      this.dependencies.projects.deleteFolder(context, input.workspaceId, folder.id, now);
+      this.dependencies.projects.deleteFolder(context, input.organizationId, folder.id, now);
       this.record(context, input, "project_folder.deleted", folder.id, { name: folder.name });
     });
   }
@@ -154,18 +154,18 @@ export class ProjectCatalogService {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
       const actual = this.dependencies.projects
-        .listFolders(context, input.workspaceId)
+        .listFolders(context, input.organizationId)
         .map((folder) => folder.id);
       if (!sameIds(actual, input.orderedFolderIds)) {
         throw new ProjectOrderInvalidError("Folder order must include every folder exactly once.");
       }
       this.dependencies.projects.reorderFolders(
         context,
-        input.workspaceId,
+        input.organizationId,
         input.orderedFolderIds,
         this.dependencies.clock(),
       );
-      this.record(context, input, "project_folders.reordered", input.workspaceId, {
+      this.record(context, input, "project_folders.reordered", input.organizationId, {
         orderedFolderIds: input.orderedFolderIds,
       });
     });
@@ -181,27 +181,27 @@ export class ProjectCatalogService {
       return Promise.reject(new TypeError("Project description cannot exceed 20,000 characters."));
     }
     return this.dependencies.transactions.write((context) => {
-      if (input.folderId) this.requireFolder(context, input.workspaceId, input.folderId);
+      if (input.folderId) this.requireFolder(context, input.organizationId, input.folderId);
       const now = this.dependencies.clock();
       const project: Project = Object.freeze({
-        access: "workspace",
+        access: "organization",
         createdAt: now,
         createdByUserId: input.userId,
         description,
         ...(input.folderId ? { folderId: input.folderId } : {}),
         id: this.dependencies.generateId(),
-        key: availableProjectKey(context, this.dependencies.projects, input.workspaceId, name),
+        key: availableProjectKey(context, this.dependencies.projects, input.organizationId, name),
         name,
         nextTaskNumber: 1,
         position: this.dependencies.projects.nextProjectPosition(
           context,
-          input.workspaceId,
+          input.organizationId,
           input.folderId,
         ),
         revision: 1,
-        slug: availableProjectSlug(context, this.dependencies.projects, input.workspaceId, name),
+        slug: availableProjectSlug(context, this.dependencies.projects, input.organizationId, name),
         updatedAt: now,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       this.dependencies.projects.createProject(context, project);
       defaultStatuses.forEach((status, position) => {
@@ -213,7 +213,7 @@ export class ProjectCatalogService {
           projectId: project.id,
           revision: 1,
           updatedAt: now,
-          workspaceId: input.workspaceId,
+          organizationId: input.organizationId,
         });
         this.dependencies.projects.createStatus(context, projectStatus);
       });
@@ -242,9 +242,9 @@ export class ProjectCatalogService {
       return Promise.reject(new TypeError("Project description cannot exceed 20,000 characters."));
     }
     return this.dependencies.transactions.write((context) => {
-      const project = this.requireProject(context, input.workspaceId, input.projectId);
+      const project = this.requireProject(context, input.organizationId, input.projectId);
       const requestedFolderId = input.folderId === null ? undefined : input.folderId;
-      if (requestedFolderId) this.requireFolder(context, input.workspaceId, requestedFolderId);
+      if (requestedFolderId) this.requireFolder(context, input.organizationId, requestedFolderId);
       const folderChanged = input.folderId !== undefined && requestedFolderId !== project.folderId;
       const now = this.dependencies.clock();
       const changes = {
@@ -258,7 +258,7 @@ export class ProjectCatalogService {
         const ungrouped: Project = Object.freeze({
           ...projectWithoutFolder,
           ...changes,
-          position: this.dependencies.projects.nextProjectPosition(context, input.workspaceId),
+          position: this.dependencies.projects.nextProjectPosition(context, input.organizationId),
         });
         this.dependencies.projects.saveProject(context, ungrouped);
         this.record(context, input, "project.updated", project.id, {
@@ -275,7 +275,7 @@ export class ProjectCatalogService {
               folderId: requestedFolderId,
               position: this.dependencies.projects.nextProjectPosition(
                 context,
-                input.workspaceId,
+                input.organizationId,
                 requestedFolderId,
               ),
             }
@@ -307,9 +307,9 @@ export class ProjectCatalogService {
   ): Promise<void> {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
-      if (input.folderId) this.requireFolder(context, input.workspaceId, input.folderId);
+      if (input.folderId) this.requireFolder(context, input.organizationId, input.folderId);
       const actual = this.dependencies.projects
-        .listProjects(context, input.workspaceId, input.userId)
+        .listProjects(context, input.organizationId, input.userId)
         .filter(
           (project) =>
             project.archivedAt === undefined &&
@@ -324,12 +324,12 @@ export class ProjectCatalogService {
       }
       this.dependencies.projects.reorderProjects(
         context,
-        input.workspaceId,
+        input.organizationId,
         input.folderId,
         input.orderedProjectIds,
         this.dependencies.clock(),
       );
-      this.record(context, input, "projects.reordered", input.workspaceId, {
+      this.record(context, input, "projects.reordered", input.organizationId, {
         folderId: input.folderId ?? null,
         orderedProjectIds: input.orderedProjectIds,
       });
@@ -341,7 +341,7 @@ export class ProjectCatalogService {
   ): Promise<void> {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
-      this.requireProject(context, input.workspaceId, input.projectId);
+      this.requireProject(context, input.organizationId, input.projectId);
       const now = this.dependencies.clock();
       this.dependencies.projects.setPreference(context, {
         favorite: input.favorite,
@@ -355,7 +355,7 @@ export class ProjectCatalogService {
   recordOpen(input: CommandContext & Readonly<{ projectId: string }>): Promise<void> {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
-      this.requireProject(context, input.workspaceId, input.projectId);
+      this.requireProject(context, input.organizationId, input.projectId);
       const now = this.dependencies.clock();
       this.dependencies.projects.setPreference(context, {
         lastOpenedAt: now,
@@ -372,7 +372,7 @@ export class ProjectCatalogService {
   ): Promise<Project> {
     validateContext(input);
     return this.dependencies.transactions.write((context) => {
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const now = this.dependencies.clock();
       let updated: Project;
       if (action === "archive") {
@@ -401,7 +401,7 @@ export class ProjectCatalogService {
           ...activeProject,
           position: this.dependencies.projects.nextProjectPosition(
             context,
-            input.workspaceId,
+            input.organizationId,
             project.folderId,
           ),
           revision: project.revision + 1,
@@ -414,9 +414,9 @@ export class ProjectCatalogService {
     });
   }
 
-  private requireFolder(context: WriteContext, workspaceId: string, folderId: string) {
+  private requireFolder(context: WriteContext, organizationId: string, folderId: string) {
     const folder = this.dependencies.projects.findFolderById(context, folderId);
-    if (!folder || folder.workspaceId !== workspaceId) {
+    if (!folder || folder.organizationId !== organizationId) {
       throw new ProjectFolderNotFoundError("The project folder does not exist.");
     }
     return folder;
@@ -424,14 +424,14 @@ export class ProjectCatalogService {
 
   private requireProject(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string,
     includeDeleted = false,
   ) {
     const project = this.dependencies.projects.findProjectById(context, projectId);
     if (
       !project ||
-      project.workspaceId !== workspaceId ||
+      project.organizationId !== organizationId ||
       (!includeDeleted && project.deletedAt !== undefined)
     ) {
       throw new ProjectNotFoundError("The project does not exist.");
@@ -459,7 +459,7 @@ export class ProjectCatalogService {
       outcome: "succeeded",
       targetId,
       targetType: operation.startsWith("project_folder") ? "project_folder" : "project",
-      workspaceId: input.workspaceId,
+      organizationId: input.organizationId,
     });
     this.dependencies.outbox.append(context, {
       availableAt: occurredAt,
@@ -467,7 +467,12 @@ export class ProjectCatalogService {
       id: this.dependencies.generateId(),
       installationId: input.installationId,
       occurredAt,
-      payload: { actorId: input.userId, ...metadata, targetId, workspaceId: input.workspaceId },
+      payload: {
+        actorId: input.userId,
+        ...metadata,
+        targetId,
+        organizationId: input.organizationId,
+      },
       topic: operation,
     });
   }

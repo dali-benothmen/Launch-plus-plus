@@ -2,7 +2,7 @@ import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import {
   type SqliteDatabase,
   SqliteProjectionRepository,
-  SqliteWorkspaceMembershipRepository,
+  SqliteOrganizationMembershipRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -39,7 +39,7 @@ export async function registerEventRoutes(
   }>,
 ): Promise<void> {
   const projections = new SqliteProjectionRepository();
-  const memberships = new SqliteWorkspaceMembershipRepository();
+  const memberships = new SqliteOrganizationMembershipRepository();
 
   app.get<{ Querystring: EventQuery }>(
     "/api/v1/events",
@@ -97,7 +97,7 @@ export async function registerEventRoutes(
       const unsubscribe = input.hub.subscribe(
         (event) => {
           const membership = input.database.read((context) =>
-            memberships.find(context, event.workspaceId, session.identity.id),
+            memberships.find(context, event.organizationId, session.identity.id),
           );
           if (membership?.state === "active") write(event);
         },

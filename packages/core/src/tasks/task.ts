@@ -17,7 +17,7 @@ export interface Task {
   readonly title: string;
   readonly updatedAt: number;
   readonly updatedByUserId: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface Label {
@@ -30,7 +30,7 @@ export interface Label {
   readonly projectId?: string;
   readonly revision: number;
   readonly updatedAt: number;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface TaskView extends Task {
@@ -48,7 +48,7 @@ export interface TaskComment {
   readonly revision: number;
   readonly taskId: string;
   readonly updatedAt: number;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface TaskActivity {
@@ -79,23 +79,23 @@ export interface TaskRepository {
   findLabelById(context: ReadContext, labelId: string): Label | undefined;
   findLabelByName(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string | undefined,
     comparisonKey: string,
   ): Label | undefined;
   findTaskById(context: ReadContext, taskId: string): Task | undefined;
   listAssigneeUserIds(context: ReadContext, taskId: string): readonly string[];
   listComments(context: ReadContext, taskId: string): readonly TaskComment[];
-  listLabels(context: ReadContext, workspaceId: string, projectId: string): readonly Label[];
+  listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[];
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[];
   listTaskActivity(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     taskId: string,
   ): readonly TaskActivity[];
   listTasks(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string,
     includeArchived?: boolean,
   ): readonly Task[];
@@ -113,7 +113,7 @@ export interface TaskRepository {
       assignedByUserId: string;
       taskId: string;
       userIds: readonly string[];
-      workspaceId: string;
+      organizationId: string;
     }>,
   ): void;
   replaceLabels(
@@ -123,7 +123,7 @@ export interface TaskRepository {
       appliedByUserId: string;
       labelIds: readonly string[];
       taskId: string;
-      workspaceId: string;
+      organizationId: string;
     }>,
   ): void;
   saveTask(context: WriteContext, task: Task): void;

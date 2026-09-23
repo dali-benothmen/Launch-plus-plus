@@ -35,7 +35,7 @@ interface TaskDetailPanelProps {
   readonly projectName: string;
   readonly statuses: readonly ProjectStatusSummary[];
   readonly taskId?: string | undefined;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 interface DetailDraft {
@@ -115,7 +115,7 @@ export function TaskDetailPanel({
   projectName,
   statuses,
   taskId,
-  workspaceId,
+  organizationId,
 }: TaskDetailPanelProps) {
   const api = useApiClient();
   const narrow = useNarrowScreen();
@@ -135,13 +135,13 @@ export function TaskDetailPanel({
     if (!taskId) return;
     setLoadError(undefined);
     try {
-      const next = await api.tasks.get(workspaceId, projectId, taskId);
+      const next = await api.tasks.get(organizationId, projectId, taskId);
       setDetail(next);
       setDraft(initialDraft(next, currentUserId));
     } catch (reason) {
       setLoadError(reason);
     }
-  }, [api, currentUserId, projectId, taskId, workspaceId]);
+  }, [api, currentUserId, projectId, taskId, organizationId]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -191,7 +191,7 @@ export function TaskDetailPanel({
     let task = detail.task;
     try {
       if (draft.statusId !== task.statusId) {
-        task = await api.tasks.move(workspaceId, projectId, task.id, {
+        task = await api.tasks.move(organizationId, projectId, task.id, {
           expectedRevision: task.revision,
           statusId: draft.statusId,
         });
@@ -204,7 +204,7 @@ export function TaskDetailPanel({
         nextDescription !== task.description ||
         nextDueDate !== task.dueDate
       ) {
-        task = await api.tasks.update(workspaceId, projectId, task.id, {
+        task = await api.tasks.update(organizationId, projectId, task.id, {
           ...(nextTitle === task.title ? {} : { title: nextTitle }),
           ...(nextDescription === task.description ? {} : { description: nextDescription }),
           ...(nextDueDate === task.dueDate
@@ -219,7 +219,7 @@ export function TaskDetailPanel({
           task.labels.map((label) => label.id),
         )
       ) {
-        task = await api.tasks.replaceLabels(workspaceId, projectId, task.id, {
+        task = await api.tasks.replaceLabels(organizationId, projectId, task.id, {
           expectedRevision: task.revision,
           labelIds: [...draft.labelIds],
         });
@@ -228,7 +228,7 @@ export function TaskDetailPanel({
         ? [...new Set([...task.assigneeUserIds, currentUserId])]
         : task.assigneeUserIds.filter((userId) => userId !== currentUserId);
       if (!sameIds(assigneeUserIds, task.assigneeUserIds)) {
-        task = await api.tasks.replaceAssignees(workspaceId, projectId, task.id, {
+        task = await api.tasks.replaceAssignees(organizationId, projectId, task.id, {
           expectedRevision: task.revision,
           userIds: assigneeUserIds,
         });
@@ -248,7 +248,7 @@ export function TaskDetailPanel({
     setCreatingSubtask(true);
     setSaveError(undefined);
     try {
-      await api.tasks.create(workspaceId, projectId, {
+      await api.tasks.create(organizationId, projectId, {
         parentTaskId: detail.task.id,
         statusId: detail.task.statusId,
         title: subtaskTitle,
@@ -267,7 +267,7 @@ export function TaskDetailPanel({
     setCreatingLabel(true);
     setSaveError(undefined);
     try {
-      const created = await api.tasks.createLabel(workspaceId, projectId, {
+      const created = await api.tasks.createLabel(organizationId, projectId, {
         color: "#1668dc",
         name: labelName,
       });
@@ -290,7 +290,7 @@ export function TaskDetailPanel({
     setPostingComment(true);
     setSaveError(undefined);
     try {
-      await api.tasks.createComment(workspaceId, projectId, detail.task.id, { body: comment });
+      await api.tasks.createComment(organizationId, projectId, detail.task.id, { body: comment });
       setComment("");
       await load();
     } catch (reason) {
@@ -496,7 +496,7 @@ export function TaskDetailPanel({
               <div className="task-detail-comment">
                 <div className="task-detail-comment-meta">
                   <Typography.Text strong>
-                    {item.authorUserId === currentUserId ? "You" : "Workspace member"}
+                    {item.authorUserId === currentUserId ? "You" : "Organization member"}
                   </Typography.Text>
                   <Typography.Text type="secondary">
                     {detailDateTime.format(new Date(item.createdAt))}
@@ -540,7 +540,7 @@ export function TaskDetailPanel({
         {detail.activity.length > 0 ? (
           <Timeline
             items={detail.activity.map((item) => ({
-              content: `${item.actorUserId === currentUserId ? "You" : "A workspace member"} ${activityText(item.operation)}.`,
+              content: `${item.actorUserId === currentUserId ? "You" : "An organization member"} ${activityText(item.operation)}.`,
               key: item.id,
               title: detailDateTime.format(new Date(item.occurredAt)),
             }))}

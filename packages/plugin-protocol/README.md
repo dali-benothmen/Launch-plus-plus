@@ -17,7 +17,7 @@ Fastify, a database, or application internals.
 - Archive paths are relative, remain inside the package, and reject traversal.
 - `integrity.json` v0 uses SHA-256 and covers every archive file except itself;
   package intake additionally requires an exact path set and matching digests.
-- Context is created by the host. Plugins cannot add actor, workspace, project,
+- Context is created by the host. Plugins cannot add actor, organization, project,
   installation, or grant fields to a request.
 - Unknown request inputs, successful outputs, error details, and theme values
   are allowed by the envelope. Capability-specific schemas and bridge size

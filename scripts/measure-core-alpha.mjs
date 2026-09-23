@@ -47,20 +47,20 @@ function seedSoloWorkload(databasePath) {
       INSERT INTO installations (id, created_at) VALUES ('installation', 1700000000000);
       INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt)
         VALUES ('owner', 'Owner', 'owner@launchpp.test', 1, '2023-11-14T22:13:20.000Z', '2023-11-14T22:13:20.000Z');
-      INSERT INTO workspaces (id, installation_id, slug, name, created_by_user_id, created_at, updated_at, revision)
-        VALUES ('workspace', 'installation', 'workspace', 'Workspace', 'owner', 1700000000000, 1700000000000, 1);
-      INSERT INTO workspace_members (workspace_id, user_id, role, state, joined_at, updated_at)
-        VALUES ('workspace', 'owner', 'owner', 'active', 1700000000000, 1700000000000);
-      INSERT INTO projects (id, workspace_id, key, slug, name, description, access, position, next_task_number, created_by_user_id, created_at, updated_at, revision)
-        VALUES ('project', 'workspace', 'PERF', 'project', 'Project', '', 'workspace', 0, 251, 'owner', 1700000000000, 1700000000000, 1);
-      INSERT INTO project_statuses (id, workspace_id, project_id, name, color, position, category, created_at, updated_at, revision)
-        VALUES ('todo', 'workspace', 'project', 'To do', '#8c8c8c', 0, 'backlog', 1700000000000, 1700000000000, 1);
+      INSERT INTO organizations (id, installation_id, slug, name, created_by_user_id, created_at, updated_at, revision)
+        VALUES ('organization', 'installation', 'organization', 'Organization', 'owner', 1700000000000, 1700000000000, 1);
+      INSERT INTO organization_members (organization_id, user_id, role, state, joined_at, updated_at)
+        VALUES ('organization', 'owner', 'owner', 'active', 1700000000000, 1700000000000);
+      INSERT INTO projects (id, organization_id, key, slug, name, description, access, position, next_task_number, created_by_user_id, created_at, updated_at, revision)
+        VALUES ('project', 'organization', 'PERF', 'project', 'Project', '', 'organization', 0, 251, 'owner', 1700000000000, 1700000000000, 1);
+      INSERT INTO project_statuses (id, organization_id, project_id, name, color, position, category, created_at, updated_at, revision)
+        VALUES ('todo', 'organization', 'project', 'To do', '#8c8c8c', 0, 'backlog', 1700000000000, 1700000000000, 1);
     `);
     const insert = database.prepare(`
       INSERT INTO tasks (
-        id, workspace_id, project_id, number, status_id, title, description_markdown, position,
+        id, organization_id, project_id, number, status_id, title, description_markdown, position,
         created_by_user_id, updated_by_user_id, created_at, updated_at, revision
-      ) VALUES (?, 'workspace', 'project', ?, 'todo', ?, '', ?, 'owner', 'owner', ?, ?, 1)
+      ) VALUES (?, 'organization', 'project', ?, 'todo', ?, '', ?, 'owner', 'owner', ?, ?, 1)
     `);
     const transaction = database.transaction(() => {
       for (let index = 1; index <= 250; index += 1) {

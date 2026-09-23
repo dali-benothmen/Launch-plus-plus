@@ -4,7 +4,7 @@ import { requireSqliteConnection } from "./context.js";
 interface ProfileRow {
   readonly avatar_asset_id: string | null;
   readonly created_at: number;
-  readonly current_workspace_id: string | null;
+  readonly current_organization_id: string | null;
   readonly display_name: string;
   readonly locale: string;
   readonly revision: number;
@@ -17,7 +17,7 @@ function mapProfile(row: ProfileRow): UserProfile {
   return Object.freeze({
     ...(row.avatar_asset_id ? { avatarAssetId: row.avatar_asset_id } : {}),
     createdAt: row.created_at,
-    ...(row.current_workspace_id ? { currentWorkspaceId: row.current_workspace_id } : {}),
+    ...(row.current_organization_id ? { currentOrganizationId: row.current_organization_id } : {}),
     displayName: row.display_name,
     locale: row.locale,
     revision: row.revision,
@@ -33,7 +33,7 @@ export class SqliteUserProfileRepository implements UserProfileRepository {
       .prepare(
         `INSERT INTO user_profiles (
           user_id, display_name, avatar_asset_id, locale, time_zone,
-          current_workspace_id, created_at, updated_at, revision
+          current_organization_id, created_at, updated_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
@@ -42,7 +42,7 @@ export class SqliteUserProfileRepository implements UserProfileRepository {
         profile.avatarAssetId ?? null,
         profile.locale,
         profile.timeZone,
-        profile.currentWorkspaceId ?? null,
+        profile.currentOrganizationId ?? null,
         profile.createdAt,
         profile.updatedAt,
         profile.revision,
@@ -53,24 +53,24 @@ export class SqliteUserProfileRepository implements UserProfileRepository {
     const row = requireSqliteConnection(context)
       .prepare<[string], ProfileRow>(
         `SELECT user_id, display_name, avatar_asset_id, locale, time_zone,
-                current_workspace_id, created_at, updated_at, revision
+                current_organization_id, created_at, updated_at, revision
          FROM user_profiles WHERE user_id = ?`,
       )
       .get(userId);
     return row ? mapProfile(row) : undefined;
   }
 
-  setCurrentWorkspace(
+  setCurrentOrganization(
     context: WriteContext,
-    input: Readonly<{ updatedAt: number; userId: string; workspaceId: string }>,
+    input: Readonly<{ updatedAt: number; userId: string; organizationId: string }>,
   ): void {
     const result = requireSqliteConnection(context)
       .prepare(
         `UPDATE user_profiles
-         SET current_workspace_id = ?, updated_at = ?, revision = revision + 1
+         SET current_organization_id = ?, updated_at = ?, revision = revision + 1
          WHERE user_id = ?`,
       )
-      .run(input.workspaceId, input.updatedAt, input.userId);
+      .run(input.organizationId, input.updatedAt, input.userId);
     if (result.changes !== 1) throw new Error("User profile was not found.");
   }
 }

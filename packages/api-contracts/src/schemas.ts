@@ -49,51 +49,51 @@ export const IdempotencyHeadersSchema = Type.Object(
 
 export type IdempotencyHeaders = Type.Static<typeof IdempotencyHeadersSchema>;
 
-export const WorkspaceSummarySchema = StrictObject(
+export const OrganizationSummarySchema = StrictObject(
   {
     id: IdentifierSchema,
     name: Type.String({ maxLength: 80, minLength: 1 }),
     revision: RevisionSchema,
     slug: Type.String({ maxLength: 120, minLength: 1 }),
   },
-  { $id: "LaunchppWorkspaceSummaryV1" },
+  { $id: "LaunchppOrganizationSummaryV1" },
 );
 
-export type WorkspaceSummary = Type.Static<typeof WorkspaceSummarySchema>;
+export type OrganizationSummary = Type.Static<typeof OrganizationSummarySchema>;
 
-export const WorkspaceContextSchema = StrictObject(
+export const OrganizationContextSchema = StrictObject(
   {
-    currentWorkspaceId: Type.Optional(IdentifierSchema),
+    currentOrganizationId: Type.Optional(IdentifierSchema),
     nextCursor: Type.Optional(CursorSchema),
-    workspaces: Type.Array(
-      Type.Unsafe<Type.Static<typeof WorkspaceSummarySchema>>(
-        Type.Ref("LaunchppWorkspaceSummaryV1"),
+    organizations: Type.Array(
+      Type.Unsafe<Type.Static<typeof OrganizationSummarySchema>>(
+        Type.Ref("LaunchppOrganizationSummaryV1"),
       ),
       { maxItems: 100 },
     ),
   },
-  { $id: "LaunchppWorkspaceContextV1" },
+  { $id: "LaunchppOrganizationContextV1" },
 );
 
-export type WorkspaceContext = Type.Static<typeof WorkspaceContextSchema>;
+export type OrganizationContext = Type.Static<typeof OrganizationContextSchema>;
 
-export const CreateWorkspaceInputSchema = StrictObject(
+export const CreateOrganizationInputSchema = StrictObject(
   { name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }) },
-  { $id: "LaunchppCreateWorkspaceInputV1" },
+  { $id: "LaunchppCreateOrganizationInputV1" },
 );
-export type CreateWorkspaceInput = Type.Static<typeof CreateWorkspaceInputSchema>;
+export type CreateOrganizationInput = Type.Static<typeof CreateOrganizationInputSchema>;
 
-export const RenameWorkspaceInputSchema = StrictObject(
+export const RenameOrganizationInputSchema = StrictObject(
   { name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }) },
-  { $id: "LaunchppRenameWorkspaceInputV1" },
+  { $id: "LaunchppRenameOrganizationInputV1" },
 );
-export type RenameWorkspaceInput = Type.Static<typeof RenameWorkspaceInputSchema>;
+export type RenameOrganizationInput = Type.Static<typeof RenameOrganizationInputSchema>;
 
-export const SelectWorkspaceInputSchema = StrictObject(
-  { workspaceId: IdentifierSchema },
-  { $id: "LaunchppSelectWorkspaceInputV1" },
+export const SelectOrganizationInputSchema = StrictObject(
+  { organizationId: IdentifierSchema },
+  { $id: "LaunchppSelectOrganizationInputV1" },
 );
-export type SelectWorkspaceInput = Type.Static<typeof SelectWorkspaceInputSchema>;
+export type SelectOrganizationInput = Type.Static<typeof SelectOrganizationInputSchema>;
 
 export const ProjectFolderSummarySchema = StrictObject(
   {
@@ -101,7 +101,7 @@ export const ProjectFolderSummarySchema = StrictObject(
     name: Type.String({ maxLength: 80, minLength: 1 }),
     position: Type.Integer({ minimum: 0 }),
     revision: RevisionSchema,
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppProjectFolderSummaryV1" },
 );
@@ -109,7 +109,7 @@ export type ProjectFolderSummary = Type.Static<typeof ProjectFolderSummarySchema
 
 export const ProjectSummarySchema = StrictObject(
   {
-    access: Type.Union([Type.Literal("restricted"), Type.Literal("workspace")]),
+    access: Type.Union([Type.Literal("restricted"), Type.Literal("organization")]),
     archivedAt: Type.Optional(TimestampSchema),
     createdByUserId: Type.Optional(IdentifierSchema),
     description: Type.String({ maxLength: 20_000 }),
@@ -123,7 +123,7 @@ export const ProjectSummarySchema = StrictObject(
     revision: RevisionSchema,
     slug: Type.String({ maxLength: 160, minLength: 1 }),
     updatedAt: Type.Optional(TimestampSchema),
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppProjectSummaryV1" },
 );
@@ -224,7 +224,7 @@ export const LabelSummarySchema = StrictObject(
     projectId: Type.Optional(IdentifierSchema),
     revision: RevisionSchema,
     updatedAt: TimestampSchema,
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppLabelSummaryV1" },
 );
@@ -253,7 +253,7 @@ export const TaskViewSchema = StrictObject(
     title: Type.String({ maxLength: 500, minLength: 1 }),
     updatedAt: TimestampSchema,
     updatedByUserId: IdentifierSchema,
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppTaskViewV1" },
 );
@@ -269,7 +269,7 @@ export const TaskCommentSchema = StrictObject(
     revision: RevisionSchema,
     taskId: IdentifierSchema,
     updatedAt: TimestampSchema,
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppTaskCommentV1" },
 );
@@ -350,7 +350,7 @@ export const SearchQuerySchema = StrictObject(
     limit: Type.Optional(Type.Integer({ maximum: 50, minimum: 1 })),
     projectId: Type.Optional(IdentifierSchema),
     q: Type.String({ maxLength: 200, minLength: 1, pattern: "\\S" }),
-    workspaceId: Type.Optional(IdentifierSchema),
+    organizationId: Type.Optional(IdentifierSchema),
   },
   { $id: "LaunchppSearchQueryV1" },
 );
@@ -363,7 +363,7 @@ export const SearchResultSchema = StrictObject(
     resourceId: IdentifierSchema,
     subtitle: Type.String({ maxLength: 500 }),
     title: Type.String({ maxLength: 500, minLength: 1 }),
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppSearchResultV1" },
 );
@@ -388,7 +388,7 @@ export const InvalidationEventSchema = StrictObject(
     resourceType: Type.String({ maxLength: 100, minLength: 1 }),
     sequence: Type.Integer({ minimum: 1 }),
     topic: Type.String({ maxLength: 100, minLength: 1 }),
-    workspaceId: IdentifierSchema,
+    organizationId: IdentifierSchema,
   },
   { $id: "LaunchppInvalidationEventV1" },
 );
@@ -443,29 +443,29 @@ export const CreateLabelInputSchema = StrictObject(
   {
     color: Type.String({ maxLength: 7, minLength: 7, pattern: "^#[0-9A-Fa-f]{6}$" }),
     name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }),
-    scope: Type.Optional(Type.Union([Type.Literal("project"), Type.Literal("workspace")])),
+    scope: Type.Optional(Type.Union([Type.Literal("project"), Type.Literal("organization")])),
   },
   { $id: "LaunchppCreateLabelInputV1" },
 );
 export type CreateLabelInput = Type.Static<typeof CreateLabelInputSchema>;
 
-export const WorkspaceParamsSchema = StrictObject(
-  { workspaceId: IdentifierSchema },
-  { $id: "LaunchppWorkspaceParamsV1" },
+export const OrganizationParamsSchema = StrictObject(
+  { organizationId: IdentifierSchema },
+  { $id: "LaunchppOrganizationParamsV1" },
 );
 
 export const ProjectParamsSchema = StrictObject(
-  { projectId: IdentifierSchema, workspaceId: IdentifierSchema },
+  { projectId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppProjectParamsV1" },
 );
 
 export const ProjectFolderParamsSchema = StrictObject(
-  { folderId: IdentifierSchema, workspaceId: IdentifierSchema },
+  { folderId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppProjectFolderParamsV1" },
 );
 
 export const TaskParamsSchema = StrictObject(
-  { projectId: IdentifierSchema, taskId: IdentifierSchema, workspaceId: IdentifierSchema },
+  { projectId: IdentifierSchema, taskId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppTaskParamsV1" },
 );
 
@@ -473,11 +473,11 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ProblemDetailsSchema,
   CursorPageQuerySchema,
   IdempotencyHeadersSchema,
-  WorkspaceSummarySchema,
-  WorkspaceContextSchema,
-  CreateWorkspaceInputSchema,
-  RenameWorkspaceInputSchema,
-  SelectWorkspaceInputSchema,
+  OrganizationSummarySchema,
+  OrganizationContextSchema,
+  CreateOrganizationInputSchema,
+  RenameOrganizationInputSchema,
+  SelectOrganizationInputSchema,
   ProjectFolderSummarySchema,
   ProjectSummarySchema,
   ProjectStatusSummarySchema,
@@ -506,7 +506,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ReplaceTaskLabelsInputSchema,
   ArchiveTaskInputSchema,
   CreateLabelInputSchema,
-  WorkspaceParamsSchema,
+  OrganizationParamsSchema,
   ProjectParamsSchema,
   ProjectFolderParamsSchema,
   TaskParamsSchema,

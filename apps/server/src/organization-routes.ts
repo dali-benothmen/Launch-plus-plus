@@ -1,25 +1,25 @@
 import { randomUUID } from "node:crypto";
 import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
 import type {
-  CreateWorkspaceInput,
+  CreateOrganizationInput,
   CursorPageQuery,
-  RenameWorkspaceInput,
-  SelectWorkspaceInput,
+  RenameOrganizationInput,
+  SelectOrganizationInput,
 } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import {
   actorFromIdentitySession,
-  canAccessWorkspace,
-  canCreateWorkspace,
+  canAccessOrganization,
+  canCreateOrganization,
 } from "@launchpp/authorization";
 import {
-  CreateWorkspaceService,
-  RenameWorkspaceService,
-  SelectCurrentWorkspaceService,
-  type Workspace,
-  WorkspaceNameAlreadyExistsError,
-  WorkspaceNotFoundError,
-  WorkspaceQueryService,
+  CreateOrganizationService,
+  RenameOrganizationService,
+  SelectCurrentOrganizationService,
+  type Organization,
+  OrganizationNameAlreadyExistsError,
+  OrganizationNotFoundError,
+  OrganizationQueryService,
 } from "@launchpp/core";
 import {
   type SqliteDatabase,
@@ -28,8 +28,8 @@ import {
   SqliteIdempotencyRepository,
   SqliteOutboxRepository,
   SqliteUserProfileRepository,
-  SqliteWorkspaceMembershipRepository,
-  SqliteWorkspaceRepository,
+  SqliteOrganizationMembershipRepository,
+  SqliteOrganizationRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -55,26 +55,26 @@ function webHeaders(headers: FastifyRequest["headers"]): Headers {
   return result;
 }
 
-function workspaceSummary(workspace: Workspace) {
+function organizationSummary(organization: Organization) {
   return {
-    id: workspace.id,
-    name: workspace.name,
-    revision: workspace.revision,
-    slug: workspace.slug,
+    id: organization.id,
+    name: organization.name,
+    revision: organization.revision,
+    slug: organization.slug,
   };
 }
 
-export async function registerWorkspaceRoutes(
+export async function registerOrganizationRoutes(
   app: FastifyInstance,
   input: Readonly<{ database: SqliteDatabase; identity: BetterAuthIdentityAdapter }>,
 ): Promise<void> {
   const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
   const idempotency = new SqliteIdempotencyRepository(input.database);
-  const memberships = new SqliteWorkspaceMembershipRepository();
+  const memberships = new SqliteOrganizationMembershipRepository();
   const outbox = new SqliteOutboxRepository();
   const profiles = new SqliteUserProfileRepository();
-  const workspaces = new SqliteWorkspaceRepository();
+  const organizations = new SqliteOrganizationRepository();
   const shared = {
     audit,
     clock: Date.now,
@@ -83,20 +83,20 @@ export async function registerWorkspaceRoutes(
     outbox,
     profiles,
     transactions: input.database,
-    workspaces,
+    organizations,
   };
-  const createWorkspace = new CreateWorkspaceService(shared);
-  const renameWorkspace = new RenameWorkspaceService(shared);
-  const selectWorkspace = new SelectCurrentWorkspaceService({
+  const createOrganization = new CreateOrganizationService(shared);
+  const renameOrganization = new RenameOrganizationService(shared);
+  const selectOrganization = new SelectCurrentOrganizationService({
     clock: Date.now,
     memberships,
     profiles,
     transactions: input.database,
   });
-  const queryWorkspaces = new WorkspaceQueryService({
+  const queryOrganizations = new OrganizationQueryService({
     profiles,
     transactions: input.database,
-    workspaces,
+    organizations,
   });
 
   const sessionFor = (request: FastifyRequest) =>
@@ -104,14 +104,14 @@ export async function registerWorkspaceRoutes(
   const installation = () => input.database.read((context) => installations.findFirst(context));
 
   app.get<{ Querystring: CursorPageQuery }>(
-    "/api/v1/workspaces",
+    "/api/v1/organizations",
     {
       schema: {
-        operationId: "listWorkspaces",
+        operationId: "listOrganizations",
         querystring: { $ref: "LaunchppCursorPageQueryV1#" },
-        response: { 200: { $ref: "LaunchppWorkspaceContextV1#" }, ...problemResponses },
-        summary: "List accessible workspaces",
-        tags: ["Workspaces"],
+        response: { 200: { $ref: "LaunchppOrganizationContextV1#" }, ...problemResponses },
+        summary: "List accessible organizations",
+        tags: ["Organizations"],
       },
     },
     async (request, reply) => {
@@ -123,7 +123,7 @@ export async function registerWorkspaceRoutes(
           401,
           "unauthenticated",
           "Authentication required",
-          "Sign in to access workspaces.",
+          "Sign in to access organizations.",
         );
       }
       const currentInstallation = installation();
@@ -138,30 +138,32 @@ export async function registerWorkspaceRoutes(
         );
       }
 
-      const result = queryWorkspaces.forUser(session.identity.id);
+      const result = queryOrganizations.forUser(session.identity.id);
       const page = cursorPage(
-        result.workspaces,
-        { ...request.query, scope: `workspaces:${session.identity.id}` },
-        (workspace) => workspace.id,
+        result.organizations,
+        { ...request.query, scope: `organizations:${session.identity.id}` },
+        (organization) => organization.id,
       );
       return {
-        ...(result.currentWorkspaceId ? { currentWorkspaceId: result.currentWorkspaceId } : {}),
+        ...(result.currentOrganizationId
+          ? { currentOrganizationId: result.currentOrganizationId }
+          : {}),
         ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
-        workspaces: page.items.map(workspaceSummary),
+        organizations: page.items.map(organizationSummary),
       };
     },
   );
 
-  app.post<{ Body: CreateWorkspaceInput }>(
-    "/api/v1/workspaces",
+  app.post<{ Body: CreateOrganizationInput }>(
+    "/api/v1/organizations",
     {
       schema: {
-        body: { $ref: "LaunchppCreateWorkspaceInputV1#" },
+        body: { $ref: "LaunchppCreateOrganizationInputV1#" },
         headers: IdempotencyHeadersSchema,
-        operationId: "createWorkspace",
-        response: { 201: { $ref: "LaunchppWorkspaceSummaryV1#" }, ...problemResponses },
-        summary: "Create a workspace",
-        tags: ["Workspaces"],
+        operationId: "createOrganization",
+        response: { 201: { $ref: "LaunchppOrganizationSummaryV1#" }, ...problemResponses },
+        summary: "Create an organization",
+        tags: ["Organizations"],
       },
     },
     async (request, reply) => {
@@ -174,17 +176,17 @@ export async function registerWorkspaceRoutes(
           401,
           "unauthenticated",
           "Authentication required",
-          "Sign in to create a workspace.",
+          "Sign in to create an organization.",
         );
       }
-      if (!canCreateWorkspace(actor)) {
+      if (!canCreateOrganization(actor)) {
         return sendProblem(
           reply,
           request,
           403,
           "forbidden",
-          "Workspace creation denied",
-          "The current actor cannot create workspaces.",
+          "Organization creation denied",
+          "The current actor cannot create organizations.",
         );
       }
       const currentInstallation = installation();
@@ -205,29 +207,29 @@ export async function registerWorkspaceRoutes(
           idempotency,
           {
             actorUserId: session.identity.id,
-            operation: "workspace.create",
+            operation: "organization.create",
             payload: request.body,
             scopeKey: `installation:${currentInstallation.id}`,
           },
           async () => {
-            const workspace = await createWorkspace.execute({
+            const organization = await createOrganization.execute({
               correlationId: request.id,
               displayName: session.identity.name,
               installationId: currentInstallation.id,
               name: request.body.name,
               userId: session.identity.id,
             });
-            return { body: workspaceSummary(workspace), status: 201 };
+            return { body: organizationSummary(organization), status: 201 };
           },
         );
       } catch (error) {
-        if (error instanceof WorkspaceNameAlreadyExistsError) {
+        if (error instanceof OrganizationNameAlreadyExistsError) {
           return sendProblem(
             reply,
             request,
             409,
-            "workspace_name_conflict",
-            "Workspace name conflict",
+            "organization_name_conflict",
+            "Organization name conflict",
             error.message,
           );
         }
@@ -236,15 +238,15 @@ export async function registerWorkspaceRoutes(
     },
   );
 
-  app.put<{ Body: SelectWorkspaceInput }>(
-    "/api/v1/workspaces/current",
+  app.put<{ Body: SelectOrganizationInput }>(
+    "/api/v1/organizations/current",
     {
       schema: {
-        body: { $ref: "LaunchppSelectWorkspaceInputV1#" },
-        operationId: "selectWorkspace",
+        body: { $ref: "LaunchppSelectOrganizationInputV1#" },
+        operationId: "selectOrganization",
         response: { 204: { type: "null" }, ...problemResponses },
-        summary: "Select the current workspace",
-        tags: ["Workspaces"],
+        summary: "Select the current organization",
+        tags: ["Organizations"],
       },
     },
     async (request, reply) => {
@@ -257,43 +259,43 @@ export async function registerWorkspaceRoutes(
           401,
           "unauthenticated",
           "Authentication required",
-          "Sign in to select a workspace.",
+          "Sign in to select an organization.",
         );
       }
       const membership = input.database.read((context) =>
-        memberships.find(context, request.body.workspaceId, session.identity.id),
+        memberships.find(context, request.body.organizationId, session.identity.id),
       );
-      if (!canAccessWorkspace(actor, membership, "workspace.select")) {
+      if (!canAccessOrganization(actor, membership, "organization.select")) {
         return sendProblem(
           reply,
           request,
           403,
-          "workspace_access_denied",
-          "Workspace access denied",
-          "Active membership is required to select this workspace.",
+          "organization_access_denied",
+          "Organization access denied",
+          "Active membership is required to select this organization.",
         );
       }
-      await selectWorkspace.execute({
+      await selectOrganization.execute({
         userId: session.identity.id,
-        workspaceId: request.body.workspaceId,
+        organizationId: request.body.organizationId,
       });
       return reply.status(204).send();
     },
   );
 
   app.patch<{
-    Body: RenameWorkspaceInput;
-    Params: { readonly workspaceId: string };
+    Body: RenameOrganizationInput;
+    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId",
+    "/api/v1/organizations/:organizationId",
     {
       schema: {
-        body: { $ref: "LaunchppRenameWorkspaceInputV1#" },
-        operationId: "renameWorkspace",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
-        response: { 200: { $ref: "LaunchppWorkspaceSummaryV1#" }, ...problemResponses },
-        summary: "Rename a workspace",
-        tags: ["Workspaces"],
+        body: { $ref: "LaunchppRenameOrganizationInputV1#" },
+        operationId: "renameOrganization",
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
+        response: { 200: { $ref: "LaunchppOrganizationSummaryV1#" }, ...problemResponses },
+        summary: "Rename an organization",
+        tags: ["Organizations"],
       },
     },
     async (request, reply) => {
@@ -306,49 +308,49 @@ export async function registerWorkspaceRoutes(
           401,
           "unauthenticated",
           "Authentication required",
-          "Sign in to rename a workspace.",
+          "Sign in to rename an organization.",
         );
       }
       const membership = input.database.read((context) =>
-        memberships.find(context, request.params.workspaceId, session.identity.id),
+        memberships.find(context, request.params.organizationId, session.identity.id),
       );
-      if (!canAccessWorkspace(actor, membership, "workspace.manage")) {
+      if (!canAccessOrganization(actor, membership, "organization.manage")) {
         return sendProblem(
           reply,
           request,
           403,
-          "workspace_management_denied",
-          "Workspace management denied",
-          "Workspace ownership is required to rename this workspace.",
+          "organization_management_denied",
+          "Organization management denied",
+          "Organization ownership is required to rename this organization.",
         );
       }
 
       try {
-        const workspace = await renameWorkspace.execute({
+        const organization = await renameOrganization.execute({
           correlationId: request.id,
           name: request.body.name,
           userId: session.identity.id,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
-        return workspaceSummary(workspace);
+        return organizationSummary(organization);
       } catch (error) {
-        if (error instanceof WorkspaceNameAlreadyExistsError) {
+        if (error instanceof OrganizationNameAlreadyExistsError) {
           return sendProblem(
             reply,
             request,
             409,
-            "workspace_name_conflict",
-            "Workspace name conflict",
+            "organization_name_conflict",
+            "Organization name conflict",
             error.message,
           );
         }
-        if (error instanceof WorkspaceNotFoundError) {
+        if (error instanceof OrganizationNotFoundError) {
           return sendProblem(
             reply,
             request,
             404,
-            "workspace_not_found",
-            "Workspace not found",
+            "organization_not_found",
+            "Organization not found",
             error.message,
           );
         }

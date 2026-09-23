@@ -18,8 +18,8 @@ import {
   RecoveryPage,
   SetupPage,
   SignInPage,
-  WorkspaceRequiredRoute,
-  WorkspaceSetupPage,
+  OrganizationRequiredRoute,
+  OrganizationSetupPage,
 } from "./auth-pages.js";
 import {
   MembersPage,
@@ -30,7 +30,7 @@ import {
 import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
-import { WorkspaceHomePage, WorkspaceProjectsPage } from "./workspace-home.js";
+import { OrganizationHomePage, OrganizationProjectsPage } from "./organization-home.js";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -62,10 +62,10 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
-    path: "/workspace-setup",
+    path: "/organization-setup",
     element: (
       <AuthenticatedRoute>
-        <WorkspaceSetupPage />
+        <OrganizationSetupPage />
       </AuthenticatedRoute>
     ),
   },
@@ -73,17 +73,17 @@ export const appRoutes: RouteObject[] = [
     path: "/app",
     element: (
       <AuthenticatedRoute>
-        <WorkspaceRequiredRoute>
+        <OrganizationRequiredRoute>
           <AppShell />
-        </WorkspaceRequiredRoute>
+        </OrganizationRequiredRoute>
       </AuthenticatedRoute>
     ),
     errorElement: <RouteFailurePage />,
     children: [
-      { index: true, element: <WorkspaceHomePage />, errorElement: <RouteFailurePage /> },
+      { index: true, element: <OrganizationHomePage />, errorElement: <RouteFailurePage /> },
       {
         path: "projects",
-        element: <WorkspaceProjectsPage />,
+        element: <OrganizationProjectsPage />,
         errorElement: <RouteFailurePage />,
       },
       {
@@ -92,17 +92,17 @@ export const appRoutes: RouteObject[] = [
         errorElement: <RouteFailurePage />,
       },
       {
-        path: "workspaces/:workspaceId/projects/:projectId",
+        path: "organizations/:organizationId/projects/:projectId",
         element: <Navigate replace to="board" />,
         errorElement: <RouteFailurePage />,
       },
       {
-        path: "workspaces/:workspaceId/projects/:projectId/:view",
+        path: "organizations/:organizationId/projects/:projectId/:view",
         element: <ProjectOverviewPage />,
         errorElement: <RouteFailurePage />,
       },
       {
-        path: "workspaces/:workspaceId/projects/:projectId/:view/tasks/:taskId",
+        path: "organizations/:organizationId/projects/:projectId/:view/tasks/:taskId",
         element: <ProjectOverviewPage />,
         errorElement: <RouteFailurePage />,
       },

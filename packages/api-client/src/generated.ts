@@ -22,8 +22,8 @@ import type {
   TaskView,
   UpdateProjectInput,
   UpdateTaskInput,
-  WorkspaceContext,
-  WorkspaceSummary,
+  OrganizationContext,
+  OrganizationSummary,
 } from "@launchpp/api-contracts";
 
 export interface RequestOptions {
@@ -47,112 +47,112 @@ function idempotencyHeaders(options?: RequestOptions): HeadersInit {
   };
 }
 
-function projectPath(workspaceId: string, projectId?: string): string {
-  const root = `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/projects`;
+function projectPath(organizationId: string, projectId?: string): string {
+  const root = `/api/v1/organizations/${encodeURIComponent(organizationId)}/projects`;
   return projectId ? `${root}/${encodeURIComponent(projectId)}` : root;
 }
 
-function taskPath(workspaceId: string, projectId: string, taskId?: string): string {
-  const root = `${projectPath(workspaceId, projectId)}/tasks`;
+function taskPath(organizationId: string, projectId: string, taskId?: string): string {
+  const root = `${projectPath(organizationId, projectId)}/tasks`;
   return taskId ? `${root}/${encodeURIComponent(taskId)}` : root;
 }
 
 export interface CoreApiClient {
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
-    archive(workspaceId: string, projectId: string): Promise<ProjectSummary>;
+    archive(organizationId: string, projectId: string): Promise<ProjectSummary>;
     create(
-      workspaceId: string,
+      organizationId: string,
       input: CreateProjectInput,
       options?: RequestOptions,
     ): Promise<ProjectSummary>;
-    createFolder(workspaceId: string, name: string): Promise<ProjectFolderSummary>;
-    delete(workspaceId: string, projectId: string): Promise<void>;
-    deleteFolder(workspaceId: string, folderId: string): Promise<void>;
-    list(workspaceId: string, query?: CursorPageQuery): Promise<ProjectCatalog>;
-    markOpened(workspaceId: string, projectId: string): Promise<void>;
+    createFolder(organizationId: string, name: string): Promise<ProjectFolderSummary>;
+    delete(organizationId: string, projectId: string): Promise<void>;
+    deleteFolder(organizationId: string, folderId: string): Promise<void>;
+    list(organizationId: string, query?: CursorPageQuery): Promise<ProjectCatalog>;
+    markOpened(organizationId: string, projectId: string): Promise<void>;
     renameFolder(
-      workspaceId: string,
+      organizationId: string,
       folderId: string,
       name: string,
     ): Promise<ProjectFolderSummary>;
-    reorderFolders(workspaceId: string, orderedFolderIds: readonly string[]): Promise<void>;
+    reorderFolders(organizationId: string, orderedFolderIds: readonly string[]): Promise<void>;
     reorderProjects(
-      workspaceId: string,
+      organizationId: string,
       input: { readonly folderId?: string; readonly orderedProjectIds: readonly string[] },
     ): Promise<void>;
-    restore(workspaceId: string, projectId: string): Promise<ProjectSummary>;
-    setFavorite(workspaceId: string, projectId: string, favorite: boolean): Promise<void>;
+    restore(organizationId: string, projectId: string): Promise<ProjectSummary>;
+    setFavorite(organizationId: string, projectId: string, favorite: boolean): Promise<void>;
     update(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       input: UpdateProjectInput,
     ): Promise<ProjectSummary>;
   };
   readonly tasks: {
     archive(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: ArchiveTaskInput,
     ): Promise<TaskView>;
     create(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       input: CreateTaskInput,
       options?: RequestOptions,
     ): Promise<TaskView>;
     createComment(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: CreateTaskCommentInput,
       options?: RequestOptions,
     ): Promise<TaskComment>;
     createLabel(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       input: CreateLabelInput,
       options?: RequestOptions,
     ): Promise<LabelSummary>;
-    get(workspaceId: string, projectId: string, taskId: string): Promise<TaskDetail>;
-    list(workspaceId: string, projectId: string, query?: CursorPageQuery): Promise<TaskPage>;
+    get(organizationId: string, projectId: string, taskId: string): Promise<TaskDetail>;
+    list(organizationId: string, projectId: string, query?: CursorPageQuery): Promise<TaskPage>;
     move(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: MoveTaskInput,
     ): Promise<TaskView>;
     replaceAssignees(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: ReplaceTaskAssigneesInput,
     ): Promise<TaskView>;
     replaceLabels(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: ReplaceTaskLabelsInput,
     ): Promise<TaskView>;
     restore(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: ArchiveTaskInput,
     ): Promise<TaskView>;
     update(
-      workspaceId: string,
+      organizationId: string,
       projectId: string,
       taskId: string,
       input: UpdateTaskInput,
     ): Promise<TaskView>;
   };
-  readonly workspaces: {
-    create(name: string, options?: RequestOptions): Promise<WorkspaceSummary>;
-    list(query?: CursorPageQuery): Promise<WorkspaceContext>;
-    rename(workspaceId: string, name: string): Promise<WorkspaceSummary>;
-    select(workspaceId: string): Promise<void>;
+  readonly organizations: {
+    create(name: string, options?: RequestOptions): Promise<OrganizationSummary>;
+    list(query?: CursorPageQuery): Promise<OrganizationContext>;
+    rename(organizationId: string, name: string): Promise<OrganizationSummary>;
+    select(organizationId: string): Promise<void>;
   };
 }
 
@@ -162,44 +162,46 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
       const parameters = new URLSearchParams({ q: query.q });
       if (query.limit !== undefined) parameters.set("limit", String(query.limit));
       if (query.projectId) parameters.set("projectId", query.projectId);
-      if (query.workspaceId) parameters.set("workspaceId", query.workspaceId);
+      if (query.organizationId) parameters.set("organizationId", query.organizationId);
       return json<SearchResponse>(`/api/v1/search?${parameters.toString()}`);
     },
     projects: Object.freeze({
-      archive: (workspaceId: string, projectId: string) =>
-        json<ProjectSummary>(`${projectPath(workspaceId, projectId)}/archive`, { method: "POST" }),
-      create: (workspaceId: string, input: CreateProjectInput, options?: RequestOptions) =>
-        json<ProjectSummary>(projectPath(workspaceId), {
+      archive: (organizationId: string, projectId: string) =>
+        json<ProjectSummary>(`${projectPath(organizationId, projectId)}/archive`, {
+          method: "POST",
+        }),
+      create: (organizationId: string, input: CreateProjectInput, options?: RequestOptions) =>
+        json<ProjectSummary>(projectPath(organizationId), {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
-      createFolder: (workspaceId: string, name: string) =>
+      createFolder: (organizationId: string, name: string) =>
         json<ProjectFolderSummary>(
-          `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/folders`,
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/folders`,
           {
             body: JSON.stringify({ name }),
             headers: { "content-type": "application/json" },
             method: "POST",
           },
         ),
-      async delete(workspaceId: string, projectId: string): Promise<void> {
-        await json(projectPath(workspaceId, projectId), { method: "DELETE" });
+      async delete(organizationId: string, projectId: string): Promise<void> {
+        await json(projectPath(organizationId, projectId), { method: "DELETE" });
       },
-      async deleteFolder(workspaceId: string, folderId: string): Promise<void> {
+      async deleteFolder(organizationId: string, folderId: string): Promise<void> {
         await json(
-          `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/folders/${encodeURIComponent(folderId)}`,
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/folders/${encodeURIComponent(folderId)}`,
           { method: "DELETE" },
         );
       },
-      list: (workspaceId: string, query?: CursorPageQuery) =>
-        json<ProjectCatalog>(`${projectPath(workspaceId)}${queryString(query)}`),
-      async markOpened(workspaceId: string, projectId: string): Promise<void> {
-        await json(`${projectPath(workspaceId, projectId)}/opened`, { method: "POST" });
+      list: (organizationId: string, query?: CursorPageQuery) =>
+        json<ProjectCatalog>(`${projectPath(organizationId)}${queryString(query)}`),
+      async markOpened(organizationId: string, projectId: string): Promise<void> {
+        await json(`${projectPath(organizationId, projectId)}/opened`, { method: "POST" });
       },
-      renameFolder: (workspaceId: string, folderId: string, name: string) =>
+      renameFolder: (organizationId: string, folderId: string, name: string) =>
         json<ProjectFolderSummary>(
-          `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/folders/${encodeURIComponent(folderId)}`,
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/folders/${encodeURIComponent(folderId)}`,
           {
             body: JSON.stringify({ name }),
             headers: { "content-type": "application/json" },
@@ -207,145 +209,161 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           },
         ),
       async reorderFolders(
-        workspaceId: string,
+        organizationId: string,
         orderedFolderIds: readonly string[],
       ): Promise<void> {
-        await json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/folder-order`, {
+        await json(`/api/v1/organizations/${encodeURIComponent(organizationId)}/folder-order`, {
           body: JSON.stringify({ orderedFolderIds }),
           headers: { "content-type": "application/json" },
           method: "PUT",
         });
       },
       async reorderProjects(
-        workspaceId: string,
+        organizationId: string,
         input: { readonly folderId?: string; readonly orderedProjectIds: readonly string[] },
       ): Promise<void> {
-        await json(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/project-order`, {
+        await json(`/api/v1/organizations/${encodeURIComponent(organizationId)}/project-order`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PUT",
         });
       },
-      restore: (workspaceId: string, projectId: string) =>
-        json<ProjectSummary>(`${projectPath(workspaceId, projectId)}/restore`, { method: "POST" }),
-      async setFavorite(workspaceId: string, projectId: string, favorite: boolean): Promise<void> {
-        await json(`${projectPath(workspaceId, projectId)}/favorite`, {
+      restore: (organizationId: string, projectId: string) =>
+        json<ProjectSummary>(`${projectPath(organizationId, projectId)}/restore`, {
+          method: "POST",
+        }),
+      async setFavorite(
+        organizationId: string,
+        projectId: string,
+        favorite: boolean,
+      ): Promise<void> {
+        await json(`${projectPath(organizationId, projectId)}/favorite`, {
           body: JSON.stringify({ favorite }),
           headers: { "content-type": "application/json" },
           method: "PUT",
         });
       },
-      update: (workspaceId: string, projectId: string, input: UpdateProjectInput) =>
-        json<ProjectSummary>(projectPath(workspaceId, projectId), {
+      update: (organizationId: string, projectId: string, input: UpdateProjectInput) =>
+        json<ProjectSummary>(projectPath(organizationId, projectId), {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PATCH",
         }),
     }),
     tasks: Object.freeze({
-      archive: (workspaceId: string, projectId: string, taskId: string, input: ArchiveTaskInput) =>
-        json<TaskView>(`${taskPath(workspaceId, projectId, taskId)}/archive`, {
+      archive: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        input: ArchiveTaskInput,
+      ) =>
+        json<TaskView>(`${taskPath(organizationId, projectId, taskId)}/archive`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "POST",
         }),
       create: (
-        workspaceId: string,
+        organizationId: string,
         projectId: string,
         input: CreateTaskInput,
         options?: RequestOptions,
       ) =>
-        json<TaskView>(taskPath(workspaceId, projectId), {
+        json<TaskView>(taskPath(organizationId, projectId), {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
       createComment: (
-        workspaceId: string,
+        organizationId: string,
         projectId: string,
         taskId: string,
         input: CreateTaskCommentInput,
         options?: RequestOptions,
       ) =>
-        json<TaskComment>(`${taskPath(workspaceId, projectId, taskId)}/comments`, {
+        json<TaskComment>(`${taskPath(organizationId, projectId, taskId)}/comments`, {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
       createLabel: (
-        workspaceId: string,
+        organizationId: string,
         projectId: string,
         input: CreateLabelInput,
         options?: RequestOptions,
       ) =>
-        json<LabelSummary>(`${projectPath(workspaceId, projectId)}/labels`, {
+        json<LabelSummary>(`${projectPath(organizationId, projectId)}/labels`, {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
-      get: (workspaceId: string, projectId: string, taskId: string) =>
-        json<TaskDetail>(taskPath(workspaceId, projectId, taskId)),
-      list: (workspaceId: string, projectId: string, query?: CursorPageQuery) =>
-        json<TaskPage>(`${taskPath(workspaceId, projectId)}${queryString(query)}`),
-      move: (workspaceId: string, projectId: string, taskId: string, input: MoveTaskInput) =>
-        json<TaskView>(`${taskPath(workspaceId, projectId, taskId)}/move`, {
+      get: (organizationId: string, projectId: string, taskId: string) =>
+        json<TaskDetail>(taskPath(organizationId, projectId, taskId)),
+      list: (organizationId: string, projectId: string, query?: CursorPageQuery) =>
+        json<TaskPage>(`${taskPath(organizationId, projectId)}${queryString(query)}`),
+      move: (organizationId: string, projectId: string, taskId: string, input: MoveTaskInput) =>
+        json<TaskView>(`${taskPath(organizationId, projectId, taskId)}/move`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "POST",
         }),
       replaceAssignees: (
-        workspaceId: string,
+        organizationId: string,
         projectId: string,
         taskId: string,
         input: ReplaceTaskAssigneesInput,
       ) =>
-        json<TaskView>(`${taskPath(workspaceId, projectId, taskId)}/assignees`, {
+        json<TaskView>(`${taskPath(organizationId, projectId, taskId)}/assignees`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PUT",
         }),
       replaceLabels: (
-        workspaceId: string,
+        organizationId: string,
         projectId: string,
         taskId: string,
         input: ReplaceTaskLabelsInput,
       ) =>
-        json<TaskView>(`${taskPath(workspaceId, projectId, taskId)}/labels`, {
+        json<TaskView>(`${taskPath(organizationId, projectId, taskId)}/labels`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PUT",
         }),
-      restore: (workspaceId: string, projectId: string, taskId: string, input: ArchiveTaskInput) =>
-        json<TaskView>(`${taskPath(workspaceId, projectId, taskId)}/restore`, {
+      restore: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        input: ArchiveTaskInput,
+      ) =>
+        json<TaskView>(`${taskPath(organizationId, projectId, taskId)}/restore`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "POST",
         }),
-      update: (workspaceId: string, projectId: string, taskId: string, input: UpdateTaskInput) =>
-        json<TaskView>(taskPath(workspaceId, projectId, taskId), {
+      update: (organizationId: string, projectId: string, taskId: string, input: UpdateTaskInput) =>
+        json<TaskView>(taskPath(organizationId, projectId, taskId), {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PATCH",
         }),
     }),
-    workspaces: Object.freeze({
+    organizations: Object.freeze({
       create: (name: string, options?: RequestOptions) =>
-        json<WorkspaceSummary>("/api/v1/workspaces", {
+        json<OrganizationSummary>("/api/v1/organizations", {
           body: JSON.stringify({ name }),
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
       list: (query?: CursorPageQuery) =>
-        json<WorkspaceContext>(`/api/v1/workspaces${queryString(query)}`),
-      rename: (workspaceId: string, name: string) =>
-        json<WorkspaceSummary>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}`, {
+        json<OrganizationContext>(`/api/v1/organizations${queryString(query)}`),
+      rename: (organizationId: string, name: string) =>
+        json<OrganizationSummary>(`/api/v1/organizations/${encodeURIComponent(organizationId)}`, {
           body: JSON.stringify({ name }),
           headers: { "content-type": "application/json" },
           method: "PATCH",
         }),
-      async select(workspaceId: string): Promise<void> {
-        await json("/api/v1/workspaces/current", {
-          body: JSON.stringify({ workspaceId }),
+      async select(organizationId: string): Promise<void> {
+        await json("/api/v1/organizations/current", {
+          body: JSON.stringify({ organizationId }),
           headers: { "content-type": "application/json" },
           method: "PUT",
         });

@@ -7,7 +7,7 @@ interface SearchRow {
   readonly resource_type: "project" | "task";
   readonly subtitle: string;
   readonly title: string;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 function ftsQuery(value: string) {
@@ -26,14 +26,14 @@ export class SqliteSearchRepository implements SearchRepository {
       projectId?: string;
       query: string;
       userId: string;
-      workspaceId?: string;
+      organizationId?: string;
     }>,
   ): readonly SearchResult[] {
     const filters = ["member.user_id = ?", "member.state = 'active'", "search_documents MATCH ?"];
     const parameters: Array<number | string> = [input.userId, ftsQuery(input.query)];
-    if (input.workspaceId) {
-      filters.push("search_documents.workspace_id = ?");
-      parameters.push(input.workspaceId);
+    if (input.organizationId) {
+      filters.push("search_documents.organization_id = ?");
+      parameters.push(input.organizationId);
     }
     if (input.projectId) {
       filters.push("search_documents.project_id = ?");
@@ -43,11 +43,11 @@ export class SqliteSearchRepository implements SearchRepository {
     return requireSqliteConnection(context)
       .prepare<Array<number | string>, SearchRow>(
         `SELECT search_documents.resource_id, search_documents.resource_type,
-                search_documents.workspace_id, search_documents.project_id,
+                search_documents.organization_id, search_documents.project_id,
                 search_documents.title, search_documents.subtitle
          FROM search_documents
-         INNER JOIN workspace_members member
-           ON member.workspace_id = search_documents.workspace_id
+         INNER JOIN organization_members member
+           ON member.organization_id = search_documents.organization_id
          WHERE ${filters.join(" AND ")}
          ORDER BY bm25(search_documents), search_documents.title COLLATE NOCASE ASC
          LIMIT ?`,
@@ -60,7 +60,7 @@ export class SqliteSearchRepository implements SearchRepository {
           resourceId: row.resource_id,
           subtitle: row.subtitle,
           title: row.title,
-          workspaceId: row.workspace_id,
+          organizationId: row.organization_id,
         }),
       );
   }

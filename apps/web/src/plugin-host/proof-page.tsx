@@ -20,7 +20,7 @@ const context: PluginContext = {
     mode: proofTheme.appearance,
     tokens: proofTheme.cssVariables,
   },
-  workspace: { id: "workspace_proof" },
+  organization: { id: "organization_proof" },
 };
 
 const capabilities: Readonly<Record<string, BrowserCapabilityHandler>> = {

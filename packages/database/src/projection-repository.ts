@@ -8,7 +8,7 @@ export interface InvalidationEvent {
   readonly resourceType: string;
   readonly sequence: number;
   readonly topic: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 interface InvalidationRow {
@@ -18,7 +18,7 @@ interface InvalidationRow {
   readonly resource_type: string;
   readonly sequence: number;
   readonly topic: string;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 function optionalString(value: unknown) {
@@ -33,7 +33,7 @@ function mapInvalidation(row: InvalidationRow): InvalidationEvent {
     resourceType: row.resource_type,
     sequence: row.sequence,
     topic: row.topic,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -42,7 +42,7 @@ function resourceType(topic: string) {
   if (topic.startsWith("label.")) return "label";
   if (topic.startsWith("project_folder.")) return "project_folder";
   if (topic.startsWith("project.")) return "project";
-  return "workspace";
+  return "organization";
 }
 
 export class SqliteProjectionRepository {
@@ -52,22 +52,22 @@ export class SqliteProjectionRepository {
     connection
       .prepare(
         `INSERT INTO search_documents (
-           resource_id, resource_type, workspace_id, project_id, title, subtitle, body
+           resource_id, resource_type, organization_id, project_id, title, subtitle, body
          )
-         SELECT project.id, 'project', project.workspace_id, project.id, project.name,
-                project.key || ' · ' || workspace.name, project.description
+         SELECT project.id, 'project', project.organization_id, project.id, project.name,
+                project.key || ' · ' || organization.name, project.description
          FROM projects project
-         INNER JOIN workspaces workspace ON workspace.id = project.workspace_id
+         INNER JOIN organizations organization ON organization.id = project.organization_id
          WHERE project.archived_at IS NULL AND project.deleted_at IS NULL
-           AND workspace.archived_at IS NULL AND workspace.deleted_at IS NULL`,
+           AND organization.archived_at IS NULL AND organization.deleted_at IS NULL`,
       )
       .run();
     connection
       .prepare(
         `INSERT INTO search_documents (
-           resource_id, resource_type, workspace_id, project_id, title, subtitle, body
+           resource_id, resource_type, organization_id, project_id, title, subtitle, body
          )
-         SELECT task.id, 'task', task.workspace_id, task.project_id, task.title,
+         SELECT task.id, 'task', task.organization_id, task.project_id, task.title,
                 project.key || '-' || task.number || ' · ' || project.name,
                 task.description_markdown
          FROM tasks task
@@ -83,29 +83,29 @@ export class SqliteProjectionRepository {
       actorId: actorValue,
       projectId: projectValue,
       targetId: targetValue,
-      workspaceId: workspaceValue,
+      organizationId: organizationValue,
     } = message.payload;
-    const workspaceId = optionalString(workspaceValue);
-    if (!workspaceId) return undefined;
-    const targetId = optionalString(targetValue) ?? workspaceId;
+    const organizationId = optionalString(organizationValue);
+    if (!organizationId) return undefined;
+    const targetId = optionalString(targetValue) ?? organizationId;
     const type = resourceType(message.topic);
     const projectId = optionalString(projectValue) ?? (type === "project" ? targetId : undefined);
     const connection = requireSqliteConnection(context);
 
     if (type === "project") this.indexProject(context, targetId);
     if (type === "task") this.indexTask(context, targetId);
-    if (type === "workspace") this.indexWorkspaceProjects(context, workspaceId);
+    if (type === "organization") this.indexOrganizationProjects(context, organizationId);
 
     connection
       .prepare(
         `INSERT OR IGNORE INTO activity_entries (
-           id, workspace_id, project_id, task_id, actor_user_id,
+           id, organization_id, project_id, task_id, actor_user_id,
            operation, metadata_json, occurred_at
          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         message.id,
-        workspaceId,
+        organizationId,
         projectId ?? null,
         type === "task" ? targetId : null,
         optionalString(actorValue) ?? null,
@@ -116,12 +116,12 @@ export class SqliteProjectionRepository {
     connection
       .prepare(
         `INSERT OR IGNORE INTO invalidation_events (
-           outbox_id, workspace_id, project_id, resource_id, resource_type, topic, occurred_at
+           outbox_id, organization_id, project_id, resource_id, resource_type, topic, occurred_at
          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         message.id,
-        workspaceId,
+        organizationId,
         projectId ?? null,
         targetId,
         type,
@@ -130,7 +130,7 @@ export class SqliteProjectionRepository {
       );
     const row = connection
       .prepare<[string], InvalidationRow>(
-        `SELECT sequence, workspace_id, project_id, resource_id, resource_type,
+        `SELECT sequence, organization_id, project_id, resource_id, resource_type,
                 topic, occurred_at
          FROM invalidation_events WHERE outbox_id = ?`,
       )
@@ -144,10 +144,10 @@ export class SqliteProjectionRepository {
   ): readonly InvalidationEvent[] {
     return requireSqliteConnection(context)
       .prepare<[string, number, number], InvalidationRow>(
-        `SELECT event.sequence, event.workspace_id, event.project_id, event.resource_id,
+        `SELECT event.sequence, event.organization_id, event.project_id, event.resource_id,
                 event.resource_type, event.topic, event.occurred_at
          FROM invalidation_events event
-         INNER JOIN workspace_members member ON member.workspace_id = event.workspace_id
+         INNER JOIN organization_members member ON member.organization_id = event.organization_id
          WHERE member.user_id = ? AND member.state = 'active' AND event.sequence > ?
          ORDER BY event.sequence ASC
          LIMIT ?`,
@@ -161,7 +161,7 @@ export class SqliteProjectionRepository {
       .prepare<[string], { readonly sequence: null | number }>(
         `SELECT max(event.sequence) AS sequence
          FROM invalidation_events event
-         INNER JOIN workspace_members member ON member.workspace_id = event.workspace_id
+         INNER JOIN organization_members member ON member.organization_id = event.organization_id
          WHERE member.user_id = ? AND member.state = 'active'`,
       )
       .get(userId);
@@ -176,14 +176,14 @@ export class SqliteProjectionRepository {
     connection
       .prepare(
         `INSERT INTO search_documents (
-           resource_id, resource_type, workspace_id, project_id, title, subtitle, body
+           resource_id, resource_type, organization_id, project_id, title, subtitle, body
          )
-         SELECT project.id, 'project', project.workspace_id, project.id, project.name,
-                project.key || ' · ' || workspace.name, project.description
+         SELECT project.id, 'project', project.organization_id, project.id, project.name,
+                project.key || ' · ' || organization.name, project.description
          FROM projects project
-         INNER JOIN workspaces workspace ON workspace.id = project.workspace_id
+         INNER JOIN organizations organization ON organization.id = project.organization_id
          WHERE project.id = ? AND project.archived_at IS NULL AND project.deleted_at IS NULL
-           AND workspace.archived_at IS NULL AND workspace.deleted_at IS NULL`,
+           AND organization.archived_at IS NULL AND organization.deleted_at IS NULL`,
       )
       .run(projectId);
     connection
@@ -192,9 +192,9 @@ export class SqliteProjectionRepository {
     connection
       .prepare(
         `INSERT INTO search_documents (
-           resource_id, resource_type, workspace_id, project_id, title, subtitle, body
+           resource_id, resource_type, organization_id, project_id, title, subtitle, body
          )
-         SELECT task.id, 'task', task.workspace_id, task.project_id, task.title,
+         SELECT task.id, 'task', task.organization_id, task.project_id, task.title,
                 project.key || '-' || task.number || ' · ' || project.name,
                 task.description_markdown
          FROM tasks task
@@ -205,11 +205,13 @@ export class SqliteProjectionRepository {
       .run(projectId);
   }
 
-  private indexWorkspaceProjects(context: WriteContext, workspaceId: string) {
+  private indexOrganizationProjects(context: WriteContext, organizationId: string) {
     const connection = requireSqliteConnection(context);
     const projectIds = connection
-      .prepare<[string], { readonly id: string }>("SELECT id FROM projects WHERE workspace_id = ?")
-      .all(workspaceId);
+      .prepare<[string], { readonly id: string }>(
+        "SELECT id FROM projects WHERE organization_id = ?",
+      )
+      .all(organizationId);
     for (const project of projectIds) this.indexProject(context, project.id);
   }
 
@@ -221,9 +223,9 @@ export class SqliteProjectionRepository {
     connection
       .prepare(
         `INSERT INTO search_documents (
-           resource_id, resource_type, workspace_id, project_id, title, subtitle, body
+           resource_id, resource_type, organization_id, project_id, title, subtitle, body
          )
-         SELECT task.id, 'task', task.workspace_id, task.project_id, task.title,
+         SELECT task.id, 'task', task.organization_id, task.project_id, task.title,
                 project.key || '-' || task.number || ' · ' || project.name,
                 task.description_markdown
          FROM tasks task

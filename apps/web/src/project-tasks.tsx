@@ -35,7 +35,7 @@ type ProjectView = "board" | "list";
 type TaskSort = "due" | "order" | "title" | "updated";
 type AssignmentFilter = "all" | "mine" | "unassigned";
 
-interface ProjectTaskWorkspaceProps {
+interface ProjectTaskOrganizationProps {
   readonly archived: boolean;
   readonly currentUserId: string;
   readonly projectId: string;
@@ -43,7 +43,7 @@ interface ProjectTaskWorkspaceProps {
   readonly statuses: readonly ProjectStatusSummary[];
   readonly taskId?: string | undefined;
   readonly view: ProjectView;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 type TaskEditor = Readonly<{ kind: "create" }> | Readonly<{ kind: "edit"; task: TaskView }>;
@@ -121,7 +121,7 @@ function taskError(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
-export function ProjectTaskWorkspace({
+export function ProjectTaskOrganization({
   archived,
   currentUserId,
   projectId,
@@ -129,8 +129,8 @@ export function ProjectTaskWorkspace({
   statuses,
   taskId,
   view,
-  workspaceId,
-}: ProjectTaskWorkspaceProps) {
+  organizationId,
+}: ProjectTaskOrganizationProps) {
   const api = useApiClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -163,7 +163,7 @@ export function ProjectTaskWorkspace({
       else if (!background) setLoading(true);
       setLoadError(undefined);
       try {
-        const page = await api.tasks.list(workspaceId, projectId, {
+        const page = await api.tasks.list(organizationId, projectId, {
           ...(cursor ? { cursor } : {}),
           limit: taskPageSize,
         });
@@ -182,7 +182,7 @@ export function ProjectTaskWorkspace({
         setLoadingMore(false);
       }
     },
-    [api, projectId, workspaceId],
+    [api, projectId, organizationId],
   );
 
   useEffect(() => {
@@ -193,9 +193,9 @@ export function ProjectTaskWorkspace({
 
   useEffect(() => {
     const reload = (event: Event) => {
-      const detail = (event as CustomEvent<{ projectId?: string; workspaceId: string }>).detail;
+      const detail = (event as CustomEvent<{ projectId?: string; organizationId: string }>).detail;
       if (
-        detail.workspaceId === workspaceId &&
+        detail.organizationId === organizationId &&
         (!detail.projectId || detail.projectId === projectId)
       ) {
         void loadTasks(undefined, true);
@@ -203,7 +203,7 @@ export function ProjectTaskWorkspace({
     };
     window.addEventListener(invalidationEventName, reload);
     return () => window.removeEventListener(invalidationEventName, reload);
-  }, [loadTasks, projectId, workspaceId]);
+  }, [loadTasks, projectId, organizationId]);
 
   useEffect(() => setSearchDraft(searchParams.get("q") ?? ""), [searchParams]);
 
@@ -266,7 +266,7 @@ export function ProjectTaskWorkspace({
     setEditor({ kind: "edit", task });
   };
 
-  const projectViewPath = `/app/workspaces/${workspaceId}/projects/${projectId}/${view}`;
+  const projectViewPath = `/app/organizations/${organizationId}/projects/${projectId}/${view}`;
   const openTask = (task: TaskView, event: ReactMouseEvent<HTMLElement>) => {
     taskOpenerRef.current = event.currentTarget;
     const parameters = searchParams.toString();
@@ -285,7 +285,7 @@ export function ProjectTaskWorkspace({
     setMovingTaskId(task.id);
     setTasks(optimisticallyMove(tasks, task.id, statusId, beforeTaskId));
     try {
-      await api.tasks.move(workspaceId, projectId, task.id, {
+      await api.tasks.move(organizationId, projectId, task.id, {
         ...(beforeTaskId ? { beforeTaskId } : {}),
         expectedRevision: task.revision,
         statusId,
@@ -311,7 +311,7 @@ export function ProjectTaskWorkspace({
     setEditorError(undefined);
     if (editor.kind === "create") {
       try {
-        const created = await api.tasks.create(workspaceId, projectId, {
+        const created = await api.tasks.create(organizationId, projectId, {
           description: draft.description,
           ...(draft.dueDate ? { dueDate: dateKey(draft.dueDate) } : {}),
           statusId: draft.statusId,
@@ -344,7 +344,7 @@ export function ProjectTaskWorkspace({
       };
       let updated = original;
       if (Object.keys(updates).length > 0) {
-        updated = await api.tasks.update(workspaceId, projectId, original.id, {
+        updated = await api.tasks.update(organizationId, projectId, original.id, {
           expectedRevision: original.revision,
           ...updates,
         });
@@ -657,7 +657,7 @@ export function ProjectTaskWorkspace({
         onChange={(nextView) => {
           const parameters = searchParams.toString();
           navigate(
-            `/app/workspaces/${workspaceId}/projects/${projectId}/${nextView}${parameters ? `?${parameters}` : ""}`,
+            `/app/organizations/${organizationId}/projects/${projectId}/${nextView}${parameters ? `?${parameters}` : ""}`,
           );
         }}
         tabBarExtraContent={
@@ -760,7 +760,7 @@ export function ProjectTaskWorkspace({
         projectName={projectName}
         statuses={statuses}
         taskId={taskId}
-        workspaceId={workspaceId}
+        organizationId={organizationId}
       />
     </>
   );

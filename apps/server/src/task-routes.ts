@@ -36,7 +36,7 @@ import {
   SqliteOutboxRepository,
   SqliteProjectRepository,
   SqliteTaskRepository,
-  SqliteWorkspaceMembershipRepository,
+  SqliteOrganizationMembershipRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -45,7 +45,7 @@ import { sendProblem } from "./problem-details.js";
 
 interface ProjectParams {
   readonly projectId: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 interface TaskParams extends ProjectParams {
@@ -81,7 +81,7 @@ function labelSummary(label: Label) {
     ...(label.projectId === undefined ? {} : { projectId: label.projectId }),
     revision: label.revision,
     updatedAt: label.updatedAt,
-    workspaceId: label.workspaceId,
+    organizationId: label.organizationId,
   };
 }
 
@@ -105,7 +105,7 @@ function taskSummary(task: TaskView) {
     title: task.title,
     updatedAt: task.updatedAt,
     updatedByUserId: task.updatedByUserId,
-    workspaceId: task.workspaceId,
+    organizationId: task.organizationId,
   };
 }
 
@@ -119,7 +119,7 @@ function commentSummary(comment: TaskComment) {
     revision: comment.revision,
     taskId: comment.taskId,
     updatedAt: comment.updatedAt,
-    workspaceId: comment.workspaceId,
+    organizationId: comment.organizationId,
   };
 }
 
@@ -133,7 +133,7 @@ export async function registerTaskRoutes(
     audit: new SqliteAuditWriter(),
     clock: Date.now,
     generateId: randomUUID,
-    memberships: new SqliteWorkspaceMembershipRepository(),
+    memberships: new SqliteOrganizationMembershipRepository(),
     outbox: new SqliteOutboxRepository(),
     projects: new SqliteProjectRepository(),
     tasks: new SqliteTaskRepository(),
@@ -212,7 +212,7 @@ export async function registerTaskRoutes(
   };
 
   app.get<{ Params: ProjectParams; Querystring: CursorPageQuery }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks",
     {
       schema: {
         operationId: "listTasks",
@@ -230,7 +230,7 @@ export async function registerTaskRoutes(
         const catalog = service.list({
           projectId: request.params.projectId,
           userId: context.userId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         const page = cursorPage(
           catalog.tasks,
@@ -250,7 +250,7 @@ export async function registerTaskRoutes(
   );
 
   app.get<{ Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId",
     {
       schema: {
         operationId: "getTaskDetail",
@@ -268,7 +268,7 @@ export async function registerTaskRoutes(
           projectId: request.params.projectId,
           taskId: request.params.taskId,
           userId: context.userId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return {
           activity: detail.activity,
@@ -285,7 +285,7 @@ export async function registerTaskRoutes(
   );
 
   app.post<{ Body: CreateTaskCommentInput; Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/comments",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/comments",
     {
       schema: {
         body: { $ref: "LaunchppCreateTaskCommentInputV1#" },
@@ -318,7 +318,7 @@ export async function registerTaskRoutes(
               correlationId: request.id,
               projectId: request.params.projectId,
               taskId: request.params.taskId,
-              workspaceId: request.params.workspaceId,
+              organizationId: request.params.organizationId,
             });
             return { body: commentSummary(comment), status: 201 };
           },
@@ -331,7 +331,7 @@ export async function registerTaskRoutes(
   );
 
   app.post<{ Body: CreateTaskInput; Params: ProjectParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks",
     {
       schema: {
         body: { $ref: "LaunchppCreateTaskInputV1#" },
@@ -363,7 +363,7 @@ export async function registerTaskRoutes(
               ...request.body,
               correlationId: request.id,
               projectId: request.params.projectId,
-              workspaceId: request.params.workspaceId,
+              organizationId: request.params.organizationId,
             });
             return { body: taskSummary(task), status: 201 };
           },
@@ -376,7 +376,7 @@ export async function registerTaskRoutes(
   );
 
   app.patch<{ Body: UpdateTaskInput; Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId",
     {
       schema: {
         body: { $ref: "LaunchppUpdateTaskInputV1#" },
@@ -398,7 +398,7 @@ export async function registerTaskRoutes(
             correlationId: request.id,
             projectId: request.params.projectId,
             taskId: request.params.taskId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -409,7 +409,7 @@ export async function registerTaskRoutes(
   );
 
   app.post<{ Body: MoveTaskInput; Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/move",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/move",
     {
       schema: {
         body: { $ref: "LaunchppMoveTaskInputV1#" },
@@ -431,7 +431,7 @@ export async function registerTaskRoutes(
             correlationId: request.id,
             projectId: request.params.projectId,
             taskId: request.params.taskId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -442,7 +442,7 @@ export async function registerTaskRoutes(
   );
 
   app.put<{ Body: ReplaceTaskAssigneesInput; Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/assignees",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/assignees",
     {
       schema: {
         body: { $ref: "LaunchppReplaceTaskAssigneesInputV1#" },
@@ -464,7 +464,7 @@ export async function registerTaskRoutes(
             correlationId: request.id,
             projectId: request.params.projectId,
             taskId: request.params.taskId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -475,7 +475,7 @@ export async function registerTaskRoutes(
   );
 
   app.put<{ Body: ReplaceTaskLabelsInput; Params: TaskParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/labels",
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/labels",
     {
       schema: {
         body: { $ref: "LaunchppReplaceTaskLabelsInputV1#" },
@@ -497,7 +497,7 @@ export async function registerTaskRoutes(
             correlationId: request.id,
             projectId: request.params.projectId,
             taskId: request.params.taskId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -509,7 +509,7 @@ export async function registerTaskRoutes(
 
   for (const action of ["archive", "restore"] as const) {
     app.post<{ Body: ArchiveTaskInput; Params: TaskParams }>(
-      `/api/v1/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/${action}`,
+      `/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/${action}`,
       {
         schema: {
           body: { $ref: "LaunchppArchiveTaskInputV1#" },
@@ -530,7 +530,7 @@ export async function registerTaskRoutes(
             correlationId: request.id,
             projectId: request.params.projectId,
             taskId: request.params.taskId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           };
           const task =
             action === "archive"
@@ -546,7 +546,7 @@ export async function registerTaskRoutes(
   }
 
   app.post<{ Body: CreateLabelInput; Params: ProjectParams }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/labels",
+    "/api/v1/organizations/:organizationId/projects/:projectId/labels",
     {
       schema: {
         body: { $ref: "LaunchppCreateLabelInputV1#" },
@@ -578,7 +578,7 @@ export async function registerTaskRoutes(
               ...request.body,
               correlationId: request.id,
               projectId: request.params.projectId,
-              workspaceId: request.params.workspaceId,
+              organizationId: request.params.organizationId,
             });
             return { body: labelSummary(label), status: 201 };
           },

@@ -1,9 +1,12 @@
 import type { TransactionManager } from "../shared/transactions.js";
-import { createOwnedWorkspace, type OwnedWorkspaceDependencies } from "./owned-workspace.js";
-import { normalizeWorkspaceName } from "./workspace-naming.js";
-import type { Workspace } from "./workspace.js";
+import {
+  createOwnedOrganization,
+  type OwnedOrganizationDependencies,
+} from "./owned-organization.js";
+import { normalizeOrganizationName } from "./organization-naming.js";
+import type { Organization } from "./organization.js";
 
-export interface CreateWorkspaceInput {
+export interface CreateOrganizationInput {
   readonly correlationId: string;
   readonly displayName: string;
   readonly installationId: string;
@@ -11,16 +14,16 @@ export interface CreateWorkspaceInput {
   readonly userId: string;
 }
 
-export interface CreateWorkspaceDependencies extends OwnedWorkspaceDependencies {
+export interface CreateOrganizationDependencies extends OwnedOrganizationDependencies {
   readonly clock: () => number;
   readonly transactions: TransactionManager;
 }
 
-export class CreateWorkspaceService {
-  constructor(private readonly dependencies: CreateWorkspaceDependencies) {}
+export class CreateOrganizationService {
+  constructor(private readonly dependencies: CreateOrganizationDependencies) {}
 
-  execute(input: CreateWorkspaceInput): Promise<Workspace> {
-    const name = normalizeWorkspaceName(input.name);
+  execute(input: CreateOrganizationInput): Promise<Organization> {
+    const name = normalizeOrganizationName(input.name);
     const displayName = input.displayName.trim().replace(/\s+/g, " ");
     if (
       displayName.length === 0 ||
@@ -28,11 +31,13 @@ export class CreateWorkspaceService {
       input.installationId.length === 0 ||
       input.correlationId.length === 0
     ) {
-      return Promise.reject(new TypeError("Workspace owner and installation values are required."));
+      return Promise.reject(
+        new TypeError("Organization owner and installation values are required."),
+      );
     }
     const now = this.dependencies.clock();
     return this.dependencies.transactions.write((context) =>
-      createOwnedWorkspace(context, this.dependencies, {
+      createOwnedOrganization(context, this.dependencies, {
         correlationId: input.correlationId,
         displayName,
         installationId: input.installationId,

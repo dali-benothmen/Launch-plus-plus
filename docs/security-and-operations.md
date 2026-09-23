@@ -48,7 +48,7 @@ The normal browser shell is trusted application code but all browser input remai
 
 ### Assets
 
-- Workspace tasks, comments, membership, plugin records, and exports
+- Organization tasks, comments, membership, plugin records, and exports
 - User credentials, session tokens, invitations, and recovery tokens
 - Integration credentials and encryption keys
 - Plugin package identity, grants, signatures, and entitlement records
@@ -57,7 +57,7 @@ The normal browser shell is trusted application code but all browser input remai
 
 ### Relevant threats
 
-- A user reading or modifying another workspace by changing an ID
+- A user reading or modifying another organization by changing an ID
 - A member escalating to administrator or installation operator
 - CSRF, XSS, session theft, credential stuffing, and malicious uploads
 - An installed plugin exfiltrating data or tunneling another plugin's permissions
@@ -79,7 +79,7 @@ Better Auth handles credential verification, sessions, verification tokens, and 
 
 - First owner created through a one-time setup flow.
 - Email and password for ordinary accounts.
-- Invitation-based workspace onboarding.
+- Invitation-based organization onboarding.
 - Password reset only when mail is configured; otherwise an explicit operator recovery command.
 - Social login, passkeys, two-factor authentication, and enterprise SSO follow after the core flow is secure and usable.
 
@@ -105,7 +105,7 @@ The server validates trusted proxy configuration before deriving secure origin, 
 
 ## First-run setup
 
-An uninitialized installation exposes only health and setup endpoints. Startup creates a short-lived, high-entropy setup token printed once to the local/operator console or read from a protected file. The first owner must present it before creating the installation identity and workspace.
+An uninitialized installation exposes only health and setup endpoints. Startup creates a short-lived, high-entropy setup token printed once to the local/operator console or read from a protected file. The first owner must present it before creating the installation identity and organization.
 
 After successful setup:
 
@@ -118,7 +118,7 @@ Binding an uninitialized server to a public interface without a setup token is r
 
 ## Authorization
 
-Authorization is an application service, not a collection of ad hoc route checks. Policies accept an actor, operation, authoritative resource, workspace membership, project policy, and optional plugin context.
+Authorization is an application service, not a collection of ad hoc route checks. Policies accept an actor, operation, authoritative resource, organization membership, project policy, and optional plugin context.
 
 ### Actor types
 
@@ -130,11 +130,11 @@ Authorization is an application service, not a collection of ad hoc route checks
 
 ### Rules
 
-- Every workspace-owned service method requires `workspaceId` and actor context.
+- Every organization-owned service method requires `organizationId` and actor context.
 - Repositories support scoped access but do not decide product permissions.
 - List queries apply access filters before counts and pagination.
 - “Not found” and “not allowed” responses avoid confirming inaccessible resource existence.
-- Installation operator capability is not implied by workspace ownership on shared/hosted deployments.
+- Installation operator capability is not implied by organization ownership on shared/hosted deployments.
 - Background plugin work uses its current grants, not the authority of whoever installed it.
 - Selection and route context never grant access.
 - Permission changes invalidate relevant caches, streams, and queued work promptly.
@@ -222,7 +222,7 @@ A Node worker thread is a supervisor mechanism, not the sole security boundary. 
 
 - Custom UI runs in a sandboxed opaque-origin iframe without same-origin or top-navigation privileges.
 - Assets are bundled and served through a package-specific restricted origin/path and CSP.
-- The bridge binds source window, frame instance, plugin ID, installation, active user, workspace/project scope, protocol version, and a nonce.
+- The bridge binds source window, frame instance, plugin ID, installation, active user, organization/project scope, protocol version, and a nonce.
 - Every message is schema-validated and rate/size limited.
 - The host performs navigation, dialogs, clipboard, downloads, and external links through explicit capabilities.
 - Direct network requests, form posts, images, popups, downloads, and navigation are tested for egress bypass.
@@ -233,9 +233,9 @@ A Node worker thread is a supervisor mechanism, not the sole security boundary. 
 Developer Mode is a temporary delivery path for unsigned local builds, not a relaxation of plugin security:
 
 - It is disabled by default, can be enabled only by an installation operator, and shows a persistent warning while available.
-- Pairing uses browser confirmation and a single-use, short-lived code. The resulting credential is bound to the operator-approved user, plugin ID, installation, development workspace and session.
+- Pairing uses browser confirmation and a single-use, short-lived code. The resulting credential is bound to the operator-approved user, plugin ID, installation, development organization and session.
 - A connected build receives an ephemeral `dev:<session-id>:<plugin-id>` identity and never replaces the installed package or inherits its grants, secrets, records or provenance.
-- Visibility is limited to the paired author by default. The default target is a dedicated development workspace with fixture or disposable data, not production workspace data.
+- Visibility is limited to the paired author by default. The default target is a dedicated development organization with fixture or disposable data, not production organization data.
 - Permissions require explicit review. A permission or destination change pauses delivery until approved again.
 - Browser and server code use the normal iframe isolation, capability broker, runtime quotas, schema validation and network policy.
 - A remote CLI creates an outbound mutually authenticated TLS/WebSocket session and sends compiled incremental artifacts. The server cannot browse the author's filesystem or initiate access to localhost.
@@ -255,7 +255,7 @@ Abuse tests cover replayed pairing codes, stolen or expired session tokens, plug
 - Strip hop-by-hop and sensitive host headers.
 - Log destination, plugin, scope, timing, and result without secrets or full sensitive bodies.
 
-Webhooks use random endpoint identifiers, signature verification where supported, replay windows, body limits, and a mapping to a specific installed plugin/workspace. Receiving a webhook does not grant caller-selected workspace context.
+Webhooks use random endpoint identifiers, signature verification where supported, replay windows, body limits, and a mapping to a specific installed plugin/organization. Receiving a webhook does not grant caller-selected organization context.
 
 ## Package and dependency supply chain
 
@@ -297,7 +297,7 @@ Key rotation rewraps data keys in bounded batches and retains prior key versions
 - User-facing diagnostic bundles show exactly what will be included and permit inspection before download.
 - Crash reporting, if configured, is an explicit operator choice with documented fields and destination.
 - Portable exports list included categories and exclude credentials/session data.
-- Account/workspace deletion follows published retention behavior and includes extension-owned linked data.
+- Account/organization deletion follows published retention behavior and includes extension-owned linked data.
 
 ## Audit records
 
@@ -309,10 +309,10 @@ Security audit entries cover:
 - Project access policy changes
 - Plugin upload, provenance decision, permission approval, enable/disable/update/purge
 - Secret creation/use metadata/rotation/deletion without secret values
-- Workspace exports, backups, restores, and permanent deletion
+- Organization exports, backups, restores, and permanent deletion
 - Configuration changes performed through Launch++
 
-Audit entries include actor, operation, target, time, request/correlation ID, source address summary where policy permits, outcome, and bounded metadata. They are append-oriented and protected from ordinary workspace editing. Operators can configure retention/export; a plugin cannot alter its audit trail.
+Audit entries include actor, operation, target, time, request/correlation ID, source address summary where policy permits, outcome, and bounded metadata. They are append-oriented and protected from ordinary organization editing. Operators can configure retention/export; a plugin cannot alter its audit trail.
 
 ## Configuration model
 
@@ -413,9 +413,9 @@ Readiness turns false before graceful shutdown, during incompatible migrations, 
 
 ### Logs
 
-Every request receives a correlation ID. Structured entries include service/module, route template, status, duration, actor type and opaque ID where appropriate, workspace ID where authorized, and error code. High-cardinality payloads and personal content are excluded.
+Every request receives a correlation ID. Structured entries include service/module, route template, status, duration, actor type and opaque ID where appropriate, organization ID where authorized, and error code. High-cardinality payloads and personal content are excluded.
 
-Plugin logs are tagged by package, workspace, invocation, and severity, with per-invocation byte/count limits. Authors see scoped logs; installation operators can inspect system-level failure context.
+Plugin logs are tagged by package, organization, invocation, and severity, with per-invocation byte/count limits. Authors see scoped logs; installation operators can inspect system-level failure context.
 
 ### Metrics
 
@@ -509,7 +509,7 @@ The application enforces quotas for package size, asset size, plugin records, jo
 
 ## Security and operations release gates
 
-- [ ] Cross-workspace authorization tests cover every resource family and plugin entry point.
+- [ ] Cross-organization authorization tests cover every resource family and plugin entry point.
 - [ ] CSRF, origin, cookie, proxy, and session rotation behavior is tested in production topology.
 - [ ] Markdown, uploads, theme tokens, and plugin package parsing have malicious fixtures.
 - [ ] SSRF defenses cover redirects, DNS rebinding, IPv4/IPv6 private ranges, and metadata endpoints.

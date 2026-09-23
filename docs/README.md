@@ -57,7 +57,7 @@ Dependency versions will be pinned in the lockfile when implementation starts. M
 | SQLite-first | Accepted | One-file ownership and simple operations; measure before adding PostgreSQL |
 | REST + SSE | Accepted | Stable, language-neutral API without a WebSocket requirement |
 | JSON themes | Accepted | Declarative and non-executable |
-| UI information architecture | Accepted for iteration | Global icon rail, contextual workspace/project sidebar, shared project views, route-backed task detail, and scoped Settings |
+| UI information architecture | Accepted for iteration | Global icon rail, organization navigation, shared project views, route-backed task detail, and scoped Settings |
 | Plugin public contract | Accepted | Manifest, capabilities, slots, commands, events, and owned storage |
 | Plugin authoring stacks | Accepted | React/TypeScript is recommended and vanilla HTML/CSS/JavaScript or TypeScript is supported; Vue, Svelte, and Angular are outside the planned v1 scope |
 | Plugin UI component system | Accepted | Ant Design powers the host and `@launchpp/ui`; public Launch++ tokens remain the custom-style contract |

@@ -32,13 +32,13 @@ function slugBase(name: string): string {
 export function availableProjectSlug(
   context: ReadContext,
   repository: ProjectRepository,
-  workspaceId: string,
+  organizationId: string,
   name: string,
 ): string {
   const base = slugBase(name);
   let candidate = base;
   let suffix = 2;
-  while (repository.findProjectBySlug(context, workspaceId, candidate)) {
+  while (repository.findProjectBySlug(context, organizationId, candidate)) {
     candidate = `${base.slice(0, Math.max(1, 64 - String(suffix).length - 1))}-${suffix}`;
     suffix += 1;
   }
@@ -55,13 +55,13 @@ function keyBase(name: string): string {
 export function availableProjectKey(
   context: ReadContext,
   repository: ProjectRepository,
-  workspaceId: string,
+  organizationId: string,
   name: string,
 ): string {
   const base = keyBase(name);
   let candidate = base;
   let suffix = 2;
-  while (repository.findProjectByKey(context, workspaceId, candidate)) {
+  while (repository.findProjectByKey(context, organizationId, candidate)) {
     candidate = `${base.slice(0, Math.max(1, 10 - String(suffix).length))}${suffix}`;
     suffix += 1;
   }

@@ -26,7 +26,7 @@ interface TaskRow {
   readonly title: string;
   readonly updated_at: number;
   readonly updated_by_user_id: string;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 interface LabelRow {
@@ -39,7 +39,7 @@ interface LabelRow {
   readonly project_id: null | string;
   readonly revision: number;
   readonly updated_at: number;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 interface CommentRow {
@@ -51,7 +51,7 @@ interface CommentRow {
   readonly revision: number;
   readonly task_id: string;
   readonly updated_at: number;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 interface ActivityRow {
@@ -62,11 +62,11 @@ interface ActivityRow {
   readonly operation: string;
 }
 
-const taskSelection = `SELECT id, workspace_id, project_id, number, parent_task_id, status_id,
+const taskSelection = `SELECT id, organization_id, project_id, number, parent_task_id, status_id,
   title, description_markdown, due_date, position, created_by_user_id, updated_by_user_id,
   created_at, updated_at, archived_at, deleted_at, revision FROM tasks`;
 
-const labelSelection = `SELECT id, workspace_id, project_id, name, comparison_key, color,
+const labelSelection = `SELECT id, organization_id, project_id, name, comparison_key, color,
   created_at, updated_at, archived_at, revision FROM labels`;
 
 function mapTask(row: TaskRow): Task {
@@ -87,7 +87,7 @@ function mapTask(row: TaskRow): Task {
     title: row.title,
     updatedAt: row.updated_at,
     updatedByUserId: row.updated_by_user_id,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -102,7 +102,7 @@ function mapLabel(row: LabelRow): Label {
     ...(row.project_id === null ? {} : { projectId: row.project_id }),
     revision: row.revision,
     updatedAt: row.updated_at,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -116,7 +116,7 @@ function mapComment(row: CommentRow): TaskComment {
     revision: row.revision,
     taskId: row.task_id,
     updatedAt: row.updated_at,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -140,13 +140,13 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO task_comments (
-          id, workspace_id, project_id, task_id, author_user_id,
+          id, organization_id, project_id, task_id, author_user_id,
           body_markdown, created_at, updated_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         comment.id,
-        comment.workspaceId,
+        comment.organizationId,
         comment.projectId,
         comment.taskId,
         comment.authorUserId,
@@ -161,13 +161,13 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO labels (
-          id, workspace_id, project_id, name, comparison_key, color,
+          id, organization_id, project_id, name, comparison_key, color,
           created_at, updated_at, archived_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         label.id,
-        label.workspaceId,
+        label.organizationId,
         label.projectId ?? null,
         label.name,
         label.comparisonKey,
@@ -183,14 +183,14 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO tasks (
-          id, workspace_id, project_id, number, parent_task_id, status_id, title,
+          id, organization_id, project_id, number, parent_task_id, status_id, title,
           description_markdown, due_date, position, created_by_user_id, updated_by_user_id,
           created_at, updated_at, archived_at, deleted_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
-        task.workspaceId,
+        task.organizationId,
         task.projectId,
         task.number,
         task.parentTaskId ?? null,
@@ -218,18 +218,18 @@ export class SqliteTaskRepository implements TaskRepository {
 
   findLabelByName(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string | undefined,
     comparisonKey: string,
   ): Label | undefined {
     const clause = projectId === undefined ? "project_id IS NULL" : "project_id = ?";
     const parameters =
       projectId === undefined
-        ? [workspaceId, comparisonKey]
-        : [workspaceId, projectId, comparisonKey];
+        ? [organizationId, comparisonKey]
+        : [organizationId, projectId, comparisonKey];
     const row = requireSqliteConnection(context)
       .prepare<unknown[], LabelRow>(
-        `${labelSelection} WHERE workspace_id = ? AND ${clause} AND comparison_key = ?`,
+        `${labelSelection} WHERE organization_id = ? AND ${clause} AND comparison_key = ?`,
       )
       .get(...parameters);
     return row ? mapLabel(row) : undefined;
@@ -254,7 +254,7 @@ export class SqliteTaskRepository implements TaskRepository {
   listComments(context: ReadContext, taskId: string): readonly TaskComment[] {
     return requireSqliteConnection(context)
       .prepare<[string], CommentRow>(
-        `SELECT id, workspace_id, project_id, task_id, author_user_id,
+        `SELECT id, organization_id, project_id, task_id, author_user_id,
                 body_markdown, created_at, updated_at, revision
          FROM task_comments WHERE task_id = ? ORDER BY created_at ASC, id ASC`,
       )
@@ -262,21 +262,21 @@ export class SqliteTaskRepository implements TaskRepository {
       .map(mapComment);
   }
 
-  listLabels(context: ReadContext, workspaceId: string, projectId: string): readonly Label[] {
+  listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[] {
     return requireSqliteConnection(context)
       .prepare<[string, string], LabelRow>(
         `${labelSelection}
-         WHERE workspace_id = ? AND (project_id IS NULL OR project_id = ?) AND archived_at IS NULL
+         WHERE organization_id = ? AND (project_id IS NULL OR project_id = ?) AND archived_at IS NULL
          ORDER BY project_id IS NOT NULL ASC, name COLLATE NOCASE ASC, id ASC`,
       )
-      .all(workspaceId, projectId)
+      .all(organizationId, projectId)
       .map(mapLabel);
   }
 
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[] {
     return requireSqliteConnection(context)
       .prepare<[string], LabelRow>(
-        `SELECT label.id, label.workspace_id, label.project_id, label.name,
+        `SELECT label.id, label.organization_id, label.project_id, label.name,
                 label.comparison_key, label.color, label.created_at, label.updated_at,
                 label.archived_at, label.revision
          FROM task_labels relation
@@ -290,24 +290,24 @@ export class SqliteTaskRepository implements TaskRepository {
 
   listTaskActivity(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     taskId: string,
   ): readonly TaskActivity[] {
     return requireSqliteConnection(context)
       .prepare<[string, string], ActivityRow>(
         `SELECT id, actor_user_id AS actor_id, operation, metadata_json, occurred_at
          FROM activity_entries
-         WHERE workspace_id = ? AND task_id = ?
+         WHERE organization_id = ? AND task_id = ?
          ORDER BY occurred_at DESC, id DESC
          LIMIT 100`,
       )
-      .all(workspaceId, taskId)
+      .all(organizationId, taskId)
       .map(mapActivity);
   }
 
   listTasks(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string,
     includeArchived = false,
   ): readonly Task[] {
@@ -317,18 +317,18 @@ export class SqliteTaskRepository implements TaskRepository {
          AND (parent.id IS NULL OR (parent.archived_at IS NULL AND parent.deleted_at IS NULL))`;
     return requireSqliteConnection(context)
       .prepare<[string, string], TaskRow>(
-        `SELECT task.id, task.workspace_id, task.project_id, task.number,
+        `SELECT task.id, task.organization_id, task.project_id, task.number,
                 task.parent_task_id, task.status_id, task.title, task.description_markdown,
                 task.due_date, task.position, task.created_by_user_id,
                 task.updated_by_user_id, task.created_at, task.updated_at,
                 task.archived_at, task.deleted_at, task.revision
          FROM tasks task
          LEFT JOIN tasks parent ON parent.id = task.parent_task_id
-         WHERE task.workspace_id = ? AND task.project_id = ? AND ${stateClause}
+         WHERE task.organization_id = ? AND task.project_id = ? AND ${stateClause}
          ORDER BY task.status_id ASC, task.parent_task_id IS NOT NULL ASC,
                   task.parent_task_id ASC, task.position ASC, task.id ASC`,
       )
-      .all(workspaceId, projectId)
+      .all(organizationId, projectId)
       .map(mapTask);
   }
 
@@ -379,18 +379,24 @@ export class SqliteTaskRepository implements TaskRepository {
       assignedByUserId: string;
       taskId: string;
       userIds: readonly string[];
-      workspaceId: string;
+      organizationId: string;
     }>,
   ): void {
     const connection = requireSqliteConnection(context);
     connection.prepare("DELETE FROM task_assignees WHERE task_id = ?").run(input.taskId);
     const insert = connection.prepare(
       `INSERT INTO task_assignees (
-        workspace_id, task_id, user_id, assigned_by_user_id, assigned_at
+        organization_id, task_id, user_id, assigned_by_user_id, assigned_at
       ) VALUES (?, ?, ?, ?, ?)`,
     );
     for (const userId of input.userIds) {
-      insert.run(input.workspaceId, input.taskId, userId, input.assignedByUserId, input.assignedAt);
+      insert.run(
+        input.organizationId,
+        input.taskId,
+        userId,
+        input.assignedByUserId,
+        input.assignedAt,
+      );
     }
   }
 
@@ -401,18 +407,24 @@ export class SqliteTaskRepository implements TaskRepository {
       appliedByUserId: string;
       labelIds: readonly string[];
       taskId: string;
-      workspaceId: string;
+      organizationId: string;
     }>,
   ): void {
     const connection = requireSqliteConnection(context);
     connection.prepare("DELETE FROM task_labels WHERE task_id = ?").run(input.taskId);
     const insert = connection.prepare(
       `INSERT INTO task_labels (
-        workspace_id, task_id, label_id, applied_by_user_id, applied_at
+        organization_id, task_id, label_id, applied_by_user_id, applied_at
       ) VALUES (?, ?, ?, ?, ?)`,
     );
     for (const labelId of input.labelIds) {
-      insert.run(input.workspaceId, input.taskId, labelId, input.appliedByUserId, input.appliedAt);
+      insert.run(
+        input.organizationId,
+        input.taskId,
+        labelId,
+        input.appliedByUserId,
+        input.appliedAt,
+      );
     }
   }
 
@@ -422,7 +434,7 @@ export class SqliteTaskRepository implements TaskRepository {
         `UPDATE tasks SET parent_task_id = ?, status_id = ?, title = ?,
              description_markdown = ?, due_date = ?, position = ?, updated_by_user_id = ?,
              updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
-         WHERE id = ? AND workspace_id = ? AND project_id = ?`,
+         WHERE id = ? AND organization_id = ? AND project_id = ?`,
       )
       .run(
         task.parentTaskId ?? null,
@@ -437,7 +449,7 @@ export class SqliteTaskRepository implements TaskRepository {
         task.deletedAt ?? null,
         task.revision,
         task.id,
-        task.workspaceId,
+        task.organizationId,
         task.projectId,
       );
   }

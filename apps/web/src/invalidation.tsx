@@ -15,7 +15,7 @@ export function InvalidationListener() {
     const handle = (message: MessageEvent<string>) => {
       try {
         const event = JSON.parse(message.data) as InvalidationEvent;
-        if (!Number.isSafeInteger(event.sequence) || !event.workspaceId) return;
+        if (!Number.isSafeInteger(event.sequence) || !event.organizationId) return;
         window.sessionStorage.setItem(cursorKey, String(event.sequence));
         void queryClient.invalidateQueries();
         window.dispatchEvent(

@@ -3,7 +3,7 @@ import type { ReadContext, WriteContext } from "../shared/transactions.js";
 export interface UserProfile {
   readonly avatarAssetId?: string;
   readonly createdAt: number;
-  readonly currentWorkspaceId?: string;
+  readonly currentOrganizationId?: string;
   readonly displayName: string;
   readonly locale: string;
   readonly revision: number;
@@ -12,7 +12,7 @@ export interface UserProfile {
   readonly userId: string;
 }
 
-export interface Workspace {
+export interface Organization {
   readonly archivedAt?: number;
   readonly createdAt: number;
   readonly createdByUserId: string;
@@ -25,16 +25,16 @@ export interface Workspace {
   readonly updatedAt: number;
 }
 
-export type WorkspaceMemberRole = "admin" | "member" | "owner";
-export type WorkspaceMemberState = "active" | "suspended";
+export type OrganizationMemberRole = "admin" | "member" | "owner";
+export type OrganizationMemberState = "active" | "suspended";
 
-export interface WorkspaceMembership {
+export interface OrganizationMembership {
   readonly joinedAt: number;
-  readonly role: WorkspaceMemberRole;
-  readonly state: WorkspaceMemberState;
+  readonly role: OrganizationMemberRole;
+  readonly state: OrganizationMemberState;
   readonly updatedAt: number;
   readonly userId: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface AuditEntry {
@@ -49,56 +49,60 @@ export interface AuditEntry {
   readonly outcome: "denied" | "failed" | "succeeded";
   readonly targetId: string;
   readonly targetType: string;
-  readonly workspaceId?: string;
+  readonly organizationId?: string;
 }
 
 export interface UserProfileRepository {
   create(context: WriteContext, profile: UserProfile): void;
   findByUserId(context: ReadContext, userId: string): UserProfile | undefined;
-  setCurrentWorkspace(
+  setCurrentOrganization(
     context: WriteContext,
-    input: Readonly<{ updatedAt: number; userId: string; workspaceId: string }>,
+    input: Readonly<{ updatedAt: number; userId: string; organizationId: string }>,
   ): void;
 }
 
-export interface WorkspaceRepository {
-  create(context: WriteContext, workspace: Workspace): void;
-  findById(context: ReadContext, workspaceId: string): Workspace | undefined;
-  findByName(context: ReadContext, installationId: string, name: string): Workspace | undefined;
-  findBySlug(context: ReadContext, installationId: string, slug: string): Workspace | undefined;
-  listForUser(context: ReadContext, userId: string): readonly Workspace[];
+export interface OrganizationRepository {
+  create(context: WriteContext, organization: Organization): void;
+  findById(context: ReadContext, organizationId: string): Organization | undefined;
+  findByName(context: ReadContext, installationId: string, name: string): Organization | undefined;
+  findBySlug(context: ReadContext, installationId: string, slug: string): Organization | undefined;
+  listForUser(context: ReadContext, userId: string): readonly Organization[];
   updateName(
     context: WriteContext,
     input: Readonly<{
       name: string;
       revision: number;
       updatedAt: number;
-      workspaceId: string;
+      organizationId: string;
     }>,
   ): void;
 }
 
-export interface WorkspaceMembershipRepository {
-  create(context: WriteContext, membership: WorkspaceMembership): void;
-  find(context: ReadContext, workspaceId: string, userId: string): WorkspaceMembership | undefined;
+export interface OrganizationMembershipRepository {
+  create(context: WriteContext, membership: OrganizationMembership): void;
+  find(
+    context: ReadContext,
+    organizationId: string,
+    userId: string,
+  ): OrganizationMembership | undefined;
 }
 
 export interface AuditWriter {
   append(context: WriteContext, entry: AuditEntry): void;
 }
 
-export class WorkspaceMembershipRequiredError extends Error {
-  override readonly name = "WorkspaceMembershipRequiredError";
+export class OrganizationMembershipRequiredError extends Error {
+  override readonly name = "OrganizationMembershipRequiredError";
 }
 
 export class UserProfileMissingError extends Error {
   override readonly name = "UserProfileMissingError";
 }
 
-export class WorkspaceNameAlreadyExistsError extends Error {
-  override readonly name = "WorkspaceNameAlreadyExistsError";
+export class OrganizationNameAlreadyExistsError extends Error {
+  override readonly name = "OrganizationNameAlreadyExistsError";
 }
 
-export class WorkspaceNotFoundError extends Error {
-  override readonly name = "WorkspaceNotFoundError";
+export class OrganizationNotFoundError extends Error {
+  override readonly name = "OrganizationNotFoundError";
 }

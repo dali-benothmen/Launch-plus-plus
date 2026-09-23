@@ -68,43 +68,43 @@ export {
 } from "./tasks/task.js";
 export { TaskService, type TaskServiceDependencies } from "./tasks/task-service.js";
 export {
-  type CreateWorkspaceDependencies,
-  type CreateWorkspaceInput,
-  CreateWorkspaceService,
-} from "./workspaces/create-workspace.js";
+  type CreateOrganizationDependencies,
+  type CreateOrganizationInput,
+  CreateOrganizationService,
+} from "./organizations/create-organization.js";
 export {
   type InitializeOwnerDependencies,
   type InitializeOwnerInput,
   InitializeOwnerService,
-} from "./workspaces/initialize-owner.js";
+} from "./organizations/initialize-owner.js";
 export {
-  type RenameWorkspaceDependencies,
-  type RenameWorkspaceInput,
-  RenameWorkspaceService,
-} from "./workspaces/rename-workspace.js";
+  type RenameOrganizationDependencies,
+  type RenameOrganizationInput,
+  RenameOrganizationService,
+} from "./organizations/rename-organization.js";
 export {
-  type SelectCurrentWorkspaceDependencies,
-  SelectCurrentWorkspaceService,
-} from "./workspaces/select-current-workspace.js";
+  type SelectCurrentOrganizationDependencies,
+  SelectCurrentOrganizationService,
+} from "./organizations/select-current-organization.js";
 export type {
   AuditEntry,
   AuditWriter,
   UserProfile,
   UserProfileRepository,
-  Workspace,
-  WorkspaceMemberRole,
-  WorkspaceMemberState,
-  WorkspaceMembership,
-  WorkspaceMembershipRepository,
-  WorkspaceRepository,
-} from "./workspaces/workspace.js";
+  Organization,
+  OrganizationMemberRole,
+  OrganizationMemberState,
+  OrganizationMembership,
+  OrganizationMembershipRepository,
+  OrganizationRepository,
+} from "./organizations/organization.js";
 export {
   UserProfileMissingError,
-  WorkspaceMembershipRequiredError,
-  WorkspaceNameAlreadyExistsError,
-  WorkspaceNotFoundError,
-} from "./workspaces/workspace.js";
+  OrganizationMembershipRequiredError,
+  OrganizationNameAlreadyExistsError,
+  OrganizationNotFoundError,
+} from "./organizations/organization.js";
 export {
-  type WorkspaceContext,
-  WorkspaceQueryService,
-} from "./workspaces/workspace-query.js";
+  type OrganizationContext,
+  OrganizationQueryService,
+} from "./organizations/organization-query.js";

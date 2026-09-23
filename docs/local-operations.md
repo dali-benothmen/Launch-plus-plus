@@ -61,7 +61,7 @@ docker compose run --rm launchpp node apps/server/dist/operations-cli.js restore
 docker compose up -d launchpp
 ```
 
-After a restore, confirm `/health/ready`, sign in, and inspect representative workspaces, projects, tasks, comments, search results, and activity. Keep the automatically generated pre-restore backup until the restored installation has been reviewed.
+After a restore, confirm `/health/ready`, sign in, and inspect representative organizations, projects, tasks, comments, search results, and activity. Keep the automatically generated pre-restore backup until the restored installation has been reviewed.
 
 ## Failure handling
 

@@ -1,4 +1,4 @@
-import type { IdentitySession, WorkspaceMembership } from "@launchpp/core";
+import type { IdentitySession, OrganizationMembership } from "@launchpp/core";
 
 export type Actor =
   | Readonly<{ type: "anonymous" }>
@@ -13,20 +13,20 @@ export function actorFromIdentitySession(session: IdentitySession | null): Actor
   });
 }
 
-export type WorkspaceOperation =
-  | "workspace.create"
-  | "workspace.manage"
-  | "workspace.read"
-  | "workspace.select";
+export type OrganizationOperation =
+  | "organization.create"
+  | "organization.manage"
+  | "organization.read"
+  | "organization.select";
 
-export function canCreateWorkspace(actor: Actor): boolean {
+export function canCreateOrganization(actor: Actor): boolean {
   return actor.type === "user";
 }
 
-export function canAccessWorkspace(
+export function canAccessOrganization(
   actor: Actor,
-  membership: WorkspaceMembership | undefined,
-  operation: Exclude<WorkspaceOperation, "workspace.create">,
+  membership: OrganizationMembership | undefined,
+  operation: Exclude<OrganizationOperation, "organization.create">,
 ): boolean {
   if (
     actor.type !== "user" ||
@@ -36,6 +36,6 @@ export function canAccessWorkspace(
   ) {
     return false;
   }
-  if (operation === "workspace.read" || operation === "workspace.select") return true;
+  if (operation === "organization.read" || operation === "organization.select") return true;
   return membership.role === "owner";
 }

@@ -19,8 +19,8 @@ export type {
   TaskDetail,
   TaskPage,
   TaskView,
-  WorkspaceContext,
-  WorkspaceSummary,
+  OrganizationContext,
+  OrganizationSummary,
 } from "@launchpp/api-contracts";
 export type { CoreApiClient, RequestOptions } from "./generated.js";
 
@@ -208,6 +208,6 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
       status: () => json<SetupStatus>("/api/setup/status"),
     }),
     tasks: core.tasks,
-    workspaces: core.workspaces,
+    organizations: core.organizations,
   });
 }

@@ -6,7 +6,7 @@ export class SqliteAuditWriter implements AuditWriter {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO audit_entries (
-          id, installation_id, workspace_id, actor_type, actor_id,
+          id, installation_id, organization_id, actor_type, actor_id,
           operation, target_type, target_id, outcome, metadata_json,
           occurred_at, correlation_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -14,7 +14,7 @@ export class SqliteAuditWriter implements AuditWriter {
       .run(
         entry.id,
         entry.installationId,
-        entry.workspaceId ?? null,
+        entry.organizationId ?? null,
         entry.actorType,
         entry.actorId ?? null,
         entry.operation,

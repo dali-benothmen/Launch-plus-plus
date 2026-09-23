@@ -56,7 +56,7 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
   }, [api, open, query]);
 
   const openResult = (result: SearchResult) => {
-    const root = `/app/workspaces/${result.workspaceId}/projects/${result.projectId}`;
+    const root = `/app/organizations/${result.organizationId}/projects/${result.projectId}`;
     navigate(result.kind === "task" ? `${root}/board/tasks/${result.resourceId}` : `${root}/board`);
     onClose();
   };

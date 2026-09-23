@@ -3,7 +3,7 @@ import {
   type ProjectCatalog,
   type ProjectSummary,
   type TaskView,
-  type WorkspaceContext,
+  type OrganizationContext,
 } from "@launchpp/api-client";
 import {
   Alert,
@@ -26,12 +26,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
-import { ProjectTaskWorkspace } from "./project-tasks.js";
+import { ProjectTaskOrganization } from "./project-tasks.js";
 import { ResourceFailure } from "./route-boundaries.js";
 
 interface MyWorkProject {
   readonly project: ProjectSummary;
-  readonly workspaceName: string;
+  readonly organizationName: string;
 }
 
 interface MyWorkTask {
@@ -40,7 +40,7 @@ interface MyWorkTask {
   readonly statusColor: string;
   readonly statusName: string;
   readonly task: TaskView;
-  readonly workspaceName: string;
+  readonly organizationName: string;
 }
 
 interface MyWorkData {
@@ -91,33 +91,33 @@ export function MyWorkPage() {
 
   const load = useCallback(() => {
     setLoadError(undefined);
-    void Promise.all([api.auth.session(), api.workspaces.list({ limit: 100 })])
+    void Promise.all([api.auth.session(), api.organizations.list({ limit: 100 })])
       .then(async ([session, context]) => {
         if (!session) throw new ApiError(401, "Your session has expired.");
 
         const catalogs = await Promise.all(
-          context.workspaces.map(async (workspace) => ({
-            catalog: await api.projects.list(workspace.id, { limit: 100 }),
-            workspace,
+          context.organizations.map(async (organization) => ({
+            catalog: await api.projects.list(organization.id, { limit: 100 }),
+            organization,
           })),
         );
-        const projects = catalogs.flatMap(({ catalog, workspace }) =>
+        const projects = catalogs.flatMap(({ catalog, organization }) =>
           catalog.projects
             .filter((project) => project.archivedAt === undefined)
-            .map((project) => ({ project, workspaceName: workspace.name })),
+            .map((project) => ({ project, organizationName: organization.name })),
         );
         const tasks = (
           await Promise.all(
             projects.map(async (entry) => {
               const catalog = catalogs.find(
-                ({ workspace }) => workspace.id === entry.project.workspaceId,
+                ({ organization }) => organization.id === entry.project.organizationId,
               )?.catalog;
               const statuses = new Map(
                 catalog?.statuses
                   .filter((status) => status.projectId === entry.project.id)
                   .map((status) => [status.id, status]),
               );
-              const page = await api.tasks.list(entry.project.workspaceId, entry.project.id, {
+              const page = await api.tasks.list(entry.project.organizationId, entry.project.id, {
                 limit: 100,
               });
               return page.items.flatMap((task) => {
@@ -201,14 +201,14 @@ export function MyWorkPage() {
 
   const openProject = (project: ProjectSummary) => {
     void api.projects
-      .markOpened(project.workspaceId, project.id)
+      .markOpened(project.organizationId, project.id)
       .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
       .catch(() => undefined);
-    navigate(`/app/workspaces/${project.workspaceId}/projects/${project.id}/board`);
+    navigate(`/app/organizations/${project.organizationId}/projects/${project.id}/board`);
   };
 
   const projectHref = (project: ProjectSummary) =>
-    `/app/workspaces/${project.workspaceId}/projects/${project.id}/board`;
+    `/app/organizations/${project.organizationId}/projects/${project.id}/board`;
 
   const projectLink = (project: ProjectSummary, label: string) => (
     <Typography.Link
@@ -230,7 +230,7 @@ export function MyWorkPage() {
           onClick={(event) => {
             event.preventDefault();
             void api.projects
-              .markOpened(project.workspaceId, project.id)
+              .markOpened(project.organizationId, project.id)
               .then(() => window.dispatchEvent(new Event(projectNavigationChangedEvent)))
               .catch(() => undefined);
             navigate(`${projectHref(project)}/tasks/${task.id}`);
@@ -327,12 +327,12 @@ export function MyWorkPage() {
           </Card>
           <Card size="small" title="Recent and favorite projects">
             <List
-              itemRender={({ project, workspaceName }) => (
+              itemRender={({ project, organizationName }) => (
                 <div className="my-work-list-item">
                   <div className="my-work-item-copy">
                     {projectLink(project, project.name)}
                     <Typography.Text type="secondary">
-                      {workspaceName} · {project.key}
+                      {organizationName} · {project.key}
                     </Typography.Text>
                   </div>
                   {project.favorite ? <Tag>Favorite</Tag> : null}
@@ -351,52 +351,56 @@ export function MyWorkPage() {
 export function ProjectCreationEntryPage() {
   const api = useApiClient();
   const navigate = useNavigate();
-  const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext>();
+  const [organizationContext, setOrganizationContext] = useState<OrganizationContext>();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>();
 
-  const loadWorkspace = useCallback(() => {
+  const loadOrganization = useCallback(() => {
     setError(undefined);
-    void api.workspaces.list().then(setWorkspaceContext).catch(setError);
+    void api.organizations.list().then(setOrganizationContext).catch(setError);
   }, [api]);
 
-  useEffect(() => loadWorkspace(), [loadWorkspace]);
+  useEffect(() => loadOrganization(), [loadOrganization]);
 
   const createProject = async () => {
-    const workspaceId = workspaceContext?.currentWorkspaceId;
-    if (!workspaceId || saving || name.trim().length === 0) return;
+    const organizationId = organizationContext?.currentOrganizationId;
+    if (!organizationId || saving || name.trim().length === 0) return;
     setSaving(true);
     setError(undefined);
     try {
-      const project = await api.projects.create(workspaceId, { name });
+      const project = await api.projects.create(organizationId, { name });
       window.dispatchEvent(new Event(projectNavigationChangedEvent));
-      void api.projects.markOpened(workspaceId, project.id).catch(() => undefined);
-      navigate(`/app/workspaces/${workspaceId}/projects/${project.id}/board`, { replace: true });
+      void api.projects.markOpened(organizationId, project.id).catch(() => undefined);
+      navigate(`/app/organizations/${organizationId}/projects/${project.id}/board`, {
+        replace: true,
+      });
     } catch (reason) {
       setError(reason);
       setSaving(false);
     }
   };
 
-  if (!workspaceContext && !error) {
+  if (!organizationContext && !error) {
     return (
       <div className="page-loading">
         <Spin />
       </div>
     );
   }
-  if (!workspaceContext && error) {
-    return <ResourceFailure error={error} onRetry={loadWorkspace} />;
+  if (!organizationContext && error) {
+    return <ResourceFailure error={error} onRetry={loadOrganization} />;
   }
 
-  const currentWorkspace = workspaceContext?.workspaces.find(
-    (workspace) => workspace.id === workspaceContext.currentWorkspaceId,
+  const currentOrganization = organizationContext?.organizations.find(
+    (organization) => organization.id === organizationContext.currentOrganizationId,
   );
 
   return (
     <section aria-labelledby="project-creation-title" className="page-stack">
-      <Typography.Text type="secondary">{currentWorkspace?.name ?? "Workspace"}</Typography.Text>
+      <Typography.Text type="secondary">
+        {currentOrganization?.name ?? "Organization"}
+      </Typography.Text>
       <Typography.Title id="project-creation-title" level={1}>
         Create project
       </Typography.Title>
@@ -431,7 +435,7 @@ export function ProjectCreationEntryPage() {
           </div>
         </Form.Item>
         <Button
-          disabled={!workspaceContext?.currentWorkspaceId || name.trim().length === 0}
+          disabled={!organizationContext?.currentOrganizationId || name.trim().length === 0}
           loading={saving}
           type="submit"
           variant="primary"
@@ -445,7 +449,7 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
-  const { projectId, taskId, view, workspaceId } = useParams();
+  const { projectId, taskId, view, organizationId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
   const [memberName, setMemberName] = useState("");
@@ -454,9 +458,9 @@ export function ProjectOverviewPage() {
   const [messageApi, messageHolder] = message.useMessage();
 
   const loadProject = useCallback(() => {
-    if (!workspaceId) return;
+    if (!organizationId) return;
     setError(undefined);
-    void Promise.all([api.projects.list(workspaceId), api.auth.session()])
+    void Promise.all([api.projects.list(organizationId), api.auth.session()])
       .then(([nextCatalog, session]) => {
         if (!session) throw new ApiError(401, "Your session has expired.");
         setCatalog(nextCatalog);
@@ -464,17 +468,17 @@ export function ProjectOverviewPage() {
         setMemberName(session.identity.name);
       })
       .catch(setError);
-  }, [api, workspaceId]);
+  }, [api, organizationId]);
 
   useEffect(() => {
     loadProject();
     const reloadInvalidated = (event: Event) => {
       const detail = (
-        event as CustomEvent<{ projectId?: string; resourceType: string; workspaceId: string }>
+        event as CustomEvent<{ projectId?: string; resourceType: string; organizationId: string }>
       ).detail;
       if (
-        detail.workspaceId === workspaceId &&
-        (detail.resourceType === "workspace" || detail.projectId === projectId)
+        detail.organizationId === organizationId &&
+        (detail.resourceType === "organization" || detail.projectId === projectId)
       ) {
         loadProject();
       }
@@ -485,7 +489,7 @@ export function ProjectOverviewPage() {
       window.removeEventListener(projectNavigationChangedEvent, loadProject);
       window.removeEventListener(invalidationEventName, reloadInvalidated);
     };
-  }, [loadProject, projectId, workspaceId]);
+  }, [loadProject, projectId, organizationId]);
 
   const project = catalog?.projects.find((item) => item.id === projectId);
   const statuses = useMemo(
@@ -515,10 +519,10 @@ export function ProjectOverviewPage() {
   }
 
   const toggleFavorite = async () => {
-    if (savingFavorite || !workspaceId) return;
+    if (savingFavorite || !organizationId) return;
     setSavingFavorite(true);
     try {
-      await api.projects.setFavorite(workspaceId, project.id, !project.favorite);
+      await api.projects.setFavorite(organizationId, project.id, !project.favorite);
       setCatalog((current) =>
         current
           ? {
@@ -592,7 +596,7 @@ export function ProjectOverviewPage() {
       {project.archivedAt !== undefined ? (
         <Alert showIcon title="This project is archived." type="warning" />
       ) : null}
-      <ProjectTaskWorkspace
+      <ProjectTaskOrganization
         archived={project.archivedAt !== undefined}
         currentUserId={memberId}
         projectId={project.id}
@@ -600,7 +604,7 @@ export function ProjectOverviewPage() {
         statuses={statuses}
         taskId={taskId}
         view={activeView}
-        workspaceId={workspaceId ?? project.workspaceId}
+        organizationId={organizationId ?? project.organizationId}
       />
     </section>
   );
@@ -613,7 +617,7 @@ export function MembersPage() {
         Members
       </Typography.Title>
       <Typography.Text type="secondary">
-        Workspace membership will be available with the collaboration slice.
+        Organization membership will be available with the collaboration slice.
       </Typography.Text>
     </section>
   );
@@ -643,7 +647,7 @@ export function SettingsPage() {
         Settings
       </Typography.Title>
       <Typography.Text type="secondary">
-        Account, workspace, appearance, and plugin settings will live here.
+        Account, organization, appearance, and plugin settings will live here.
       </Typography.Text>
       {error instanceof Error ? <Alert title={error.message} type="error" /> : null}
       <div className="settings-actions">

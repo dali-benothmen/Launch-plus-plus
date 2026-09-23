@@ -13,7 +13,7 @@ Launch++ should feel small when first installed and remain understandable as pro
 - Separate Home and Projects pages with distinct responsibilities.
 - A single project page whose core and plugin views share the same header.
 - Route-backed task details that preserve project context.
-- One settings system divided by personal, workspace, project, and installation authority.
+- One settings system divided by personal, organization, project, and installation authority.
 - Host-controlled plugin placements instead of plugin-owned navigation shells.
 
 Core work remains complete when every optional plugin is disabled.
@@ -41,7 +41,7 @@ The rail contains icons with accessible names and visible tooltips:
 3. Global search.
 4. Calendar when the official Calendar plugin is enabled.
 5. Members.
-6. Approved plugin-contributed workspace pages.
+6. Approved plugin-contributed organization pages.
 7. Settings near the bottom.
 8. User/avatar menu at the bottom.
 
@@ -82,18 +82,18 @@ Authentication pages use a shared split-page shell on large screens:
 └────────────────────────────┴────────────────────────────┘
 ```
 
-The right side should reinforce the product rather than contain unrelated decoration. Suitable content includes a simplified Launch++ workspace preview, a Board-to-Calendar example, a restrained illustration, or one short product principle. It must not expose real workspace data. On narrow screens, the presentation side disappears and the form becomes the full page.
+The right side should reinforce the product rather than contain unrelated decoration. Suitable content includes a simplified Launch++ organization preview, a Board-to-Calendar example, a restrained illustration, or one short product principle. It must not expose real organization data. On narrow screens, the presentation side disappears and the form becomes the full page.
 
 | Page | Responsibility | Required content |
 | --- | --- | --- |
 | Sign in | Authenticate an existing account | Email, password, configured provider options, recovery link, validation, loading and failure states |
 | Sign up / create account | Create an account when installation policy permits it | Identity and credential fields, policy message, terms where applicable, invitation awareness |
 | Account recovery | Restore access | Recovery request, token completion, expiry, success and invalid-token states |
-| Accept invitation | Join the intended workspace | Workspace/inviter identity, sign-in or account creation, accept/decline result |
+| Accept invitation | Join the intended organization | Organization/inviter identity, sign-in or account creation, accept/decline result |
 | First installation setup | Create the first owner securely | Setup-token validation and owner account |
-| Workspace setup | Establish the first working context | Workspace name and completion state |
+| Organization setup | Establish the first working context | Organization name and completion state |
 
-The sign-up surface supports open registration, invitation-required registration, and registration-disabled policies. An invite link should never send an authenticated user through unrelated workspace creation.
+The sign-up surface supports open registration, invitation-required registration, and registration-disabled policies. An invite link should never send an authenticated user through unrelated organization creation.
 
 ## Light onboarding
 
@@ -102,19 +102,19 @@ Onboarding is a short path to useful work, not a product questionnaire.
 ### First installation owner
 
 1. Create the owner account.
-2. Name the first workspace.
+2. Name the first organization.
 3. Name the first project and accept a small default status workflow.
 4. Enter the project Board.
 
 ### Invited member
 
 1. Create or confirm the account.
-2. Accept the workspace invitation.
-3. Enter the invited workspace or project.
+2. Accept the organization invitation.
+3. Enter the invited organization or project.
 
-### User creating an additional workspace
+### User creating an additional organization
 
-1. Name the workspace.
+1. Name the organization.
 2. Create the first project.
 3. Enter the project.
 
@@ -122,7 +122,7 @@ Company size, industry, job title, feature interests, integrations, and plugin r
 
 ## First-run Home
 
-After workspace setup, Home asks the owner to create the first project. Creating it opens the Board immediately. The ordinary Home replaces that first-run prompt with recent and organizational content; it does not become a configurable analytics dashboard.
+After organization setup, Home asks the owner to create the first project. Creating it opens the Board immediately. The ordinary Home replaces that first-run prompt with recent and organizational content; it does not become a configurable analytics dashboard.
 
 ## Project page
 
@@ -215,7 +215,7 @@ When the Calendar plugin is disabled, its icon and contribution disappear while 
 
 ## Members
 
-Members is a core workspace page and a rail destination. Ordinary members may view the directory according to workspace policy; authorized owners and administrators receive management controls.
+Members is a core organization page and a rail destination. Ordinary members may view the directory according to organization policy; authorized owners and administrators receive management controls.
 
 The contextual sidebar contains:
 
@@ -262,12 +262,12 @@ Settings uses the global rail plus the contextual sidebar. The contextual naviga
 - **Notifications:** personal delivery preferences as channels are introduced.
 - **Sessions:** active sessions and revocation.
 
-### Workspace
+### Organization
 
-- **General:** workspace name and defaults.
+- **General:** organization name and defaults.
 - **Members:** the administrative view of invitations, roles, and removal; it links to the main Members directory rather than duplicating it.
-- **Extensions:** enable operator-installed packages, review grants, choose project scopes, configure workspace plugin settings, and inspect health.
-- **Data and export:** workspace export/import entry points, retention explanations, and authorized deletion.
+- **Extensions:** enable operator-installed packages, review grants, choose project scopes, configure organization plugin settings, and inspect health.
+- **Data and export:** organization export/import entry points, retention explanations, and authorized deletion.
 
 ### Current project
 
@@ -278,37 +278,37 @@ Settings uses the global rail plus the contextual sidebar. The contextual naviga
 ### Installation operator
 
 - **Packages:** upload a `.launch-plugin`, validate it, review identity/provenance/permissions, install versions, and remove unused artifacts.
-- **Developer Mode:** enable the temporary channel, approve pairing, choose a development workspace, show connected developer/session/expiry, and revoke access.
+- **Developer Mode:** enable the temporary channel, approve pairing, choose a development organization, show connected developer/session/expiry, and revoke access.
 - **System:** canonical URL, mail/integration configuration summaries, application version, and update readiness.
 - **Backups:** backup status and create, verify, and restore entry points with strong confirmation.
 - **Diagnostics:** health, storage use, failed jobs/plugins, safe-start controls, and redacted diagnostic export.
 
-Workspace ownership does not automatically grant installation-operator access on a shared or hosted deployment. The UI communicates this through absent groups and clear authority descriptions rather than a screen full of disabled controls.
+Organization ownership does not automatically grant installation-operator access on a shared or hosted deployment. The UI communicates this through absent groups and clear authority descriptions rather than a screen full of disabled controls.
 
 ## Plugin management journey
 
-Package installation and workspace enablement remain separate:
+Package installation and organization enablement remain separate:
 
 1. An installation operator opens **Settings → Installation → Packages** and uploads an archive.
 2. Launch++ validates it before any executable code runs.
 3. The operator reviews publisher/provenance, contents, compatibility, permissions, and size, then adds it to the installation package pool.
-4. A workspace administrator opens **Settings → Workspace → Extensions**, reviews workspace grants and project scopes, and enables it.
+4. An organization administrator opens **Settings → Organization → Extensions**, reviews organization grants and project scopes, and enables it.
 5. Project administrators configure project enablement and placements where allowed.
 6. Disabling removes contributions and execution while retaining data. Removing a package and purging plugin data are distinct, more privileged actions.
 
-A future marketplace changes discovery, purchase, and acquisition. It does not replace the permission review, workspace enablement, or project-placement surfaces.
+A future marketplace changes discovery, purchase, and acquisition. It does not replace the permission review, organization enablement, or project-placement surfaces.
 
 ## Plugin contribution placement
 
 | Contribution | Product placement | Host responsibility |
 | --- | --- | --- |
-| Workspace page | Global rail as an approved plugin icon, with overflow when required | Icon, tooltip, order, route, active state, visibility, permissions |
+| Organization page | Global rail as an approved plugin icon, with overflow when required | Icon, tooltip, order, route, active state, visibility, permissions |
 | Project page | Project view rail after Board and List | Label, route, project context, ordering, overflow, failure boundary |
 | Task field | Supported task properties and configured Board/List placements | Native input, validation, visibility, theme, authorization |
 | Task panel | Task detail Extensions region | Boundary, loading/error state, theme bridge, lifecycle |
 | Task/card action | Existing host action menu | Native item, plugin identity, permission state, confirmation |
 | Board action | Board toolbar or overflow | Placement, density, responsive overflow, permission state |
-| Settings contribution | Personal, workspace, or project settings scope | Scope, navigation, save/error behavior, authorization |
+| Settings contribution | Personal, organization, or project settings scope | Scope, navigation, save/error behavior, authorization |
 | Command | Command palette and declared contextual menu | Discovery, shortcut policy, inputs, results, plugin identity |
 | Custom dialog | Host-owned dialog containing a sandboxed surface | Focus, close behavior, size limits, theme, error isolation |
 
@@ -328,7 +328,7 @@ Every page or substantial surface defines:
 - Narrow-screen behavior.
 - Keyboard entry, visible focus, and predictable return focus.
 
-All primary operations work without drag and drop. URLs identify workspace, project, view, and selected task where appropriate. Safe-start mode uses the same core pages while omitting optional plugin contributions.
+All primary operations work without drag and drop. URLs identify organization, project, view, and selected task where appropriate. Safe-start mode uses the same core pages while omitting optional plugin contributions.
 
 ## Initial page inventory
 
@@ -350,12 +350,12 @@ All primary operations work without drag and drop. URLs identify workspace, proj
 - Members.
 - Search results when an overlay is insufficient.
 - Notification history.
-- Settings with personal, workspace, project, and installation scopes.
+- Settings with personal, organization, project, and installation scopes.
 
 ### Official and third-party extensions
 
 - Official Calendar plugin page.
-- Workspace plugin pages represented by approved rail icons.
+- Organization plugin pages represented by approved rail icons.
 - Project plugin pages represented in the project view rail.
 - Plugin settings embedded in the appropriate Settings scope.
 
@@ -377,13 +377,13 @@ These may be introduced later or through plugins without changing the stable she
 
 - Desktop uses a narrow global icon rail and a flexible main-content region.
 - Projects owns project discovery and organization instead of a permanent project sidebar.
-- Workspaces contain projects and optional one-level folders.
+- Organizations contain projects and optional one-level folders.
 - Authentication uses a split form/presentation layout on wide screens.
 - Onboarding is path-aware and ends at useful project work quickly.
 - Board, List, and plugin project views share one project page and header.
 - Task detail is a route-backed side panel on desktop and a page on narrow screens.
 - Calendar is a first-class experience delivered by an official bundled plugin.
-- Members is a core workspace page.
+- Members is a core organization page.
 - Settings is one scoped system, and package upload remains an installation-operator responsibility.
 - Plugins extend host-owned navigation and surfaces but do not create parallel shells.
 
@@ -396,4 +396,4 @@ The first usability review should verify:
 - Whether folders and the project table remain clear for realistic project sets.
 - Whether the two-row project header remains calm after several plugin views are enabled.
 - Whether the route-backed task panel preserves enough Board/List context at common laptop widths.
-- Whether package installation versus workspace enablement is understandable to self-hosted administrators.
+- Whether package installation versus organization enablement is understandable to self-hosted administrators.

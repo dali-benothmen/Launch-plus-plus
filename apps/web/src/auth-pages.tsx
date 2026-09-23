@@ -20,7 +20,7 @@ function AuthLayout({ children, title }: PropsWithChildren<{ readonly title: str
         <div className="auth-principle">
           <Typography.Title level={2}>Plan clearly. Extend freely.</Typography.Title>
           <Typography.Text>
-            A calm project workspace with a plugin platform designed to grow with your team.
+            A calm project organization with a plugin platform designed to grow with your team.
           </Typography.Text>
         </div>
       </aside>
@@ -160,17 +160,17 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
   return children;
 }
 
-export function WorkspaceRequiredRoute({ children }: PropsWithChildren) {
+export function OrganizationRequiredRoute({ children }: PropsWithChildren) {
   const api = useApiClient();
-  const [hasWorkspace, setHasWorkspace] = useState<boolean>();
+  const [hasOrganization, setHasOrganization] = useState<boolean>();
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
     let active = true;
-    void api.workspaces
+    void api.organizations
       .list()
       .then((context) => {
-        if (active) setHasWorkspace(Boolean(context.currentWorkspaceId));
+        if (active) setHasOrganization(Boolean(context.currentOrganizationId));
       })
       .catch((reason: unknown) => {
         if (active) setError(reason);
@@ -182,13 +182,13 @@ export function WorkspaceRequiredRoute({ children }: PropsWithChildren) {
 
   if (error) {
     return (
-      <AuthLayout title="Unable to open your workspace">
+      <AuthLayout title="Unable to open your organization">
         <ErrorMessage error={error} />
       </AuthLayout>
     );
   }
-  if (hasWorkspace === undefined) return <Spin fullscreen description="Loading workspace" />;
-  if (!hasWorkspace) return <Navigate replace to="/workspace-setup" />;
+  if (hasOrganization === undefined) return <Spin fullscreen description="Loading organization" />;
+  if (!hasOrganization) return <Navigate replace to="/organization-setup" />;
   return children;
 }
 
@@ -240,7 +240,7 @@ export function SetupPage() {
         name: String(data.get("name") ?? ""),
         password: String(data.get("password") ?? ""),
       });
-      navigate("/workspace-setup", { replace: true });
+      navigate("/organization-setup", { replace: true });
     } catch (reason) {
       setError(reason);
     } finally {
@@ -296,7 +296,7 @@ export function SetupPage() {
   );
 }
 
-export function WorkspaceSetupPage() {
+export function OrganizationSetupPage() {
   const api = useApiClient();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
@@ -305,11 +305,11 @@ export function WorkspaceSetupPage() {
 
   useEffect(() => {
     let active = true;
-    void api.workspaces
+    void api.organizations
       .list()
       .then((context) => {
         if (!active) return;
-        if (context.currentWorkspaceId) {
+        if (context.currentOrganizationId) {
           navigate("/app", { replace: true });
           return;
         }
@@ -328,12 +328,12 @@ export function WorkspaceSetupPage() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const name = String(data.get("workspaceName") ?? "").trim();
+    const name = String(data.get("organizationName") ?? "").trim();
     if (!name) return;
     setError(undefined);
     setLoading(true);
     try {
-      await api.workspaces.create(name);
+      await api.organizations.create(name);
       navigate("/app", { replace: true });
     } catch (reason) {
       setError(reason);
@@ -341,21 +341,21 @@ export function WorkspaceSetupPage() {
     }
   };
 
-  if (checking) return <Spin fullscreen description="Preparing your workspace" />;
+  if (checking) return <Spin fullscreen description="Preparing your organization" />;
 
   return (
-    <AuthLayout title="Create your workspace">
+    <AuthLayout title="Create your organization">
       <Typography.Paragraph type="secondary">
         Give the place where your projects live a clear name. You can change it later.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
         <ErrorMessage error={error} />
-        <Field htmlFor="workspace-name" label="Workspace name">
+        <Field htmlFor="organization-name" label="Organization name">
           <Input
             autoFocus
-            id="workspace-name"
+            id="organization-name"
             maxLength={80}
-            name="workspaceName"
+            name="organizationName"
             placeholder="Acme"
             required
           />
@@ -397,7 +397,7 @@ export function SignInPage() {
   return (
     <AuthLayout title="Welcome back">
       <Typography.Paragraph type="secondary">
-        Sign in to continue to your workspace.
+        Sign in to continue to your organization.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
         <ErrorMessage error={error} />

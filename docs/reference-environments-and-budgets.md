@@ -27,7 +27,7 @@ Launch++ remains a single-node application with local SQLite for v1. Hardware de
 
 | Tier | CPU | Memory | Storage | OS/runtime | Purpose |
 | --- | --- | --- | --- | --- | --- |
-| Developer laptop | 4 logical modern x64/arm64 cores | 8 GiB | Local SSD with 10 GiB free | Supported desktop OS, Node.js 24 | Development, unit/browser tests, small personal workspace |
+| Developer laptop | 4 logical modern x64/arm64 cores | 8 GiB | Local SSD with 10 GiB free | Supported desktop OS, Node.js 24 | Development, unit/browser tests, small personal organization |
 | Small-team VPS | 2 vCPU | 4 GiB | 40 GiB SSD/NVMe with durable volume and backups | 64-bit Linux, Node.js 24 | Initial deployment and restore qualification |
 | Baseline capture host | 12-thread Intel i7-9750H | 16 GiB | Local SSD | x64 Linux 6.8, Node.js 24.14.1 | First foundation measurements only |
 

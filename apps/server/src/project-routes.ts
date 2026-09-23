@@ -10,7 +10,7 @@ import type {
   UpdateProjectInput,
 } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
-import { actorFromIdentitySession, canAccessWorkspace } from "@launchpp/authorization";
+import { actorFromIdentitySession, canAccessOrganization } from "@launchpp/authorization";
 import {
   ProjectCatalogService,
   ProjectFolderNameConflictError,
@@ -29,7 +29,7 @@ import {
   SqliteIdempotencyRepository,
   SqliteOutboxRepository,
   SqliteProjectRepository,
-  SqliteWorkspaceMembershipRepository,
+  SqliteOrganizationMembershipRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -61,7 +61,7 @@ function folderSummary(folder: ProjectFolder) {
     name: folder.name,
     position: folder.position,
     revision: folder.revision,
-    workspaceId: folder.workspaceId,
+    organizationId: folder.organizationId,
   };
 }
 
@@ -83,7 +83,7 @@ function projectSummary(
     revision: project.revision,
     slug: project.slug,
     updatedAt: project.updatedAt,
-    workspaceId: project.workspaceId,
+    organizationId: project.organizationId,
   };
 }
 
@@ -99,10 +99,10 @@ function statusSummary(status: ProjectStatus) {
   };
 }
 
-function catalogSummary(catalog: ProjectCatalog, query: CursorPageQuery, workspaceId: string) {
+function catalogSummary(catalog: ProjectCatalog, query: CursorPageQuery, organizationId: string) {
   const page = cursorPage(
     catalog.projects,
-    { ...query, scope: `projects:${workspaceId}` },
+    { ...query, scope: `projects:${organizationId}` },
     (project) => project.id,
   );
   const projectIds = new Set(page.items.map((project) => project.id));
@@ -123,7 +123,7 @@ export async function registerProjectRoutes(
   const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
   const idempotency = new SqliteIdempotencyRepository(input.database);
-  const memberships = new SqliteWorkspaceMembershipRepository();
+  const memberships = new SqliteOrganizationMembershipRepository();
   const outbox = new SqliteOutboxRepository();
   const projects = new SqliteProjectRepository();
   const catalog = new ProjectCatalogService({
@@ -138,7 +138,7 @@ export async function registerProjectRoutes(
   const authorize = async (
     request: FastifyRequest,
     reply: FastifyReply,
-    workspaceId: string,
+    organizationId: string,
     manage: boolean,
   ) => {
     const session = await input.identity.resolveSession(webHeaders(request.headers));
@@ -160,18 +160,24 @@ export async function registerProjectRoutes(
       return undefined;
     }
     const membership = input.database.read((context) =>
-      memberships.find(context, workspaceId, session.identity.id),
+      memberships.find(context, organizationId, session.identity.id),
     );
-    if (!canAccessWorkspace(actor, membership, manage ? "workspace.manage" : "workspace.read")) {
+    if (
+      !canAccessOrganization(
+        actor,
+        membership,
+        manage ? "organization.manage" : "organization.read",
+      )
+    ) {
       sendProblem(
         reply,
         request,
         403,
-        "workspace_access_denied",
-        "Workspace access denied",
+        "organization_access_denied",
+        "Organization access denied",
         manage
-          ? "Workspace ownership is required to manage projects."
-          : "Active workspace membership is required.",
+          ? "Organization ownership is required to manage projects."
+          : "Active organization membership is required.",
       );
       return undefined;
     }
@@ -216,55 +222,55 @@ export async function registerProjectRoutes(
   };
 
   app.get<{
-    Params: { readonly workspaceId: string };
+    Params: { readonly organizationId: string };
     Querystring: CursorPageQuery;
   }>(
-    "/api/v1/workspaces/:workspaceId/projects",
+    "/api/v1/organizations/:organizationId/projects",
     {
       schema: {
         operationId: "listProjects",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
         querystring: { $ref: "LaunchppCursorPageQueryV1#" },
         response: { 200: { $ref: "LaunchppProjectCatalogV1#" }, ...problemResponses },
-        summary: "List a workspace project catalog",
+        summary: "List an organization project catalog",
         tags: ["Projects"],
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, false);
+      const access = await authorize(request, reply, request.params.organizationId, false);
       if (!access) return;
       return catalogSummary(
-        catalog.list(request.params.workspaceId, access.userId),
+        catalog.list(request.params.organizationId, access.userId),
         request.query,
-        request.params.workspaceId,
+        request.params.organizationId,
       );
     },
   );
 
   app.post<{
     Body: ProjectFolderInput;
-    Params: { readonly workspaceId: string };
+    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/folders",
+    "/api/v1/organizations/:organizationId/folders",
     {
       schema: {
         body: { $ref: "LaunchppProjectFolderInputV1#" },
         operationId: "createProjectFolder",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: { 201: { $ref: "LaunchppProjectFolderSummaryV1#" }, ...problemResponses },
         summary: "Create a project folder",
         tags: ["Projects"],
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         const folder = await catalog.createFolder({
           ...access,
           correlationId: request.id,
           name: request.body.name,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(201).send(folderSummary(folder));
       } catch (error) {
@@ -276,9 +282,9 @@ export async function registerProjectRoutes(
 
   app.patch<{
     Body: ProjectFolderInput;
-    Params: { readonly folderId: string; readonly workspaceId: string };
+    Params: { readonly folderId: string; readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/folders/:folderId",
+    "/api/v1/organizations/:organizationId/folders/:folderId",
     {
       schema: {
         body: { $ref: "LaunchppProjectFolderInputV1#" },
@@ -290,7 +296,7 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         return folderSummary(
@@ -299,7 +305,7 @@ export async function registerProjectRoutes(
             correlationId: request.id,
             folderId: request.params.folderId,
             name: request.body.name,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -309,8 +315,8 @@ export async function registerProjectRoutes(
     },
   );
 
-  app.delete<{ Params: { readonly folderId: string; readonly workspaceId: string } }>(
-    "/api/v1/workspaces/:workspaceId/folders/:folderId",
+  app.delete<{ Params: { readonly folderId: string; readonly organizationId: string } }>(
+    "/api/v1/organizations/:organizationId/folders/:folderId",
     {
       schema: {
         operationId: "deleteProjectFolder",
@@ -321,14 +327,14 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         await catalog.deleteFolder({
           ...access,
           correlationId: request.id,
           folderId: request.params.folderId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {
@@ -340,28 +346,28 @@ export async function registerProjectRoutes(
 
   app.put<{
     Body: FolderOrderInput;
-    Params: { readonly workspaceId: string };
+    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/folder-order",
+    "/api/v1/organizations/:organizationId/folder-order",
     {
       schema: {
         body: { $ref: "LaunchppFolderOrderInputV1#" },
         operationId: "reorderProjectFolders",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: problemResponses,
         summary: "Reorder project folders",
         tags: ["Projects"],
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         await catalog.reorderFolders({
           ...access,
           correlationId: request.id,
           orderedFolderIds: request.body.orderedFolderIds,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {
@@ -373,22 +379,22 @@ export async function registerProjectRoutes(
 
   app.post<{
     Body: CreateProjectInput;
-    Params: { readonly workspaceId: string };
+    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/projects",
+    "/api/v1/organizations/:organizationId/projects",
     {
       schema: {
         body: { $ref: "LaunchppCreateProjectInputV1#" },
         headers: IdempotencyHeadersSchema,
         operationId: "createProject",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: { 201: { $ref: "LaunchppProjectSummaryV1#" }, ...problemResponses },
         summary: "Create a project",
         tags: ["Projects"],
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         return await executeIdempotent(
@@ -399,14 +405,14 @@ export async function registerProjectRoutes(
             actorUserId: access.userId,
             operation: "project.create",
             payload: request.body,
-            scopeKey: `workspace:${request.params.workspaceId}`,
+            scopeKey: `organization:${request.params.organizationId}`,
           },
           async () => {
             const project = await catalog.createProject({
               ...access,
               correlationId: request.id,
               ...request.body,
-              workspaceId: request.params.workspaceId,
+              organizationId: request.params.organizationId,
             });
             return { body: projectSummary(project), status: 201 };
           },
@@ -420,9 +426,9 @@ export async function registerProjectRoutes(
 
   app.patch<{
     Body: UpdateProjectInput;
-    Params: { readonly projectId: string; readonly workspaceId: string };
+    Params: { readonly projectId: string; readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId",
+    "/api/v1/organizations/:organizationId/projects/:projectId",
     {
       schema: {
         body: { $ref: "LaunchppUpdateProjectInputV1#" },
@@ -434,7 +440,7 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         return projectSummary(
@@ -443,7 +449,7 @@ export async function registerProjectRoutes(
             correlationId: request.id,
             ...request.body,
             projectId: request.params.projectId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           }),
         );
       } catch (error) {
@@ -454,8 +460,8 @@ export async function registerProjectRoutes(
   );
 
   for (const action of ["archive", "restore"] as const) {
-    app.post<{ Params: { readonly projectId: string; readonly workspaceId: string } }>(
-      `/api/v1/workspaces/:workspaceId/projects/:projectId/${action}`,
+    app.post<{ Params: { readonly projectId: string; readonly organizationId: string } }>(
+      `/api/v1/organizations/:organizationId/projects/:projectId/${action}`,
       {
         schema: {
           operationId: `${action}Project`,
@@ -466,14 +472,14 @@ export async function registerProjectRoutes(
         },
       },
       async (request, reply) => {
-        const access = await authorize(request, reply, request.params.workspaceId, true);
+        const access = await authorize(request, reply, request.params.organizationId, true);
         if (!access) return;
         try {
           const command = {
             ...access,
             correlationId: request.id,
             projectId: request.params.projectId,
-            workspaceId: request.params.workspaceId,
+            organizationId: request.params.organizationId,
           };
           const project =
             action === "archive"
@@ -488,8 +494,8 @@ export async function registerProjectRoutes(
     );
   }
 
-  app.delete<{ Params: { readonly projectId: string; readonly workspaceId: string } }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId",
+  app.delete<{ Params: { readonly projectId: string; readonly organizationId: string } }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId",
     {
       schema: {
         operationId: "deleteProject",
@@ -500,14 +506,14 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         await catalog.deleteProject({
           ...access,
           correlationId: request.id,
           projectId: request.params.projectId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {
@@ -519,28 +525,28 @@ export async function registerProjectRoutes(
 
   app.put<{
     Body: ProjectOrderInput;
-    Params: { readonly workspaceId: string };
+    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/project-order",
+    "/api/v1/organizations/:organizationId/project-order",
     {
       schema: {
         body: { $ref: "LaunchppProjectOrderInputV1#" },
         operationId: "reorderProjects",
-        params: { $ref: "LaunchppWorkspaceParamsV1#" },
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: problemResponses,
         summary: "Reorder projects",
         tags: ["Projects"],
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, true);
+      const access = await authorize(request, reply, request.params.organizationId, true);
       if (!access) return;
       try {
         await catalog.reorderProjects({
           ...access,
           correlationId: request.id,
           ...request.body,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {
@@ -552,9 +558,9 @@ export async function registerProjectRoutes(
 
   app.put<{
     Body: FavoriteProjectInput;
-    Params: { readonly projectId: string; readonly workspaceId: string };
+    Params: { readonly projectId: string; readonly organizationId: string };
   }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/favorite",
+    "/api/v1/organizations/:organizationId/projects/:projectId/favorite",
     {
       schema: {
         body: { $ref: "LaunchppFavoriteProjectInputV1#" },
@@ -566,7 +572,7 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, false);
+      const access = await authorize(request, reply, request.params.organizationId, false);
       if (!access) return;
       try {
         await catalog.setFavorite({
@@ -574,7 +580,7 @@ export async function registerProjectRoutes(
           correlationId: request.id,
           favorite: request.body.favorite,
           projectId: request.params.projectId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {
@@ -584,8 +590,8 @@ export async function registerProjectRoutes(
     },
   );
 
-  app.post<{ Params: { readonly projectId: string; readonly workspaceId: string } }>(
-    "/api/v1/workspaces/:workspaceId/projects/:projectId/opened",
+  app.post<{ Params: { readonly projectId: string; readonly organizationId: string } }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/opened",
     {
       schema: {
         operationId: "recordProjectOpened",
@@ -596,14 +602,14 @@ export async function registerProjectRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.workspaceId, false);
+      const access = await authorize(request, reply, request.params.organizationId, false);
       if (!access) return;
       try {
         await catalog.recordOpen({
           ...access,
           correlationId: request.id,
           projectId: request.params.projectId,
-          workspaceId: request.params.workspaceId,
+          organizationId: request.params.organizationId,
         });
         return reply.status(204).send();
       } catch (error) {

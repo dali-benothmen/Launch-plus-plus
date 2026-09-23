@@ -7,7 +7,7 @@ export interface SearchResult {
   readonly resourceId: string;
   readonly subtitle: string;
   readonly title: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface SearchRepository {
@@ -18,7 +18,7 @@ export interface SearchRepository {
       projectId?: string;
       query: string;
       userId: string;
-      workspaceId?: string;
+      organizationId?: string;
     }>,
   ): readonly SearchResult[];
 }
@@ -37,7 +37,7 @@ export class SearchService {
       projectId?: string;
       query: string;
       userId: string;
-      workspaceId?: string;
+      organizationId?: string;
     }>,
   ): readonly SearchResult[] {
     const query = input.query.trim().replace(/\s+/g, " ");

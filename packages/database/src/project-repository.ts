@@ -17,11 +17,11 @@ interface FolderRow {
   readonly position: number;
   readonly revision: number;
   readonly updated_at: number;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 interface ProjectRow {
-  readonly access: "restricted" | "workspace";
+  readonly access: "restricted" | "organization";
   readonly archived_at: number | null;
   readonly created_at: number;
   readonly created_by_user_id: string;
@@ -38,7 +38,7 @@ interface ProjectRow {
   readonly revision: number;
   readonly slug: string;
   readonly updated_at: number;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 interface StatusRow {
@@ -53,15 +53,15 @@ interface StatusRow {
   readonly project_id: string;
   readonly revision: number;
   readonly updated_at: number;
-  readonly workspace_id: string;
+  readonly organization_id: string;
 }
 
 const folderSelection = `
-  SELECT id, workspace_id, name, position, created_by_user_id, created_at, updated_at, revision
+  SELECT id, organization_id, name, position, created_by_user_id, created_at, updated_at, revision
   FROM project_folders`;
 
 const projectSelection = `
-  SELECT id, workspace_id, folder_id, key, slug, name, description, access, position,
+  SELECT id, organization_id, folder_id, key, slug, name, description, access, position,
          next_task_number, created_by_user_id, created_at, updated_at, archived_at,
          deleted_at, revision
   FROM projects`;
@@ -75,7 +75,7 @@ function mapFolder(row: FolderRow): ProjectFolder {
     position: row.position,
     revision: row.revision,
     updatedAt: row.updated_at,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -96,7 +96,7 @@ function mapProject(row: ProjectRow): Project {
     revision: row.revision,
     slug: row.slug,
     updatedAt: row.updated_at,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -123,7 +123,7 @@ function mapStatus(row: StatusRow): ProjectStatus {
     projectId: row.project_id,
     revision: row.revision,
     updatedAt: row.updated_at,
-    workspaceId: row.workspace_id,
+    organizationId: row.organization_id,
   });
 }
 
@@ -136,12 +136,12 @@ export class SqliteProjectRepository implements ProjectRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO project_folders (
-          id, workspace_id, name, position, created_by_user_id, created_at, updated_at, revision
+          id, organization_id, name, position, created_by_user_id, created_at, updated_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         folder.id,
-        folder.workspaceId,
+        folder.organizationId,
         folder.name,
         folder.position,
         folder.createdByUserId,
@@ -155,14 +155,14 @@ export class SqliteProjectRepository implements ProjectRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO projects (
-          id, workspace_id, folder_id, key, slug, name, description, access, position,
+          id, organization_id, folder_id, key, slug, name, description, access, position,
           next_task_number, created_by_user_id, created_at, updated_at, archived_at,
           deleted_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         project.id,
-        project.workspaceId,
+        project.organizationId,
         project.folderId ?? null,
         project.key,
         project.slug,
@@ -184,13 +184,13 @@ export class SqliteProjectRepository implements ProjectRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO project_statuses (
-          id, workspace_id, project_id, name, color, icon, position, category,
+          id, organization_id, project_id, name, color, icon, position, category,
           created_at, updated_at, archived_at, revision
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         status.id,
-        status.workspaceId,
+        status.organizationId,
         status.projectId,
         status.name,
         status.color,
@@ -206,7 +206,7 @@ export class SqliteProjectRepository implements ProjectRepository {
 
   deleteFolder(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     folderId: string,
     updatedAt: number,
   ): void {
@@ -214,35 +214,35 @@ export class SqliteProjectRepository implements ProjectRepository {
     const activeProjectIds = connection
       .prepare<[string, string], { readonly id: string }>(
         `SELECT id FROM projects
-         WHERE workspace_id = ? AND folder_id = ? AND archived_at IS NULL AND deleted_at IS NULL
+         WHERE organization_id = ? AND folder_id = ? AND archived_at IS NULL AND deleted_at IS NULL
          ORDER BY position ASC, id ASC`,
       )
-      .all(workspaceId, folderId);
-    let position = this.nextProjectPosition(context, workspaceId);
+      .all(organizationId, folderId);
+    let position = this.nextProjectPosition(context, organizationId);
     const moveActive = connection.prepare(
       `UPDATE projects
        SET folder_id = NULL, position = ?, updated_at = ?, revision = revision + 1
-       WHERE id = ? AND workspace_id = ?`,
+       WHERE id = ? AND organization_id = ?`,
     );
     for (const project of activeProjectIds) {
-      moveActive.run(position, updatedAt, project.id, workspaceId);
+      moveActive.run(position, updatedAt, project.id, organizationId);
       position += 1;
     }
     connection
       .prepare(
         `UPDATE projects
          SET folder_id = NULL, updated_at = ?, revision = revision + 1
-         WHERE workspace_id = ? AND folder_id = ?
+         WHERE organization_id = ? AND folder_id = ?
            AND (archived_at IS NOT NULL OR deleted_at IS NOT NULL)`,
       )
-      .run(updatedAt, workspaceId, folderId);
+      .run(updatedAt, organizationId, folderId);
     connection
-      .prepare("DELETE FROM project_folders WHERE id = ? AND workspace_id = ?")
-      .run(folderId, workspaceId);
+      .prepare("DELETE FROM project_folders WHERE id = ? AND organization_id = ?")
+      .run(folderId, organizationId);
     this.reorderFolders(
       context,
-      workspaceId,
-      this.listFolders(context, workspaceId).map((folder) => folder.id),
+      organizationId,
+      this.listFolders(context, organizationId).map((folder) => folder.id),
       updatedAt,
     );
   }
@@ -256,14 +256,14 @@ export class SqliteProjectRepository implements ProjectRepository {
 
   findFolderByName(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     name: string,
   ): ProjectFolder | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], FolderRow>(
-        `${folderSelection} WHERE workspace_id = ? AND lower(name) = lower(?)`,
+        `${folderSelection} WHERE organization_id = ? AND lower(name) = lower(?)`,
       )
-      .get(workspaceId, name);
+      .get(organizationId, name);
     return row ? mapFolder(row) : undefined;
   }
 
@@ -274,41 +274,45 @@ export class SqliteProjectRepository implements ProjectRepository {
     return row ? mapProject(row) : undefined;
   }
 
-  findProjectByKey(context: ReadContext, workspaceId: string, key: string): Project | undefined {
+  findProjectByKey(context: ReadContext, organizationId: string, key: string): Project | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], ProjectRow>(
-        `${projectSelection} WHERE workspace_id = ? AND key = ?`,
+        `${projectSelection} WHERE organization_id = ? AND key = ?`,
       )
-      .get(workspaceId, key);
+      .get(organizationId, key);
     return row ? mapProject(row) : undefined;
   }
 
-  findProjectBySlug(context: ReadContext, workspaceId: string, slug: string): Project | undefined {
+  findProjectBySlug(
+    context: ReadContext,
+    organizationId: string,
+    slug: string,
+  ): Project | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], ProjectRow>(
-        `${projectSelection} WHERE workspace_id = ? AND slug = ?`,
+        `${projectSelection} WHERE organization_id = ? AND slug = ?`,
       )
-      .get(workspaceId, slug);
+      .get(organizationId, slug);
     return row ? mapProject(row) : undefined;
   }
 
-  listFolders(context: ReadContext, workspaceId: string): readonly ProjectFolder[] {
+  listFolders(context: ReadContext, organizationId: string): readonly ProjectFolder[] {
     return requireSqliteConnection(context)
       .prepare<[string], FolderRow>(
-        `${folderSelection} WHERE workspace_id = ? ORDER BY position ASC, id ASC`,
+        `${folderSelection} WHERE organization_id = ? ORDER BY position ASC, id ASC`,
       )
-      .all(workspaceId)
+      .all(organizationId)
       .map(mapFolder);
   }
 
   listProjects(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     userId: string,
   ): readonly ProjectNavigationItem[] {
     return requireSqliteConnection(context)
       .prepare<[string, string], ProjectRow>(
-        `SELECT projects.id, projects.workspace_id, projects.folder_id, projects.key,
+        `SELECT projects.id, projects.organization_id, projects.folder_id, projects.key,
                 projects.slug, projects.name, projects.description, projects.access,
                 projects.position, projects.next_task_number, projects.created_by_user_id,
                 projects.created_at, projects.updated_at, projects.archived_at,
@@ -318,48 +322,48 @@ export class SqliteProjectRepository implements ProjectRepository {
          FROM projects
          LEFT JOIN project_preferences preference
            ON preference.project_id = projects.id AND preference.user_id = ?
-         WHERE projects.workspace_id = ? AND projects.deleted_at IS NULL
+         WHERE projects.organization_id = ? AND projects.deleted_at IS NULL
          ORDER BY projects.archived_at IS NOT NULL ASC,
                   projects.folder_id IS NULL ASC,
                   projects.position ASC,
                   projects.id ASC`,
       )
-      .all(userId, workspaceId)
+      .all(userId, organizationId)
       .map(mapNavigationProject);
   }
 
-  listStatuses(context: ReadContext, workspaceId: string): readonly ProjectStatus[] {
+  listStatuses(context: ReadContext, organizationId: string): readonly ProjectStatus[] {
     return requireSqliteConnection(context)
       .prepare<[string], StatusRow>(
-        `SELECT status.id, status.workspace_id, status.project_id, status.name, status.color,
+        `SELECT status.id, status.organization_id, status.project_id, status.name, status.color,
                 status.icon, status.position, status.category, status.created_at,
                 status.updated_at, status.archived_at, status.revision
          FROM project_statuses status
          INNER JOIN projects project ON project.id = status.project_id
-         WHERE status.workspace_id = ? AND status.archived_at IS NULL
+         WHERE status.organization_id = ? AND status.archived_at IS NULL
            AND project.deleted_at IS NULL
          ORDER BY status.project_id ASC, status.position ASC`,
       )
-      .all(workspaceId)
+      .all(organizationId)
       .map(mapStatus);
   }
 
-  nextFolderPosition(context: ReadContext, workspaceId: string): number {
+  nextFolderPosition(context: ReadContext, organizationId: string): number {
     const row = requireSqliteConnection(context)
       .prepare<[string], { readonly position: number }>(
-        "SELECT coalesce(max(position), -1) + 1 AS position FROM project_folders WHERE workspace_id = ?",
+        "SELECT coalesce(max(position), -1) + 1 AS position FROM project_folders WHERE organization_id = ?",
       )
-      .get(workspaceId);
+      .get(organizationId);
     return row?.position ?? 0;
   }
 
-  nextProjectPosition(context: ReadContext, workspaceId: string, folderId?: string): number {
-    const params = folderId === undefined ? [workspaceId] : [workspaceId, folderId];
+  nextProjectPosition(context: ReadContext, organizationId: string, folderId?: string): number {
+    const params = folderId === undefined ? [organizationId] : [organizationId, folderId];
     const row = requireSqliteConnection(context)
       .prepare<unknown[], { readonly position: number }>(
         `SELECT coalesce(max(position), -1) + 1 AS position
          FROM projects
-         WHERE workspace_id = ? AND ${folderClause(folderId)}
+         WHERE organization_id = ? AND ${folderClause(folderId)}
            AND archived_at IS NULL AND deleted_at IS NULL`,
       )
       .get(...params);
@@ -368,45 +372,46 @@ export class SqliteProjectRepository implements ProjectRepository {
 
   reorderFolders(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     orderedIds: readonly string[],
     updatedAt: number,
   ): void {
     const connection = requireSqliteConnection(context);
-    const offset = this.nextFolderPosition(context, workspaceId) + orderedIds.length + 1;
+    const offset = this.nextFolderPosition(context, organizationId) + orderedIds.length + 1;
     connection
-      .prepare("UPDATE project_folders SET position = position + ? WHERE workspace_id = ?")
-      .run(offset, workspaceId);
+      .prepare("UPDATE project_folders SET position = position + ? WHERE organization_id = ?")
+      .run(offset, organizationId);
     const update = connection.prepare(
-      "UPDATE project_folders SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND workspace_id = ?",
+      "UPDATE project_folders SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND organization_id = ?",
     );
     orderedIds.forEach((id, position) => {
-      update.run(position, updatedAt, id, workspaceId);
+      update.run(position, updatedAt, id, organizationId);
     });
   }
 
   reorderProjects(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     folderId: string | undefined,
     orderedIds: readonly string[],
     updatedAt: number,
   ): void {
     const connection = requireSqliteConnection(context);
     const clause = folderClause(folderId);
-    const params = folderId === undefined ? [workspaceId] : [workspaceId, folderId];
-    const offset = this.nextProjectPosition(context, workspaceId, folderId) + orderedIds.length + 1;
+    const params = folderId === undefined ? [organizationId] : [organizationId, folderId];
+    const offset =
+      this.nextProjectPosition(context, organizationId, folderId) + orderedIds.length + 1;
     connection
       .prepare(
         `UPDATE projects SET position = position + ?
-         WHERE workspace_id = ? AND ${clause} AND archived_at IS NULL AND deleted_at IS NULL`,
+         WHERE organization_id = ? AND ${clause} AND archived_at IS NULL AND deleted_at IS NULL`,
       )
       .run(offset, ...params);
     const update = connection.prepare(
-      "UPDATE projects SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND workspace_id = ?",
+      "UPDATE projects SET position = ?, updated_at = ?, revision = revision + 1 WHERE id = ? AND organization_id = ?",
     );
     orderedIds.forEach((id, position) => {
-      update.run(position, updatedAt, id, workspaceId);
+      update.run(position, updatedAt, id, organizationId);
     });
   }
 
@@ -415,7 +420,7 @@ export class SqliteProjectRepository implements ProjectRepository {
       .prepare(
         `UPDATE project_folders
          SET name = ?, position = ?, updated_at = ?, revision = ?
-         WHERE id = ? AND workspace_id = ?`,
+         WHERE id = ? AND organization_id = ?`,
       )
       .run(
         folder.name,
@@ -423,7 +428,7 @@ export class SqliteProjectRepository implements ProjectRepository {
         folder.updatedAt,
         folder.revision,
         folder.id,
-        folder.workspaceId,
+        folder.organizationId,
       );
   }
 
@@ -433,7 +438,7 @@ export class SqliteProjectRepository implements ProjectRepository {
         `UPDATE projects
          SET folder_id = ?, name = ?, description = ?, access = ?, position = ?,
              next_task_number = ?, updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
-         WHERE id = ? AND workspace_id = ?`,
+         WHERE id = ? AND organization_id = ?`,
       )
       .run(
         project.folderId ?? null,
@@ -447,7 +452,7 @@ export class SqliteProjectRepository implements ProjectRepository {
         project.deletedAt ?? null,
         project.revision,
         project.id,
-        project.workspaceId,
+        project.organizationId,
       );
   }
 

@@ -6,7 +6,7 @@ This subsystem design is part of the [Launch++ architecture documentation](./REA
 
 Launch++ should make a useful plugin feel like a small feature contribution: declare what it adds, write only its unique behavior, and let the platform handle persistence, permissions, rendering, packaging, and operations. Use Figma as the reference for approachable authoring, contextual actions and optional custom UI, adapted to persistent team workflows and server-side execution.
 
-Imagine enabling Story Points for one project. A number field appears in task details; it becomes available as a list column, board-card property, filter, and sort key. It follows the current theme and exports with the workspace. The author writes one manifest contribution. No database migration, API route, custom input component, or change to Launch++ is required.
+Imagine enabling Story Points for one project. A number field appears in task details; it becomes available as a list column, board-card property, filter, and sort key. It follows the current theme and exports with the organization. The author writes one manifest contribution. No database migration, API route, custom input component, or change to Launch++ is required.
 
 This is a proposed architecture and developer contract, not an implemented SDK. The repository currently contains only a basic package.json; every path, package name, command, and API below is proposed. The design focuses on the extension platform and its UX contracts, not final visual styling.
 
@@ -24,7 +24,7 @@ Figma also distinguishes plugins run by an individual from shared widgets in a f
 
 ### The architectural commitment
 
-Build a modular application with a small domain core and a first-class extension platform. Keep workspaces, identity, authorization, projects, tasks, comments, and activity in the core. Put plugin lifecycle, extension registration, typed storage, event delivery, and the UI shell in platform modules.
+Build a modular application with a small domain core and a first-class extension platform. Keep organizations, identity, authorization, projects, tasks, comments, and activity in the core. Put plugin lifecycle, extension registration, typed storage, event delivery, and the UI shell in platform modules.
 
 The core product remains usable with all optional plugins disabled. Official optional features use the same public contracts as external plugins. List and Board can reuse the view registry and query primitives without making essential navigation removable.
 
@@ -64,7 +64,7 @@ A plugin has one identity and one root manifest, with optional server handlers a
 | Capability | User experience | Lifecycle and execution | Examples |
 | --- | --- | --- | --- |
 | Actions | Run a command from the palette, a task menu or a button | Bounded invocation under the initiating user's permissions; optional input form and preview | Create tasks from a checklist, bulk label selected tasks |
-| Features | Enable a lasting addition to a project or workspace | Contributions stay registered while enabled; UI loads when needed and data is host-persisted | Story Points, Calendar, Time Tracking |
+| Features | Enable a lasting addition to a project or organization | Contributions stay registered while enabled; UI loads when needed and data is host-persisted | Story Points, Calendar, Time Tracking |
 | Background behavior | Configure a reaction or schedule | Durable server invocations under a separately granted plugin identity | Process reminders, synchronize issues |
 
 These capabilities can be combined. Time Tracking can add a Start timer action, a Timesheets view and scheduled processing in one package. A persistent feature does not imply a continuously running JavaScript process: declarations remain registered, state is stored by the host, and handlers activate only when needed.
@@ -76,7 +76,7 @@ Registration is static. The application can explain a plugin’s UI, requested a
 | Extension point | What authors declare or implement | Delivery |
 | --- | --- | --- |
 | Task/project fields | Typed value, label, constraints, visibility and allowed placements | Author preview starts with task number/text fields; expand in supported SDK |
-| Settings | Workspace/project/user scope; typed schema; host-rendered form | Supported SDK; only enablement controls in author preview |
+| Settings | Organization/project/user scope; typed schema; host-rendered form | Supported SDK; only enablement controls in author preview |
 | Actions / commands | Typed inputs and results, generated input UI, handler, optional preview, task menu or command-palette placement | Behavior milestone starts with Checklist Importer |
 | Task panels and project views | Standard host-rendered layout or custom sandboxed UI | Custom-view milestone |
 | Plugin records | Private typed collections with declared indexes and parent scope | Behavior milestone; native field storage in author preview |
@@ -163,7 +163,7 @@ The CLI generates build configuration and package scripts. Directories, filename
     "settings": [
       {
         "id": "settings",
-        "scope": "workspace",
+        "scope": "organization",
         "title": "Sprint Planner",
         "entry": "./src/settings/SettingsPage.tsx"
       }
@@ -265,7 +265,7 @@ Small shell controls remain host-rendered. A navigation item, task-menu action, 
 The proposed creation workflow is detailed in the [plugin CLI design](./plugin-cli-design.md):
 
 1. `pnpm create launchpp-plugin` asks for React/TypeScript or vanilla browser authoring and whether the plugin starts with a page, task panel, action, data collection, settings page or background integration.
-2. `pnpm dev` opens a disposable local Launch++ workspace with hot reload, fixtures, scoped logs, data inspection and a plugin inspector.
+2. `pnpm dev` opens a disposable local Launch++ organization with hot reload, fixtures, scoped logs, data inspection and a plugin inspector.
 3. `pnpm check` validates the manifest, permissions, entry points, unsupported imports, data compatibility, schemas and contribution collisions.
 4. `pnpm test` runs against the same broker and runtime contracts used by Launch++.
 5. `pnpm pack` creates a `.launch-plugin` archive containing the generated manifest, static data schema, browser and server bundles, contract schemas, integrity hashes and license metadata. It contains no SQL or plugin-authored migration files.
@@ -298,18 +298,18 @@ The Phase 0 implementation fixes the deterministic ZIP, SHA-256 integrity, trave
 
 The pack-and-upload loop is for release validation, not every edit. Launch++ includes an operator-controlled **Settings → Developer → Developer Mode** switch and the CLI supports two development paths:
 
-- `launchpp dev` starts a disposable local Launch++ workspace with fixtures. This is the safest and default path.
+- `launchpp dev` starts a disposable local Launch++ organization with fixtures. This is the safest and default path.
 - `launchpp dev --connect https://launch.example` pairs the local CLI with an existing Launch++ installation for an authenticated preview.
 
 Connected development uses a short-lived, one-time pairing code confirmed in the browser. The CLI opens an outbound authenticated TLS/WebSocket channel and streams compiled incremental artifacts—not source files—to the host. A remote VPS never reaches into the developer's localhost or filesystem. The host registers an ephemeral identity such as `dev:<session-id>:<plugin-id>`; it does not replace or mutate the installed release.
 
-A development plugin is visible only to its author by default and runs in a dedicated development workspace rather than production data. Access for selected test users can be added later. Requested permissions still require explicit approval, permission changes prompt again, and the same iframe sandbox, capability broker, runtime limits, network policy and data boundaries apply. Developer Mode enables a temporary unsigned live-build channel; it does not disable security.
+A development plugin is visible only to its author by default and runs in a dedicated development organization rather than production data. Access for selected test users can be added later. Requested permissions still require explicit approval, permission changes prompt again, and the same iframe sandbox, capability broker, runtime limits, network policy and data boundaries apply. Developer Mode enables a temporary unsigned live-build channel; it does not disable security.
 
 Browser changes use framework HMR when the adapter supports it and otherwise reload the affected iframe. Manifest changes re-register ephemeral contributions. Server changes replace the next isolated invocation. Compatible schema changes evolve ephemeral development storage; incompatible changes stop with guidance or offer a reset only for disposable data. Diagnostics appear in the CLI, a surface error overlay and the plugin inspector.
 
 Disconnecting, expiry or disabling Developer Mode revokes the session token, removes ephemeral contributions and assets, stops development handlers, and applies the selected disposable-data retention policy. A release still passes `check`, `test` and `pack`; connected preview is never a substitute for testing the deterministic archive.
 
-Server handlers receive an invocation-scoped, typed `launch` capability object. Namespaces such as `launch.tasks`, `launch.projects`, `launch.store` and `launch.context` expose only granted operations. Context contains host-validated workspace, project, user and selected-entity references. Selection is useful context rather than an authorization grant; every operation rechecks access.
+Server handlers receive an invocation-scoped, typed `launch` capability object. Namespaces such as `launch.tasks`, `launch.projects`, `launch.store` and `launch.context` expose only granted operations. Context contains host-validated organization, project, user and selected-entity references. Selection is useful context rather than an authorization grant; every operation rechecks access.
 
 ```ts
 export async function addToSprint(
@@ -337,17 +337,17 @@ Action input schemas describe labels, types, required fields, constraints and de
 
 A preview is an explicit optional read-only preparation handler returning a host-supported summary; the platform cannot infer arbitrary plugin effects from an input schema. Checklist Importer uses this path to show the tasks it intends to create. Bind confirmation to the reviewed input and relevant revisions, and revalidate permissions at execution. A changed input requires a fresh preview. Cancelling before execution performs no mutation; cancelling after a committed mutation does not imply rollback. Results must say what completed.
 
-Slots are named, versioned product surfaces. The initial vocabulary should include `workspace.navigation`, `project.navigation`, `project.toolbar`, `task.actions`, `task.details.fields`, `task.details.panels`, `task.card.badges`, `task.card.actions`, `board.toolbar`, `board.card.actions`, `board.sidebar`, `settings.workspace`, `settings.project`, `settings.user` and `commandPalette`. Each slot documents its supported contribution type, context, lifecycle and space constraints.
+Slots are named, versioned product surfaces. The initial vocabulary should include `organization.navigation`, `project.navigation`, `project.toolbar`, `task.actions`, `task.details.fields`, `task.details.panels`, `task.card.badges`, `task.card.actions`, `board.toolbar`, `board.card.actions`, `board.sidebar`, `settings.organization`, `settings.project`, `settings.user` and `commandPalette`. Each slot documents its supported contribution type, context, lifecycle and space constraints.
 
 Plugins request a slot through the manifest; the host controls surrounding layout, ordering, responsive behavior and overflow. Namespaced contribution IDs prevent collisions, and the registry rejects duplicate IDs inside a package. Plugin identity remains visible in management and diagnostics. Slots are stable public API; internal React component paths are not.
 
-A task field automatically becomes available in the native column picker, filter controls and export. Enabling a plugin does not automatically put every field on every card. Workspace administrators choose which fields/views each project exposes; individual users can retain view preferences.
+A task field automatically becomes available in the native column picker, filter controls and export. Enabling a plugin does not automatically put every field on every card. Organization administrators choose which fields/views each project exposes; individual users can retain view preferences.
 
 Use native rendering for small contributions, including fields, settings and common lists. Reserve custom UI for substantial panels and views. Avoid one iframe per table cell. The Ant Design-powered React UI kit supplies controls, task links, loading/empty/error states, typography and spacing; `@launchpp/ui-tokens` supplies the browser-standard visual contract for custom React and vanilla surfaces. The wire protocol stays independent of React.
 
 Custom views live within the application’s navigation and route model, with deep links and scoped URLs owned by the host. The host mediates dialogs, toasts, navigation and permission prompts. Plugin CSS cannot modify the shell. Theme packages set validated semantic tokens; custom plugins receive the resolved tokens.
 
-Workspace administrators enable plugins; project-scoped plugins are then enabled only in chosen projects. Server operators control which executable packages are allowed on their installation. A locally running solo owner sees these as one simple flow. Installation shows what will be added, what access is requested, and any connection setup. A plugin with no required settings can be enabled in one action.
+Organization administrators enable plugins; project-scoped plugins are then enabled only in chosen projects. Server operators control which executable packages are allowed on their installation. A locally running solo owner sees these as one simple flow. Installation shows what will be added, what access is requested, and any connection setup. A plugin with no required settings can be enabled in one action.
 
 Errors remain local to the affected plugin surface. Repeated failures pause its handlers and show an actionable status in Settings → Extensions. A safe-start option loads the core with all optional plugins disabled.
 
@@ -381,7 +381,7 @@ export default function SprintBoard() {
 
 The bridge delivers snapshots and invalidations to subscribed surfaces. When the core application or another authorized plugin updates a task, relevant hooks refresh. Mutations go through typed SDK operations or registered server actions, then trigger the same invalidation path. A plugin never receives data the current user cannot access, and background code uses a separately granted service identity.
 
-Plugin collections are namespaced, typed, indexed and scoped to a workspace with an optional project, task or actor parent. Plugins cannot directly read another plugin's private collection. Cooperation happens through public contracts.
+Plugin collections are namespaced, typed, indexed and scoped to an organization with an optional project, task or actor parent. Plugins cannot directly read another plugin's private collection. Cooperation happens through public contracts.
 
 ### Communication between plugins
 
@@ -452,7 +452,7 @@ This is an execution architecture, not a security guarantee. Cancellation and th
 
 The tradeoff is intentional: bundled pure JavaScript dependencies are eligible; arbitrary Node built-ins, native modules and unrestricted provider SDKs are not supported. Provide small official adapters for common integrations instead. If the runtime cannot meet the compatibility and isolation tests, keep executable plugins in a clearly marked operator-trusted preview and defer public untrusted installation; do not weaken the broker contract to ship it.
 
-For custom browser UI, use sandboxed frames without same-origin privileges, a restrictive content policy, bundled assets and a validated message channel bound to the frame and its current scope. The host must validate every request, not trust a plugin-supplied workspace ID. Remote network access and credentials go through the broker. Native sandbox behavior and its same-origin caveats are documented by [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
+For custom browser UI, use sandboxed frames without same-origin privileges, a restrictive content policy, bundled assets and a validated message channel bound to the frame and its current scope. The host must validate every request, not trust a plugin-supplied organization ID. Remote network access and credentials go through the broker. Native sandbox behavior and its same-origin caveats are documented by [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
 
 Browser isolation also needs an explicit egress test: requests, images, forms, popups and frame navigation must not bypass granted destinations. Do not claim full containment merely because an iframe exists. If browser controls cannot enforce the intended policy across supported browsers, keep arbitrary third-party UI out of the trusted-data release until a stronger renderer or isolation design is proven.
 
@@ -466,20 +466,20 @@ Core entities retain explicit domain schemas. Plugins extend them through namesp
 
 Support number, text, boolean, date and single/multiple select fields initially. Field types define validation, ordering, null behavior and supported query operators. Expose these through the ordinary task query API, with server-side filtering, sorting and cursor pagination. Indexing must be part of the implementation; fetching all tasks into a browser to filter a plugin field is not acceptable.
 
-Plugins declare private typed collections—for example `timeEntries`—in `data/schema.ts`. The CLI compiles this author-friendly DSL into a static JSON schema and generates typed server/browser clients plus optional framework bindings such as React hooks. The host provides declared indexes, bounded queries, optimistic concurrency and atomic operation batches. Records carry workspace and plugin identity automatically, plus a project/task parent or actor owner when appropriate. The API enforces parent access and rejects references across workspaces. This handles plugin-specific entities without exposing SQL, an arbitrary ORM, or a universal entity builder. The complete model is in [plugin-storage-design.md](./plugin-storage-design.md).
+Plugins declare private typed collections—for example `timeEntries`—in `data/schema.ts`. The CLI compiles this author-friendly DSL into a static JSON schema and generates typed server/browser clients plus optional framework bindings such as React hooks. The host provides declared indexes, bounded queries, optimistic concurrency and atomic operation batches. Records carry organization and plugin identity automatically, plus a project/task parent or actor owner when appropriate. The API enforces parent access and rejects references across organizations. This handles plugin-specific entities without exposing SQL, an arbitrary ORM, or a universal entity builder. The complete model is in [plugin-storage-design.md](./plugin-storage-design.md).
 
-Every collection declares its access model: workspace-shared, parent-scoped, or actor-owned with an optional parent. The host enforces that declaration. For actor-owned records it assigns and checks the owner; user IDs supplied by plugin code cannot impersonate another actor. Background service access to those records requires a separate explicit grant.
+Every collection declares its access model: organization-shared, parent-scoped, or actor-owned with an optional parent. The host enforces that declaration. For actor-owned records it assigns and checks the owner; user IDs supplied by plugin code cannot impersonate another actor. Background service access to those records requires a separate explicit grant.
 
-Task-owned field values and records follow the task when it moves between projects in the same workspace. Authorization derives the current project from the authoritative task relation; copied project IDs are never sufficient. If the destination has the plugin disabled, data remains dormant and exportable, while plugin execution and normal contribution visibility stop there. Project-owned records remain in their original project. Cross-workspace moves are outside the initial contract.
+Task-owned field values and records follow the task when it moves between projects in the same organization. Authorization derives the current project from the authoritative task relation; copied project IDs are never sufficient. If the destination has the plugin disabled, data remains dormant and exportable, while plugin execution and normal contribution visibility stop there. Project-owned records remain in their original project. Cross-organization moves are outside the initial contract.
 
-Archiving preserves data and makes plugin writes to the archived parent unavailable. Recoverable deletion hides the parent and its linked plugin data from ordinary queries; restoring the parent restores that data. Permanent parent deletion cascades to linked field values and records after retention, through host-maintained relationships. Background service identities obey the same lifecycle rules. Workspace-level records without a parent follow workspace retention. Plugins do not receive a generic bypass to retain identifiable copies of purged parent data.
+Archiving preserves data and makes plugin writes to the archived parent unavailable. Recoverable deletion hides the parent and its linked plugin data from ordinary queries; restoring the parent restores that data. Permanent parent deletion cascades to linked field values and records after retention, through host-maintained relationships. Background service identities obey the same lifecycle rules. Organization-level records without a parent follow organization retention. Plugins do not receive a generic bypass to retain identifiable copies of purged parent data.
 
 Keep public IDs as opaque strings, dates as ISO date-only values, timestamps as UTC strings, and absence as explicit null where supported. Use revision checks for conflicting updates and structured errors with stable codes. The initial wire API separates its version from package semver and the platform-owned data-schema format. Installed plugin schema state is identified by a canonical digest; authors do not manually increment a data-schema version.
 
 Logical data groups are:
 
 - PluginPackage: immutable identity, version, digest and manifest.
-- WorkspacePlugin: enablement, accepted grants, installed schema digest and health.
+- OrganizationPlugin: enablement, accepted grants, installed schema digest and health.
 - ProjectPlugin: project-specific activation and non-secret settings.
 - FieldDefinition / FieldValue: namespaced typed extensions linked to core entities.
 - PluginRecord: scoped collection data and revision.
@@ -490,15 +490,15 @@ These are proposed logical records, not a committed physical table design. The h
 
 ### Commands, events and jobs
 
-Commands express user intent and return a typed result. They run under the initiating user’s permissions. Events report facts after a transaction commits. An event includes an immutable event ID, versioned type, workspace and entity reference, revision, occurrence time, original actor, source plugin and causation chain. Only eligible subscribers receive it; payload fields are permission-filtered.
+Commands express user intent and return a typed result. They run under the initiating user’s permissions. Events report facts after a transaction commits. An event includes an immutable event ID, versioned type, organization and entity reference, revision, occurrence time, original actor, source plugin and causation chain. Only eligible subscribers receive it; payload fields are permission-filtered.
 
 Write domain changes and their outbox entries in one database transaction. Deliver events at least once, with bounded retries and a visible failed-delivery queue. Do not promise total ordering or exactly-once external effects. Handlers must tolerate duplicates and stale revisions. Plugin commands and core mutation APIs accept idempotency keys; the platform stores those keys atomically with the corresponding local effect.
 
 A retry-safe helper must combine the plugin’s own record changes and completion marker in a host-managed transaction. Plugins submit bounded operation batches with revision preconditions; the host validates and commits them atomically. Do not hold a database transaction open while arbitrary plugin code or network calls execute. A simple “seen event” flag written before or after side effects is insufficient. Outgoing requests need provider-supported idempotency or reconciliation; the SDK cannot make an arbitrary third-party request exactly once.
 
-A command handler can issue several broker calls, but those calls are independently committed unless grouped in an explicit atomic batch. The SDK must make this distinction visible. Idempotency keys are scoped to installation, workspace, plugin, actor and command, and bound to a hash of validated inputs; reusing a key with different inputs is rejected. The host checks completed keys before invoking a handler and again within the committing transaction. Retain completion results through the documented retry window. Multi-effect workflows need a durable workflow state or separate stable effect keys.
+A command handler can issue several broker calls, but those calls are independently committed unless grouped in an explicit atomic batch. The SDK must make this distinction visible. Idempotency keys are scoped to installation, organization, plugin, actor and command, and bound to a hash of validated inputs; reusing a key with different inputs is rejected. The host checks completed keys before invoking a handler and again within the committing transaction. Retain completion results through the documented retry window. Multi-effect workflows need a durable workflow state or separate stable effect keys.
 
-For Time Tracking, declare actor-owned `activeTimers` and `timeEntries` collections linked to tasks. A host-enforced unique index on the owner in `activeTimers` permits one active timer per user per workspace for this plugin. Starting creates the active record atomically. Stopping conditionally deletes that record and creates the completed entry in one batch. The SDK supplies collection types and operation builders from the declaration.
+For Time Tracking, declare actor-owned `activeTimers` and `timeEntries` collections linked to tasks. A host-enforced unique index on the owner in `activeTimers` permits one active timer per user per organization for this plugin. Starting creates the active record atomically. Stopping conditionally deletes that record and creates the completed entry in one batch. The SDK supplies collection types and operation builders from the declaration.
 
 **Proposed server handler:**
 
@@ -557,15 +557,15 @@ sequenceDiagram
 
 Task saving does not wait for plugin execution. Idempotency belongs at the effect boundary.
 
-### Installation, updates and workspace portability
+### Installation, updates and organization portability
 
 Ship a single archive per plugin version. Install locally from a file before building a marketplace. Validate the archive, entry paths, sizes, manifest, supported API versions, publisher identity where available and integrity before staging it. A hash verifies integrity, not trust. Never run npm install on the user’s server. Bundle the plugin’s eligible dependencies at authoring time.
 
 Bind an installed plugin ID to an operator-accepted provenance record. A different archive claiming the same ID cannot inherit its records, grants or secrets automatically. Signed updates must match the accepted publisher identity or an explicitly approved key transition. Unsigned local packages are identified as such and require explicit operator approval for each replacement digest. A change of provenance is an ownership transfer with separate approval, not a routine update. A future registry reserves publisher namespaces; the initial local installer must not imply that an unverified name proves authorship.
 
-An installation may cache many packages; each workspace selects its own version and settings. Only server operators add executable packages to the installation; workspace administrators choose from those allowed packages and accept grants. This separation becomes important for a future hosted service.
+An installation may cache many packages; each organization selects its own version and settings. Only server operators add executable packages to the installation; organization administrators choose from those allowed packages and accept grants. This separation becomes important for a future hosted service.
 
-An update is staged: compatibility and schema-digest comparison → permission-diff review if needed → impact preview → lock that workspace’s plugin data and drain in-flight writes → consistent safety snapshot → host-owned schema/index evolution → staged health check → activation. The lock covers native field edits, settings, collection writes, jobs and broker calls, not only executable handlers. Affected contributions remain read-only during the transition. Do not automatically grant new permissions.
+An update is staged: compatibility and schema-digest comparison → permission-diff review if needed → impact preview → lock that organization’s plugin data and drain in-flight writes → consistent safety snapshot → host-owned schema/index evolution → staged health check → activation. The lock covers native field edits, settings, collection writes, jobs and broker calls, not only executable handlers. Affected contributions remain read-only during the transition. Do not automatically grant new permissions.
 
 Plugin packages contain no SQL and no author-maintained migration scripts. Adding optional/defaulted fields, collections, enum values and safe indexes is automatic. Defaults are resolved lazily where possible. Removal, in-place type changes, incompatible constraint tightening, scope changes and other ambiguous/destructive changes are rejected before data changes. Authors use stable IDs, additive replacement and deprecation; a small future catalog of host-owned declarative conversions may cover common cases without arbitrary code.
 
@@ -573,7 +573,7 @@ A failed preparation step leaves the prior schema and package active. Supported 
 
 Disabling removes contributions and stops execution while retaining data. Uninstalling also keeps data by default; an explicit separate purge removes it. Orphaned plugin fields remain discoverable through an administrative read-only data viewer and exports. A disabled plugin’s required fields cannot prevent core task edits; validation requirements apply only while the contribution is enabled.
 
-Workspace export includes core records, field definitions and values, plugin records, settings, enabled scopes, package versions/digests and compiled schema digests. Preserve IDs when importing into a new workspace namespace. If packages are unavailable or incompatible, retain their data and mark the plugin unavailable. Import must never execute a package merely because it appeared in an archive.
+Organization export includes core records, field definitions and values, plugin records, settings, enabled scopes, package versions/digests and compiled schema digests. Preserve IDs when importing into a new organization namespace. If packages are unavailable or incompatible, retain their data and mark the plugin unavailable. Import must never execute a package merely because it appeared in an archive.
 
 Ordinary portable exports omit secrets and mark integrations as needing reconnection. Full disaster-recovery backups need the encrypted credential store and recoverable encryption-key material stored securely. Package archives may accompany an offline migration subject to their licenses; installation still requires normal trust and compatibility checks.
 
@@ -583,11 +583,11 @@ The local and VPS app run the same plugin broker and package format. Moving to a
 
 The package model must allow an independent developer to grow the same browser project from a local plugin into a supported commercial product. Commercial distribution adds publisher identity, signing, entitlement and update policy around the package; it does not introduce a different plugin API or require a particular UI framework.
 
-A future marketplace flow should be: discover the plugin → review publisher, price and data access → start a trial or purchase → review permissions → enable it for selected workspaces or projects. Verified publisher identity and signed archives bind updates to the accepted owner. Teams can pin versions, choose an update policy and review any new permissions before upgrading.
+A future marketplace flow should be: discover the plugin → review publisher, price and data access → start a trial or purchase → review permissions → enable it for selected organizations or projects. Verified publisher identity and signed archives bind updates to the accepted owner. Teams can pin versions, choose an update policy and review any new permissions before upgrading.
 
 Support two business models:
 
-- **Marketplace-managed:** Launch++ manages checkout, trials, workspace or seat entitlements, installation and updates.
+- **Marketplace-managed:** Launch++ manages checkout, trials, organization or seat entitlements, installation and updates.
 - **Publisher-managed:** the plugin connects to the publisher's service through declared network destinations and validates a subscription or provides hosted functionality there.
 
 Publisher-managed plugins must disclose which data leaves the installation. Credentials stay in the host vault and are injected only into approved brokered requests; they are never exposed to browser UI.
@@ -604,7 +604,7 @@ Published plugins declare their supported API range and required platform capabi
 
 The author preview has no plugin-to-plugin dependencies. After core contracts stabilize, plugins may expose namespaced commands and events with independently versioned schemas. Dependencies advertise package and capability requirements, optional integrations tolerate absence, and the package graph rejects cycles. One plugin cannot directly read another’s private records.
 
-Treat documentation and fixtures as public product surfaces. Provide an API reference generated from schemas, recipes, minimal working examples, a permissions guide, schema-evolution guide, compatibility matrix and a local playground. Test the entire create → dev → pack → install workflow in CI, including an example repository outside the application monorepo. Catch accidental reliance on workspace aliases and unpublished internals.
+Treat documentation and fixtures as public product surfaces. Provide an API reference generated from schemas, recipes, minimal working examples, a permissions guide, schema-evolution guide, compatibility matrix and a local playground. Test the entire create → dev → pack → install workflow in CI, including an example repository outside the application monorepo. Catch accidental reliance on organization aliases and unpublished internals.
 
 Figma informs the authoring experience, contextual actions, generated inputs and separation of logic from custom UI. The declarative contribution registry is also informed by [VS Code’s contribution-point model](https://code.visualstudio.com/api/references/contribution-points). Launch++ combines those ideas with server authorization, persistent shared features, durable background execution and portable data contracts.
 
@@ -616,7 +616,7 @@ The existing package.json is only an npm scaffold. There is no existing applicat
 2. Prove the browser-standard contract and supported authoring paths. Add minimal project/task reads in `packages/core`, policy checks in `packages/authorization`, the sandbox bridge in `apps/web`, and public authoring support in `packages/plugin-sdk`, `packages/plugin-data`, `packages/ui`, `packages/ui-tokens` and `packages/plugin-cli`. Generate both a JSON-manifest React/TypeScript project using the Ant Design-powered UI package and a minimal vanilla surface against the same broker. Prove HMR or safe iframe reload, typed context/hooks, native and custom components, deep links, light/dark themes, keyboard use and packaging outside the monorepo.
 3. Prove native contributions and portable storage. Add the field registry and host renderers, then build examples/story-points. Prove edit → list/filter → export → disable → re-enable without application changes or custom browser code.
 4. Prove actions and durable behavior. Add command input schemas, native prompts and the typed invocation API. Build examples/checklist-importer to prove input → read-only preview → confirmation → retry-safe batch creation without custom UI. Then add typed collections and examples/time-tracking with start/stop actions and a React Timesheets view. Enforce one active timer per actor with a declared unique index; make stop/retry safe. Add outbox/job delivery after these contracts work.
-5. Prove richer views and lifecycle. Build examples/due-date-calendar as a read-only custom project view, then implement package updates, automatic safe schema evolution, incompatible-change rejection, disable/uninstall behavior and workspace migration in apps/server plus platform modules.
+5. Prove richer views and lifecycle. Build examples/due-date-calendar as a read-only custom project view, then implement package updates, automatic safe schema evolution, incompatible-change rejection, disable/uninstall behavior and organization migration in apps/server plus platform modules.
 6. Productize authoring and installation. Complete packages/plugin-cli with check/test, richer diagnostics and the full create/dev/check/test/pack workflow. Validate locally and on a supported VPS distribution, then freeze the first supported surface after independent plugin-author feedback. Keep marketplace discovery, billing and dependency resolution for subsequent iterations.
 
 packages/core cannot import plugin packages. Apps and platform compose the core with contributions. SDK and UI kit depend on public protocol types; an automated import-boundary check prohibits external plugins from importing application services or the ORM.
@@ -631,11 +631,11 @@ packages/core cannot import plugin packages. Apps and platform compose the core 
 - [ ] **A packaged external example runs without monorepo access.** No internal imports, symlink assumptions, server-side install scripts or source-code edits.
 - [ ] **Native fields work across the product.** Edit and validate values; filter/sort with pagination; hide a column; export/import; disable and re-enable without loss.
 - [ ] **Time Tracking survives duplicate requests and process restart.** Crash between effect commit and acknowledgement; verify one stored effect and visible retry history.
-- [ ] **Permissions remain correct across all entry points.** Try forged workspace/project IDs, a revoked grant, restricted user reads, cross-parent collection links, background jobs and event payload access.
+- [ ] **Permissions remain correct across all entry points.** Try forged organization/project IDs, a revoked grant, restricted user reads, cross-parent collection links, background jobs and event payload access.
 - [ ] **Execution and UI confinement withstand adversarial fixtures.** Infinite loop, excess allocation, unsupported filesystem/native import, network redirect to private address, iframe exfiltration/navigation and malformed RPC. A failed gate blocks untrusted execution claims.
 - [ ] **Calendar stays usable in light/dark mode and by keyboard.** Navigate via a deep link, change project, revoke access while open, load empty/error data, and verify only the plugin surface fails.
 - [ ] **Update and disable have observable, reversible behavior.** New permission requires review; unsafe data-schema changes are rejected; failed safe evolution retains the prior version; disable revokes execution and preserves exportable data.
-- [ ] **A real workspace moves from a laptop to a fresh server.** Pack/install plugins, create tasks and time entries, export, import through the browser, verify IDs and values, and reconnect secrets explicitly.
+- [ ] **A real organization moves from a laptop to a fresh server.** Pack/install plugins, create tasks and time entries, export, import through the browser, verify IDs and values, and reconnect secrets explicitly.
 - [ ] **Host and plugin budgets are measured before release.** Record core save latency with slow handlers, cold start, query latency at representative dataset sizes and per-plugin memory. Set supported limits from measurements.
 
 ### Decisions and validation risks

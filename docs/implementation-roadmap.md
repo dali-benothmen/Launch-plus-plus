@@ -79,7 +79,7 @@ The architecture decisions in `docs/` are accepted as the implementation baselin
 
 ### Tasks
 
-- [x] **P0-01 — Bootstrap the workspace.** Create the pinned Node.js/pnpm TypeScript monorepo, package boundary rules, shared TypeScript configuration, formatting, linting, unit-test, browser-test, and architecture-test commands. Verify a clean checkout installs and runs every empty-package check deterministically.
+- [x] **P0-01 — Bootstrap the codebase.** Create the pinned Node.js/pnpm TypeScript monorepo, package boundary rules, shared TypeScript configuration, formatting, linting, unit-test, browser-test, and architecture-test commands. Verify a clean checkout installs and runs every empty-package check deterministically.
 - [x] **P0-02 — Create package ownership boundaries.** Add only the initial `apps/web`, `apps/server`, `packages/core`, `packages/database`, `packages/api-contracts`, `packages/api-client`, `packages/authorization`, `packages/ui`, `packages/ui-tokens`, and minimal plugin protocol/runtime/test packages needed for the proofs. Enforce forbidden import directions in CI.
 - [x] **P0-03 — Build the server lifecycle skeleton.** Implement typed configuration, Fastify composition, health/readiness endpoints, correlation IDs, structured logging, error mapping, security headers, origin/CSRF controls, baseline rate limits, and graceful startup/shutdown. Verify invalid configuration fails before opening a listener.
 - [x] **P0-04 — Prove the persistence spine.** Configure SQLite WAL, foreign keys, busy timeout, Drizzle migrations, transaction ownership, repository ports, and a transactional outbox proof. Verify rollback, concurrent reads, serialized writes, and migration failure recovery.
@@ -113,9 +113,9 @@ All Phase 0 exit conditions pass on a clean machine.
 
 ### Tasks
 
-- [x] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and a short workspace naming step. Do not add questionnaire-style onboarding.
-- [x] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
-- [x] **P1-03 — Implement projects and statuses.** Add project CRUD/archive, workspace-root navigation, ordering, favorite behavior, and default ordered statuses with database invariants.
+- [x] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and a short organization naming step. Do not add questionnaire-style onboarding.
+- [x] **P1-02 — Implement organizations and membership ownership.** Add organization creation, owner membership, profile linkage, current-organization selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
+- [x] **P1-03 — Implement projects and statuses.** Add project CRUD/archive, organization-root navigation, ordering, favorite behavior, and default ordered statuses with database invariants.
 - [x] **P1-04 — Implement the task domain.** Add tasks, subtasks, status movement, assignees, labels, due dates, revisions, archive/restore, ordering, and optimistic-concurrency errors through application services.
 - [x] **P1-05 — Publish the core HTTP contract.** Add versioned JSON schemas, REST endpoints, problem details, cursors, idempotency support, OpenAPI generation, and the generated TypeScript API client for implemented resources.
 - [x] **P1-06 — Build the authenticated application shell.** Implement the global icon rail, dedicated Home and Projects destinations, route boundaries, and required unavailable/forbidden/error states.
@@ -134,7 +134,7 @@ All Phase 0 exit conditions pass on a clean machine.
 - [x] Board, List, task detail, search, and activity agree on the same underlying task state.
 - [x] Keyboard-only users can complete the primary task journey.
 - [x] A concurrent update produces a recoverable conflict rather than silent data loss.
-- [x] Backup and restore reproduce the workspace on a clean installation.
+- [x] Backup and restore reproduce the organization on a clean installation.
 - [x] The product remains fully usable with the plugin platform disabled.
 
 ## Phase 2 — plugin author preview
@@ -151,13 +151,13 @@ The Core alpha is stable enough to provide project/task fixtures and public capa
 
 - [ ] **P2-01 — Publish manifest and package schemas v1-preview.** Cover identity, version/API ranges, permissions, authoring adapter, browser surfaces, server handlers, contributions, dependencies, and integrity metadata. Provide JSON Schema completion and precise validation errors.
 - [ ] **P2-02 — Implement package upload and staged installation.** Add Settings UI for file selection or drag-and-drop, archive inspection, compatibility/provenance summary, requested permissions, contribution preview, atomic staging, enablement, and rollback on failure.
-- [ ] **P2-03 — Implement the extension registry.** Resolve installed/enabled packages and workspace/project scope into stable contribution IDs, collision diagnostics, routes, settings entries, fields, panels, actions, and navigation placements.
+- [ ] **P2-03 — Implement the extension registry.** Resolve installed/enabled packages and organization/project scope into stable contribution IDs, collision diagnostics, routes, settings entries, fields, panels, actions, and navigation placements.
 - [ ] **P2-04 — Implement host-rendered contributions.** Render declared navigation items, task/project actions, command-palette items, standard settings fields, and the first task field/board badge/list column using current host components and permission visibility.
-- [ ] **P2-05 — Implement the capability broker.** Map plugin SDK calls to ordinary authorized application services with actor, workspace, project, grant, schema, quota, correlation, cancellation, and structured-error enforcement.
+- [ ] **P2-05 — Implement the capability broker.** Map plugin SDK calls to ordinary authorized application services with actor, organization, project, grant, schema, quota, correlation, cancellation, and structured-error enforcement.
 - [ ] **P2-06 — Publish `@launchpp/sdk` and `@launchpp/sdk/react`.** Support context, project/task reads, allowed mutations, navigation, commands, theme data, cancellation, and errors. React bindings add providers and hooks without changing the wire contract.
 - [ ] **P2-07 — Publish the React plugin UI contract.** Ship Ant Design-powered `@launchpp/ui`, `@launchpp/ui-tokens`, the adapter-generated provider/bootstrap, Launch++ surface layouts, standard async states, icons, and documented custom-component behavior.
 - [ ] **P2-08 — Scaffold React and vanilla projects.** Implement `create-launchpp-plugin` with React/TypeScript, vanilla TypeScript, and vanilla JavaScript templates. Generate the authoritative `launchpp.plugin.json`, selected capabilities, tests, scripts, and only required permissions.
-- [ ] **P2-09 — Implement disposable `launchpp dev`.** Start an isolated development workspace with fixtures, logs, plugin inspector, React HMR, safe vanilla iframe reload, manifest re-registration, theme preview, and disposable storage reset.
+- [ ] **P2-09 — Implement disposable `launchpp dev`.** Start an isolated development organization with fixtures, logs, plugin inspector, React HMR, safe vanilla iframe reload, manifest re-registration, theme preview, and disposable storage reset.
 - [ ] **P2-10 — Implement connected Developer Mode.** Add operator enablement, authenticated pairing, short-lived author-scoped sessions, production-equivalent permission/sandbox boundaries, explicit banners, expiry, revocation, and teardown.
 - [ ] **P2-11 — Implement CLI generation and validation.** Deliver `launchpp add`, `generate`, `check`, and `test` for contributions, manifest/permission validation, forbidden imports, direct Ant-internal usage diagnostics, generated clients, and protocol-compatible test fixtures.
 - [ ] **P2-12 — Complete deterministic `pack` and `inspect`.** Compile source entries, bundle eligible dependencies, tree-shake React/Ant imports, normalize browser/server/schema assets, emit hashes and metadata, reopen/validate the archive, and provide a non-executing inspection report.
@@ -188,19 +188,19 @@ Independent authors have successfully built against the Phase 2 preview, and res
 
 ### Tasks
 
-- [ ] **P3-01 — Complete team identity flows.** Add invitations, invitation acceptance, workspace admin/member roles, membership changes, ownership transfer, deactivation, session listing/revocation, configured mail delivery with a development fake, and the authorization matrix.
-- [ ] **P3-02 — Build Members and scoped Settings.** Implement personal, workspace, current-project, and installation settings navigation with authority-aware visibility and audit behavior.
+- [ ] **P3-01 — Complete team identity flows.** Add invitations, invitation acceptance, organization admin/member roles, membership changes, ownership transfer, deactivation, session listing/revocation, configured mail delivery with a development fake, and the authorization matrix.
+- [ ] **P3-02 — Build Members and scoped Settings.** Implement personal, organization, current-project, and installation settings navigation with authority-aware visibility and audit behavior.
 - [ ] **P3-03 — Add notifications.** Project relevant domain/outbox facts into in-app notifications with read state, SSE invalidation, bounded retention, and optional mail-adapter hooks.
 - [ ] **P3-04 — Publish the plugin data DSL and generator.** Implement `data/schema.ts`, stable IDs, field/index/relation validation, generated typed clients and React hooks, canonical static schema output, and no SQL/database access for authors.
-- [ ] **P3-05 — Implement host-managed plugin collections.** Add workspace/project/user scopes, authorization, filtering, pagination, atomic batches, revisions, quotas, lifecycle state, export, and physical isolation over host-owned tables.
+- [ ] **P3-05 — Implement host-managed plugin collections.** Add organization/project/user scopes, authorization, filtering, pagination, atomic batches, revisions, quotas, lifecycle state, export, and physical isolation over host-owned tables.
 - [ ] **P3-06 — Implement automatic safe schema evolution.** Compare the installed/released schema fingerprint, apply additive changes and approved conversions, reject destructive/ambiguous changes, recover from failure, and expose diagnostics through CLI and installation UI.
 - [ ] **P3-07 — Implement commands and public capabilities.** Add typed input/output schemas, fully qualified IDs, permission checks, timeouts, idempotency, version constraints, dependency declarations, optional-dependency handling, and invocation tracing.
 - [ ] **P3-08 — Implement events and durable jobs.** Deliver post-commit events at least once, retry with backoff/jitter, leases, schedules, missed-run policy, dead-letter inspection, replay, cancellation, and plugin-identity authorization.
 - [ ] **P3-09 — Implement brokered external integrations.** Add allowlisted outbound HTTP, redirect/rebinding protection, quotas, encrypted credential references, redacted logs, and webhook routing only after the SSRF/adversarial suite passes.
 - [ ] **P3-10 — Build Checklist Importer.** Validate native action inputs, preview, confirmation, atomic task mutation, idempotency, permission denial, and replay-safe behavior.
 - [ ] **P3-11 — Build Time Tracking.** Validate typed collections, actor ownership, one-active-timer constraints, commands, events/jobs, recovery after restart, duplicate delivery, and export.
-- [ ] **P3-12 — Complete portable workspace export/import.** Preserve core IDs, plugin packages/versions, dormant plugin data, schemas, settings, and integrity metadata while requiring secrets to be reconnected.
-- [ ] **P3-13 — Qualify team and behavior flows.** Test forged context, cross-workspace IDs, revoked grants, duplicate events, crashed workers, laptop sleep/wake schedules, invitation abuse, and migration from laptop to a clean VPS.
+- [ ] **P3-12 — Complete portable organization export/import.** Preserve core IDs, plugin packages/versions, dormant plugin data, schemas, settings, and integrity metadata while requiring secrets to be reconnected.
+- [ ] **P3-13 — Qualify team and behavior flows.** Test forged context, cross-organization IDs, revoked grants, duplicate events, crashed workers, laptop sleep/wake schedules, invitation abuse, and migration from laptop to a clean VPS.
 
 ### Exit gate — Launch++ MVP / Team beta
 
@@ -209,7 +209,7 @@ Independent authors have successfully built against the Phase 2 preview, and res
 - [ ] Inter-plugin invocation works only through declared, version-compatible public capabilities.
 - [ ] Duplicate/restarted delivery produces one logical Time Tracking effect.
 - [ ] A revoked user or plugin grant stops future reads, writes, commands, events, and jobs.
-- [ ] Workspace export/import preserves dormant plugin data and explains missing packages or secrets.
+- [ ] Organization export/import preserves dormant plugin data and explains missing packages or secrets.
 
 ## Phase 4 — supported extension platform and v1
 
@@ -228,7 +228,7 @@ The Team beta runs on real small-team datasets, the public plugin contracts have
 - [ ] **P4-03 — Build the Due-date Calendar reference plugin.** Validate a native-feeling custom route, query invalidation, deep links, filters, accessibility, theme propagation, error confinement, and disabled-plugin routes while keeping Calendar outside the core.
 - [ ] **P4-04 — Complete theme import and management.** Add JSON upload, validation, accessibility diagnostics, temporary preview, activation, family variants, fallback, removal, and packaged theme distribution.
 - [ ] **P4-05 — Freeze compatibility policy.** Publish supported API/manifest/theme/SDK/UI version ranges, semantic-versioning rules, deprecation windows, stored old-artifact fixtures, upgrade tooling, and precise unsupported-version errors.
-- [ ] **P4-06 — Run the full adversarial plugin suite.** Cover archive bombs/traversal, protocol forgery, browser egress/navigation, CSP bypass attempts, CPU/memory/log/output floods, native/process/filesystem imports, SSRF redirects/rebinding, revoked grants, and cross-workspace access.
+- [ ] **P4-06 — Run the full adversarial plugin suite.** Cover archive bombs/traversal, protocol forgery, browser egress/navigation, CSP bypass attempts, CPU/memory/log/output floods, native/process/filesystem imports, SSRF redirects/rebinding, revoked grants, and cross-organization access.
 - [ ] **P4-07 — Complete accessibility qualification.** Test primary core and plugin journeys with keyboard and representative assistive technology; verify focus restoration, labels, contrast, motion preferences, and plugin failure surfaces.
 - [ ] **P4-08 — Complete performance and resource qualification.** Measure API/UI targets, SQLite contention, FTS rebuild, outbox backlog, large boards/lists, plugin startup, package size, worker quotas, and theme switching on published reference environments.
 - [ ] **P4-09 — Complete deployment and recovery tooling.** Produce the supported production image, simple VPS/TLS example, configuration reference, backup scheduling, restore drill, failed-upgrade recovery, safe mode, health checks, log rotation guidance, and upgrade checklist.

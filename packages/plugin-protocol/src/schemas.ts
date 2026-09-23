@@ -61,7 +61,7 @@ export const BrowserSurfaceSchema = StrictObject(
 export const NavigationSchema = StrictObject({
   icon: Type.Optional(Type.String({ maxLength: 80, minLength: 1 })),
   label: Type.String({ maxLength: 80, minLength: 1 }),
-  slot: Type.Union([Type.Literal("workspace.navigation"), Type.Literal("project.navigation")]),
+  slot: Type.Union([Type.Literal("organization.navigation"), Type.Literal("project.navigation")]),
 });
 
 export const PageContributionSchema = StrictObject(
@@ -73,7 +73,7 @@ export const PageContributionSchema = StrictObject(
       minLength: 1,
       pattern: routePathPattern,
     }),
-    scope: Type.Union([Type.Literal("workspace"), Type.Literal("project")]),
+    scope: Type.Union([Type.Literal("organization"), Type.Literal("project")]),
     surface: IdentifierSchema,
     title: Type.String({ maxLength: 120, minLength: 1 }),
   },
@@ -108,7 +108,11 @@ export const ActionContributionSchema = StrictObject(
 export const SettingsContributionSchema = StrictObject(
   {
     id: IdentifierSchema,
-    scope: Type.Union([Type.Literal("user"), Type.Literal("workspace"), Type.Literal("project")]),
+    scope: Type.Union([
+      Type.Literal("user"),
+      Type.Literal("organization"),
+      Type.Literal("project"),
+    ]),
     surface: IdentifierSchema,
     title: Type.String({ maxLength: 120, minLength: 1 }),
   },
@@ -179,7 +183,7 @@ export const PluginContextSchema = StrictObject(
         Type.String({ maxLength: 256 }),
       ),
     }),
-    workspace: StrictObject({ id: Type.String({ maxLength: 128, minLength: 1 }) }),
+    organization: StrictObject({ id: Type.String({ maxLength: 128, minLength: 1 }) }),
   },
   { $id: "LaunchppPluginContextV0" },
 );

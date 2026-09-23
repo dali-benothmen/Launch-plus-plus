@@ -16,7 +16,7 @@ pnpm measure:core-alpha
 
 `test:solo` owns a disposable database under `.cache/solo-qualification` and serves the built application on `127.0.0.1:4180`. It checks accessible names, field labelling, duplicate IDs, image alternatives, landmarks, a real keyboard-operated primary path, consistent task state across surfaces, search, activity, and the structured `409` response for two writes against one task revision.
 
-The database qualification builds two committed historical fixtures: the foundation schema and the last project schema before tasks existed. Each is upgraded through the current migration set, checked for preserved rows, backed up with its checksum manifest, restored into a clean database, and compared at the workspace/project level.
+The database qualification builds two committed historical fixtures: the foundation schema and the last project schema before tasks existed. Each is upgraded through the current migration set, checked for preserved rows, backed up with its checksum manifest, restored into a clean database, and compared at the organization/project level.
 
 The performance command builds production artifacts and evaluates the budgets in `tests/performance/core-alpha-budgets.json`. Its workload contains 250 tasks, 250 indexed task-page reads, five fresh migrations, five online backups, twenty verifications, and five clean restores. The first retained reference result is `tests/performance/baselines/core-alpha-local-2026-09-20.json`.
 
@@ -28,7 +28,7 @@ The performance command builds production artifacts and evaluates the budgets in
 | Board, List, detail, search, and activity agree | One task is created and changed through these surfaces in the same browser journey. |
 | Keyboard primary journey | Setup/project submission, task creation, tab switching, and opening task detail are activated from keyboard focus. |
 | Concurrent edits are recoverable | Two updates with the same expected revision produce exactly one success and one structured revision conflict; the authoritative task remains readable. |
-| Backup/restore reproduces the workspace | Both historical fixtures migrate, back up, verify, restore, and retain installation/project/status counts. |
+| Backup/restore reproduces the organization | Both historical fixtures migrate, back up, verify, restore, and retain installation/project/status counts. |
 | Core works without plugins | The qualification server builds without the plugin proof flag and the entire journey completes without plugin frames or plugin services. |
 
 ## Current boundary

@@ -1,6 +1,6 @@
 # Launch++ server
 
-This workspace is the trusted HTTP composition root. It owns process startup/shutdown and transport concerns; domain rules remain in `@launchpp/core`, authorization remains in `@launchpp/authorization`, and persistence remains in `@launchpp/database`.
+This organization is the trusted HTTP composition root. It owns process startup/shutdown and transport concerns; domain rules remain in `@launchpp/core`, authorization remains in `@launchpp/authorization`, and persistence remains in `@launchpp/database`.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ For backend development, run the repository-level watcher instead:
 pnpm dev:server
 ```
 
-It watches the server and referenced backend workspaces, recompiles changed TypeScript, and automatically restarts Fastify. Stop both watcher processes with `Ctrl+C`.
+It watches the server and referenced backend organizations, recompiles changed TypeScript, and automatically restarts Fastify. Stop both watcher processes with `Ctrl+C`.
 
 For the packaged-like local path, `pnpm local:start` builds the application and serves the compiled web client and API from `http://127.0.0.1:3000` in one process. The [local operations guide](../../docs/local-operations.md) covers the container and backup/restore workflows.
 
@@ -23,11 +23,11 @@ The local default listens on `127.0.0.1:3000` and stores state in `data/launchpp
 
 On an empty database, local loopback access authorizes the setup browser automatically with a short-lived `HttpOnly` cookie. Startup also logs a one-time setup URL for remote/VPS operators; its fragment is exchanged for the same cookie and removed from the browser address before account creation. Both methods expire after 30 minutes, raw secrets are released after use, and only hashes remain in server memory. Until setup succeeds, non-setup API routes return `setup_required`; public account registration remains disabled after setup as well.
 
-First-owner setup atomically creates the installation, Launch++ profile, default workspace, active owner membership, audit facts, and outbox facts after Better Auth creates the identity. Existing development databases from the earlier authentication slice are repaired lazily on the first authenticated workspace read by creating the missing profile and owner workspace.
+First-owner setup atomically creates the installation, Launch++ profile, default organization, active owner membership, audit facts, and outbox facts after Better Auth creates the identity. Existing development databases from the earlier authentication slice are repaired lazily on the first authenticated organization read by creating the missing profile and owner organization.
 
-The authenticated workspace endpoints currently support listing accessible workspaces, creating and renaming an owned workspace, and selecting the current workspace. Reads are membership-filtered, selection requires an active matching membership, and workspace-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
+The authenticated organization endpoints currently support listing accessible organizations, creating and renaming an owned organization, and selecting the current organization. Reads are membership-filtered, selection requires an active matching membership, and organization-management authorization is owner-only. These are intentionally internal unversioned routes until the versioned HTTP contract task; invitations and additional role workflows remain unavailable.
 
-The internal project endpoints expose the current project catalog, project and one-level folder lifecycle operations, ordering, archive/restore, and per-user favorite/recent state. Mutations use the same owner-only workspace management policy in the solo slice; catalog reads and personal preferences require active membership. Project creation writes the project, three default statuses, audit entry, and outbox fact atomically. These routes remain internal until the versioned HTTP contract milestone.
+The internal project endpoints expose the current project catalog, project and one-level folder lifecycle operations, ordering, archive/restore, and per-user favorite/recent state. Mutations use the same owner-only organization management policy in the solo slice; catalog reads and personal preferences require active membership. Project creation writes the project, three default statuses, audit entry, and outbox fact atomically. These routes remain internal until the versioned HTTP contract milestone.
 
 ## Configuration
 

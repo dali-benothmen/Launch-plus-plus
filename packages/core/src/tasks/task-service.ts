@@ -1,7 +1,10 @@
 import type { Project, ProjectRepository, ProjectStatus } from "../projects/project.js";
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { ReadContext, TransactionManager, WriteContext } from "../shared/transactions.js";
-import type { AuditWriter, WorkspaceMembershipRepository } from "../workspaces/workspace.js";
+import type {
+  AuditWriter,
+  OrganizationMembershipRepository,
+} from "../organizations/organization.js";
 import type {
   Label,
   Task,
@@ -29,14 +32,14 @@ interface CommandContext {
   readonly installationId: string;
   readonly projectId: string;
   readonly userId: string;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface TaskServiceDependencies {
   readonly audit: AuditWriter;
   readonly clock: () => number;
   readonly generateId: () => string;
-  readonly memberships: WorkspaceMembershipRepository;
+  readonly memberships: OrganizationMembershipRepository;
   readonly outbox: OutboxWriter;
   readonly projects: ProjectRepository;
   readonly tasks: TaskRepository;
@@ -52,10 +55,10 @@ function validateContext(input: CommandContext) {
     input.installationId.length === 0 ||
     input.projectId.length === 0 ||
     input.userId.length === 0 ||
-    input.workspaceId.length === 0
+    input.organizationId.length === 0
   ) {
     throw new TypeError(
-      "Workspace, project, user, installation, and correlation identifiers are required.",
+      "Organization, project, user, installation, and correlation identifiers are required.",
     );
   }
 }
@@ -132,51 +135,53 @@ function withoutOptional<T extends object, K extends keyof T>(value: T, key: K):
 export class TaskService {
   constructor(private readonly dependencies: TaskServiceDependencies) {}
 
-  list(input: Readonly<{ projectId: string; userId: string; workspaceId: string }>): TaskCatalog {
+  list(
+    input: Readonly<{ projectId: string; userId: string; organizationId: string }>,
+  ): TaskCatalog {
     if (
       input.projectId.length === 0 ||
       input.userId.length === 0 ||
-      input.workspaceId.length === 0
+      input.organizationId.length === 0
     ) {
-      throw new TypeError("Workspace, project, and user identifiers are required.");
+      throw new TypeError("Organization, project, and user identifiers are required.");
     }
     return this.dependencies.transactions.read((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId);
       const tasks = this.dependencies.tasks
-        .listTasks(context, input.workspaceId, input.projectId)
+        .listTasks(context, input.organizationId, input.projectId)
         .map((task) => this.toView(context, task, project));
       return Object.freeze({
-        labels: this.dependencies.tasks.listLabels(context, input.workspaceId, input.projectId),
+        labels: this.dependencies.tasks.listLabels(context, input.organizationId, input.projectId),
         tasks,
       });
     });
   }
 
   getDetail(
-    input: Readonly<{ projectId: string; taskId: string; userId: string; workspaceId: string }>,
+    input: Readonly<{ projectId: string; taskId: string; userId: string; organizationId: string }>,
   ): TaskDetail {
     if (
       input.projectId.length === 0 ||
       input.taskId.length === 0 ||
       input.userId.length === 0 ||
-      input.workspaceId.length === 0
+      input.organizationId.length === 0
     ) {
-      throw new TypeError("Workspace, project, task, and user identifiers are required.");
+      throw new TypeError("Organization, project, task, and user identifiers are required.");
     }
     return this.dependencies.transactions.read((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId);
       const task = this.requireTask(context, input, input.taskId);
       const subtasks = this.dependencies.tasks
-        .listTasks(context, input.workspaceId, input.projectId)
+        .listTasks(context, input.organizationId, input.projectId)
         .filter((item) => item.parentTaskId === task.id)
         .map((item) => this.toView(context, item, project));
       return Object.freeze({
-        activity: this.dependencies.tasks.listTaskActivity(context, input.workspaceId, task.id),
+        activity: this.dependencies.tasks.listTaskActivity(context, input.organizationId, task.id),
         availableLabels: this.dependencies.tasks.listLabels(
           context,
-          input.workspaceId,
+          input.organizationId,
           input.projectId,
         ),
         comments: this.dependencies.tasks.listComments(context, task.id),
@@ -192,8 +197,8 @@ export class TaskService {
     validateContext(input);
     const body = normalizeComment(input.body);
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       const now = this.dependencies.clock();
       const comment: TaskComment = Object.freeze({
@@ -205,7 +210,7 @@ export class TaskService {
         revision: 1,
         taskId: task.id,
         updatedAt: now,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       this.dependencies.tasks.createComment(context, comment);
       this.record(context, input, "comment.created", task.id, { commentId: comment.id });
@@ -228,9 +233,9 @@ export class TaskService {
     const description = normalizeDescription(input.description);
     const dueDate = normalizeDueDate(input.dueDate);
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
-      const statuses = this.activeStatuses(context, input.workspaceId, input.projectId);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const statuses = this.activeStatuses(context, input.organizationId, input.projectId);
       const status = input.statusId ? this.requireStatus(statuses, input.statusId) : statuses[0];
       if (!status) throw new TaskStatusInvalidError("The project has no active status.");
       const parent = input.parentTaskId
@@ -257,7 +262,7 @@ export class TaskService {
         title,
         updatedAt: now,
         updatedByUserId: input.userId,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       this.dependencies.tasks.createTask(context, task);
       this.dependencies.projects.saveProject(context, {
@@ -292,8 +297,8 @@ export class TaskService {
       input.description === undefined ? undefined : normalizeDescription(input.description);
     const dueDate = input.dueDate === undefined ? undefined : normalizeDueDate(input.dueDate);
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       this.requireRevision(task, input.expectedRevision);
       const base = input.dueDate === null ? withoutOptional(task, "dueDate") : task;
@@ -324,16 +329,16 @@ export class TaskService {
     validateContext(input);
     validateExpectedRevision(input.expectedRevision);
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       this.requireRevision(task, input.expectedRevision);
       const status = this.requireStatus(
-        this.activeStatuses(context, input.workspaceId, input.projectId),
+        this.activeStatuses(context, input.organizationId, input.projectId),
         input.statusId,
       );
       const targetTasks = this.dependencies.tasks
-        .listTasks(context, input.workspaceId, input.projectId)
+        .listTasks(context, input.organizationId, input.projectId)
         .filter(
           (item) =>
             item.id !== task.id &&
@@ -389,14 +394,20 @@ export class TaskService {
     validateExpectedRevision(input.expectedRevision);
     const userIds = uniqueIds(input.userIds, "Assignees");
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       this.requireRevision(task, input.expectedRevision);
       for (const userId of userIds) {
-        const membership = this.dependencies.memberships.find(context, input.workspaceId, userId);
+        const membership = this.dependencies.memberships.find(
+          context,
+          input.organizationId,
+          userId,
+        );
         if (membership?.state !== "active") {
-          throw new TaskAssigneeInvalidError("Every assignee must be an active workspace member.");
+          throw new TaskAssigneeInvalidError(
+            "Every assignee must be an active organization member.",
+          );
         }
       }
       const now = this.dependencies.clock();
@@ -405,7 +416,7 @@ export class TaskService {
         assignedByUserId: input.userId,
         taskId: task.id,
         userIds,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       const updated = this.touch(task, input.userId, now);
       this.dependencies.tasks.saveTask(context, updated);
@@ -419,7 +430,7 @@ export class TaskService {
 
   createLabel(
     input: CommandContext &
-      Readonly<{ color: string; name: string; scope?: "project" | "workspace" }>,
+      Readonly<{ color: string; name: string; scope?: "project" | "organization" }>,
   ): Promise<Label> {
     validateContext(input);
     const name = normalizeLabelName(input.name);
@@ -428,10 +439,10 @@ export class TaskService {
       return Promise.reject(new TypeError("Label color must be a six-digit hexadecimal color."));
     }
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      this.requireProject(context, input.workspaceId, input.projectId, true);
-      const projectId = input.scope === "workspace" ? undefined : input.projectId;
-      if (this.dependencies.tasks.findLabelByName(context, input.workspaceId, projectId, key)) {
+      this.requireActor(context, input.organizationId, input.userId);
+      this.requireProject(context, input.organizationId, input.projectId, true);
+      const projectId = input.scope === "organization" ? undefined : input.projectId;
+      if (this.dependencies.tasks.findLabelByName(context, input.organizationId, projectId, key)) {
         throw new TaskLabelNameConflictError("A label with this name already exists in the scope.");
       }
       const now = this.dependencies.clock();
@@ -444,7 +455,7 @@ export class TaskService {
         ...(projectId ? { projectId } : {}),
         revision: 1,
         updatedAt: now,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       this.dependencies.tasks.createLabel(context, label);
       this.record(context, input, "label.created", label.id, {
@@ -464,15 +475,15 @@ export class TaskService {
     validateExpectedRevision(input.expectedRevision);
     const labelIds = uniqueIds(input.labelIds, "Labels");
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       this.requireRevision(task, input.expectedRevision);
       for (const labelId of labelIds) {
         const label = this.dependencies.tasks.findLabelById(context, labelId);
         if (
           !label ||
-          label.workspaceId !== input.workspaceId ||
+          label.organizationId !== input.organizationId ||
           label.archivedAt !== undefined ||
           (label.projectId !== undefined && label.projectId !== input.projectId)
         ) {
@@ -487,7 +498,7 @@ export class TaskService {
         appliedByUserId: input.userId,
         labelIds,
         taskId: task.id,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       });
       const updated = this.touch(task, input.userId, now);
       this.dependencies.tasks.saveTask(context, updated);
@@ -518,8 +529,8 @@ export class TaskService {
     validateContext(input);
     validateExpectedRevision(input.expectedRevision);
     return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.workspaceId, input.userId);
-      const project = this.requireProject(context, input.workspaceId, input.projectId, true);
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId, true);
       this.requireRevision(task, input.expectedRevision);
       if (action === "archive" && task.archivedAt !== undefined) {
@@ -566,24 +577,24 @@ export class TaskService {
     });
   }
 
-  private requireActor(context: ReadContext, workspaceId: string, userId: string) {
-    const membership = this.dependencies.memberships.find(context, workspaceId, userId);
+  private requireActor(context: ReadContext, organizationId: string, userId: string) {
+    const membership = this.dependencies.memberships.find(context, organizationId, userId);
     if (membership?.state !== "active") {
-      throw new TaskAccessDeniedError("Active workspace membership is required.");
+      throw new TaskAccessDeniedError("Active organization membership is required.");
     }
     return membership;
   }
 
   private requireProject(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     projectId: string,
     mutable = false,
   ) {
     const project = this.dependencies.projects.findProjectById(context, projectId);
     if (
       !project ||
-      project.workspaceId !== workspaceId ||
+      project.organizationId !== organizationId ||
       project.deletedAt !== undefined ||
       (mutable && project.archivedAt !== undefined)
     ) {
@@ -592,9 +603,9 @@ export class TaskService {
     return project;
   }
 
-  private activeStatuses(context: ReadContext, workspaceId: string, projectId: string) {
+  private activeStatuses(context: ReadContext, organizationId: string, projectId: string) {
     return this.dependencies.projects
-      .listStatuses(context, workspaceId)
+      .listStatuses(context, organizationId)
       .filter((status) => status.projectId === projectId && status.archivedAt === undefined);
   }
 
@@ -606,14 +617,14 @@ export class TaskService {
 
   private requireTask(
     context: ReadContext,
-    scope: Readonly<{ projectId: string; workspaceId: string }>,
+    scope: Readonly<{ projectId: string; organizationId: string }>,
     taskId: string,
     includeArchived = false,
   ) {
     const task = this.dependencies.tasks.findTaskById(context, taskId);
     if (
       !task ||
-      task.workspaceId !== scope.workspaceId ||
+      task.organizationId !== scope.organizationId ||
       task.projectId !== scope.projectId ||
       task.deletedAt !== undefined ||
       (!includeArchived && task.archivedAt !== undefined)
@@ -676,7 +687,7 @@ export class TaskService {
       outcome: "succeeded",
       targetId,
       targetType,
-      workspaceId: input.workspaceId,
+      organizationId: input.organizationId,
     });
     this.dependencies.outbox.append(context, {
       availableAt: occurredAt,
@@ -689,7 +700,7 @@ export class TaskService {
         projectId: input.projectId,
         ...metadata,
         targetId,
-        workspaceId: input.workspaceId,
+        organizationId: input.organizationId,
       },
       topic: operation,
     });

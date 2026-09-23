@@ -1,6 +1,6 @@
 import type { ReadContext, WriteContext } from "../shared/transactions.js";
 
-export type ProjectAccess = "restricted" | "workspace";
+export type ProjectAccess = "restricted" | "organization";
 export type ProjectStatusCategory = "active" | "backlog" | "done";
 
 export interface ProjectFolder {
@@ -11,7 +11,7 @@ export interface ProjectFolder {
   readonly position: number;
   readonly revision: number;
   readonly updatedAt: number;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface Project {
@@ -30,7 +30,7 @@ export interface Project {
   readonly revision: number;
   readonly slug: string;
   readonly updatedAt: number;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface ProjectStatus {
@@ -45,7 +45,7 @@ export interface ProjectStatus {
   readonly projectId: string;
   readonly revision: number;
   readonly updatedAt: number;
-  readonly workspaceId: string;
+  readonly organizationId: string;
 }
 
 export interface ProjectNavigationItem extends Project {
@@ -65,37 +65,41 @@ export interface ProjectRepository {
   createStatus(context: WriteContext, status: ProjectStatus): void;
   deleteFolder(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     folderId: string,
     updatedAt: number,
   ): void;
   findFolderById(context: ReadContext, folderId: string): ProjectFolder | undefined;
   findFolderByName(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     name: string,
   ): ProjectFolder | undefined;
   findProjectById(context: ReadContext, projectId: string): Project | undefined;
-  findProjectByKey(context: ReadContext, workspaceId: string, key: string): Project | undefined;
-  findProjectBySlug(context: ReadContext, workspaceId: string, slug: string): Project | undefined;
-  listFolders(context: ReadContext, workspaceId: string): readonly ProjectFolder[];
+  findProjectByKey(context: ReadContext, organizationId: string, key: string): Project | undefined;
+  findProjectBySlug(
+    context: ReadContext,
+    organizationId: string,
+    slug: string,
+  ): Project | undefined;
+  listFolders(context: ReadContext, organizationId: string): readonly ProjectFolder[];
   listProjects(
     context: ReadContext,
-    workspaceId: string,
+    organizationId: string,
     userId: string,
   ): readonly ProjectNavigationItem[];
-  listStatuses(context: ReadContext, workspaceId: string): readonly ProjectStatus[];
-  nextFolderPosition(context: ReadContext, workspaceId: string): number;
-  nextProjectPosition(context: ReadContext, workspaceId: string, folderId?: string): number;
+  listStatuses(context: ReadContext, organizationId: string): readonly ProjectStatus[];
+  nextFolderPosition(context: ReadContext, organizationId: string): number;
+  nextProjectPosition(context: ReadContext, organizationId: string, folderId?: string): number;
   reorderFolders(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     orderedIds: readonly string[],
     updatedAt: number,
   ): void;
   reorderProjects(
     context: WriteContext,
-    workspaceId: string,
+    organizationId: string,
     folderId: string | undefined,
     orderedIds: readonly string[],
     updatedAt: number,

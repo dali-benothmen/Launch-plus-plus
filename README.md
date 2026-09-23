@@ -10,7 +10,7 @@ The architecture and technical-foundation phase is complete. A runnable server/w
 
 Launch++ starts with a focused core:
 
-- Workspaces and projects
+- Organizations and projects
 - Tasks, subtasks, statuses, assignees, and labels
 - Comments and activity
 - Board and list views

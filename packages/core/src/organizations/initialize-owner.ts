@@ -1,7 +1,7 @@
 import type { InstallationRepository } from "../installations/installation.js";
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { TransactionManager } from "../shared/transactions.js";
-import type { AuditWriter, UserProfileRepository } from "./workspace.js";
+import type { AuditWriter, UserProfileRepository } from "./organization.js";
 
 export interface InitializeOwnerInput {
   readonly correlationId: string;

@@ -244,37 +244,37 @@
   gap: 2px;
 }
 
-.workspace-home {
+.organization-home {
   display: grid;
   gap: 40px;
 }
 
-.workspace-welcome-content,
-.workspace-section-heading,
-.workspace-actions,
-.workspace-breadcrumb {
+.organization-welcome-content,
+.organization-section-heading,
+.organization-actions,
+.organization-breadcrumb {
   display: flex;
   align-items: center;
 }
 
-.workspace-welcome-content,
-.workspace-section-heading {
+.organization-welcome-content,
+.organization-section-heading {
   justify-content: space-between;
   gap: 24px;
 }
 
-.workspace-welcome-content > :first-child {
+.organization-welcome-content > :first-child {
   display: grid;
   gap: 6px;
 }
 
-.workspace-section {
+.organization-section {
   display: grid;
   gap: 18px;
 }
 
-.workspace-actions,
-.workspace-breadcrumb {
+.organization-actions,
+.organization-breadcrumb {
   gap: 8px;
 }
 
@@ -526,13 +526,13 @@
     grid-template-columns: 1fr;
   }
 
-  .workspace-welcome-content,
-  .workspace-section-heading {
+  .organization-welcome-content,
+  .organization-section-heading {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .workspace-actions {
+  .organization-actions {
     flex-wrap: wrap;
   }
 }

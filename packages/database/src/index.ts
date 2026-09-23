@@ -51,8 +51,8 @@ export {
   taskLabels,
   tasks,
   userProfiles,
-  workspaceMembers,
-  workspaces,
+  organizationMembers,
+  organizations,
 } from "./schema.js";
 export { SqliteSearchRepository } from "./search-repository.js";
 export {
@@ -62,5 +62,5 @@ export {
 } from "./sqlite-database.js";
 export { SqliteTaskRepository } from "./task-repository.js";
 export { SqliteUserProfileRepository } from "./user-profile-repository.js";
-export { SqliteWorkspaceMembershipRepository } from "./workspace-membership-repository.js";
-export { SqliteWorkspaceRepository } from "./workspace-repository.js";
+export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
+export { SqliteOrganizationRepository } from "./organization-repository.js";

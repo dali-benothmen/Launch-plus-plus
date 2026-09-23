@@ -1,10 +1,10 @@
 import type { ReadContext } from "../shared/transactions.js";
-import type { WorkspaceRepository } from "./workspace.js";
+import type { OrganizationRepository } from "./organization.js";
 
-export function normalizeWorkspaceName(value: string): string {
+export function normalizeOrganizationName(value: string): string {
   const name = value.trim().replace(/\s+/g, " ");
   if (name.length === 0 || name.length > 80) {
-    throw new TypeError("Workspace name must contain between 1 and 80 characters.");
+    throw new TypeError("Organization name must contain between 1 and 80 characters.");
   }
   return name;
 }
@@ -18,12 +18,12 @@ function slugBase(name: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48)
     .replace(/-+$/g, "");
-  return value || "workspace";
+  return value || "organization";
 }
 
-export function availableWorkspaceSlug(
+export function availableOrganizationSlug(
   context: ReadContext,
-  repository: WorkspaceRepository,
+  repository: OrganizationRepository,
   installationId: string,
   name: string,
 ): string {

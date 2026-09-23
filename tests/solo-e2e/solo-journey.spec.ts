@@ -109,13 +109,13 @@ test("a first owner can complete the solo project journey without plugins", asyn
   await expect(detail.getByText(/You (created|updated|added)/).first()).toBeVisible();
 
   const route = new URL(page.url()).pathname.match(
-    /workspaces\/([^/]+)\/projects\/([^/]+)\/list\/tasks\/([^/]+)/,
+    /organizations\/([^/]+)\/projects\/([^/]+)\/list\/tasks\/([^/]+)/,
   );
   expect(route).not.toBeNull();
-  const [, workspaceId, projectId, taskId] = route as RegExpMatchArray;
+  const [, organizationId, projectId, taskId] = route as RegExpMatchArray;
   const conflict = await page.evaluate(
-    async ({ projectId, taskId, workspaceId }) => {
-      const taskUrl = `/api/v1/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`;
+    async ({ projectId, taskId, organizationId }) => {
+      const taskUrl = `/api/v1/organizations/${organizationId}/projects/${projectId}/tasks/${taskId}`;
       const current = await fetch(taskUrl).then((response) => response.json());
       const update = (title: string) =>
         fetch(taskUrl, {
@@ -135,7 +135,7 @@ test("a first owner can complete the solo project journey without plugins", asyn
         statuses: responses.map((response) => response.status).sort(),
       };
     },
-    { projectId, taskId, workspaceId },
+    { projectId, taskId, organizationId },
   );
   expect(conflict.statuses).toEqual([200, 409]);
   expect(conflict.bodies).toEqual(

@@ -2,7 +2,7 @@ import type {
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectSummary,
-  WorkspaceSummary,
+  OrganizationSummary,
 } from "@launchpp/api-client";
 import {
   Alert,
@@ -42,7 +42,7 @@ interface HomeData {
   readonly catalog: ProjectCatalog;
   readonly ownerId: string;
   readonly ownerName: string;
-  readonly workspace: WorkspaceSummary;
+  readonly organization: OrganizationSummary;
 }
 
 const updatedFormatter = new Intl.DateTimeFormat(undefined, {
@@ -55,7 +55,7 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function WorkspaceProjectExperience({ page }: { readonly page: "home" | "projects" }) {
+function OrganizationProjectExperience({ page }: { readonly page: "home" | "projects" }) {
   const api = useApiClient();
   const navigate = useNavigate();
   const [data, setData] = useState<HomeData>();
@@ -75,16 +75,18 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
     try {
       const [session, context] = await Promise.all([
         api.auth.session(),
-        api.workspaces.list({ limit: 100 }),
+        api.organizations.list({ limit: 100 }),
       ]);
-      const workspace = context.workspaces.find((item) => item.id === context.currentWorkspaceId);
-      if (!session || !workspace) throw new Error("Your workspace is not available.");
-      const catalog = await api.projects.list(workspace.id, { limit: 100 });
+      const organization = context.organizations.find(
+        (item) => item.id === context.currentOrganizationId,
+      );
+      if (!session || !organization) throw new Error("Your organization is not available.");
+      const catalog = await api.projects.list(organization.id, { limit: 100 });
       setData({
         catalog,
         ownerId: session.identity.id,
         ownerName: session.identity.name,
-        workspace,
+        organization,
       });
     } catch (reason) {
       setLoadError(reason);
@@ -95,7 +97,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
     void load();
     const reloadInvalidated = (event: Event) => {
       const type = (event as CustomEvent<{ resourceType: string }>).detail.resourceType;
-      if (type === "project" || type === "project_folder" || type === "workspace") void load();
+      if (type === "project" || type === "project_folder" || type === "organization") void load();
     };
     const reload = () => void load();
     window.addEventListener(projectNavigationChangedEvent, reload);
@@ -124,8 +126,8 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
 
   const openProject = useCallback(
     (project: ProjectSummary) => {
-      void api.projects.markOpened(project.workspaceId, project.id).catch(() => undefined);
-      navigate(`/app/workspaces/${project.workspaceId}/projects/${project.id}/board`);
+      void api.projects.markOpened(project.organizationId, project.id).catch(() => undefined);
+      navigate(`/app/organizations/${project.organizationId}/projects/${project.id}/board`);
     },
     [api, navigate],
   );
@@ -154,7 +156,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
     setEditorError(undefined);
     try {
       if (editor.kind === "create-project") {
-        const project = await api.projects.create(data.workspace.id, {
+        const project = await api.projects.create(data.organization.id, {
           ...(openFolderId ? { folderId: openFolderId } : {}),
           name: editorName,
         });
@@ -165,17 +167,17 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
         return;
       }
       if (editor.kind === "create-folder") {
-        const folder = await api.projects.createFolder(data.workspace.id, editorName);
+        const folder = await api.projects.createFolder(data.organization.id, editorName);
         messageApi.success(`${folder.name} created.`);
       } else if (editor.kind === "rename-folder") {
         const folder = await api.projects.renameFolder(
-          data.workspace.id,
+          data.organization.id,
           editor.folder.id,
           editorName,
         );
         messageApi.success(`${folder.name} renamed.`);
       } else {
-        const project = await api.projects.update(data.workspace.id, editor.project.id, {
+        const project = await api.projects.update(data.organization.id, editor.project.id, {
           name: editorName,
         });
         messageApi.success(`${project.name} renamed.`);
@@ -195,11 +197,11 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
     setDeleting(true);
     try {
       if (deleteTarget.kind === "folder") {
-        await api.projects.deleteFolder(data.workspace.id, deleteTarget.folder.id);
+        await api.projects.deleteFolder(data.organization.id, deleteTarget.folder.id);
         if (openFolderId === deleteTarget.folder.id) setOpenFolderId(undefined);
         messageApi.success(`${deleteTarget.folder.name} deleted.`);
       } else {
-        await api.projects.delete(data.workspace.id, deleteTarget.project.id);
+        await api.projects.delete(data.organization.id, deleteTarget.project.id);
         messageApi.success(`${deleteTarget.project.name} deleted.`);
       }
       setDeleteTarget(undefined);
@@ -215,7 +217,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
   const togglePinned = async (project: ProjectSummary) => {
     try {
       await api.projects.setFavorite(
-        data?.workspace.id ?? project.workspaceId,
+        data?.organization.id ?? project.organizationId,
         project.id,
         !project.favorite,
       );
@@ -232,8 +234,8 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
     const project = activeProjects.find((item) => item.id === projectId);
     if (!project || project.folderId === folderId) return;
     try {
-      await api.projects.update(data.workspace.id, projectId, { folderId: folderId ?? null });
-      messageApi.success(folderId ? "Project moved to folder." : "Project moved to workspace.");
+      await api.projects.update(data.organization.id, projectId, { folderId: folderId ?? null });
+      messageApi.success(folderId ? "Project moved to folder." : "Project moved to organization.");
       notifyChange();
       await load();
     } catch (reason) {
@@ -258,7 +260,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
                 ? [
                     {
                       key: `move-root-${project.id}`,
-                      label: "Workspace root",
+                      label: "Organization root",
                       onClick: () => void moveProject(project.id),
                     },
                   ]
@@ -314,7 +316,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
         <Dropdown menu={{ items: projectMenu(project) }} trigger={["contextMenu"]}>
           <div className="project-table-name">
             <Typography.Link
-              href={`/app/workspaces/${project.workspaceId}/projects/${project.id}/board`}
+              href={`/app/organizations/${project.organizationId}/projects/${project.id}/board`}
               onClick={(event) => {
                 event.preventDefault();
                 openProject(project);
@@ -332,8 +334,8 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
       title: "Owner",
       render: (_, project) =>
         !project.createdByUserId || project.createdByUserId === data?.ownerId
-          ? (data?.ownerName ?? "Workspace owner")
-          : "Workspace member",
+          ? (data?.ownerName ?? "Organization owner")
+          : "Organization member",
     },
     {
       dataIndex: "updatedAt",
@@ -359,7 +361,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
       <Card hoverable onDoubleClick={() => openProject(project)} size="small">
         <div className="project-card-copy">
           <Typography.Link
-            href={`/app/workspaces/${project.workspaceId}/projects/${project.id}/board`}
+            href={`/app/organizations/${project.organizationId}/projects/${project.id}/board`}
             onClick={(event) => {
               event.preventDefault();
               openProject(project);
@@ -385,15 +387,15 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
   return (
     <section
       aria-labelledby={page === "home" ? "home-title" : "projects-title"}
-      className="page-stack workspace-home"
+      className="page-stack organization-home"
     >
       {messageHolder}
       {page === "home" ? (
         <>
-          <Card className="workspace-welcome" variant="borderless">
-            <div className="workspace-welcome-content">
+          <Card className="organization-welcome" variant="borderless">
+            <div className="organization-welcome-content">
               <div>
-                <Typography.Text type="secondary">{data.workspace.name}</Typography.Text>
+                <Typography.Text type="secondary">{data.organization.name}</Typography.Text>
                 <Typography.Title id="home-title" level={1}>
                   {activeProjects.length === 0
                     ? "Create your first project"
@@ -412,7 +414,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
           </Card>
 
           {recentProjects.length > 0 ? (
-            <section className="workspace-section" aria-labelledby="quick-access-title">
+            <section className="organization-section" aria-labelledby="quick-access-title">
               <Typography.Title id="quick-access-title" level={2}>
                 Quick access
               </Typography.Title>
@@ -421,7 +423,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
           ) : null}
 
           {pinnedProjects.length > 0 ? (
-            <section className="workspace-section" aria-labelledby="pinned-title">
+            <section className="organization-section" aria-labelledby="pinned-title">
               <Typography.Title id="pinned-title" level={2}>
                 Pinned
               </Typography.Title>
@@ -431,14 +433,14 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
         </>
       ) : (
         <>
-          <header className="workspace-section-heading">
+          <header className="organization-section-heading">
             <div>
-              <Typography.Text type="secondary">{data.workspace.name}</Typography.Text>
+              <Typography.Text type="secondary">{data.organization.name}</Typography.Text>
               <Typography.Title id="projects-title" level={1}>
                 Projects
               </Typography.Title>
             </div>
-            <div className="workspace-actions">
+            <div className="organization-actions">
               <Button onClick={() => openEditor({ kind: "create-folder" })}>New folder</Button>
               <Button onClick={() => openEditor({ kind: "create-project" })} variant="primary">
                 New project
@@ -446,7 +448,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
             </div>
           </header>
 
-          <section className="workspace-section" aria-labelledby="folders-title">
+          <section className="organization-section" aria-labelledby="folders-title">
             <Typography.Title id="folders-title" level={2}>
               Folders
             </Typography.Title>
@@ -493,17 +495,17 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
           </section>
 
           <section
-            className="workspace-section"
+            className="organization-section"
             aria-labelledby="all-projects-title"
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => {
               if (draggedProjectId && !openFolderId) void moveProject(draggedProjectId);
             }}
           >
-            <div className="workspace-section-heading">
+            <div className="organization-section-heading">
               <div>
                 {currentFolder ? (
-                  <div className="workspace-breadcrumb">
+                  <div className="organization-breadcrumb">
                     <Button
                       onClick={() => setOpenFolderId(undefined)}
                       onDragOver={(event) => event.preventDefault()}
@@ -592,7 +594,7 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
           description={
             deleteTarget?.kind === "folder"
               ? "Only empty folders can be deleted. Projects inside it are not removed."
-              : "This removes the project and its tasks from the workspace."
+              : "This removes the project and its tasks from the organization."
           }
           showIcon
           title="This action cannot be undone."
@@ -603,10 +605,10 @@ function WorkspaceProjectExperience({ page }: { readonly page: "home" | "project
   );
 }
 
-export function WorkspaceHomePage() {
-  return <WorkspaceProjectExperience page="home" />;
+export function OrganizationHomePage() {
+  return <OrganizationProjectExperience page="home" />;
 }
 
-export function WorkspaceProjectsPage() {
-  return <WorkspaceProjectExperience page="projects" />;
+export function OrganizationProjectsPage() {
+  return <OrganizationProjectExperience page="projects" />;
 }

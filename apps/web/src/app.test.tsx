@@ -22,7 +22,7 @@ const apiClient: ApiClient = {
   search: vi.fn(async () => ({ items: [] })),
   projects: {
     archive: vi.fn(async () => ({
-      access: "workspace" as const,
+      access: "organization" as const,
       archivedAt: Date.now(),
       description: "",
       favorite: false,
@@ -32,10 +32,10 @@ const apiClient: ApiClient = {
       position: 0,
       revision: 2,
       slug: "project",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
-    create: vi.fn(async (_workspaceId, input) => ({
-      access: "workspace" as const,
+    create: vi.fn(async (_organizationId, input) => ({
+      access: "organization" as const,
       description: input.description ?? "",
       favorite: false,
       ...(input.folderId ? { folderId: input.folderId } : {}),
@@ -45,30 +45,30 @@ const apiClient: ApiClient = {
       position: 0,
       revision: 1,
       slug: "project",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
-    createFolder: vi.fn(async (_workspaceId, name) => ({
+    createFolder: vi.fn(async (_organizationId, name) => ({
       id: "folder-1",
       name,
       position: 0,
       revision: 1,
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
     delete: vi.fn(async () => undefined),
     deleteFolder: vi.fn(async () => undefined),
     list: vi.fn(async () => ({ folders: [], projects: [], statuses: [] })),
     markOpened: vi.fn(async () => undefined),
-    renameFolder: vi.fn(async (_workspaceId, folderId, name) => ({
+    renameFolder: vi.fn(async (_organizationId, folderId, name) => ({
       id: folderId,
       name,
       position: 0,
       revision: 2,
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
     reorderFolders: vi.fn(async () => undefined),
     reorderProjects: vi.fn(async () => undefined),
     restore: vi.fn(async () => ({
-      access: "workspace" as const,
+      access: "organization" as const,
       description: "",
       favorite: false,
       id: "project-1",
@@ -77,11 +77,11 @@ const apiClient: ApiClient = {
       position: 0,
       revision: 3,
       slug: "project",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
     setFavorite: vi.fn(async () => undefined),
-    update: vi.fn(async (_workspaceId, projectId, input) => ({
-      access: "workspace" as const,
+    update: vi.fn(async (_organizationId, projectId, input) => ({
+      access: "organization" as const,
       description: input.description ?? "",
       favorite: false,
       ...(typeof input.folderId === "string" ? { folderId: input.folderId } : {}),
@@ -91,7 +91,7 @@ const apiClient: ApiClient = {
       position: 0,
       revision: 2,
       slug: "project",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
     })),
   },
   setup: {
@@ -132,22 +132,24 @@ const apiClient: ApiClient = {
       throw new Error("Task API is not used by this shell fixture.");
     }),
   },
-  workspaces: {
+  organizations: {
     create: vi.fn(async () => ({
-      id: "workspace-1",
-      name: "My Workspace",
+      id: "organization-1",
+      name: "My Organization",
       revision: 1,
-      slug: "my-workspace",
+      slug: "my-organization",
     })),
     list: vi.fn(async () => ({
-      currentWorkspaceId: "workspace-1",
-      workspaces: [{ id: "workspace-1", name: "My Workspace", revision: 1, slug: "my-workspace" }],
+      currentOrganizationId: "organization-1",
+      organizations: [
+        { id: "organization-1", name: "My Organization", revision: 1, slug: "my-organization" },
+      ],
     })),
-    rename: vi.fn(async (_workspaceId, name) => ({
-      id: "workspace-1",
+    rename: vi.fn(async (_organizationId, name) => ({
+      id: "organization-1",
       name,
       revision: 2,
-      slug: "my-workspace",
+      slug: "my-organization",
     })),
     select: vi.fn(async () => undefined),
   },
