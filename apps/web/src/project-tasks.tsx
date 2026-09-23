@@ -232,7 +232,7 @@ function TaskDropZone({
           <span className="task-column-drop-label">Drop task here</span>
         ) : (
           <Empty
-            description={false}
+            description="No tasks"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             styles={emptyColumnStyles}
           />
