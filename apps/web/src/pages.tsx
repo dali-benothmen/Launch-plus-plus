@@ -566,7 +566,11 @@ export function ProjectOverviewPage() {
       <header className="project-page-header">
         <div className="project-heading">
           <div className="project-title-row">
-            <Typography.Title id="project-title" level={1}>
+            <Typography.Title
+              id="project-title"
+              level={1}
+              style={{ fontSize: 15, lineHeight: "22px", margin: 0 }}
+            >
               {organizationName} - {project.name}
             </Typography.Title>
           </div>

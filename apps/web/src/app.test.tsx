@@ -76,6 +76,7 @@ const apiClient: ApiClient = {
     })),
     reorderFolders: vi.fn(async () => undefined),
     reorderProjects: vi.fn(async () => undefined),
+    reorderStatuses: vi.fn(async () => undefined),
     restore: vi.fn(async () => ({
       access: "organization" as const,
       description: "",

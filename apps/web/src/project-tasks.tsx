@@ -152,6 +152,14 @@ export function ProjectTaskOrganization({
     readonly beforeTaskId?: string;
     readonly statusId: string;
   }>();
+  const [orderedStatusIds, setOrderedStatusIds] = useState<readonly string[]>(() =>
+    statuses.map((status) => status.id),
+  );
+  const [draggedStatusId, setDraggedStatusId] = useState<string>();
+  const [columnDropTarget, setColumnDropTarget] = useState<{
+    readonly edge: "after" | "before";
+    readonly statusId: string;
+  }>();
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -203,6 +211,10 @@ export function ProjectTaskOrganization({
     setNextCursor(undefined);
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    setOrderedStatusIds(statuses.map((status) => status.id));
+  }, [statuses]);
 
   useEffect(() => {
     const reload = (event: Event) => {
@@ -324,6 +336,32 @@ export function ProjectTaskOrganization({
     }
   };
 
+  const reorderColumns = async (targetStatusId: string, edge: "after" | "before") => {
+    if (!draggedStatusId || draggedStatusId === targetStatusId) {
+      setDraggedStatusId(undefined);
+      setColumnDropTarget(undefined);
+      return;
+    }
+    const snapshot = orderedStatusIds;
+    const next = snapshot.filter((id) => id !== draggedStatusId);
+    const targetIndex = next.indexOf(targetStatusId);
+    if (targetIndex < 0) return;
+    next.splice(targetIndex + (edge === "after" ? 1 : 0), 0, draggedStatusId);
+    setOrderedStatusIds(next);
+    setColumnDropTarget(undefined);
+    try {
+      await api.projects.reorderStatuses(organizationId, projectId, {
+        orderedStatusIds: next,
+      });
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+    } catch (reason) {
+      setOrderedStatusIds(snapshot);
+      messageApi.error(taskError(reason, "Could not reorder the board columns."));
+    } finally {
+      setDraggedStatusId(undefined);
+    }
+  };
+
   const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
     {
       key: "edit",
@@ -420,27 +458,60 @@ export function ProjectTaskOrganization({
       />
     ) : null;
 
-  const boardStatuses = statuses;
+  const boardStatuses = useMemo(() => {
+    const ordered = orderedStatusIds.flatMap((id) => {
+      const status = statusById.get(id);
+      return status ? [status] : [];
+    });
+    const included = new Set(orderedStatusIds);
+    return [...ordered, ...statuses.filter((status) => !included.has(status.id))];
+  }, [orderedStatusIds, statusById, statuses]);
   const board = (
     <>
       {loadWarning}
       <div className="task-board-grid">
         {boardStatuses.map((status) => {
           const columnTasks = visibleTasks.filter((task) => task.statusId === status.id);
-          const renderedColumnTasks = draggedTaskId
-            ? columnTasks.filter((task) => task.id !== draggedTaskId)
-            : columnTasks;
           return (
             <Card
               aria-label={`${status.name} tasks`}
-              className="task-board-column"
+              className={`task-board-column${
+                draggedStatusId === status.id ? " is-column-dragging" : ""
+              }${
+                columnDropTarget?.statusId === status.id
+                  ? ` is-column-drop-${columnDropTarget.edge}`
+                  : ""
+              }`}
+              draggable={!archived && draggedTaskId === undefined}
               key={status.id}
               onDragOver={(event) => {
                 event.preventDefault();
-                if (draggedTaskId) setDragTarget({ statusId: status.id });
+                if (draggedStatusId) {
+                  const bounds = event.currentTarget.getBoundingClientRect();
+                  setColumnDropTarget({
+                    edge: event.clientX < bounds.left + bounds.width / 2 ? "before" : "after",
+                    statusId: status.id,
+                  });
+                } else if (draggedTaskId) {
+                  setDragTarget({ statusId: status.id });
+                }
+              }}
+              onDragEnd={() => {
+                setDraggedStatusId(undefined);
+                setColumnDropTarget(undefined);
+              }}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = "move";
+                setDraggedStatusId(status.id);
               }}
               onDrop={(event) => {
                 event.preventDefault();
+                if (draggedStatusId) {
+                  const edge =
+                    columnDropTarget?.statusId === status.id ? columnDropTarget.edge : "before";
+                  void reorderColumns(status.id, edge);
+                  return;
+                }
                 const task = tasks.find((item) => item.id === draggedTaskId);
                 if (task) {
                   const beforeTaskId =
@@ -450,6 +521,7 @@ export function ProjectTaskOrganization({
               }}
               role="listbox"
               size="small"
+              style={{ background: "var(--launch-color-bg-layout)" }}
             >
               <div className="task-board-column-content">
                 <header className="task-column-header">
@@ -467,7 +539,7 @@ export function ProjectTaskOrganization({
                   />
                 </header>
                 <div className="task-column-list">
-                  {renderedColumnTasks.map((task) => (
+                  {columnTasks.map((task) => (
                     <Fragment key={task.id}>
                       {dragTarget?.statusId === status.id && dragTarget.beforeTaskId === task.id ? (
                         <div aria-hidden className="task-drop-placeholder" />
@@ -475,13 +547,16 @@ export function ProjectTaskOrganization({
                       <div
                         aria-label={`Move ${task.title}`}
                         aria-selected={false}
-                        className="task-card-shell"
+                        className={`task-card-shell${
+                          draggedTaskId === task.id ? " is-dragging" : ""
+                        }`}
                         draggable={!archived && movingTaskId === undefined}
                         onDragEnd={() => {
                           setDraggedTaskId(undefined);
                           setDragTarget(undefined);
                         }}
                         onDragStart={(event: DragEvent<HTMLDivElement>) => {
+                          event.stopPropagation();
                           event.dataTransfer.effectAllowed = "move";
                           setDraggedTaskId(task.id);
                         }}

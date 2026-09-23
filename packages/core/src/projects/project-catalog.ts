@@ -280,6 +280,39 @@ export class ProjectCatalogService {
     });
   }
 
+  reorderStatuses(
+    input: CommandContext & Readonly<{ projectId: string; orderedStatusIds: readonly string[] }>,
+  ): Promise<void> {
+    validateContext(input);
+    return this.dependencies.transactions.write((context) => {
+      this.requireProject(context, input.organizationId, input.projectId);
+      const currentIds = this.dependencies.projects
+        .listStatuses(context, input.organizationId)
+        .filter((status) => status.projectId === input.projectId && status.archivedAt === undefined)
+        .map((status) => status.id);
+      if (
+        currentIds.length !== input.orderedStatusIds.length ||
+        new Set(input.orderedStatusIds).size !== currentIds.length ||
+        currentIds.some((id) => !input.orderedStatusIds.includes(id))
+      ) {
+        throw new ProjectOrderInvalidError(
+          "Board column order must include every active column exactly once.",
+        );
+      }
+      this.dependencies.projects.reorderStatuses(
+        context,
+        input.organizationId,
+        input.projectId,
+        input.orderedStatusIds,
+        this.dependencies.clock(),
+      );
+      this.record(context, input, "project.statuses_reordered", input.projectId, {
+        orderedStatusIds: input.orderedStatusIds,
+        projectId: input.projectId,
+      });
+    });
+  }
+
   updateProject(
     input: CommandContext &
       Readonly<{

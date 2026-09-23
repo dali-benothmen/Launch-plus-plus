@@ -12,6 +12,7 @@ import type {
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
+  ProjectStatusOrderInput,
   ProjectStatusSummary,
   ProjectSummary,
   ReplaceTaskAssigneesInput,
@@ -89,6 +90,11 @@ export interface CoreApiClient {
     reorderProjects(
       organizationId: string,
       input: { readonly folderId?: string; readonly orderedProjectIds: readonly string[] },
+    ): Promise<void>;
+    reorderStatuses(
+      organizationId: string,
+      projectId: string,
+      input: ProjectStatusOrderInput,
     ): Promise<void>;
     restore(organizationId: string, projectId: string): Promise<ProjectSummary>;
     setFavorite(organizationId: string, projectId: string, favorite: boolean): Promise<void>;
@@ -242,6 +248,17 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
         input: { readonly folderId?: string; readonly orderedProjectIds: readonly string[] },
       ): Promise<void> {
         await json(`/api/v1/organizations/${encodeURIComponent(organizationId)}/project-order`, {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "PUT",
+        });
+      },
+      async reorderStatuses(
+        organizationId: string,
+        projectId: string,
+        input: ProjectStatusOrderInput,
+      ): Promise<void> {
+        await json(`${projectPath(organizationId, projectId)}/status-order`, {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "PUT",

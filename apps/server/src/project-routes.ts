@@ -8,6 +8,7 @@ import type {
   ProjectFolderInput,
   ProjectOrderInput,
   ProjectStatusInput,
+  ProjectStatusOrderInput,
   UpdateProjectInput,
 } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
@@ -286,6 +287,40 @@ export async function registerProjectRoutes(
           organizationId: request.params.organizationId,
         });
         return reply.status(201).send(folderSummary(folder));
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.put<{
+    Body: ProjectStatusOrderInput;
+    Params: { readonly projectId: string; readonly organizationId: string };
+  }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/status-order",
+    {
+      schema: {
+        body: { $ref: "LaunchppProjectStatusOrderInputV1#" },
+        operationId: "reorderProjectStatuses",
+        params: { $ref: "LaunchppProjectParamsV1#" },
+        response: problemResponses,
+        summary: "Reorder project board columns",
+        tags: ["Projects"],
+      },
+    },
+    async (request, reply) => {
+      const access = await authorize(request, reply, request.params.organizationId, true);
+      if (!access) return;
+      try {
+        await catalog.reorderStatuses({
+          ...access,
+          correlationId: request.id,
+          orderedStatusIds: request.body.orderedStatusIds,
+          projectId: request.params.projectId,
+          organizationId: request.params.organizationId,
+        });
+        return reply.status(204).send();
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;

@@ -172,6 +172,14 @@ export const ProjectStatusInputSchema = StrictObject(
 );
 export type ProjectStatusInput = Type.Static<typeof ProjectStatusInputSchema>;
 
+export const ProjectStatusOrderInputSchema = StrictObject(
+  {
+    orderedStatusIds: Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
+  },
+  { $id: "LaunchppProjectStatusOrderInputV1" },
+);
+export type ProjectStatusOrderInput = Type.Static<typeof ProjectStatusOrderInputSchema>;
+
 export const ProjectCatalogSchema = StrictObject(
   {
     folders: Type.Array(
@@ -513,6 +521,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ProjectSummarySchema,
   ProjectStatusSummarySchema,
   ProjectStatusInputSchema,
+  ProjectStatusOrderInputSchema,
   ProjectCatalogSchema,
   ProjectFolderInputSchema,
   FolderOrderInputSchema,

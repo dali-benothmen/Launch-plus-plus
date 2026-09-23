@@ -10,6 +10,7 @@ export type {
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusSummary,
+  ProjectStatusOrderInput,
   ProjectSummary,
   SearchQuery,
   SearchResponse,

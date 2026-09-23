@@ -104,6 +104,13 @@ export interface ProjectRepository {
     orderedIds: readonly string[],
     updatedAt: number,
   ): void;
+  reorderStatuses(
+    context: WriteContext,
+    organizationId: string,
+    projectId: string,
+    orderedIds: readonly string[],
+    updatedAt: number,
+  ): void;
   saveFolder(context: WriteContext, folder: ProjectFolder): void;
   saveProject(context: WriteContext, project: Project): void;
   setPreference(

@@ -415,6 +415,30 @@ export class SqliteProjectRepository implements ProjectRepository {
     });
   }
 
+  reorderStatuses(
+    context: WriteContext,
+    organizationId: string,
+    projectId: string,
+    orderedIds: readonly string[],
+    updatedAt: number,
+  ): void {
+    const connection = requireSqliteConnection(context);
+    const offset = orderedIds.length * 2 + 1;
+    connection
+      .prepare(
+        `UPDATE project_statuses SET position = position + ?
+         WHERE organization_id = ? AND project_id = ? AND archived_at IS NULL`,
+      )
+      .run(offset, organizationId, projectId);
+    const update = connection.prepare(
+      `UPDATE project_statuses SET position = ?, updated_at = ?, revision = revision + 1
+       WHERE id = ? AND organization_id = ? AND project_id = ? AND archived_at IS NULL`,
+    );
+    orderedIds.forEach((id, position) => {
+      update.run(position, updatedAt, id, organizationId, projectId);
+    });
+  }
+
   saveFolder(context: WriteContext, folder: ProjectFolder): void {
     requireSqliteConnection(context)
       .prepare(
