@@ -18,7 +18,6 @@ import {
   type DropdownMenuItem,
   Empty,
   Form,
-  InboxIcon,
   Input,
   ListIcon,
   Modal,
@@ -87,7 +86,6 @@ const taskPageSize = 50;
 const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 const emptyColumnStyles = {
   description: { color: "rgb(0 0 0 / 45%)" },
-  image: { height: 56, marginBottom: 8 },
   root: { margin: "0 0 6px" },
 } as const;
 
@@ -235,7 +233,7 @@ function TaskDropZone({
         ) : (
           <Empty
             description="No tasks"
-            image={<InboxIcon aria-hidden style={{ fontSize: 56 }} />}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
             styles={emptyColumnStyles}
           />
         )
