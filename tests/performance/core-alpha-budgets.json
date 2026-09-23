@@ -1,0 +1,10 @@
+{
+  "maximums": {
+    "database.backup.p95Ms": 1000,
+    "database.freshMigration.p95Ms": 1000,
+    "database.restore.p95Ms": 1000,
+    "database.taskPageRead.p95Ms": 25,
+    "database.verify.p95Ms": 500,
+    "webDistribution.gzipBytes": 320000
+  }
+}

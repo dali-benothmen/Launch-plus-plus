@@ -11,6 +11,7 @@
       "allowWorkspaceDependencies": [
         "@launchpp/api-client",
         "@launchpp/plugin-protocol",
+        "@launchpp/theme-runtime",
         "@launchpp/ui",
         "@launchpp/ui-tokens"
       ]
@@ -77,14 +78,28 @@
       "path": "packages/ui",
       "owner": "design-system",
       "visibility": "public",
-      "allowWorkspaceDependencies": ["@launchpp/ui-tokens"]
+      "allowWorkspaceDependencies": ["@launchpp/theme-runtime", "@launchpp/ui-tokens"]
     },
     {
       "name": "@launchpp/ui-tokens",
       "path": "packages/ui-tokens",
       "owner": "design-system",
       "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/theme-schema"]
+    },
+    {
+      "name": "@launchpp/theme-schema",
+      "path": "packages/theme-schema",
+      "owner": "design-system",
+      "visibility": "public",
       "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/theme-runtime",
+      "path": "packages/theme-runtime",
+      "owner": "design-system",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/theme-schema"]
     },
     {
       "name": "@launchpp/plugin-protocol",
@@ -166,6 +181,14 @@
         "@launchpp/plugin-runtime",
         "react"
       ]
+    },
+    {
+      "from": "@launchpp/theme-schema",
+      "deny": ["@launchpp/core", "@launchpp/database", "fastify", "react", "drizzle-orm"]
+    },
+    {
+      "from": "@launchpp/theme-runtime",
+      "deny": ["@launchpp/core", "@launchpp/database", "fastify", "react", "drizzle-orm"]
     },
     {
       "from": "@launchpp-internal/web",

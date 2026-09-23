@@ -18,9 +18,10 @@ export interface StartServerOptions {
 
 async function closeWithin(app: FastifyInstance, timeoutMs: number): Promise<void> {
   let timeout: NodeJS.Timeout | undefined;
+  const closing = app.close();
   try {
     await Promise.race([
-      app.close(),
+      closing,
       new Promise<never>((_resolve, reject) => {
         timeout = setTimeout(
           () => reject(new Error(`Server shutdown exceeded ${timeoutMs}ms`)),
@@ -29,6 +30,10 @@ async function closeWithin(app: FastifyInstance, timeoutMs: number): Promise<voi
         timeout.unref();
       }),
     ]);
+  } catch (error) {
+    app.server.closeAllConnections?.();
+    await closing.catch(() => undefined);
+    throw error;
   } finally {
     if (timeout) clearTimeout(timeout);
   }
@@ -65,15 +70,23 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
 }
 
 export function installSignalHandlers(server: RunningServer): () => void {
+  let signalReceived = false;
   const handleSignal = (signal: NodeJS.Signals) => {
+    if (signalReceived) {
+      server.app.log.error({ signal }, "forced shutdown requested");
+      process.exitCode = 1;
+      server.app.server.closeAllConnections?.();
+      return;
+    }
+    signalReceived = true;
     void server.stop(signal).catch((error: unknown) => {
       server.app.log.error({ err: error, signal }, "server shutdown failed");
       process.exitCode = 1;
     });
   };
 
-  process.once("SIGINT", handleSignal);
-  process.once("SIGTERM", handleSignal);
+  process.on("SIGINT", handleSignal);
+  process.on("SIGTERM", handleSignal);
   return () => {
     process.off("SIGINT", handleSignal);
     process.off("SIGTERM", handleSignal);

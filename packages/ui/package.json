@@ -30,6 +30,7 @@
   "dependencies": {
     "@ant-design/icons": "6.3.4",
     "@launchpp/ui-tokens": "workspace:*",
+    "@launchpp/theme-runtime": "workspace:*",
     "@radix-ui/react-dialog": "1.1.23",
     "@radix-ui/react-dropdown-menu": "2.1.24",
     "@radix-ui/react-popover": "1.1.23",

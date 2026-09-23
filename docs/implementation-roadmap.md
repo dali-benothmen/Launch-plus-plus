@@ -1,6 +1,6 @@
 # Launch++ implementation roadmap
 
-Status: proposed execution plan derived from the accepted product and architecture documents. No application implementation exists yet.
+Status: active execution plan derived from the accepted product and architecture documents.
 
 This document turns the target architecture into ordered phases and checkable tasks. It is the delivery-level source of truth; subsystem documents remain authoritative for their contracts. Relevant inputs are the [product scope](./product-scope.md), [system architecture](./system-architecture.md), [plugin system](./plugin-system-design.md), [plugin UI system](./plugin-ui-system.md), [plugin storage](./plugin-storage-design.md), [plugin CLI](./plugin-cli-design.md), [theme system](./theme-system-design.md), [security and operations](./security-and-operations.md), and [development guide](./development-and-delivery.md).
 
@@ -113,29 +113,29 @@ All Phase 0 exit conditions pass on a clean machine.
 
 ### Tasks
 
-- [ ] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and direct redirect to project creation. Do not add questionnaire-style onboarding.
-- [ ] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
-- [ ] **P1-03 — Implement projects, folders, and statuses.** Add project CRUD/archive, one-level navigation folders, ordering, favorite/recent behavior, and default ordered statuses with database invariants.
-- [ ] **P1-04 — Implement the task domain.** Add tasks, subtasks, status movement, assignees, labels, due dates, revisions, archive/restore, ordering, and optimistic-concurrency errors through application services.
-- [ ] **P1-05 — Publish the core HTTP contract.** Add versioned JSON schemas, REST endpoints, problem details, cursors, idempotency support, OpenAPI generation, and the generated TypeScript API client for implemented resources.
-- [ ] **P1-06 — Build the authenticated application shell.** Implement the global icon rail, project-tree sidebar, responsive collapse/drawer behavior, workspace switching, route boundaries, and required unavailable/forbidden/error states.
-- [ ] **P1-06a — Build My Work.** Add assigned tasks, due-soon tasks, recently updated relevant tasks, recent/favorite projects, and a clear empty-state path to create or open a project. Keep analytics and configurable dashboard widgets outside core.
-- [ ] **P1-07 — Build project creation and navigation.** Make a first-time user create a project with the smallest default workflow and land directly on its Board. Include project header, member placeholders, search entry, Board/List switcher, and stable URLs.
-- [ ] **P1-08 — Build Board and List over one task service.** Implement task creation/editing, filters, sorting, pagination or incremental loading, drag-and-drop plus keyboard movement, and consistent optimistic updates with conflict rollback.
-- [ ] **P1-09 — Build route-backed task detail.** Add identity/state, description, subtasks, labels, assignees, due date, comments, and activity. Use a desktop panel and narrow-screen page with predictable focus restoration.
-- [ ] **P1-10 — Add search, activity, outbox dispatch, and SSE invalidation.** Implement permission-filtered SQLite FTS, activity projection, durable dispatch, SSE reconnect behavior, and authoritative query invalidation.
-- [ ] **P1-11 — Complete the base theme system.** Implement theme schema/resolution and built-in Light, Dark, and High Contrast documents. Map resolved tokens into stable CSS variables and Ant Design configuration.
-- [ ] **P1-12 — Add local operations.** Produce the first runnable local/container distribution, migration runner, installation backup, restore verification, safe shutdown, and operator-facing failure messages.
-- [ ] **P1-13 — Qualify the solo journey.** Cover setup → project → tasks → Board/List → task detail → search → backup/restore with Playwright, accessibility checks, migration fixtures, and reference performance measurements.
+- [x] **P1-01 — Implement first-owner setup and authentication.** Add setup-token validation, sign-up, sign-in, sign-out, recovery foundations, session resolution, and a short workspace naming step. Do not add questionnaire-style onboarding.
+- [x] **P1-02 — Implement workspaces and membership ownership.** Add workspace creation, owner membership, profile linkage, current-workspace selection, authorization policies, and audit facts. Invitations and additional roles remain Phase 3.
+- [x] **P1-03 — Implement projects and statuses.** Add project CRUD/archive, workspace-root navigation, ordering, favorite behavior, and default ordered statuses with database invariants.
+- [x] **P1-04 — Implement the task domain.** Add tasks, subtasks, status movement, assignees, labels, due dates, revisions, archive/restore, ordering, and optimistic-concurrency errors through application services.
+- [x] **P1-05 — Publish the core HTTP contract.** Add versioned JSON schemas, REST endpoints, problem details, cursors, idempotency support, OpenAPI generation, and the generated TypeScript API client for implemented resources.
+- [x] **P1-06 — Build the authenticated application shell.** Implement the global icon rail, dedicated Home and Projects destinations, route boundaries, and required unavailable/forbidden/error states.
+- [x] **P1-06a — Build Home and project discovery.** Add first-project guidance, quick access, pinned projects, and a dedicated Projects explorer with one-level folders, context actions, and the all-projects table. Keep analytics and configurable dashboard widgets outside core.
+- [x] **P1-07 — Build project creation and navigation.** Make a first-time user create a project with the smallest default workflow and land directly on its Board. Include project header, member placeholders, search entry, Board/List switcher, and stable URLs.
+- [x] **P1-08 — Build Board and List over one task service.** Implement task creation/editing, filters, sorting, pagination or incremental loading, drag-and-drop plus keyboard movement, and consistent optimistic updates with conflict rollback.
+- [x] **P1-09 — Build route-backed task detail.** Add identity/state, description, subtasks, labels, assignees, due date, comments, and activity. Use a desktop panel and narrow-screen page with predictable focus restoration.
+- [x] **P1-10 — Add search, activity, outbox dispatch, and SSE invalidation.** Implement permission-filtered SQLite FTS, activity projection, durable dispatch, SSE reconnect behavior, and authoritative query invalidation.
+- [x] **P1-11 — Complete the base theme system.** Implement theme schema/resolution and built-in Light, Dark, and High Contrast documents. Map resolved tokens into stable CSS variables and Ant Design configuration.
+- [x] **P1-12 — Add local operations.** Produce the first runnable local/container distribution, migration runner, installation backup, restore verification, safe shutdown, and operator-facing failure messages.
+- [x] **P1-13 — Qualify the solo journey.** Cover setup → project → tasks → Board/List → task detail → search → backup/restore with Playwright, accessibility checks, migration fixtures, and reference performance measurements.
 
 ### Exit gate — Core alpha
 
-- [ ] A fresh installation reaches a usable Board without documentation or onboarding questions.
-- [ ] Board, List, task detail, search, and activity agree on the same underlying task state.
-- [ ] Keyboard-only users can complete the primary task journey.
-- [ ] A concurrent update produces a recoverable conflict rather than silent data loss.
-- [ ] Backup and restore reproduce the workspace on a clean installation.
-- [ ] The product remains fully usable with the plugin platform disabled.
+- [x] A fresh installation reaches a usable Board without documentation or onboarding questions.
+- [x] Board, List, task detail, search, and activity agree on the same underlying task state.
+- [x] Keyboard-only users can complete the primary task journey.
+- [x] A concurrent update produces a recoverable conflict rather than silent data loss.
+- [x] Backup and restore reproduce the workspace on a clean installation.
+- [x] The product remains fully usable with the plugin platform disabled.
 
 ## Phase 2 — plugin author preview
 

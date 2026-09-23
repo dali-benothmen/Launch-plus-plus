@@ -1,8 +1,11 @@
-import { Typography } from "@launchpp/ui";
 import type { PluginContext } from "@launchpp/plugin-protocol";
+import { getBuiltInTheme } from "@launchpp/theme-runtime";
+import { Typography } from "@launchpp/ui";
 
 import type { BrowserCapabilityHandler } from "./browser-bridge.js";
 import { PluginSurface } from "./plugin-surface.js";
+
+const proofTheme = getBuiltInTheme("dark");
 
 const context: PluginContext = {
   actor: { id: "actor_proof" },
@@ -13,12 +16,9 @@ const context: PluginContext = {
   project: { id: "project_proof" },
   surfaceId: "proof",
   theme: {
-    id: "launchpp.dark",
-    mode: "dark",
-    tokens: {
-      "--launch-color-surface": "#141414",
-      "--launch-color-text-primary": "#f5f5f5",
-    },
+    id: proofTheme.id,
+    mode: proofTheme.appearance,
+    tokens: proofTheme.cssVariables,
   },
   workspace: { id: "workspace_proof" },
 };

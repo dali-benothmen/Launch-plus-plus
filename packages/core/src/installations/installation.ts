@@ -7,5 +7,6 @@ export interface Installation {
 
 export interface InstallationRepository {
   create(context: WriteContext, installation: Installation): void;
+  findFirst(context: ReadContext): Installation | undefined;
   findById(context: ReadContext, id: string): Installation | undefined;
 }

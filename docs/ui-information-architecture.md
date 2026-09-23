@@ -10,7 +10,7 @@ Launch++ should feel small when first installed and remain understandable as pro
 
 - One stable application shell.
 - A narrow global icon rail for product areas.
-- One contextual sidebar for project navigation or the selected area's local navigation.
+- Separate Home and Projects pages with distinct responsibilities.
 - A single project page whose core and plugin views share the same header.
 - Route-backed task details that preserve project context.
 - One settings system divided by personal, workspace, project, and installation authority.
@@ -20,99 +20,52 @@ Core work remains complete when every optional plugin is disabled.
 
 ## Application shell
 
-Authenticated desktop layouts have three columns:
+Authenticated desktop layouts have two stable columns:
 
 ```text
-┌─────────────┬────────────────────────┬──────────────────────────────┐
-│ Global rail │ Context sidebar        │ Main content                 │
-│ Icon-only   │ Project tree or local  │ My Work, project, calendar,  │
-│ navigation  │ section navigation     │ members, settings, or plugin │
-└─────────────┴────────────────────────┴──────────────────────────────┘
+┌─────────────┬──────────────────────────────────────────────────────┐
+│ Global rail │ Main content                                         │
+│ Icon-only   │ Home, Projects, selected project, settings, or plugin │
+│ navigation  │                                                      │
+└─────────────┴──────────────────────────────────────────────────────┘
 ```
 
-The global rail remains visually narrow. The contextual sidebar can collapse independently to provide more space for boards, lists, calendars, and custom plugin pages.
-
-On narrower layouts, the context sidebar becomes an overlay or drawer. Task-detail panels become full pages. The information hierarchy and route identity remain the same; responsive behavior must not create a second mobile-only product model.
+The global rail remains visually narrow. Project discovery lives on a dedicated Projects page rather than consuming permanent horizontal space. On narrower layouts, task-detail panels become full pages. The information hierarchy and route identity remain the same; responsive behavior must not create a second mobile-only product model.
 
 ### Global icon rail
 
 The rail contains icons with accessible names and visible tooltips:
 
-1. Workspace switcher at the top.
-2. My Work.
-3. Calendar when the official Calendar plugin is enabled.
-4. Members.
-5. Approved plugin-contributed workspace pages.
-6. Settings near the bottom.
-7. User/avatar menu at the bottom.
+1. Home.
+2. Projects.
+3. Global search.
+4. Calendar when the official Calendar plugin is enabled.
+5. Members.
+6. Approved plugin-contributed workspace pages.
+7. Settings near the bottom.
+8. User/avatar menu at the bottom.
 
 Global search and notifications belong in application chrome rather than taking permanent rail positions. Board and List never appear in the global rail because they are views of a selected project.
 
 The host controls icon order, active state, overflow, accessibility, permissions, and whether a plugin contribution is visible. Plugins cannot create an additional global rail.
 
-### Context sidebar
+## Home
 
-The second sidebar changes with the selected global area:
+Home is the default authenticated page. It contains an adaptive welcome banner, recent projects in Quick access, and pinned projects when any exist. A first-time owner sees one clear action to create the first project and enter its Board.
 
-| Area | Context sidebar contents |
-| --- | --- |
-| My Work | Project search, favorites/recent projects, project folders, ungrouped projects, archived entry |
-| Selected project | The same project tree, keeping project switching immediate |
-| Calendar | Calendar/project visibility filters and saved calendar choices when supported |
-| Members | All members, pending invitations, role filters, and deactivated members when supported |
-| Settings | Personal, workspace, current-project, and installation sections allowed for the actor |
-| Plugin workspace page | Project tree by default, or a declared host-supported local navigation model later |
+Home is not the project organizer and does not contain folders or the complete project table.
 
-Replacing the sidebar by context prevents Settings or Members from creating a third navigation column. The layout should not show both a project tree and a settings tree simultaneously.
+## Projects
 
-## Project tree and folders
+Projects is a dedicated rail destination and behaves like a small file explorer. Folders appear at the top of the page and the project table appears below them.
 
-During ordinary work, the contextual sidebar is the project browser. A separate top-level Projects page is not required initially.
+- Users create projects and optional folders from this page.
+- Folders are one level deep and contain projects only.
+- Projects can be moved into and out of folders by context menu or drag and drop.
+- Folder and project actions are available through right-click menus.
+- A table shows project name, owner, last activity, and sharing state.
 
-The project sidebar contains:
-
-- Projects heading.
-- Primary Create project button.
-- Project search.
-- Favorites or recent projects.
-- Workspace project folders.
-- Projects that have no folder.
-- Archived projects entry.
-- Folder and project actions through contextual menus.
-
-An example structure is:
-
-```text
-PROJECTS                                  +
-
-Favorites
-  Launch++
-
-Product
-  Launch++ Web
-  Launch++ API
-
-Clients
-  Acme Website
-  Northstar App
-
-Ungrouped
-  Internal tools
-
-Archived
-```
-
-V1 folders have a deliberately small contract:
-
-- One folder level; folders cannot contain other folders.
-- A project belongs to zero or one folder.
-- Folders can be created, renamed, reordered, collapsed, and removed.
-- Projects can be reordered and moved between folders.
-- Removing a folder does not delete its projects; they become ungrouped.
-- Folders organize navigation only. They do not inherit permissions, settings, workflows, or plugin enablement.
-- Favorites and recent projects are virtual sections, not folders stored in the project hierarchy.
-
-This preserves an easy path to portfolios or deeper organization later without turning the first project model into an enterprise hierarchy.
+Drag and drop is an accelerator, not the only way to move a project. Folder-based permissions, workflows, and plugin inheritance remain outside the MVP.
 
 ## Public and authentication pages
 
@@ -137,7 +90,8 @@ The right side should reinforce the product rather than contain unrelated decora
 | Sign up / create account | Create an account when installation policy permits it | Identity and credential fields, policy message, terms where applicable, invitation awareness |
 | Account recovery | Restore access | Recovery request, token completion, expiry, success and invalid-token states |
 | Accept invitation | Join the intended workspace | Workspace/inviter identity, sign-in or account creation, accept/decline result |
-| First installation setup | Create the first owner securely | Setup-token validation, owner account, first workspace, completion state |
+| First installation setup | Create the first owner securely | Setup-token validation and owner account |
+| Workspace setup | Establish the first working context | Workspace name and completion state |
 
 The sign-up surface supports open registration, invitation-required registration, and registration-disabled policies. An invite link should never send an authenticated user through unrelated workspace creation.
 
@@ -166,19 +120,9 @@ Onboarding is a short path to useful work, not a product questionnaire.
 
 Company size, industry, job title, feature interests, integrations, and plugin recommendations are excluded from initial onboarding. Optional education appears contextually on the page where an action is performed.
 
-## My Work
+## First-run Home
 
-My Work is the default authenticated landing page. Its question is: **What should I work on next?**
-
-It contains:
-
-- Tasks assigned to the current user.
-- Tasks due soon.
-- Recently updated tasks relevant to the current user.
-- Recent or favorite projects.
-- One clear empty-state action to create or open a project.
-
-It is not a customizable dashboard. Widgets, charts, analytics, reports, and arbitrary saved sections are deferred to plugins.
+After workspace setup, Home asks the owner to create the first project. Creating it opens the Board immediately. The ordinary Home replaces that first-run prompt with recent and organizational content; it does not become a configurable analytics dashboard.
 
 ## Project page
 
@@ -399,7 +343,8 @@ All primary operations work without drag and drop. URLs identify workspace, proj
 
 ### Authenticated core
 
-- My Work.
+- Home.
+- Projects explorer.
 - Project page with Board and List.
 - Route-backed task detail.
 - Members.
@@ -416,10 +361,9 @@ All primary operations work without drag and drop. URLs identify workspace, proj
 
 ## Explicitly deferred
 
-- Dedicated top-level Projects page while the project sidebar provides browsing and creation.
-- Deeply nested project folders.
+- Nested project folders.
 - Folder-based permissions, workflows, or plugin inheritance.
-- Customizable My Work/dashboard widgets.
+- Customizable Home/dashboard widgets.
 - Core reporting, roadmaps, Gantt, CRM, billing, or automation pages.
 - Marketplace storefront and checkout.
 - Guest/client portals.
@@ -431,10 +375,9 @@ These may be introduced later or through plugins without changing the stable she
 
 ## Decisions captured
 
-- Desktop uses a narrow global icon rail and one independently collapsible contextual sidebar.
-- The project tree occupies the contextual sidebar during ordinary work; Calendar, Members, and Settings replace its contents with area-specific navigation.
-- The project tree is sufficient for initial project discovery, so a separate Projects page is deferred.
-- Project folders are one level and organizational only.
+- Desktop uses a narrow global icon rail and a flexible main-content region.
+- Projects owns project discovery and organization instead of a permanent project sidebar.
+- Workspaces contain projects and optional one-level folders.
 - Authentication uses a split form/presentation layout on wide screens.
 - Onboarding is path-aware and ends at useful project work quickly.
 - Board, List, and plugin project views share one project page and header.
@@ -449,10 +392,8 @@ These may be introduced later or through plugins without changing the stable she
 The first usability review should verify:
 
 - Whether the icon-only rail remains understandable with tooltips and keyboard focus.
-- Whether users understand why the contextual sidebar changes by product area.
-- Whether one-level folders organize realistic project sets without encouraging deep hierarchy.
-- Whether My Work is a better default than reopening the last project.
+- Whether Quick access and pinned projects make reopening work fast enough.
+- Whether folders and the project table remain clear for realistic project sets.
 - Whether the two-row project header remains calm after several plugin views are enabled.
 - Whether the route-backed task panel preserves enough Board/List context at common laptop widths.
 - Whether package installation versus workspace enablement is understandable to self-hosted administrators.
-

@@ -151,11 +151,10 @@ Project-level restricted membership and a guest role are deferred until the basi
 
 The complete page and navigation model is defined in [UI information architecture](./ui-information-architecture.md).
 
-The desktop product shell has three stable columns plus contextual surfaces:
+The desktop product shell has two stable columns plus contextual surfaces:
 
-- **Global icon rail:** workspace switcher, product areas, approved extension pages, settings, and user menu.
-- **Context sidebar:** project folders/tree during ordinary work, replaced by local navigation for Calendar, Members, and Settings.
-- **Main content:** My Work, the selected project view, Members, Settings, or a plugin page.
+- **Global icon rail:** Home, Projects, product areas, approved extension pages, settings, and user menu.
+- **Main content:** Home, the Projects explorer, selected project view, Members, Settings, or a plugin page.
 - **Contextual surfaces:** task details, dialogs, menus, panels, and notifications.
 
 Plugins target named slots within these regions. They never depend on internal React component paths. Small contributions remain host-rendered; full pages or substantial panels may use sandboxed browser UI authored with the supported React/TypeScript or vanilla path.

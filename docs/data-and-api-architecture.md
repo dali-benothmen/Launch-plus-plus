@@ -86,6 +86,7 @@ Better Auth owns its user, session, linked account, and verification tables. Lau
 - `avatar_asset_id`, nullable
 - `locale`
 - `time_zone`
+- `current_workspace_id`, nullable — the user's selected active workspace
 - `created_at`, `updated_at`, `revision`
 
 Authentication schema changes are generated/reviewed alongside application migrations. An auth library migration is never run independently against production without backup and compatibility tests.
@@ -116,10 +117,17 @@ Invariants:
 
 - Every active workspace has at least one owner.
 - The final owner cannot leave, be removed, or be demoted without an ownership transfer.
+- Workspace names are case-insensitively unique within an installation.
 - Workspace slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
 - Membership changes invalidate relevant sessions/query scopes and produce audit activity.
 
 ### Projects and statuses
+
+`project_folders`
+
+- `id`, `workspace_id`, `name`, `position`
+- `created_by_user_id`, `created_at`, `updated_at`, `revision`
+- one navigation level only; removing a folder moves its projects to the ungrouped scope
 
 `projects`
 
@@ -131,6 +139,12 @@ Invariants:
 - `created_by_user_id`
 - `created_at`, `updated_at`, `archived_at`, `deleted_at`
 - `revision`
+
+`project_preferences`
+
+- `user_id`, `project_id`
+- `favorite`, optional `last_opened_at`, `updated_at`
+- personal navigation state only; it does not alter shared project ordering
 
 `project_statuses`
 
@@ -144,6 +158,8 @@ Invariants:
 Invariants:
 
 - A status and task always belong to the same workspace and project.
+- A folder and its projects always belong to the same workspace.
+- Active folder, project, and status positions are unique within their ordering scope.
 - A project retains at least one active status while active tasks exist.
 - Removing a used status requires moving its tasks in the same transaction or archiving the status.
 - `next_task_number` is incremented in the task-creation transaction; numbers are never reused.
@@ -222,6 +238,8 @@ Comment edits preserve authorship and generate activity. A recoverably deleted c
 Activity is an append-oriented human history created from successful domain changes. It is not the canonical event store and does not reconstruct state. Summary data contains stable display facts needed to explain the action while sensitive live details are loaded under current permissions.
 
 Security-relevant installation and permission changes additionally write a separate audit stream with stricter retention and operator visibility, described in the security document.
+
+The initial `audit_entries` table records installation/workspace scope, actor, operation, target, outcome, bounded JSON metadata, occurrence time, and correlation ID. First-owner setup and workspace creation write these audit facts in the same transaction as their domain state.
 
 ### Notifications
 

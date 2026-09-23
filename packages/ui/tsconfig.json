@@ -8,5 +8,5 @@
     "jsx": "react-jsx"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "references": [{ "path": "../ui-tokens" }]
+  "references": [{ "path": "../theme-runtime" }, { "path": "../ui-tokens" }]
 }

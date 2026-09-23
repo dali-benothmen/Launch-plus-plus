@@ -706,6 +706,8 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 
 The Launch++ theme has three derived layers:
 
+The base runtime ships Light, Dark, and High Contrast as ordinary validated theme documents. It resolves them into the public semantic `--launch-color-*`, `--launch-radius-*`, `--launch-shadow-*`, and `--launch-font-*` variables; internal component tokens are derived from that stable contract. Theme selection must not change layout, density, or component behavior.
+
 1. **Seed tokens** express design intent, such as primary color, base radius, base font size, and control height.
 2. **Map tokens** are algorithmically derived scales and gradients.
 3. **Alias tokens** assign those values to semantic roles used across components.

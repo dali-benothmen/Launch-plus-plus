@@ -16,6 +16,9 @@
     },
     "./styles.css": "./styles.css"
   },
+  "dependencies": {
+    "@launchpp/theme-schema": "workspace:*"
+  },
   "publishConfig": {
     "access": "public"
   },

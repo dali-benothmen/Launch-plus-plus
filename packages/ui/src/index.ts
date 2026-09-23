@@ -2,9 +2,14 @@ import "../styles.css";
 
 export {
   AppstoreOutlined as ProjectsIcon,
+  BgColorsOutlined as ThemeIcon,
+  FolderOutlined as FolderIcon,
   HomeOutlined as HomeIcon,
+  MenuFoldOutlined as CollapseNavigationIcon,
+  MenuUnfoldOutlined as ExpandNavigationIcon,
   MoonOutlined as DarkThemeIcon,
   PlusOutlined as AddIcon,
+  SearchOutlined as SearchIcon,
   SettingOutlined as SettingsIcon,
   SunOutlined as LightThemeIcon,
   TeamOutlined as MembersIcon,

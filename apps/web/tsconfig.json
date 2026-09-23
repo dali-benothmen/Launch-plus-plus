@@ -11,6 +11,7 @@
   "references": [
     { "path": "../../packages/api-client" },
     { "path": "../../packages/plugin-protocol" },
+    { "path": "../../packages/theme-runtime" },
     { "path": "../../packages/ui" },
     { "path": "../../packages/ui-tokens" }
   ]
