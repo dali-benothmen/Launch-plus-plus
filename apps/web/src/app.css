@@ -641,6 +641,7 @@
 
 .task-column-list.is-empty {
   min-height: 34px;
+  place-content: center;
 }
 
 .task-column-list.is-drop-target {
@@ -652,7 +653,7 @@
   min-height: 58px;
 }
 
-.task-column-empty {
+.task-column-drop-label {
   display: grid;
   min-height: 32px;
   color: var(--launch-color-text-muted);
@@ -660,7 +661,7 @@
   place-items: center;
 }
 
-.task-column-list.is-drop-target .task-column-empty {
+.task-column-list.is-drop-target .task-column-drop-label {
   color: var(--launch-ui-primary);
 }
 

@@ -84,6 +84,10 @@ interface SortableTaskShellProps extends SortableShellProps {
 
 const taskPageSize = 50;
 const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+const emptyColumnStyles = {
+  image: { height: 24, marginBottom: 0 },
+  root: { margin: 0 },
+} as const;
 
 function dateFromKey(value?: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -224,9 +228,15 @@ function TaskDropZone({
     >
       {children}
       {empty ? (
-        <span className="task-column-empty">
-          {droppable.isDropTarget ? "Drop task here" : "No tasks"}
-        </span>
+        droppable.isDropTarget ? (
+          <span className="task-column-drop-label">Drop task here</span>
+        ) : (
+          <Empty
+            description={false}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            styles={emptyColumnStyles}
+          />
+        )
       ) : null}
     </div>
   );
