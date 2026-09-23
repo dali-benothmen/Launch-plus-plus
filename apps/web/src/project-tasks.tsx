@@ -237,7 +237,7 @@ function SortableTaskShell({
 
   return (
     <div
-      aria-label={`Move ${sortable.sortable.data.label}`}
+      aria-label={`Move ${label}`}
       aria-selected={false}
       className={`task-card-shell${sortable.isDragging ? " is-dragging" : ""}`}
       ref={sortable.ref}
