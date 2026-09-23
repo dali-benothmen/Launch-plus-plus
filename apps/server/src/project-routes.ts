@@ -7,6 +7,7 @@ import type {
   FolderOrderInput,
   ProjectFolderInput,
   ProjectOrderInput,
+  ProjectStatusInput,
   UpdateProjectInput,
 } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
@@ -17,6 +18,7 @@ import {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusNameConflictError,
   type Project,
   type ProjectCatalog,
   type ProjectFolder,
@@ -192,6 +194,17 @@ export async function registerProjectRoutes(
         409,
         "project_folder_name_conflict",
         "Project folder name conflict",
+        error.message,
+      );
+      return true;
+    }
+    if (error instanceof ProjectStatusNameConflictError) {
+      sendProblem(
+        reply,
+        request,
+        409,
+        "project_status_name_conflict",
+        "Board column name conflict",
         error.message,
       );
       return true;
@@ -417,6 +430,40 @@ export async function registerProjectRoutes(
             return { body: projectSummary(project), status: 201 };
           },
         );
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.post<{
+    Body: ProjectStatusInput;
+    Params: { readonly projectId: string; readonly organizationId: string };
+  }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/statuses",
+    {
+      schema: {
+        body: { $ref: "LaunchppProjectStatusInputV1#" },
+        operationId: "createProjectStatus",
+        params: { $ref: "LaunchppProjectParamsV1#" },
+        response: { 201: { $ref: "LaunchppProjectStatusSummaryV1#" }, ...problemResponses },
+        summary: "Create a project board column",
+        tags: ["Projects"],
+      },
+    },
+    async (request, reply) => {
+      const access = await authorize(request, reply, request.params.organizationId, true);
+      if (!access) return;
+      try {
+        const status = await catalog.createStatus({
+          ...access,
+          ...request.body,
+          correlationId: request.id,
+          projectId: request.params.projectId,
+          organizationId: request.params.organizationId,
+        });
+        return reply.status(201).send(statusSummary(status));
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;

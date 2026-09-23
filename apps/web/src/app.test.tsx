@@ -54,6 +54,15 @@ const apiClient: ApiClient = {
       revision: 1,
       organizationId: "organization-1",
     })),
+    createStatus: vi.fn(async (_organizationId, projectId, input) => ({
+      category: input.category ?? ("active" as const),
+      color: input.color ?? "#8c8c8c",
+      id: "status-1",
+      name: input.name,
+      position: 0,
+      projectId,
+      revision: 1,
+    })),
     delete: vi.fn(async () => undefined),
     deleteFolder: vi.fn(async () => undefined),
     list: vi.fn(async () => ({ folders: [], projects: [], statuses: [] })),
@@ -131,6 +140,15 @@ const apiClient: ApiClient = {
     update: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
+  },
+  teams: {
+    create: vi.fn(async (organizationId, input) => ({
+      id: "team-1",
+      name: input.name,
+      organizationId,
+      revision: 1,
+    })),
+    list: vi.fn(async () => []),
   },
   organizations: {
     create: vi.fn(async () => ({

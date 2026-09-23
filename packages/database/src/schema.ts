@@ -178,6 +178,32 @@ export const organizations = sqliteTable(
   ],
 );
 
+export const teams = sqliteTable(
+  "teams",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    uniqueIndex("teams_organization_name_unique").on(
+      table.organizationId,
+      sql`lower(${table.name})`,
+    ),
+    index("teams_organization_created_idx").on(table.organizationId, table.createdAt),
+    check("teams_name_not_blank", sql`length(trim(${table.name})) > 0`),
+    check("teams_revision_positive", sql`${table.revision} > 0`),
+  ],
+);
+
 export const userProfiles = sqliteTable("user_profiles", {
   userId: text("user_id")
     .primaryKey()
@@ -654,6 +680,7 @@ export const databaseSchema = {
   taskComments,
   taskLabels,
   tasks,
+  teams,
   userProfiles,
   organizationMembers,
   organizations,

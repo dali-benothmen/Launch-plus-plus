@@ -50,6 +50,7 @@ export {
   taskComments,
   taskLabels,
   tasks,
+  teams,
   userProfiles,
   organizationMembers,
   organizations,
@@ -61,6 +62,7 @@ export {
   SqliteDatabase,
 } from "./sqlite-database.js";
 export { SqliteTaskRepository } from "./task-repository.js";
+export { SqliteTeamRepository } from "./team-repository.js";
 export { SqliteUserProfileRepository } from "./user-profile-repository.js";
 export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
 export { SqliteOrganizationRepository } from "./organization-repository.js";

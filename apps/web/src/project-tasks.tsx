@@ -2,6 +2,7 @@ import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/ap
 import {
   Alert,
   Avatar,
+  BoardIcon,
   Button,
   Card,
   DatePicker,
@@ -10,6 +11,7 @@ import {
   Empty,
   Form,
   Input,
+  ListIcon,
   Modal,
   MoreIcon,
   message,
@@ -23,6 +25,7 @@ import {
 } from "@launchpp/ui";
 import {
   type DragEvent,
+  Fragment,
   type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
@@ -33,11 +36,10 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
+import { openProjectCreationEvent, projectNavigationChangedEvent } from "./project-navigation.js";
 import { TaskDetailPanel } from "./task-detail.js";
 
 type ProjectView = "board" | "list";
-type TaskSort = "due" | "order" | "title" | "updated";
-type AssignmentFilter = "all" | "mine" | "unassigned";
 
 interface ProjectTaskOrganizationProps {
   readonly archived: boolean;
@@ -146,12 +148,13 @@ export function ProjectTaskOrganization({
   const [loadError, setLoadError] = useState<unknown>();
   const [movingTaskId, setMovingTaskId] = useState<string>();
   const [draggedTaskId, setDraggedTaskId] = useState<string>();
+  const [dragTarget, setDragTarget] = useState<{
+    readonly beforeTaskId?: string;
+    readonly statusId: string;
+  }>();
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("all");
-  const [sort, setSort] = useState<TaskSort>("order");
   const [editor, setEditor] = useState<TaskEditor>();
   const [draft, setDraft] = useState<TaskDraft>({
     description: "",
@@ -161,6 +164,10 @@ export function ProjectTaskOrganization({
   });
   const [editorError, setEditorError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  const [columnName, setColumnName] = useState("");
+  const [columnError, setColumnError] = useState<unknown>();
+  const [savingColumn, setSavingColumn] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
 
   const loadTasks = useCallback(
@@ -223,29 +230,19 @@ export function ProjectTaskOrganization({
   const visibleTasks = useMemo(() => {
     const filtered = tasks.filter((task) => {
       if (task.archivedAt !== undefined || task.parentTaskId !== undefined) return false;
-      if (statusFilter !== "all" && task.statusId !== statusFilter) return false;
-      if (assignmentFilter === "mine" && !task.assigneeUserIds.includes(currentUserId))
-        return false;
-      if (assignmentFilter === "unassigned" && task.assigneeUserIds.length > 0) return false;
       if (!query) return true;
       return `${task.reference} ${task.title} ${task.description}`
         .toLocaleLowerCase()
         .includes(query);
     });
     return filtered.toSorted((first, second) => {
-      if (sort === "due") {
-        if (first.dueDate && second.dueDate) return first.dueDate.localeCompare(second.dueDate);
-        return first.dueDate ? -1 : second.dueDate ? 1 : 0;
-      }
-      if (sort === "title") return first.title.localeCompare(second.title);
-      if (sort === "updated") return second.updatedAt - first.updatedAt;
       if (first.statusId === second.statusId) return first.position - second.position;
       return (
         (statusById.get(first.statusId)?.position ?? 0) -
         (statusById.get(second.statusId)?.position ?? 0)
       );
     });
-  }, [assignmentFilter, currentUserId, query, sort, statusById, statusFilter, tasks]);
+  }, [query, statusById, tasks]);
 
   const closeEditor = () => {
     setEditor(undefined);
@@ -306,6 +303,24 @@ export function ProjectTaskOrganization({
     } finally {
       setMovingTaskId(undefined);
       setDraggedTaskId(undefined);
+      setDragTarget(undefined);
+    }
+  };
+
+  const createColumn = async () => {
+    if (!columnName.trim() || savingColumn) return;
+    setSavingColumn(true);
+    setColumnError(undefined);
+    try {
+      await api.projects.createStatus(organizationId, projectId, { name: columnName });
+      setColumnModalOpen(false);
+      setColumnName("");
+      messageApi.success("Board column created.");
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+    } catch (reason) {
+      setColumnError(reason);
+    } finally {
+      setSavingColumn(false);
     }
   };
 
@@ -388,48 +403,6 @@ export function ProjectTaskOrganization({
     }
   };
 
-  const customizeItems: readonly DropdownMenuItem[] = [
-    {
-      key: "all-statuses",
-      label: statusFilter === "all" ? "All statuses ✓" : "All statuses",
-      onClick: () => setStatusFilter("all"),
-    },
-    ...statuses.map((status) => ({
-      key: `status-${status.id}`,
-      label: statusFilter === status.id ? `${status.name} ✓` : status.name,
-      onClick: () => setStatusFilter(status.id),
-    })),
-    { type: "divider" },
-    {
-      key: "all-assignments",
-      label: assignmentFilter === "all" ? "All assignments ✓" : "All assignments",
-      onClick: () => setAssignmentFilter("all"),
-    },
-    {
-      key: "mine",
-      label: assignmentFilter === "mine" ? "Assigned to me ✓" : "Assigned to me",
-      onClick: () => setAssignmentFilter("mine"),
-    },
-    {
-      key: "unassigned",
-      label: assignmentFilter === "unassigned" ? "Unassigned ✓" : "Unassigned",
-      onClick: () => setAssignmentFilter("unassigned"),
-    },
-    { type: "divider" },
-    ...(
-      [
-        ["order", "Board order"],
-        ["due", "Due date"],
-        ["updated", "Recently updated"],
-        ["title", "Title"],
-      ] as const
-    ).map(([value, label]) => ({
-      key: `sort-${value}`,
-      label: sort === value ? `${label} ✓` : label,
-      onClick: () => setSort(value),
-    })),
-  ];
-
   const loadMore = nextCursor ? (
     <div className="task-load-more">
       <Button loading={loadingMore} onClick={() => void loadTasks(nextCursor)}>
@@ -447,148 +420,176 @@ export function ProjectTaskOrganization({
       />
     ) : null;
 
-  const boardStatuses =
-    statusFilter === "all" ? statuses : statuses.filter((status) => status.id === statusFilter);
+  const boardStatuses = statuses;
   const board = (
     <>
       {loadWarning}
       <div className="task-board-grid">
         {boardStatuses.map((status) => {
           const columnTasks = visibleTasks.filter((task) => task.statusId === status.id);
+          const renderedColumnTasks = draggedTaskId
+            ? columnTasks.filter((task) => task.id !== draggedTaskId)
+            : columnTasks;
           return (
-            <div
+            <Card
               aria-label={`${status.name} tasks`}
               className="task-board-column"
               key={status.id}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (draggedTaskId) setDragTarget({ statusId: status.id });
+              }}
               onDrop={(event) => {
                 event.preventDefault();
                 const task = tasks.find((item) => item.id === draggedTaskId);
-                if (task) void moveTask(task, status.id);
+                if (task) {
+                  const beforeTaskId =
+                    dragTarget?.statusId === status.id ? dragTarget.beforeTaskId : undefined;
+                  void moveTask(task, status.id, beforeTaskId);
+                }
               }}
               role="listbox"
+              size="small"
             >
-              <header className="task-column-header">
-                <Typography.Text>{status.name}</Typography.Text>
-                <span className="task-column-count" style={{ backgroundColor: status.color }}>
-                  {columnTasks.length}
-                </span>
-                <Button
-                  aria-label={`${status.name} actions`}
-                  className="task-column-menu"
-                  icon={<MoreIcon />}
-                  iconOnly
-                  size="small"
-                  variant="text"
-                />
-              </header>
-              <div className="task-column-list">
-                {columnTasks.map((task) => (
-                  <div
-                    aria-label={`Move ${task.title}`}
-                    aria-selected={false}
-                    className="task-card-shell"
-                    draggable={!archived && sort === "order" && movingTaskId === undefined}
-                    key={task.id}
-                    onDragEnd={() => setDraggedTaskId(undefined)}
-                    onDragStart={(event: DragEvent<HTMLDivElement>) => {
-                      event.dataTransfer.effectAllowed = "move";
-                      setDraggedTaskId(task.id);
-                    }}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      const dragged = tasks.find((item) => item.id === draggedTaskId);
-                      if (dragged && dragged.id !== task.id) {
-                        void moveTask(dragged, status.id, task.id);
-                      }
-                    }}
-                    role="option"
-                    tabIndex={0}
-                    title={sort === "order" ? "Drag to reorder" : "Use board order to drag"}
-                  >
-                    <Card size="small">
-                      <div className="task-card-content">
-                        <div className="task-card-heading">
-                          <Button
-                            className="task-title-button"
-                            onClick={(event) => openTask(task, event)}
-                            size="small"
-                            variant="link"
-                          >
-                            {task.title}
-                          </Button>
-                          <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
-                            <Button
-                              aria-label={`Actions for ${task.title}`}
-                              disabled={archived}
-                              icon={<MoreIcon />}
-                              iconOnly
-                              size="small"
-                              variant="text"
-                            />
-                          </Dropdown>
-                        </div>
-                        {task.description ? (
-                          <Typography.Text className="task-card-description" type="secondary">
-                            {task.description}
-                          </Typography.Text>
-                        ) : null}
-                        <div className="task-card-status">
-                          <Typography.Text type="secondary">{status.name}</Typography.Text>
-                          <span
-                            aria-hidden
-                            className="task-status-line"
-                            style={{ backgroundColor: status.color }}
-                          />
-                        </div>
-                        {task.labels.length > 0 ? (
-                          <div className="task-card-meta">
-                            {task.labels.map((label) => (
-                              <Tag color={label.color} key={label.id}>
-                                {label.name}
-                              </Tag>
-                            ))}
+              <div className="task-board-column-content">
+                <header className="task-column-header">
+                  <Typography.Text>{status.name}</Typography.Text>
+                  <span className="task-column-count" style={{ backgroundColor: status.color }}>
+                    {columnTasks.length}
+                  </span>
+                  <Button
+                    aria-label={`${status.name} actions`}
+                    className="task-column-menu"
+                    icon={<MoreIcon />}
+                    iconOnly
+                    size="small"
+                    variant="text"
+                  />
+                </header>
+                <div className="task-column-list">
+                  {renderedColumnTasks.map((task) => (
+                    <Fragment key={task.id}>
+                      {dragTarget?.statusId === status.id && dragTarget.beforeTaskId === task.id ? (
+                        <div aria-hidden className="task-drop-placeholder" />
+                      ) : null}
+                      <div
+                        aria-label={`Move ${task.title}`}
+                        aria-selected={false}
+                        className="task-card-shell"
+                        draggable={!archived && movingTaskId === undefined}
+                        onDragEnd={() => {
+                          setDraggedTaskId(undefined);
+                          setDragTarget(undefined);
+                        }}
+                        onDragStart={(event: DragEvent<HTMLDivElement>) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          setDraggedTaskId(task.id);
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          if (draggedTaskId) {
+                            setDragTarget({ beforeTaskId: task.id, statusId: status.id });
+                          }
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          const dragged = tasks.find((item) => item.id === draggedTaskId);
+                          if (dragged && dragged.id !== task.id) {
+                            void moveTask(dragged, status.id, task.id);
+                          }
+                        }}
+                        role="option"
+                        tabIndex={0}
+                        title="Drag to reorder"
+                      >
+                        <Card size="small">
+                          <div className="task-card-content">
+                            <div className="task-card-heading">
+                              <Button
+                                className="task-title-button"
+                                onClick={(event) => openTask(task, event)}
+                                size="small"
+                                variant="link"
+                              >
+                                {task.title}
+                              </Button>
+                              <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+                                <Button
+                                  aria-label={`Actions for ${task.title}`}
+                                  disabled={archived}
+                                  icon={<MoreIcon />}
+                                  iconOnly
+                                  size="small"
+                                  variant="text"
+                                />
+                              </Dropdown>
+                            </div>
+                            {task.description ? (
+                              <Typography.Text className="task-card-description" type="secondary">
+                                {task.description}
+                              </Typography.Text>
+                            ) : null}
+                            <div className="task-card-status">
+                              <Typography.Text type="secondary">{status.name}</Typography.Text>
+                              <span
+                                aria-hidden
+                                className="task-status-line"
+                                style={{ backgroundColor: status.color }}
+                              />
+                            </div>
+                            {task.labels.length > 0 ? (
+                              <div className="task-card-meta">
+                                {task.labels.map((label) => (
+                                  <Tag color={label.color} key={label.id}>
+                                    {label.name}
+                                  </Tag>
+                                ))}
+                              </div>
+                            ) : null}
+                            <div className="task-assignees">
+                              <Typography.Text type="secondary">Assigned to</Typography.Text>
+                              {task.assigneeUserIds.length > 0 ? (
+                                <Avatar.Group max={{ count: 3 }} size="small">
+                                  {task.assigneeUserIds.map((userId) => (
+                                    <Avatar key={userId}>
+                                      {userId === currentUserId ? "Me" : "M"}
+                                    </Avatar>
+                                  ))}
+                                </Avatar.Group>
+                              ) : (
+                                <Typography.Text type="secondary">Unassigned</Typography.Text>
+                              )}
+                            </div>
+                            <div className="task-card-summary">
+                              <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                              {task.dueDate ? (
+                                <Typography.Text type="secondary">
+                                  {formatDate(task.dueDate)}
+                                </Typography.Text>
+                              ) : null}
+                            </div>
                           </div>
-                        ) : null}
-                        <div className="task-assignees">
-                          <Typography.Text type="secondary">Assigned to</Typography.Text>
-                          {task.assigneeUserIds.length > 0 ? (
-                            <Avatar.Group max={{ count: 3 }} size="small">
-                              {task.assigneeUserIds.map((userId) => (
-                                <Avatar key={userId}>
-                                  {userId === currentUserId ? "Me" : "M"}
-                                </Avatar>
-                              ))}
-                            </Avatar.Group>
-                          ) : (
-                            <Typography.Text type="secondary">Unassigned</Typography.Text>
-                          )}
-                        </div>
-                        <div className="task-card-summary">
-                          <Typography.Text type="secondary">{task.reference}</Typography.Text>
-                          {task.dueDate ? (
-                            <Typography.Text type="secondary">
-                              {formatDate(task.dueDate)}
-                            </Typography.Text>
-                          ) : null}
-                        </div>
+                        </Card>
                       </div>
-                    </Card>
-                  </div>
-                ))}
+                    </Fragment>
+                  ))}
+                  {dragTarget?.statusId === status.id && !dragTarget.beforeTaskId ? (
+                    <div aria-hidden className="task-drop-placeholder" />
+                  ) : null}
+                </div>
+                <Button
+                  block
+                  disabled={archived}
+                  onClick={() => openCreate(status.id)}
+                  size="small"
+                  variant="dashed"
+                >
+                  Add task
+                </Button>
               </div>
-              <Button
-                block
-                disabled={archived}
-                onClick={() => openCreate(status.id)}
-                size="small"
-                variant="dashed"
-              >
-                Add task
-              </Button>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -744,8 +745,26 @@ export function ProjectTaskOrganization({
         ariaLabel="Project views"
         className="project-tabs"
         items={[
-          { children: content ?? board, key: "board", label: "Board view" },
-          { children: content ?? list, key: "list", label: "List view" },
+          {
+            children: content ?? board,
+            key: "board",
+            label: (
+              <span className="view-tab-label">
+                <BoardIcon aria-hidden />
+                Board view
+              </span>
+            ),
+          },
+          {
+            children: content ?? list,
+            key: "list",
+            label: (
+              <span className="view-tab-label">
+                <ListIcon aria-hidden />
+                List view
+              </span>
+            ),
+          },
         ]}
         onChange={(nextView) => {
           const parameters = searchParams.toString();
@@ -756,15 +775,51 @@ export function ProjectTaskOrganization({
         size="small"
         tabBarExtraContent={
           <div className="task-header-actions">
-            <Dropdown menu={{ items: customizeItems }} placement="bottomRight" trigger={["click"]}>
-              <Button size="small">Customize</Button>
-            </Dropdown>
-            <Button onClick={() => navigate("/app/projects/new")} size="small" variant="primary">
+            <Button onClick={() => setColumnModalOpen(true)} size="small">
+              + Add column
+            </Button>
+            <Button
+              onClick={() => window.dispatchEvent(new Event(openProjectCreationEvent))}
+              size="small"
+              variant="primary"
+            >
               + New project
             </Button>
           </div>
         }
       />
+
+      <Modal
+        confirmLoading={savingColumn}
+        okButtonProps={{ disabled: !columnName.trim() }}
+        okText="Create column"
+        onCancel={() => {
+          setColumnModalOpen(false);
+          setColumnError(undefined);
+        }}
+        onOk={() => void createColumn()}
+        open={columnModalOpen}
+        title="Add board column"
+      >
+        {columnError ? (
+          <Alert
+            showIcon
+            title={taskError(columnError, "Could not create the board column.")}
+            type="error"
+          />
+        ) : null}
+        <Form layout="vertical" onFinish={createColumn}>
+          <Form.Item label="Column name" required>
+            <Input
+              autoFocus
+              maxLength={80}
+              onChange={(event) => setColumnName(event.target.value)}
+              placeholder="Ready for review"
+              value={columnName}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         confirmLoading={saving}

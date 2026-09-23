@@ -1,31 +1,32 @@
-import type { ProjectSummary } from "@launchpp/api-client";
+import type { ProjectSummary, TeamSummary } from "@launchpp/api-client";
 import {
+  Alert,
   Avatar,
   Button,
   Dropdown,
   type DropdownMenuItem,
+  Form,
   HomeIcon,
   InboxIcon,
   Input,
   LogoutIcon,
   MembersIcon,
+  message,
+  Modal,
   NotificationsIcon,
   OrganizationIcon,
   PluginsIcon,
   SearchIcon,
   SettingsIcon,
   TasksIcon,
-  ThemeIcon,
-  Tooltip,
   Typography,
 } from "@launchpp/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { GlobalSearch } from "./global-search.js";
 import { InvalidationListener, invalidationEventName } from "./invalidation.js";
-import { projectNavigationChangedEvent } from "./project-navigation.js";
-import { themeOptions, useThemeController } from "./theme-context.js";
+import { openProjectCreationEvent, projectNavigationChangedEvent } from "./project-navigation.js";
 
 const globalLinks = [
   { icon: <HomeIcon aria-hidden />, label: "Home", to: "/app" },
@@ -59,15 +60,29 @@ function headerTitle(pathname: string) {
   return "Home";
 }
 
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function AppShell() {
   const api = useApiClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const theme = useThemeController();
+  const [messageApi, messageHolder] = message.useMessage();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [organizationId, setOrganizationId] = useState("");
   const [organizationName, setOrganizationName] = useState("Organization");
   const [memberName, setMemberName] = useState("Launch++ member");
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
+  const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [projectError, setProjectError] = useState<unknown>();
+  const [savingProject, setSavingProject] = useState(false);
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const [teamError, setTeamError] = useState<unknown>();
+  const [savingTeam, setSavingTeam] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   const loadNavigation = useCallback(async () => {
@@ -81,13 +96,18 @@ export function AppShell() {
       );
       if (session) setMemberName(session.identity.name);
       if (!organization) return;
+      setOrganizationId(organization.id);
       setOrganizationName(organization.name);
-      const catalog = await api.projects.list(organization.id, { limit: 100 });
+      const [catalog, nextTeams] = await Promise.all([
+        api.projects.list(organization.id, { limit: 100 }),
+        api.teams.list(organization.id),
+      ]);
       setProjects(
         catalog.projects
           .filter((project) => project.archivedAt === undefined)
           .toSorted((first, second) => first.position - second.position),
       );
+      setTeams(nextTeams);
     } catch {
       // Route-level screens own load failures. Navigation remains usable while they recover.
     }
@@ -111,18 +131,71 @@ export function AppShell() {
         setSearchOpen(true);
       }
     };
+    const openProjectModal = () => setProjectModalOpen(true);
     window.addEventListener("keydown", openSearch);
-    return () => window.removeEventListener("keydown", openSearch);
+    window.addEventListener(openProjectCreationEvent, openProjectModal);
+    return () => {
+      window.removeEventListener("keydown", openSearch);
+      window.removeEventListener(openProjectCreationEvent, openProjectModal);
+    };
   }, []);
 
-  const themeItems: readonly DropdownMenuItem[] = themeOptions.map((option) => ({
-    key: option.value,
-    label: option.value === theme.themeId ? `${option.label} (current)` : option.label,
-    onClick: () => theme.setTheme(option.value),
-  }));
+  const recentProject = useMemo(
+    () =>
+      projects
+        .filter((project) => project.lastOpenedAt !== undefined)
+        .toSorted((first, second) => (second.lastOpenedAt ?? 0) - (first.lastOpenedAt ?? 0))[0] ??
+      projects[0],
+    [projects],
+  );
+  const organizationTarget = recentProject
+    ? `/app/organizations/${recentProject.organizationId}/projects/${recentProject.id}/board`
+    : "/app";
   const notificationItems: readonly DropdownMenuItem[] = [
     { disabled: true, key: "empty", label: "You have no new notifications" },
   ];
+
+  const openProject = (project: ProjectSummary) => {
+    void api.projects.markOpened(project.organizationId, project.id).catch(() => undefined);
+    navigate(`/app/organizations/${project.organizationId}/projects/${project.id}/board`);
+  };
+
+  const createProject = async () => {
+    if (!organizationId || !projectName.trim() || savingProject) return;
+    setSavingProject(true);
+    setProjectError(undefined);
+    try {
+      const project = await api.projects.create(organizationId, { name: projectName });
+      await api.projects.markOpened(organizationId, project.id).catch(() => undefined);
+      setProjectModalOpen(false);
+      setProjectName("");
+      messageApi.success(`${project.name} created.`);
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+      await loadNavigation();
+      navigate(`/app/organizations/${organizationId}/projects/${project.id}/board`);
+    } catch (error) {
+      setProjectError(error);
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
+  const createTeam = async () => {
+    if (!organizationId || !teamName.trim() || savingTeam) return;
+    setSavingTeam(true);
+    setTeamError(undefined);
+    try {
+      const team = await api.teams.create(organizationId, { name: teamName });
+      setTeams((current) => [...current, team]);
+      setTeamModalOpen(false);
+      setTeamName("");
+      messageApi.success(`${team.name} created.`);
+    } catch (error) {
+      setTeamError(error);
+    } finally {
+      setSavingTeam(false);
+    }
+  };
 
   const signOut = async () => {
     if (signingOut) return;
@@ -137,6 +210,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      {messageHolder}
       <InvalidationListener />
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -147,58 +221,53 @@ export function AppShell() {
           <span aria-hidden className="brand-glyph" />
         </NavLink>
         <nav className="rail-links">
-          {globalLinks.map((item) => (
-            <Tooltip key={item.to} placement="right" title={item.label}>
+          {globalLinks.map((item) => {
+            const destination = item.label === "Organization" ? organizationTarget : item.to;
+            return (
               <NavLink
                 aria-label={item.label}
                 className={({ isActive }) => {
                   const organizationActive =
                     item.label === "Organization" &&
-                    (location.pathname.startsWith("/app/projects") ||
-                      location.pathname.startsWith("/app/organizations/"));
+                    location.pathname.startsWith("/app/organizations/");
                   return `rail-link${isActive || organizationActive ? " is-active" : ""}`;
                 }}
-                end={item.to === "/app" || item.to === "/app/projects"}
-                to={item.to}
+                end={item.label !== "Organization"}
+                key={item.to}
+                onClick={() => {
+                  if (item.label === "Organization" && recentProject) openProject(recentProject);
+                }}
+                to={destination}
               >
                 {item.icon}
               </NavLink>
-            </Tooltip>
-          ))}
+            );
+          })}
         </nav>
         <div className="rail-footer">
-          <Tooltip placement="right" title="Settings">
-            <NavLink
-              aria-label="Settings"
-              className={({ isActive }) => `rail-link${isActive ? " is-active" : ""}`}
-              to="/app/settings"
-            >
-              <SettingsIcon aria-hidden />
-            </NavLink>
-          </Tooltip>
-          <Tooltip placement="right" title="Sign out">
-            <Button
-              aria-label="Sign out"
-              icon={<LogoutIcon />}
-              iconOnly
-              loading={signingOut}
-              onClick={() => void signOut()}
-              size="small"
-              variant="text"
-            />
-          </Tooltip>
+          <NavLink
+            aria-label="Settings"
+            className={({ isActive }) => `rail-link${isActive ? " is-active" : ""}`}
+            to="/app/settings"
+          >
+            <SettingsIcon aria-hidden />
+          </NavLink>
+          <Button
+            aria-label="Sign out"
+            className="rail-action"
+            icon={<LogoutIcon />}
+            iconOnly
+            loading={signingOut}
+            onClick={() => void signOut()}
+            size="small"
+            variant="text"
+          />
         </div>
       </aside>
 
       <aside aria-label="Organization navigation" className="organization-sidebar">
         <div className="organization-identity">
-          <div className="organization-identity-copy">
-            <Typography.Text strong>{organizationName}</Typography.Text>
-            <Typography.Text type="secondary">Team plan</Typography.Text>
-          </div>
-          <span aria-hidden className="organization-switcher-mark">
-            ⌃
-          </span>
+          <Typography.Text strong>{organizationName}</Typography.Text>
         </div>
 
         <nav className="organization-menu" aria-label="Organization menu">
@@ -218,24 +287,18 @@ export function AppShell() {
         </nav>
 
         <div className="sidebar-section">
-          <div className="sidebar-section-heading">
-            <Typography.Text className="sidebar-section-label" type="secondary">
-              Projects
-            </Typography.Text>
-            <Button
-              aria-label="Create project"
-              onClick={() => navigate("/app/projects/new")}
-              size="small"
-              variant="text"
-            >
-              +
-            </Button>
-          </div>
+          <Typography.Text className="sidebar-section-label" type="secondary">
+            Projects
+          </Typography.Text>
           <nav className="sidebar-projects" aria-label="Projects">
             {projects.map((project, index) => (
               <NavLink
                 className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
                 key={project.id}
+                onClick={(event) => {
+                  event.preventDefault();
+                  openProject(project);
+                }}
                 to={`/app/organizations/${project.organizationId}/projects/${project.id}`}
               >
                 <span aria-hidden className={`project-nav-icon is-color-${(index % 3) + 1}`}>
@@ -244,22 +307,41 @@ export function AppShell() {
                 <span>{project.name}</span>
               </NavLink>
             ))}
-            <NavLink className="sidebar-link is-muted" to="/app/projects/new">
-              <span aria-hidden>+</span>
-              <span>New project</span>
-            </NavLink>
+            <Button
+              block
+              className="sidebar-create-button"
+              disabled={!organizationId}
+              onClick={() => setProjectModalOpen(true)}
+              size="small"
+              variant="dashed"
+            >
+              + New project
+            </Button>
           </nav>
         </div>
 
         <div className="sidebar-section">
-          <div className="sidebar-section-heading">
-            <Typography.Text className="sidebar-section-label" type="secondary">
-              Teams
-            </Typography.Text>
-          </div>
-          <Typography.Text className="sidebar-empty-copy" type="secondary">
-            + New team
+          <Typography.Text className="sidebar-section-label" type="secondary">
+            Teams
           </Typography.Text>
+          <div className="sidebar-projects">
+            {teams.map((team) => (
+              <div className="sidebar-link sidebar-team" key={team.id}>
+                <MembersIcon aria-hidden />
+                <span>{team.name}</span>
+              </div>
+            ))}
+            <Button
+              block
+              className="sidebar-create-button"
+              disabled={!organizationId}
+              onClick={() => setTeamModalOpen(true)}
+              size="small"
+              variant="dashed"
+            >
+              + New team
+            </Button>
+          </div>
         </div>
       </aside>
 
@@ -283,16 +365,6 @@ export function AppShell() {
             value=""
           />
           <div className="app-header-actions">
-            <Dropdown menu={{ items: themeItems }} placement="bottomRight" trigger={["click"]}>
-              <Button
-                aria-label="Choose appearance"
-                icon={<ThemeIcon />}
-                iconOnly
-                size="small"
-                title={theme.theme.name}
-                variant="text"
-              />
-            </Dropdown>
             <Dropdown
               menu={{ items: notificationItems }}
               placement="bottomRight"
@@ -317,6 +389,70 @@ export function AppShell() {
       </div>
 
       <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />
+
+      <Modal
+        confirmLoading={savingProject}
+        okButtonProps={{ disabled: !projectName.trim() }}
+        okText="Create project"
+        onCancel={() => {
+          setProjectModalOpen(false);
+          setProjectError(undefined);
+        }}
+        onOk={() => void createProject()}
+        open={projectModalOpen}
+        title="Create project"
+      >
+        {projectError ? (
+          <Alert
+            showIcon
+            title={errorMessage(projectError, "Could not create the project.")}
+            type="error"
+          />
+        ) : null}
+        <Form layout="vertical" onFinish={createProject}>
+          <Form.Item label="Project name" required>
+            <Input
+              autoFocus
+              maxLength={120}
+              onChange={(event) => setProjectName(event.target.value)}
+              placeholder="Website redesign"
+              value={projectName}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        confirmLoading={savingTeam}
+        okButtonProps={{ disabled: !teamName.trim() }}
+        okText="Create team"
+        onCancel={() => {
+          setTeamModalOpen(false);
+          setTeamError(undefined);
+        }}
+        onOk={() => void createTeam()}
+        open={teamModalOpen}
+        title="Create team"
+      >
+        {teamError ? (
+          <Alert
+            showIcon
+            title={errorMessage(teamError, "Could not create the team.")}
+            type="error"
+          />
+        ) : null}
+        <Form layout="vertical" onFinish={createTeam}>
+          <Form.Item label="Team name" required>
+            <Input
+              autoFocus
+              maxLength={80}
+              onChange={(event) => setTeamName(event.target.value)}
+              placeholder="Design"
+              value={teamName}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

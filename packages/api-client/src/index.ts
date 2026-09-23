@@ -19,6 +19,8 @@ export type {
   TaskDetail,
   TaskPage,
   TaskView,
+  TeamInput,
+  TeamSummary,
   OrganizationContext,
   OrganizationSummary,
 } from "@launchpp/api-contracts";
@@ -208,6 +210,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
       status: () => json<SetupStatus>("/api/setup/status"),
     }),
     tasks: core.tasks,
+    teams: core.teams,
     organizations: core.organizations,
   });
 }

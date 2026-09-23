@@ -27,6 +27,7 @@ export {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusNameConflictError,
 } from "./projects/project.js";
 export {
   type ProjectCatalogDependencies,
@@ -67,6 +68,9 @@ export {
   TaskStatusInvalidError,
 } from "./tasks/task.js";
 export { TaskService, type TaskServiceDependencies } from "./tasks/task-service.js";
+export type { Team, TeamRepository } from "./teams/team.js";
+export { TeamNameConflictError } from "./teams/team.js";
+export { TeamService, type TeamServiceDependencies } from "./teams/team-service.js";
 export {
   type CreateOrganizationDependencies,
   type CreateOrganizationInput,

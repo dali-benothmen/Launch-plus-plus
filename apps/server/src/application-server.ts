@@ -19,6 +19,7 @@ import { type BuildServerOptions, buildServer } from "./server.js";
 import { createSetupCoordinator } from "./setup-routes.js";
 import { registerStaticWeb } from "./static-web.js";
 import { registerTaskRoutes } from "./task-routes.js";
+import { registerTeamRoutes } from "./team-routes.js";
 import { registerOrganizationRoutes } from "./organization-routes.js";
 
 export interface ApplicationResources {
@@ -100,6 +101,7 @@ export async function buildApplicationServer(
     await registerOrganizationRoutes(app, { database, identity: identity.adapter });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
+    await registerTeamRoutes(app, { database, identity: identity.adapter });
     await registerSearchRoutes(app, { database, identity: identity.adapter });
     await registerEventRoutes(app, { database, hub, identity: identity.adapter });
     await registerBetterAuthRoutes(app, identity.adapter);

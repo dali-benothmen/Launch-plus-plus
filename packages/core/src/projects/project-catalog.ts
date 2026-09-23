@@ -20,6 +20,7 @@ import {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusNameConflictError,
 } from "./project.js";
 
 export interface ProjectCatalogDependencies {
@@ -223,6 +224,59 @@ export class ProjectCatalogService {
         name,
       });
       return project;
+    });
+  }
+
+  createStatus(
+    input: CommandContext &
+      Readonly<{
+        category?: ProjectStatusCategory;
+        color?: string;
+        name: string;
+        projectId: string;
+      }>,
+  ): Promise<ProjectStatus> {
+    validateContext(input);
+    const name = input.name.trim().replace(/\s+/g, " ");
+    const color = input.color ?? "#8c8c8c";
+    if (name.length === 0 || name.length > 80) {
+      return Promise.reject(new TypeError("Board column name must contain 1 to 80 characters."));
+    }
+    if (!/^#[0-9a-f]{6}$/i.test(color)) {
+      return Promise.reject(new TypeError("Board column color must be a six-digit hex color."));
+    }
+    return this.dependencies.transactions.write((context) => {
+      this.requireProject(context, input.organizationId, input.projectId);
+      const projectStatuses = this.dependencies.projects
+        .listStatuses(context, input.organizationId)
+        .filter(
+          (status) => status.projectId === input.projectId && status.archivedAt === undefined,
+        );
+      if (projectStatuses.some((status) => status.name.toLowerCase() === name.toLowerCase())) {
+        throw new ProjectStatusNameConflictError("A board column with this name already exists.");
+      }
+      const now = this.dependencies.clock();
+      const status: ProjectStatus = Object.freeze({
+        category: input.category ?? "active",
+        color,
+        createdAt: now,
+        id: this.dependencies.generateId(),
+        name,
+        position: projectStatuses.reduce(
+          (position, item) => Math.max(position, item.position + 1),
+          0,
+        ),
+        projectId: input.projectId,
+        revision: 1,
+        updatedAt: now,
+        organizationId: input.organizationId,
+      });
+      this.dependencies.projects.createStatus(context, status);
+      this.record(context, input, "project_status.created", status.id, {
+        name,
+        projectId: input.projectId,
+      });
+      return status;
     });
   }
 
@@ -458,7 +512,11 @@ export class ProjectCatalogService {
       operation,
       outcome: "succeeded",
       targetId,
-      targetType: operation.startsWith("project_folder") ? "project_folder" : "project",
+      targetType: operation.startsWith("project_folder")
+        ? "project_folder"
+        : operation.startsWith("project_status")
+          ? "project_status"
+          : "project",
       organizationId: input.organizationId,
     });
     this.dependencies.outbox.append(context, {

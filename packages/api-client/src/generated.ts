@@ -11,6 +11,8 @@ import type {
   MoveTaskInput,
   ProjectCatalog,
   ProjectFolderSummary,
+  ProjectStatusInput,
+  ProjectStatusSummary,
   ProjectSummary,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
@@ -20,6 +22,8 @@ import type {
   TaskDetail,
   TaskPage,
   TaskView,
+  TeamInput,
+  TeamSummary,
   UpdateProjectInput,
   UpdateTaskInput,
   OrganizationContext,
@@ -67,6 +71,11 @@ export interface CoreApiClient {
       options?: RequestOptions,
     ): Promise<ProjectSummary>;
     createFolder(organizationId: string, name: string): Promise<ProjectFolderSummary>;
+    createStatus(
+      organizationId: string,
+      projectId: string,
+      input: ProjectStatusInput,
+    ): Promise<ProjectStatusSummary>;
     delete(organizationId: string, projectId: string): Promise<void>;
     deleteFolder(organizationId: string, folderId: string): Promise<void>;
     list(organizationId: string, query?: CursorPageQuery): Promise<ProjectCatalog>;
@@ -148,6 +157,10 @@ export interface CoreApiClient {
       input: UpdateTaskInput,
     ): Promise<TaskView>;
   };
+  readonly teams: {
+    create(organizationId: string, input: TeamInput): Promise<TeamSummary>;
+    list(organizationId: string): Promise<readonly TeamSummary[]>;
+  };
   readonly organizations: {
     create(name: string, options?: RequestOptions): Promise<OrganizationSummary>;
     list(query?: CursorPageQuery): Promise<OrganizationContext>;
@@ -185,6 +198,12 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
             method: "POST",
           },
         ),
+      createStatus: (organizationId: string, projectId: string, input: ProjectStatusInput) =>
+        json<ProjectStatusSummary>(`${projectPath(organizationId, projectId)}/statuses`, {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }),
       async delete(organizationId: string, projectId: string): Promise<void> {
         await json(projectPath(organizationId, projectId), { method: "DELETE" });
       },
@@ -345,6 +364,18 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: { "content-type": "application/json" },
           method: "PATCH",
         }),
+    }),
+    teams: Object.freeze({
+      create: (organizationId: string, input: TeamInput) =>
+        json<TeamSummary>(`/api/v1/organizations/${encodeURIComponent(organizationId)}/teams`, {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }),
+      list: (organizationId: string) =>
+        json<readonly TeamSummary[]>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/teams`,
+        ),
     }),
     organizations: Object.freeze({
       create: (name: string, options?: RequestOptions) =>

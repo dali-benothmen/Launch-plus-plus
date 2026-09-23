@@ -130,6 +130,10 @@ export class ProjectFolderNameConflictError extends Error {
   override readonly name = "ProjectFolderNameConflictError";
 }
 
+export class ProjectStatusNameConflictError extends Error {
+  override readonly name = "ProjectStatusNameConflictError";
+}
+
 export class ProjectOrderInvalidError extends Error {
   override readonly name = "ProjectOrderInvalidError";
 }

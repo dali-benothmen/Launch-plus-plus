@@ -71,6 +71,13 @@
       "when": 1790160020010,
       "tag": "0009_organization_domain",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790168030030,
+      "tag": "0010_organization_teams",
+      "breakpoints": true
     }
   ]
 }

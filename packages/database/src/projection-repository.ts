@@ -41,7 +41,9 @@ function resourceType(topic: string) {
   if (topic.startsWith("task.") || topic.startsWith("comment.")) return "task";
   if (topic.startsWith("label.")) return "label";
   if (topic.startsWith("project_folder.")) return "project_folder";
+  if (topic.startsWith("project_status.")) return "project_status";
   if (topic.startsWith("project.")) return "project";
+  if (topic.startsWith("team.")) return "team";
   return "organization";
 }
 

@@ -77,6 +77,23 @@ export const OrganizationContextSchema = StrictObject(
 
 export type OrganizationContext = Type.Static<typeof OrganizationContextSchema>;
 
+export const TeamSummarySchema = StrictObject(
+  {
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 80, minLength: 1 }),
+    revision: RevisionSchema,
+    organizationId: IdentifierSchema,
+  },
+  { $id: "LaunchppTeamSummaryV1" },
+);
+export type TeamSummary = Type.Static<typeof TeamSummarySchema>;
+
+export const TeamInputSchema = StrictObject(
+  { name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }) },
+  { $id: "LaunchppTeamInputV1" },
+);
+export type TeamInput = Type.Static<typeof TeamInputSchema>;
+
 export const CreateOrganizationInputSchema = StrictObject(
   { name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }) },
   { $id: "LaunchppCreateOrganizationInputV1" },
@@ -142,6 +159,18 @@ export const ProjectStatusSummarySchema = StrictObject(
   { $id: "LaunchppProjectStatusSummaryV1" },
 );
 export type ProjectStatusSummary = Type.Static<typeof ProjectStatusSummarySchema>;
+
+export const ProjectStatusInputSchema = StrictObject(
+  {
+    category: Type.Optional(
+      Type.Union([Type.Literal("active"), Type.Literal("backlog"), Type.Literal("done")]),
+    ),
+    color: Type.Optional(Type.String({ maxLength: 7, minLength: 7, pattern: "^#[0-9A-Fa-f]{6}$" })),
+    name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }),
+  },
+  { $id: "LaunchppProjectStatusInputV1" },
+);
+export type ProjectStatusInput = Type.Static<typeof ProjectStatusInputSchema>;
 
 export const ProjectCatalogSchema = StrictObject(
   {
@@ -475,12 +504,15 @@ export const CORE_API_SCHEMAS = Object.freeze([
   IdempotencyHeadersSchema,
   OrganizationSummarySchema,
   OrganizationContextSchema,
+  TeamSummarySchema,
+  TeamInputSchema,
   CreateOrganizationInputSchema,
   RenameOrganizationInputSchema,
   SelectOrganizationInputSchema,
   ProjectFolderSummarySchema,
   ProjectSummarySchema,
   ProjectStatusSummarySchema,
+  ProjectStatusInputSchema,
   ProjectCatalogSchema,
   ProjectFolderInputSchema,
   FolderOrderInputSchema,
