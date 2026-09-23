@@ -53,7 +53,7 @@ CREATE TABLE `__new_organizations` (
 INSERT INTO `__new_organizations`("id", "installation_id", "slug", "name", "created_by_user_id", "created_at", "updated_at", "archived_at", "deleted_at", "revision") SELECT "id", "installation_id", "slug", "name", "created_by_user_id", "created_at", "updated_at", "archived_at", "deleted_at", "revision" FROM `organizations`;--> statement-breakpoint
 DROP TABLE `organizations`;--> statement-breakpoint
 ALTER TABLE `__new_organizations` RENAME TO `organizations`;--> statement-breakpoint
-CREATE UNIQUE INDEX `organizations_installation_name_unique` ON `organizations` (`installation_id`,`lower("name")`);--> statement-breakpoint
+CREATE UNIQUE INDEX `organizations_installation_name_unique` ON `organizations` (`installation_id`,lower("name"));--> statement-breakpoint
 CREATE UNIQUE INDEX `organizations_installation_slug_unique` ON `organizations` (`installation_id`,`slug`);--> statement-breakpoint
 CREATE INDEX `organizations_installation_updated_idx` ON `organizations` (`installation_id`,`updated_at`);--> statement-breakpoint
 CREATE TABLE `__new_activity_entries` (
@@ -158,7 +158,7 @@ CREATE TABLE `__new_project_folders` (
 INSERT INTO `__new_project_folders`("id", "organization_id", "name", "position", "created_by_user_id", "created_at", "updated_at", "revision") SELECT "id", "organization_id", "name", "position", "created_by_user_id", "created_at", "updated_at", "revision" FROM `project_folders`;--> statement-breakpoint
 DROP TABLE `project_folders`;--> statement-breakpoint
 ALTER TABLE `__new_project_folders` RENAME TO `project_folders`;--> statement-breakpoint
-CREATE UNIQUE INDEX `project_folders_organization_name_unique` ON `project_folders` (`organization_id`,`lower("name")`);--> statement-breakpoint
+CREATE UNIQUE INDEX `project_folders_organization_name_unique` ON `project_folders` (`organization_id`,lower("name"));--> statement-breakpoint
 CREATE UNIQUE INDEX `project_folders_organization_position_unique` ON `project_folders` (`organization_id`,`position`);--> statement-breakpoint
 CREATE UNIQUE INDEX `project_folders_organization_id_unique` ON `project_folders` (`organization_id`,`id`);--> statement-breakpoint
 CREATE TABLE `__new_project_statuses` (
@@ -186,7 +186,7 @@ INSERT INTO `__new_project_statuses`("id", "organization_id", "project_id", "nam
 DROP TABLE `project_statuses`;--> statement-breakpoint
 ALTER TABLE `__new_project_statuses` RENAME TO `project_statuses`;--> statement-breakpoint
 CREATE UNIQUE INDEX `project_statuses_project_position_unique` ON `project_statuses` (`project_id`,`position`) WHERE "project_statuses"."archived_at" is null;--> statement-breakpoint
-CREATE UNIQUE INDEX `project_statuses_project_name_unique` ON `project_statuses` (`project_id`,`lower("name")`);--> statement-breakpoint
+CREATE UNIQUE INDEX `project_statuses_project_name_unique` ON `project_statuses` (`project_id`,lower("name"));--> statement-breakpoint
 CREATE UNIQUE INDEX `project_statuses_organization_project_id_unique` ON `project_statuses` (`organization_id`,`project_id`,`id`);--> statement-breakpoint
 CREATE INDEX `project_statuses_project_state_idx` ON `project_statuses` (`project_id`,`archived_at`);--> statement-breakpoint
 CREATE TABLE `__new_projects` (

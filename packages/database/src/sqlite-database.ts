@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import type { TransactionManager } from "@launchpp/core";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import type { TransactionManager } from "@launchpp/core";
 import { createReadContext, SqliteWriteContext } from "./context.js";
 import { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 import { databaseSchema } from "./schema.js";
@@ -14,9 +14,37 @@ export interface OpenSqliteDatabaseOptions {
   readonly migrationsFolder?: string;
 }
 
+interface ForeignKeyViolation {
+  readonly fkid: number;
+  readonly parent: string;
+  readonly rowid: number | null;
+  readonly table: string;
+}
+
 function configureConnection(connection: Database.Database, busyTimeoutMs: number): void {
   connection.pragma("foreign_keys = ON");
   connection.pragma(`busy_timeout = ${busyTimeoutMs}`);
+}
+
+function migrateConnection(connection: Database.Database, migrationsFolder: string): void {
+  const orm = drizzle(connection, { schema: databaseSchema });
+
+  // SQLite cannot change foreign-key enforcement from inside the transaction
+  // used by Drizzle's migrator. Schema migrations that rebuild referenced
+  // tables therefore need enforcement suspended before that transaction starts.
+  connection.pragma("foreign_keys = OFF");
+  try {
+    runMigrations(orm, migrationsFolder);
+
+    const violations = connection.pragma("foreign_key_check") as ForeignKeyViolation[];
+    if (violations.length > 0) {
+      throw new Error(
+        `Database migration produced ${violations.length} foreign-key violation${violations.length === 1 ? "" : "s"}`,
+      );
+    }
+  } finally {
+    connection.pragma("foreign_keys = ON");
+  }
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
@@ -104,8 +132,7 @@ export function openSqliteDatabase(options: OpenSqliteDatabaseOptions): SqliteDa
     }
     writer.pragma("synchronous = NORMAL");
 
-    const orm = drizzle(writer, { schema: databaseSchema });
-    runMigrations(orm, options.migrationsFolder ?? defaultMigrationsFolder);
+    migrateConnection(writer, options.migrationsFolder ?? defaultMigrationsFolder);
 
     reader = new Database(options.filePath, { fileMustExist: true, readonly: true });
     configureConnection(reader, busyTimeoutMs);
