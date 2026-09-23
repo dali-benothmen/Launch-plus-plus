@@ -1,4 +1,13 @@
 import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/api-client";
+import { move } from "@dnd-kit/helpers";
+import {
+  type DragEndEvent,
+  DragDropProvider,
+  type DragOverEvent,
+  DragOverlay,
+  useDroppable,
+} from "@dnd-kit/react";
+import { useSortable } from "@dnd-kit/react/sortable";
 import {
   Alert,
   Avatar,
@@ -24,9 +33,8 @@ import {
   Typography,
 } from "@launchpp/ui";
 import {
-  type DragEvent,
-  Fragment,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -59,6 +67,20 @@ interface TaskDraft {
   readonly dueDate: Date | null;
   readonly statusId: string;
   readonly title: string;
+}
+
+type TaskLayout = Record<string, string[]>;
+
+interface SortableShellProps {
+  readonly children: ReactNode;
+  readonly disabled: boolean;
+  readonly id: string;
+  readonly index: number;
+  readonly label: string;
+}
+
+interface SortableTaskShellProps extends SortableShellProps {
+  readonly group: string;
 }
 
 const taskPageSize = 50;
@@ -127,6 +149,106 @@ function taskError(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
+function dragLabel(data: Record<string, unknown>) {
+  const { label } = data;
+  return String(label ?? "");
+}
+
+function createTaskLayout(
+  statuses: readonly ProjectStatusSummary[],
+  tasks: readonly TaskView[],
+): TaskLayout {
+  return Object.fromEntries(
+    statuses.map((status) => [
+      status.id,
+      tasks
+        .filter(
+          (task) =>
+            task.statusId === status.id &&
+            task.archivedAt === undefined &&
+            task.parentTaskId === undefined,
+        )
+        .toSorted((first, second) => first.position - second.position)
+        .map((task) => task.id),
+    ]),
+  );
+}
+
+function SortableColumnShell({ children, disabled, id, index, label }: SortableShellProps) {
+  const sortable = useSortable({
+    accept: "column",
+    data: { kind: "column", label, statusId: id },
+    disabled,
+    id: `column:${id}`,
+    index,
+    transition: { duration: 200, easing: "cubic-bezier(0.25, 1, 0.5, 1)", idle: true },
+    type: "column",
+  });
+
+  return (
+    <Card
+      aria-label={`${label} tasks`}
+      className={`task-board-column${sortable.isDragging ? " is-column-dragging" : ""}`}
+      ref={sortable.ref}
+      role="listbox"
+      size="small"
+    >
+      <div className="task-board-column-content">{children}</div>
+    </Card>
+  );
+}
+
+function TaskDropZone({ children, statusId }: Readonly<{ children: ReactNode; statusId: string }>) {
+  const droppable = useDroppable({
+    accept: "task",
+    data: { statusId },
+    id: statusId,
+    type: "task-container",
+  });
+
+  return (
+    <div
+      className={`task-column-list${droppable.isDropTarget ? " is-drop-target" : ""}`}
+      ref={droppable.ref}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SortableTaskShell({
+  children,
+  disabled,
+  group,
+  id,
+  index,
+  label,
+}: SortableTaskShellProps) {
+  const sortable = useSortable({
+    accept: "task",
+    data: { kind: "task", label, taskId: id },
+    disabled,
+    group,
+    id,
+    index,
+    transition: { duration: 200, easing: "cubic-bezier(0.25, 1, 0.5, 1)", idle: true },
+    type: "task",
+  });
+
+  return (
+    <div
+      aria-label={`Move ${sortable.sortable.data.label}`}
+      aria-selected={false}
+      className={`task-card-shell${sortable.isDragging ? " is-dragging" : ""}`}
+      ref={sortable.ref}
+      role="option"
+      tabIndex={0}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function ProjectTaskOrganization({
   archived,
   currentUserId,
@@ -147,19 +269,10 @@ export function ProjectTaskOrganization({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<unknown>();
   const [movingTaskId, setMovingTaskId] = useState<string>();
-  const [draggedTaskId, setDraggedTaskId] = useState<string>();
-  const [dragTarget, setDragTarget] = useState<{
-    readonly beforeTaskId?: string;
-    readonly statusId: string;
-  }>();
   const [orderedStatusIds, setOrderedStatusIds] = useState<readonly string[]>(() =>
     statuses.map((status) => status.id),
   );
-  const [draggedStatusId, setDraggedStatusId] = useState<string>();
-  const [columnDropTarget, setColumnDropTarget] = useState<{
-    readonly edge: "after" | "before";
-    readonly statusId: string;
-  }>();
+  const [taskLayout, setTaskLayout] = useState<TaskLayout>(() => createTaskLayout(statuses, []));
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -177,6 +290,10 @@ export function ProjectTaskOrganization({
   const [columnError, setColumnError] = useState<unknown>();
   const [savingColumn, setSavingColumn] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
+  const taskLayoutRef = useRef(taskLayout);
+  const taskLayoutSnapshotRef = useRef(taskLayout);
+  const dragInProgressRef = useRef(false);
+  const draftRef = useRef(draft);
 
   const loadTasks = useCallback(
     async (cursor?: string, background = false) => {
@@ -213,8 +330,15 @@ export function ProjectTaskOrganization({
   }, [loadTasks]);
 
   useEffect(() => {
-    setOrderedStatusIds(statuses.map((status) => status.id));
+    if (!dragInProgressRef.current) setOrderedStatusIds(statuses.map((status) => status.id));
   }, [statuses]);
+
+  useEffect(() => {
+    if (dragInProgressRef.current) return;
+    const next = createTaskLayout(statuses, tasks);
+    taskLayoutRef.current = next;
+    setTaskLayout(next);
+  }, [statuses, tasks]);
 
   useEffect(() => {
     const reload = (event: Event) => {
@@ -262,14 +386,19 @@ export function ProjectTaskOrganization({
     setSaving(false);
   };
 
+  const updateDraft = (next: TaskDraft) => {
+    draftRef.current = next;
+    setDraft(next);
+  };
+
   const openCreate = (statusId = statuses[0]?.id ?? "") => {
-    setDraft({ description: "", dueDate: null, statusId, title: "" });
+    updateDraft({ description: "", dueDate: null, statusId, title: "" });
     setEditorError(undefined);
     setEditor({ kind: "create" });
   };
 
   const openEdit = (task: TaskView) => {
-    setDraft({
+    updateDraft({
       description: task.description,
       dueDate: dateFromKey(task.dueDate),
       statusId: task.statusId,
@@ -314,8 +443,6 @@ export function ProjectTaskOrganization({
       await loadTasks(undefined, true);
     } finally {
       setMovingTaskId(undefined);
-      setDraggedTaskId(undefined);
-      setDragTarget(undefined);
     }
   };
 
@@ -336,29 +463,15 @@ export function ProjectTaskOrganization({
     }
   };
 
-  const reorderColumns = async (targetStatusId: string, edge: "after" | "before") => {
-    if (!draggedStatusId || draggedStatusId === targetStatusId) {
-      setDraggedStatusId(undefined);
-      setColumnDropTarget(undefined);
-      return;
-    }
-    const snapshot = orderedStatusIds;
-    const next = snapshot.filter((id) => id !== draggedStatusId);
-    const targetIndex = next.indexOf(targetStatusId);
-    if (targetIndex < 0) return;
-    next.splice(targetIndex + (edge === "after" ? 1 : 0), 0, draggedStatusId);
-    setOrderedStatusIds(next);
-    setColumnDropTarget(undefined);
+  const persistColumnOrder = async (next: readonly string[], snapshot: readonly string[]) => {
     try {
       await api.projects.reorderStatuses(organizationId, projectId, {
-        orderedStatusIds: next,
+        orderedStatusIds: [...next],
       });
       window.dispatchEvent(new Event(projectNavigationChangedEvent));
     } catch (reason) {
       setOrderedStatusIds(snapshot);
       messageApi.error(taskError(reason, "Could not reorder the board columns."));
-    } finally {
-      setDraggedStatusId(undefined);
     }
   };
 
@@ -382,16 +495,18 @@ export function ProjectTaskOrganization({
   ];
 
   const saveTask = async () => {
-    if (!editor || saving || draft.title.trim().length === 0 || !draft.statusId) return;
+    const currentDraft = draftRef.current;
+    if (!editor || saving || currentDraft.title.trim().length === 0 || !currentDraft.statusId)
+      return;
     setSaving(true);
     setEditorError(undefined);
     if (editor.kind === "create") {
       try {
         const created = await api.tasks.create(organizationId, projectId, {
-          description: draft.description,
-          ...(draft.dueDate ? { dueDate: dateKey(draft.dueDate) } : {}),
-          statusId: draft.statusId,
-          title: draft.title,
+          description: currentDraft.description,
+          ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
+          statusId: currentDraft.statusId,
+          title: currentDraft.title,
         });
         setTasks((current) => [...current, created]);
         closeEditor();
@@ -405,12 +520,12 @@ export function ProjectTaskOrganization({
 
     const original = editor.task;
     const snapshot = tasks;
-    const optimistic = taskWithDraft(original, draft);
+    const optimistic = taskWithDraft(original, currentDraft);
     setTasks((current) => current.map((task) => (task.id === original.id ? optimistic : task)));
     try {
-      const nextDueDate = draft.dueDate ? dateKey(draft.dueDate) : undefined;
-      const nextTitle = draft.title.trim().replace(/\s+/g, " ");
-      const nextDescription = draft.description.trim();
+      const nextDueDate = currentDraft.dueDate ? dateKey(currentDraft.dueDate) : undefined;
+      const nextTitle = currentDraft.title.trim().replace(/\s+/g, " ");
+      const nextDescription = currentDraft.description.trim();
       const updates = {
         ...(nextTitle === original.title ? {} : { title: nextTitle }),
         ...(nextDescription === original.description ? {} : { description: nextDescription }),
@@ -466,64 +581,83 @@ export function ProjectTaskOrganization({
     const included = new Set(orderedStatusIds);
     return [...ordered, ...statuses.filter((status) => !included.has(status.id))];
   }, [orderedStatusIds, statusById, statuses]);
+
+  const visibleTaskById = useMemo(
+    () => new Map(visibleTasks.map((task) => [task.id, task])),
+    [visibleTasks],
+  );
+
+  const handleDragStart = () => {
+    dragInProgressRef.current = true;
+    taskLayoutSnapshotRef.current = taskLayoutRef.current;
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    if (event.operation.source?.type !== "task") return;
+    setTaskLayout((current) => {
+      const next = move(current, event);
+      taskLayoutRef.current = next;
+      return next;
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    dragInProgressRef.current = false;
+    const source = event.operation.source;
+    if (!source) return;
+
+    if (event.canceled || !event.operation.target) {
+      if (source.type === "task") {
+        taskLayoutRef.current = taskLayoutSnapshotRef.current;
+        setTaskLayout(taskLayoutSnapshotRef.current);
+      }
+      return;
+    }
+
+    if (source.type === "column") {
+      const snapshot = orderedStatusIds;
+      const next = move([...snapshot], event);
+      setOrderedStatusIds(next);
+      void persistColumnOrder(next, snapshot);
+      return;
+    }
+
+    if (source.type === "task") {
+      const taskId = String(source.id);
+      const destination = Object.entries(taskLayoutRef.current).find(([, ids]) =>
+        ids.includes(taskId),
+      );
+      const task = tasks.find((item) => item.id === taskId);
+      if (!destination || !task) return;
+      const [statusId, ids] = destination;
+      const taskIndex = ids.indexOf(taskId);
+      const beforeTaskId = ids[taskIndex + 1];
+      void moveTask(task, statusId, beforeTaskId);
+    }
+  };
+
   const board = (
     <>
       {loadWarning}
-      <div className="task-board-grid">
-        {boardStatuses.map((status) => {
-          const columnTasks = visibleTasks.filter((task) => task.statusId === status.id);
-          return (
-            <Card
-              aria-label={`${status.name} tasks`}
-              className={`task-board-column${
-                draggedStatusId === status.id ? " is-column-dragging" : ""
-              }${
-                columnDropTarget?.statusId === status.id
-                  ? ` is-column-drop-${columnDropTarget.edge}`
-                  : ""
-              }`}
-              draggable={!archived && draggedTaskId === undefined}
-              key={status.id}
-              onDragOver={(event) => {
-                event.preventDefault();
-                if (draggedStatusId) {
-                  const bounds = event.currentTarget.getBoundingClientRect();
-                  setColumnDropTarget({
-                    edge: event.clientX < bounds.left + bounds.width / 2 ? "before" : "after",
-                    statusId: status.id,
-                  });
-                } else if (draggedTaskId) {
-                  setDragTarget({ statusId: status.id });
-                }
-              }}
-              onDragEnd={() => {
-                setDraggedStatusId(undefined);
-                setColumnDropTarget(undefined);
-              }}
-              onDragStart={(event) => {
-                event.dataTransfer.effectAllowed = "move";
-                setDraggedStatusId(status.id);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                if (draggedStatusId) {
-                  const edge =
-                    columnDropTarget?.statusId === status.id ? columnDropTarget.edge : "before";
-                  void reorderColumns(status.id, edge);
-                  return;
-                }
-                const task = tasks.find((item) => item.id === draggedTaskId);
-                if (task) {
-                  const beforeTaskId =
-                    dragTarget?.statusId === status.id ? dragTarget.beforeTaskId : undefined;
-                  void moveTask(task, status.id, beforeTaskId);
-                }
-              }}
-              role="listbox"
-              size="small"
-              style={{ background: "var(--launch-color-bg-layout)" }}
-            >
-              <div className="task-board-column-content">
+      <DragDropProvider
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragStart={handleDragStart}
+      >
+        <div className="task-board-grid">
+          {boardStatuses.map((status, statusIndex) => {
+            const columnTasks = (taskLayout[status.id] ?? []).flatMap((id) => {
+              const task = visibleTaskById.get(id);
+              return task ? [task] : [];
+            });
+            return (
+              <SortableColumnShell
+                disabled={archived || movingTaskId !== undefined}
+                id={status.id}
+                index={statusIndex}
+                key={status.id}
+                label={status.name}
+              >
                 <header className="task-column-header">
                   <Typography.Text>{status.name}</Typography.Text>
                   <span className="task-column-count" style={{ backgroundColor: status.color }}>
@@ -538,122 +672,87 @@ export function ProjectTaskOrganization({
                     variant="text"
                   />
                 </header>
-                <div className="task-column-list">
-                  {columnTasks.map((task) => (
-                    <Fragment key={task.id}>
-                      {dragTarget?.statusId === status.id && dragTarget.beforeTaskId === task.id ? (
-                        <div aria-hidden className="task-drop-placeholder" />
-                      ) : null}
-                      <div
-                        aria-label={`Move ${task.title}`}
-                        aria-selected={false}
-                        className={`task-card-shell${
-                          draggedTaskId === task.id ? " is-dragging" : ""
-                        }`}
-                        draggable={!archived && movingTaskId === undefined}
-                        onDragEnd={() => {
-                          setDraggedTaskId(undefined);
-                          setDragTarget(undefined);
-                        }}
-                        onDragStart={(event: DragEvent<HTMLDivElement>) => {
-                          event.stopPropagation();
-                          event.dataTransfer.effectAllowed = "move";
-                          setDraggedTaskId(task.id);
-                        }}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          if (draggedTaskId) {
-                            setDragTarget({ beforeTaskId: task.id, statusId: status.id });
-                          }
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const dragged = tasks.find((item) => item.id === draggedTaskId);
-                          if (dragged && dragged.id !== task.id) {
-                            void moveTask(dragged, status.id, task.id);
-                          }
-                        }}
-                        role="option"
-                        tabIndex={0}
-                        title="Drag to reorder"
-                      >
-                        <Card size="small">
-                          <div className="task-card-content">
-                            <div className="task-card-heading">
+                <TaskDropZone statusId={status.id}>
+                  {columnTasks.map((task, taskIndex) => (
+                    <SortableTaskShell
+                      disabled={archived || movingTaskId !== undefined || Boolean(query)}
+                      group={status.id}
+                      id={task.id}
+                      index={taskIndex}
+                      key={task.id}
+                      label={task.title}
+                    >
+                      <Card className="task-card" size="small">
+                        <div className="task-card-content">
+                          <div className="task-card-heading">
+                            <Button
+                              className="task-title-button"
+                              onClick={(event) => openTask(task, event)}
+                              size="small"
+                              variant="link"
+                            >
+                              {task.title}
+                            </Button>
+                            <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
                               <Button
-                                className="task-title-button"
-                                onClick={(event) => openTask(task, event)}
+                                aria-label={`Actions for ${task.title}`}
+                                disabled={archived}
+                                icon={<MoreIcon />}
+                                iconOnly
                                 size="small"
-                                variant="link"
-                              >
-                                {task.title}
-                              </Button>
-                              <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
-                                <Button
-                                  aria-label={`Actions for ${task.title}`}
-                                  disabled={archived}
-                                  icon={<MoreIcon />}
-                                  iconOnly
-                                  size="small"
-                                  variant="text"
-                                />
-                              </Dropdown>
+                                variant="text"
+                              />
+                            </Dropdown>
+                          </div>
+                          {task.description ? (
+                            <Typography.Text className="task-card-description" type="secondary">
+                              {task.description}
+                            </Typography.Text>
+                          ) : null}
+                          <div className="task-card-status">
+                            <Typography.Text type="secondary">{status.name}</Typography.Text>
+                            <span
+                              aria-hidden
+                              className="task-status-line"
+                              style={{ backgroundColor: status.color }}
+                            />
+                          </div>
+                          {task.labels.length > 0 ? (
+                            <div className="task-card-meta">
+                              {task.labels.map((label) => (
+                                <Tag color={label.color} key={label.id}>
+                                  {label.name}
+                                </Tag>
+                              ))}
                             </div>
-                            {task.description ? (
-                              <Typography.Text className="task-card-description" type="secondary">
-                                {task.description}
+                          ) : null}
+                          <div className="task-assignees">
+                            <Typography.Text type="secondary">Assigned to</Typography.Text>
+                            {task.assigneeUserIds.length > 0 ? (
+                              <Avatar.Group max={{ count: 3 }} size="small">
+                                {task.assigneeUserIds.map((userId) => (
+                                  <Avatar key={userId}>
+                                    {userId === currentUserId ? "Me" : "M"}
+                                  </Avatar>
+                                ))}
+                              </Avatar.Group>
+                            ) : (
+                              <Typography.Text type="secondary">Unassigned</Typography.Text>
+                            )}
+                          </div>
+                          <div className="task-card-summary">
+                            <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                            {task.dueDate ? (
+                              <Typography.Text type="secondary">
+                                {formatDate(task.dueDate)}
                               </Typography.Text>
                             ) : null}
-                            <div className="task-card-status">
-                              <Typography.Text type="secondary">{status.name}</Typography.Text>
-                              <span
-                                aria-hidden
-                                className="task-status-line"
-                                style={{ backgroundColor: status.color }}
-                              />
-                            </div>
-                            {task.labels.length > 0 ? (
-                              <div className="task-card-meta">
-                                {task.labels.map((label) => (
-                                  <Tag color={label.color} key={label.id}>
-                                    {label.name}
-                                  </Tag>
-                                ))}
-                              </div>
-                            ) : null}
-                            <div className="task-assignees">
-                              <Typography.Text type="secondary">Assigned to</Typography.Text>
-                              {task.assigneeUserIds.length > 0 ? (
-                                <Avatar.Group max={{ count: 3 }} size="small">
-                                  {task.assigneeUserIds.map((userId) => (
-                                    <Avatar key={userId}>
-                                      {userId === currentUserId ? "Me" : "M"}
-                                    </Avatar>
-                                  ))}
-                                </Avatar.Group>
-                              ) : (
-                                <Typography.Text type="secondary">Unassigned</Typography.Text>
-                              )}
-                            </div>
-                            <div className="task-card-summary">
-                              <Typography.Text type="secondary">{task.reference}</Typography.Text>
-                              {task.dueDate ? (
-                                <Typography.Text type="secondary">
-                                  {formatDate(task.dueDate)}
-                                </Typography.Text>
-                              ) : null}
-                            </div>
                           </div>
-                        </Card>
-                      </div>
-                    </Fragment>
+                        </div>
+                      </Card>
+                    </SortableTaskShell>
                   ))}
-                  {dragTarget?.statusId === status.id && !dragTarget.beforeTaskId ? (
-                    <div aria-hidden className="task-drop-placeholder" />
-                  ) : null}
-                </div>
+                </TaskDropZone>
                 <Button
                   block
                   disabled={archived}
@@ -663,11 +762,27 @@ export function ProjectTaskOrganization({
                 >
                   Add task
                 </Button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </SortableColumnShell>
+            );
+          })}
+        </div>
+        <DragOverlay
+          className="board-drag-overlay"
+          dropAnimation={{ duration: 180, easing: "cubic-bezier(0.25, 1, 0.5, 1)" }}
+        >
+          {(source) =>
+            source.type === "column" ? (
+              <Card className="column-drag-preview" size="small">
+                <Typography.Text strong>{dragLabel(source.data)}</Typography.Text>
+              </Card>
+            ) : source.type === "task" ? (
+              <Card className="task-drag-preview" size="small">
+                <Typography.Text strong>{dragLabel(source.data)}</Typography.Text>
+              </Card>
+            ) : null
+          }
+        </DragOverlay>
+      </DragDropProvider>
       {loadMore}
     </>
   );
@@ -899,7 +1014,7 @@ export function ProjectTaskOrganization({
       <Modal
         confirmLoading={saving}
         destroyOnHidden
-        okButtonProps={{ disabled: draft.title.trim().length === 0 || !draft.statusId }}
+        okButtonProps={{ disabled: !draft.statusId }}
         okText={editor?.kind === "edit" ? "Save task" : "Create task"}
         onCancel={closeEditor}
         onOk={() => void saveTask()}
@@ -913,23 +1028,23 @@ export function ProjectTaskOrganization({
           <Form.Item label="Title" required>
             <Input
               autoFocus
+              defaultValue={draft.title}
               disabled={saving}
               maxLength={500}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, title: event.target.value }))
-              }
-              value={draft.title}
+              onChange={(event) => {
+                draftRef.current = { ...draftRef.current, title: event.target.value };
+              }}
             />
           </Form.Item>
           <Form.Item label="Description">
             <Input.TextArea
               autoSize={{ maxRows: 8, minRows: 3 }}
+              defaultValue={draft.description}
               disabled={saving}
               maxLength={100_000}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, description: event.target.value }))
-              }
-              value={draft.description}
+              onChange={(event) => {
+                draftRef.current = { ...draftRef.current, description: event.target.value };
+              }}
             />
           </Form.Item>
           {editor?.kind === "create" ? (
@@ -938,8 +1053,7 @@ export function ProjectTaskOrganization({
                 ariaLabel="Task status"
                 disabled={saving}
                 onChange={(value) =>
-                  typeof value === "string" &&
-                  setDraft((current) => ({ ...current, statusId: value }))
+                  typeof value === "string" && updateDraft({ ...draftRef.current, statusId: value })
                 }
                 options={statusOptions}
                 value={draft.statusId}
@@ -951,10 +1065,10 @@ export function ProjectTaskOrganization({
               allowClear
               disabled={saving}
               onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
+                updateDraft({
+                  ...draftRef.current,
                   dueDate: value instanceof Date ? value : null,
-                }))
+                })
               }
               value={draft.dueDate}
             />

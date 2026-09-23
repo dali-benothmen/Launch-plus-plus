@@ -569,7 +569,7 @@ export function ProjectOverviewPage() {
             <Typography.Title
               id="project-title"
               level={1}
-              style={{ fontSize: 15, lineHeight: "22px", margin: 0 }}
+              style={{ fontSize: 17, lineHeight: "24px", margin: 0 }}
             >
               {organizationName} - {project.name}
             </Typography.Title>

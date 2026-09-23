@@ -234,8 +234,13 @@ export function AppShell() {
                 }}
                 end={item.label !== "Organization"}
                 key={item.to}
-                onClick={() => {
-                  if (item.label === "Organization" && recentProject) openProject(recentProject);
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (item.label === "Organization" && recentProject) {
+                    openProject(recentProject);
+                    return;
+                  }
+                  navigate(item.to);
                 }}
                 to={destination}
               >
@@ -308,7 +313,6 @@ export function AppShell() {
               </NavLink>
             ))}
             <Button
-              block
               className="sidebar-create-button"
               disabled={!organizationId}
               onClick={() => setProjectModalOpen(true)}
@@ -332,7 +336,6 @@ export function AppShell() {
               </div>
             ))}
             <Button
-              block
               className="sidebar-create-button"
               disabled={!organizationId}
               onClick={() => setTeamModalOpen(true)}
