@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch ./dist/main.js",
+    "dev": "node --watch-path=./dist --watch-path=../../packages/database/migrations ./dist/main.js",
     "start": "node ./dist/main.js"
   },
   "dependencies": {
