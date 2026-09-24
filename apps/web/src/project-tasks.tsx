@@ -44,9 +44,9 @@ import {
 } from "@launchpp/ui";
 import {
   CommentOutlined,
-  FileTextOutlined,
-  FlagOutlined,
+  PaperClipOutlined,
   UploadOutlined,
+  UserOutlined,
 } from "@launchpp/ui/icons";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -106,22 +106,11 @@ const emptyColumnStyles = {
   root: { margin: "0 0 6px" },
 } as const;
 const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 11 } as const;
-const taskCardAssigneeStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 11 } as const;
-const taskCardDateStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 11 } as const;
 const taskPriorityOptions = [
   { label: <Tag color="green">Low</Tag>, value: "low" },
   { label: <Tag color="orange">Medium</Tag>, value: "medium" },
   { label: <Tag color="red">High</Tag>, value: "high" },
 ] as const;
-const taskPriorityPresentation: Record<
-  TaskPriority,
-  Readonly<{ color: "blue" | "orange" | "red"; label: string }>
-> = {
-  high: { color: "red", label: "High" },
-  low: { color: "blue", label: "Low" },
-  medium: { color: "orange", label: "Medium" },
-};
-
 const fallbackStatusColors = [
   "#faad14",
   "#1677ff",
@@ -969,10 +958,24 @@ export function ProjectTaskOrganization({
                               </Typography.Text>
                             ) : null}
                           </div>
-                          <div className="task-assignees">
-                            <Typography.Text style={taskCardAssigneeStyle} type="secondary">
-                              Assignees:
-                            </Typography.Text>
+                          <div className="task-card-summary">
+                            <div className="task-card-metrics">
+                              <span
+                                aria-label={`${task.commentCount} comments`}
+                                className="task-card-metric"
+                                title="Comments"
+                              >
+                                <CommentOutlined aria-hidden />
+                                {task.commentCount}
+                              </span>
+                              <span
+                                aria-label="0 attachments"
+                                className="task-card-metric"
+                                title="Attachments"
+                              >
+                                <PaperClipOutlined aria-hidden />0
+                              </span>
+                            </div>
                             {task.assigneeUserIds.length > 0 ? (
                               <Avatar.Group max={{ count: 3 }} size={20}>
                                 {task.assigneeUserIds.map((userId) => (
@@ -984,45 +987,17 @@ export function ProjectTaskOrganization({
                                 ))}
                               </Avatar.Group>
                             ) : (
-                              <Typography.Text style={taskCardDescriptionStyle} type="secondary">
-                                Unassigned
-                              </Typography.Text>
+                              <Button
+                                aria-label="No assignee"
+                                className="task-card-unassigned"
+                                disabled
+                                icon={<UserOutlined />}
+                                iconOnly
+                                shape="circle"
+                                size="small"
+                                variant="dashed"
+                              />
                             )}
-                          </div>
-                          <div className="task-card-details">
-                            {task.dueDate ? (
-                              <span className="task-card-due">
-                                <FlagOutlined aria-hidden />
-                                <Typography.Text style={taskCardDateStyle} type="secondary">
-                                  {formatDate(task.dueDate)}
-                                </Typography.Text>
-                              </span>
-                            ) : (
-                              <span />
-                            )}
-                            <Tag
-                              className="task-card-priority"
-                              color={taskPriorityPresentation[task.priority].color}
-                            >
-                              {taskPriorityPresentation[task.priority].label}
-                            </Tag>
-                          </div>
-                          <div className="task-card-footer">
-                            <span
-                              aria-label={`${task.commentCount} comments`}
-                              className="task-card-metric"
-                              title="Comments"
-                            >
-                              <CommentOutlined aria-hidden />
-                              {task.commentCount}
-                            </span>
-                            <span
-                              aria-label="0 attached documents"
-                              className="task-card-metric"
-                              title="Attached documents"
-                            >
-                              <FileTextOutlined aria-hidden />0
-                            </span>
                           </div>
                         </div>
                       </Card>
