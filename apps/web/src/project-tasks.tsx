@@ -36,6 +36,7 @@ import {
   Spin,
   Table,
   type TableColumn,
+  Tabs,
   Tag,
   Typography,
   Upload,
@@ -1234,32 +1235,36 @@ export function ProjectTaskOrganization({
       {messageHolder}
       {actionsContainer ? createPortal(actionButtons, actionsContainer) : null}
       <div className="task-view-toolbar">
-        <nav aria-label="Project views" className="project-view-switcher">
-          <Button
-            aria-current={view === "board" ? "page" : undefined}
-            className={
-              view === "board" ? "project-view-button is-active" : "project-view-button"
-            }
-            icon={<BoardIcon aria-hidden />}
-            onClick={() => navigateToView("board")}
-            size="small"
-            variant="text"
-          >
-            Board view
-          </Button>
-          <Button
-            aria-current={view === "list" ? "page" : undefined}
-            className={
-              view === "list" ? "project-view-button is-active" : "project-view-button"
-            }
-            icon={<ListIcon aria-hidden />}
-            onClick={() => navigateToView("list")}
-            size="small"
-            variant="text"
-          >
-            List view
-          </Button>
-        </nav>
+        <Tabs
+          activeKey={view}
+          ariaLabel="Project views"
+          className="project-tabs"
+          classNames={{ body: "project-tabs-empty-body" }}
+          items={[
+            {
+              key: "board",
+              label: (
+                <span className="view-tab-label">
+                  <BoardIcon aria-hidden />
+                  Board view
+                </span>
+              ),
+            },
+            {
+              key: "list",
+              label: (
+                <span className="view-tab-label">
+                  <ListIcon aria-hidden />
+                  List view
+                </span>
+              ),
+            },
+          ]}
+          onChange={(nextView) => {
+            if (nextView === "board" || nextView === "list") navigateToView(nextView);
+          }}
+          size="small"
+        />
       </div>
       <div className="task-view-content">{content ?? (view === "board" ? board : list)}</div>
 
