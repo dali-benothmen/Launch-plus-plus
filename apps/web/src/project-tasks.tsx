@@ -1215,6 +1215,7 @@ export function ProjectTaskOrganization({
               }}
               placeholder="What needs to be done?"
               size="large"
+              styles={{ input: { fontSize: 13 }, root: { fontSize: 13 } }}
             />
           </Form.Item>
           <Form.Item
@@ -1280,6 +1281,10 @@ export function ProjectTaskOrganization({
                 options={teamOptions}
                 placeholder={teamOptions.length > 0 ? "Select team" : "No teams yet"}
                 size="large"
+                styles={{
+                  root: { fontSize: 13 },
+                  selector: { fontSize: 13, lineHeight: "20px" },
+                }}
                 value={draft.teamId}
               />
             </Form.Item>
