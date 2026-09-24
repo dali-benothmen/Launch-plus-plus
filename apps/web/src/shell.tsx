@@ -60,6 +60,14 @@ function headerTitle(pathname: string) {
   return "Home";
 }
 
+function globalLinkIsActive(label: (typeof globalLinks)[number]["label"], pathname: string) {
+  if (label === "Home") return pathname === "/app";
+  if (label === "Organization") {
+    return pathname === "/app/projects" || pathname.startsWith("/app/organizations/");
+  }
+  return pathname === "/app/plugins";
+}
+
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -150,7 +158,7 @@ export function AppShell() {
   );
   const organizationTarget = recentProject
     ? `/app/organizations/${recentProject.organizationId}/projects/${recentProject.id}/board`
-    : "/app";
+    : "/app/projects";
   const notificationItems: readonly DropdownMenuItem[] = [
     { disabled: true, key: "empty", label: "You have no new notifications" },
   ];
@@ -226,21 +234,14 @@ export function AppShell() {
             return (
               <NavLink
                 aria-label={item.label}
-                className={({ isActive }) => {
-                  const organizationActive =
-                    item.label === "Organization" &&
-                    location.pathname.startsWith("/app/organizations/");
-                  return `rail-link${isActive || organizationActive ? " is-active" : ""}`;
-                }}
+                className={`rail-link${globalLinkIsActive(item.label, location.pathname) ? " is-active" : ""}`}
                 end={item.label !== "Organization"}
                 key={item.to}
                 onClick={(event) => {
-                  event.preventDefault();
                   if (item.label === "Organization" && recentProject) {
+                    event.preventDefault();
                     openProject(recentProject);
-                    return;
                   }
-                  navigate(item.to);
                 }}
                 to={destination}
               >

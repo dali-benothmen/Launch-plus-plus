@@ -8,6 +8,7 @@ import {
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
+  AddIcon,
   Alert,
   Avatar,
   BoardIcon,
@@ -784,7 +785,9 @@ export function ProjectTaskOrganization({
                 <Button
                   block
                   disabled={archived}
+                  className="task-add-button"
                   onClick={() => openCreate(status.id)}
+                  icon={<AddIcon aria-hidden />}
                   size="small"
                   variant="dashed"
                 >

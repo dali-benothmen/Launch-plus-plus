@@ -624,6 +624,10 @@
   font-size: 9px;
 }
 
+.task-add-button {
+  min-height: 30px;
+}
+
 .task-column-list,
 .task-card-content {
   display: grid;
