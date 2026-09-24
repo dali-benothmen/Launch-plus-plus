@@ -461,9 +461,34 @@
   color: rgb(0 0 0 / 45%);
 }
 
+.task-view-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--launch-color-border-secondary);
+}
+
+.task-view-toolbar .project-tabs {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .project-tabs {
   --launch-ui-primary: var(--launch-color-text);
   --launch-ui-primary-hover: var(--launch-color-text);
+}
+
+.project-tabs .launch-ui-tabs-list {
+  border-bottom: 0;
+}
+
+.project-tabs-empty-body {
+  display: none;
+}
+
+.task-view-content {
+  padding-top: 16px;
 }
 
 .project-title-row,

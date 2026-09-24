@@ -1207,55 +1207,55 @@ export function ProjectTaskOrganization({
   return (
     <>
       {messageHolder}
-      <Tabs
-        activeKey={view}
-        ariaLabel="Project views"
-        className="project-tabs"
-        items={[
-          {
-            children: content ?? board,
-            key: "board",
-            label: (
-              <span className="view-tab-label">
-                <BoardIcon aria-hidden />
-                Board view
-              </span>
-            ),
-          },
-          {
-            children: content ?? list,
-            key: "list",
-            label: (
-              <span className="view-tab-label">
-                <ListIcon aria-hidden />
-                List view
-              </span>
-            ),
-          },
-        ]}
-        onChange={(nextView) => {
-          const parameters = searchParams.toString();
-          navigate(
-            `/app/organizations/${organizationId}/projects/${projectId}/${nextView}${parameters ? `?${parameters}` : ""}`,
-          );
-        }}
-        size="small"
-        tabBarExtraContent={
-          <div className="task-header-actions">
-            <Button onClick={() => setColumnModalOpen(true)} size="small">
-              + Add column
-            </Button>
-            <Button
-              disabled={displayStatuses.length === 0}
-              onClick={() => openCreate()}
-              size="small"
-              variant="primary"
-            >
-              + New task
-            </Button>
-          </div>
-        }
-      />
+      <div className="task-view-toolbar">
+        <Tabs
+          activeKey={view}
+          ariaLabel="Project views"
+          className="project-tabs"
+          classNames={{ body: "project-tabs-empty-body" }}
+          items={[
+            {
+              key: "board",
+              label: (
+                <span className="view-tab-label">
+                  <BoardIcon aria-hidden />
+                  Board view
+                </span>
+              ),
+            },
+            {
+              key: "list",
+              label: (
+                <span className="view-tab-label">
+                  <ListIcon aria-hidden />
+                  List view
+                </span>
+              ),
+            },
+          ]}
+          onChange={(nextView) => {
+            const parameters = searchParams.toString();
+            navigate(
+              `/app/organizations/${organizationId}/projects/${projectId}/${nextView}${parameters ? `?${parameters}` : ""}`,
+            );
+          }}
+          size="small"
+        />
+        <div className="task-header-actions">
+          <Button onClick={() => setColumnModalOpen(true)} size="small">
+            + Add column
+          </Button>
+          <Button
+            disabled={displayStatuses.length === 0}
+            onClick={() => openCreate()}
+            size="small"
+            variant="primary"
+          >
+            + New task
+          </Button>
+        </div>
+      </div>
+      <div className="task-view-content">{content ?? (view === "board" ? board : list)}</div>
 
       <Modal
         confirmLoading={savingColumn}
