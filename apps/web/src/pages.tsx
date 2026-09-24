@@ -448,6 +448,7 @@ export function ProjectOverviewPage() {
   const [organizationName, setOrganizationName] = useState("Organization");
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [taskActionsContainer, setTaskActionsContainer] = useState<HTMLDivElement | null>(null);
   const [messageApi, messageHolder] = message.useMessage();
 
   const loadProject = useCallback(() => {
@@ -581,6 +582,7 @@ export function ProjectOverviewPage() {
           </Typography.Text>
         </div>
         <div className="project-member-actions">
+          <div className="project-task-actions-host" ref={setTaskActionsContainer} />
           <Button disabled size="small" title="Activity is coming with collaboration">
             Activity
           </Button>
@@ -603,6 +605,7 @@ export function ProjectOverviewPage() {
       ) : null}
       <ProjectTaskOrganization
         archived={project.archivedAt !== undefined}
+        actionsContainer={taskActionsContainer}
         currentUserId={memberId}
         currentUserName={memberName}
         projectId={project.id}

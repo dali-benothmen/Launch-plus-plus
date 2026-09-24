@@ -464,7 +464,7 @@
 .task-view-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   border-bottom: 1px solid var(--launch-color-border-secondary);
 }
@@ -521,6 +521,10 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.project-task-actions-host {
+  display: contents;
 }
 
 .home-empty-card {

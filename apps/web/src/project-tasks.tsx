@@ -49,6 +49,7 @@ import {
   UserOutlined,
 } from "@launchpp/ui/icons";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
@@ -58,6 +59,7 @@ import { TaskDetailPanel } from "./task-detail.js";
 type ProjectView = "board" | "list";
 
 interface ProjectTaskOrganizationProps {
+  readonly actionsContainer?: HTMLElement | null | undefined;
   readonly archived: boolean;
   readonly currentUserId: string;
   readonly currentUserName: string;
@@ -345,6 +347,7 @@ function SortableTaskShell({
 }
 
 export function ProjectTaskOrganization({
+  actionsContainer,
   archived,
   currentUserId,
   currentUserName,
@@ -1215,9 +1218,21 @@ export function ProjectTaskOrganization({
     );
   };
 
+  const actionButtons = (
+    <div className="task-header-actions">
+      <Button onClick={openColumnEditor} size="small">
+        + Add column
+      </Button>
+      <Button onClick={() => openCreate()} size="small" variant="primary">
+        + New task
+      </Button>
+    </div>
+  );
+
   return (
     <>
       {messageHolder}
+      {actionsContainer ? createPortal(actionButtons, actionsContainer) : null}
       <div className="task-view-toolbar">
         <nav aria-label="Project views" className="project-view-switcher">
           <Button
@@ -1245,14 +1260,6 @@ export function ProjectTaskOrganization({
             List view
           </Button>
         </nav>
-        <div className="task-header-actions">
-          <Button onClick={openColumnEditor} size="small">
-            + Add column
-          </Button>
-          <Button onClick={() => openCreate()} size="small" variant="primary">
-            + New task
-          </Button>
-        </div>
       </div>
       <div className="task-view-content">{content ?? (view === "board" ? board : list)}</div>
 
