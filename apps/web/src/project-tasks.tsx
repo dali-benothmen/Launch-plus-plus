@@ -420,6 +420,8 @@ export function ProjectTaskOrganization({
   const [deleteError, setDeleteError] = useState<unknown>();
   const [deleting, setDeleting] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
+  const pendingTaskMenuOpenRef = useRef<TaskView>();
+  const suppressTaskCardOpenRef = useRef(false);
   const taskLayoutRef = useRef(taskLayout);
   const taskLayoutSnapshotRef = useRef(taskLayout);
   const dragInProgressRef = useRef(false);
@@ -725,13 +727,29 @@ export function ProjectTaskOrganization({
     },
   ];
 
+  const suppressTaskCardOpen = () => {
+    suppressTaskCardOpenRef.current = true;
+    window.setTimeout(() => {
+      suppressTaskCardOpenRef.current = false;
+    }, 0);
+  };
+
+  const handleTaskMenuOpenChange = (open: boolean) => {
+    if (open) return;
+    const pendingTask = pendingTaskMenuOpenRef.current;
+    if (!pendingTask) return;
+    pendingTaskMenuOpenRef.current = undefined;
+    window.setTimeout(() => openTask(pendingTask), 0);
+  };
+
   const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
     {
       key: "edit",
       label: "Edit task",
       onClick: ({ domEvent }) => {
         domEvent.stopPropagation();
-        window.requestAnimationFrame(() => openTask(task));
+        suppressTaskCardOpen();
+        pendingTaskMenuOpenRef.current = task;
       },
     },
     {
@@ -742,6 +760,7 @@ export function ProjectTaskOrganization({
           label: status.name,
           onClick: ({ domEvent }) => {
             domEvent.stopPropagation();
+            suppressTaskCardOpen();
             void moveTask(task, status.id);
           },
         })),
@@ -755,6 +774,7 @@ export function ProjectTaskOrganization({
       label: "Delete task",
       onClick: ({ domEvent }) => {
         domEvent.stopPropagation();
+        suppressTaskCardOpen();
         setDeleteError(undefined);
         setDeleteTarget({ kind: "task", task });
       },
@@ -959,7 +979,10 @@ export function ProjectTaskOrganization({
                       index={taskIndex}
                       key={task.id}
                       label={task.title}
-                      onOpen={(opener) => openTask(task, opener)}
+                      onOpen={(opener) => {
+                        if (suppressTaskCardOpenRef.current) return;
+                        openTask(task, opener);
+                      }}
                     >
                       <Card className="task-card" size="small">
                         <div className="task-card-content">
@@ -980,6 +1003,7 @@ export function ProjectTaskOrganization({
                             <Dropdown
                               destroyOnHidden
                               menu={{ items: taskMenu(task) }}
+                              onOpenChange={handleTaskMenuOpenChange}
                               trigger={["click"]}
                             >
                               <Button
@@ -1134,7 +1158,12 @@ export function ProjectTaskOrganization({
     {
       key: "actions",
       render: (_value, task) => (
-        <Dropdown destroyOnHidden menu={{ items: taskMenu(task) }} trigger={["click"]}>
+        <Dropdown
+          destroyOnHidden
+          menu={{ items: taskMenu(task) }}
+          onOpenChange={handleTaskMenuOpenChange}
+          trigger={["click"]}
+        >
           <Button
             aria-label={`Actions for ${task.title}`}
             disabled={archived}
