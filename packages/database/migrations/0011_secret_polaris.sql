@@ -45,4 +45,4 @@ CREATE UNIQUE INDEX `tasks_project_scope_position_unique` ON `tasks` (`project_i
 CREATE INDEX `tasks_project_status_position_idx` ON `tasks` (`project_id`,`status_id`,`parent_task_id`,`position`);--> statement-breakpoint
 CREATE INDEX `tasks_project_updated_idx` ON `tasks` (`project_id`,`updated_at`);--> statement-breakpoint
 CREATE INDEX `tasks_parent_idx` ON `tasks` (`parent_task_id`,`archived_at`);--> statement-breakpoint
-CREATE INDEX `tasks_due_date_idx` ON `tasks` (`organization_id`,`due_date`);--> statement-breakpoint
+CREATE INDEX `tasks_due_date_idx` ON `tasks` (`organization_id`,`due_date`);
