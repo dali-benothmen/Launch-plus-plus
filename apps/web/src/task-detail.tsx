@@ -37,6 +37,7 @@ import {
   FlagOutlined,
   FileTextOutlined,
   PaperClipOutlined,
+  SendOutlined,
   TeamOutlined,
   UserAddOutlined,
   UserOutlined,
@@ -909,54 +910,78 @@ export function TaskDetailPanel({
             ),
             children: (
               <section className="task-detail-tab-panel" aria-label="Comments">
-                <Typography.Text strong>Comments</Typography.Text>
+                {!archived ? (
+                  <div className="task-detail-comment-form">
+                    <Input
+                      maxLength={20_000}
+                      onChange={(event) => setComment(event.target.value)}
+                      onPressEnter={() => void createComment()}
+                      placeholder="Type comment"
+                      suffix={
+                        <Space size={2}>
+                          <Upload<TaskDetail>
+                            beforeUpload={(file) => {
+                              if (file.size <= maximumAttachmentBytes) return true;
+                              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+                              return Upload.LIST_IGNORE;
+                            }}
+                            customRequest={uploadAttachment}
+                            fileList={attachmentFiles}
+                            maxCount={100}
+                            multiple
+                            onChange={({ fileList }) => setAttachmentFiles(fileList)}
+                            showUploadList={false}
+                          >
+                            <Button
+                              aria-label="Attach file to task"
+                              icon={<PaperClipOutlined />}
+                              iconOnly
+                              size="small"
+                              variant="text"
+                            />
+                          </Upload>
+                          <Button
+                            aria-label="Send comment"
+                            disabled={comment.trim().length === 0}
+                            icon={<SendOutlined />}
+                            iconOnly
+                            loading={postingComment}
+                            onClick={() => void createComment()}
+                            size="small"
+                            variant="text"
+                          />
+                        </Space>
+                      }
+                      value={comment}
+                    />
+                  </div>
+                ) : null}
                 {detail.comments.length > 0 ? (
                   <div className="task-detail-comment-list">
                     {detail.comments.map((item) => (
                       <article className="task-detail-comment" key={item.id}>
-                        <Avatar size={24}>
-                          {item.authorUserId === currentUserId
-                            ? currentUserName.slice(0, 1).toUpperCase()
-                            : "M"}
-                        </Avatar>
-                        <div>
-                          <div className="task-detail-comment-meta">
-                            <Typography.Text strong>
-                              {item.authorUserId === currentUserId
-                                ? currentUserName
-                                : "Organization member"}
-                            </Typography.Text>
-                            <Typography.Text type="secondary">
-                              {detailDateTime.format(new Date(item.createdAt))}
-                            </Typography.Text>
-                          </div>
-                          <Typography.Paragraph>{item.body}</Typography.Paragraph>
+                        <div className="task-detail-comment-meta">
+                          <Avatar size={20}>
+                            {item.authorUserId === currentUserId
+                              ? currentUserName.slice(0, 1).toUpperCase()
+                              : "M"}
+                          </Avatar>
+                          <Typography.Text strong>
+                            {item.authorUserId === currentUserId
+                              ? currentUserName
+                              : "Organization member"}
+                          </Typography.Text>
+                          <Typography.Text className="task-detail-comment-date" type="secondary">
+                            {detailDateTime.format(new Date(item.createdAt))}
+                          </Typography.Text>
                         </div>
+                        <Typography.Paragraph>{item.body}</Typography.Paragraph>
                       </article>
                     ))}
                   </div>
                 ) : (
                   <Empty description="No comments yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 )}
-                {!archived ? (
-                  <div className="task-detail-comment-form">
-                    <Input.TextArea
-                      autoSize={{ maxRows: 6, minRows: 2 }}
-                      maxLength={20_000}
-                      onChange={(event) => setComment(event.target.value)}
-                      placeholder="Write a comment"
-                      value={comment}
-                    />
-                    <Button
-                      disabled={comment.trim().length === 0}
-                      loading={postingComment}
-                      onClick={() => void createComment()}
-                      variant="primary"
-                    >
-                      Send
-                    </Button>
-                  </div>
-                ) : null}
               </section>
             ),
           },
