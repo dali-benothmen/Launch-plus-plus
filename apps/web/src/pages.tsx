@@ -564,7 +564,12 @@ export function ProjectOverviewPage() {
   ];
 
   return (
-    <section aria-labelledby="project-title" className="page-stack project-workspace">
+    <section
+      aria-labelledby="project-title"
+      className={
+        "page-stack project-workspace" + (activeView === "board" ? " is-board-view" : "")
+      }
+    >
       {messageHolder}
       <header className="project-page-header">
         <div className="project-heading">
@@ -577,7 +582,7 @@ export function ProjectOverviewPage() {
               {organizationName} - {project.name}
             </Typography.Title>
           </div>
-          <Typography.Text className="project-description" type="secondary">
+          <Typography.Text className="project-description">
             {project.description || "Manage tasks, ownership, and progress for this project."}
           </Typography.Text>
         </div>

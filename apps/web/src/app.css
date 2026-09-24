@@ -410,6 +410,19 @@
   max-width: none;
 }
 
+.project-workspace.is-board-view {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project-workspace.is-board-view .project-page-header,
+.project-workspace.is-board-view .task-view-toolbar {
+  flex: 0 0 auto;
+}
+
 .page-loading {
   display: grid;
   min-height: 240px;
@@ -458,7 +471,7 @@
 }
 
 .project-description {
-  color: rgb(0 0 0 / 45%);
+  color: var(--launch-color-text-muted);
 }
 
 .task-view-toolbar {
@@ -493,6 +506,14 @@
 
 .task-view-content {
   padding-top: 16px;
+}
+
+.task-view-content.is-board {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .project-title-row,
@@ -638,8 +659,11 @@
 
 .task-board-grid {
   display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
   overflow-x: auto;
-  align-items: start;
+  overflow-y: hidden;
+  align-items: stretch;
   grid-auto-columns: minmax(180px, 1fr);
   grid-auto-flow: column;
   gap: 10px;
@@ -648,7 +672,11 @@
 
 .launch-ui-card.task-board-column {
   position: relative;
+  display: grid;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
   background: #f6f8fa;
   cursor: grab;
   transition:
@@ -658,6 +686,9 @@
 
 .task-board-column-content {
   display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -700,17 +731,26 @@
 }
 
 .task-column-list {
+  min-height: 0;
+  overflow-y: auto;
   align-content: start;
   border: 1px dashed transparent;
   border-radius: var(--launch-radius-lg);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   transition:
     border-color 180ms cubic-bezier(0.215, 0.61, 0.355, 1),
     background-color 180ms cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 .task-column-list.is-empty {
-  min-height: 34px;
-  place-content: center;
+  min-height: 40px;
+  overflow-y: hidden;
+  align-content: start;
+}
+
+.launch-ui-button.empty-column-add-task {
+  background: transparent;
 }
 
 .task-column-list.is-drop-target {

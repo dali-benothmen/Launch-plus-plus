@@ -104,10 +104,6 @@ interface SortableTaskShellProps extends SortableShellProps {
 
 const taskPageSize = 50;
 const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
-const emptyColumnStyles = {
-  description: { color: "rgb(0 0 0 / 45%)" },
-  root: { margin: "0 0 6px" },
-} as const;
 const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 13 } as const;
 const taskPriorityOptions = [
   { label: <Tag color="green">Low</Tag>, value: "low" },
@@ -262,12 +258,16 @@ function SortableColumnShell({ children, disabled, id, index, label }: SortableS
 
 function TaskDropZone({
   children,
+  disabled,
   empty,
+  onAdd,
   placeholderHeight,
   statusId,
 }: Readonly<{
   children: ReactNode;
+  disabled: boolean;
   empty: boolean;
+  onAdd: () => void;
   placeholderHeight?: number | undefined;
   statusId: string;
 }>) {
@@ -281,7 +281,11 @@ function TaskDropZone({
 
   return (
     <div
-      className={`task-column-list${empty ? " is-empty" : ""}${droppable.isDropTarget ? " is-drop-target" : ""}`}
+      className={
+        "task-column-list" +
+        (empty ? " is-empty" : "") +
+        (droppable.isDropTarget ? " is-drop-target" : "")
+      }
       ref={droppable.ref}
       style={
         droppable.isDropTarget && placeholderHeight !== undefined
@@ -294,11 +298,21 @@ function TaskDropZone({
         droppable.isDropTarget ? (
           <span className="task-column-drop-label">Drop task here</span>
         ) : (
-          <Empty
-            description="No tasks"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            styles={emptyColumnStyles}
-          />
+          <Button
+            block
+            className="empty-column-add-task"
+            disabled={disabled}
+            icon={<AddIcon aria-hidden />}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAdd();
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+            size="large"
+            variant="dashed"
+          >
+            Add task
+          </Button>
         )
       ) : null}
     </div>
@@ -927,7 +941,9 @@ export function ProjectTaskOrganization({
                   </div>
                 </header>
                 <TaskDropZone
+                  disabled={archived}
                   empty={columnTasks.length === 0}
+                  onAdd={() => openCreate(status.id)}
                   placeholderHeight={draggedTaskHeight}
                   statusId={status.id}
                 >
@@ -1263,10 +1279,12 @@ export function ProjectTaskOrganization({
           onChange={(nextView) => {
             if (nextView === "board" || nextView === "list") navigateToView(nextView);
           }}
-          size="small"
+      <div className={"task-view-content is-" + view}>
+        {content ?? (view === "board" ? board : list)}
+      </div>
         />
       </div>
-      <div className="task-view-content">{content ?? (view === "board" ? board : list)}</div>
+      <div className={"task-view-content is-" + view}>{content ?? (view === "board" ? board : list)}</div>
 
       <Modal
         confirmLoading={savingColumn}
