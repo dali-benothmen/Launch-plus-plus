@@ -157,10 +157,6 @@ function formatDate(value: number | string) {
   return date ? shortDate.format(date) : String(value);
 }
 
-function truncateDescription(value: string) {
-  return value.length > 118 ? `${value.slice(0, 118).trimEnd()}...` : value;
-}
-
 function optimisticallyMove(
   tasks: readonly TaskView[],
   taskId: string,
@@ -966,13 +962,14 @@ export function ProjectTaskOrganization({
                               {task.title}
                             </Typography.Text>
                             {task.description ? (
-                              <Typography.Text
+                              <Typography.Paragraph
                                 className="task-card-description"
+                                ellipsis={{ rows: 2 }}
                                 style={taskCardDescriptionStyle}
                                 type="secondary"
                               >
-                                {truncateDescription(task.description)}
-                              </Typography.Text>
+                                {task.description}
+                              </Typography.Paragraph>
                             ) : null}
                           </div>
                           <div className="task-card-labels">
