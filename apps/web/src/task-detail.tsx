@@ -76,6 +76,7 @@ interface DetailDraft {
   readonly title: string;
 }
 
+const detailDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 const detailDateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
@@ -183,8 +184,7 @@ export function TaskDetailPanel({
   const [creatingSubtask, setCreatingSubtask] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [editingDescription, setEditingDescription] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [attachmentFiles, setAttachmentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
 
   const load = useCallback(async () => {
@@ -209,8 +209,7 @@ export function TaskDetailPanel({
     setDetail(undefined);
     setDraft(undefined);
     setAttachmentFiles([]);
-    setEditingTitle(false);
-    setEditingDescription(false);
+    setEditing(false);
     setSaveError(undefined);
     setComment("");
     setSubtaskTitle("");
@@ -288,8 +287,12 @@ export function TaskDetailPanel({
     }));
   }, [currentUserId, currentUserName, draft?.assigneeUserIds]);
 
-  const save = async (nextDraft: DetailDraft) => {
-    if (!detail || saving || archived || nextDraft.title.trim().length === 0) return;
+  const save = async (nextDraft: DetailDraft): Promise<boolean> => {
+    if (!detail || saving || archived) return false;
+    if (nextDraft.title.trim().length === 0) {
+      setSaveError(new TypeError("A task title is required."));
+      return false;
+    }
     setSaving(true);
     setSaveError(undefined);
     let task = detail.task;
@@ -331,17 +334,25 @@ export function TaskDetailPanel({
       }
       onTaskChanged(task);
       await load();
+      return true;
     } catch (reason) {
       setSaveError(reason);
       if (reason instanceof ApiError && reason.status === 409) await load();
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
-  const commitDraft = (nextDraft: DetailDraft) => {
-    setDraft(nextDraft);
-    void save(nextDraft);
+  const saveChanges = async () => {
+    if (!draft) return;
+    if (await save(draft)) setEditing(false);
+  };
+
+  const cancelEditing = () => {
+    if (detail) setDraft(initialDraft(detail, currentUserId));
+    setSaveError(undefined);
+    setEditing(false);
   };
 
   const createSubtask = async () => {
@@ -418,7 +429,7 @@ export function TaskDetailPanel({
 
   const applyDetail = (next: TaskDetail) => {
     setDetail(next);
-    setDraft(initialDraft(next, currentUserId));
+    setDraft((current) => (editing && current ? current : initialDraft(next, currentUserId)));
     setAttachmentFiles(next.attachments.map(attachmentUploadFile));
     onTaskChanged(next.task);
   };
@@ -486,8 +497,35 @@ export function TaskDetailPanel({
   const subtaskProgress = detail?.subtasks.length
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
+  const selectedStatus = detail
+    ? statuses.find((status) => status.id === detail.task.statusId)
+    : undefined;
+  const selectedTeam = detail?.task.teamId
+    ? teams.find((team) => team.id === detail.task.teamId)
+    : undefined;
+  const selectedTeamIndex = selectedTeam
+    ? teams.findIndex((team) => team.id === selectedTeam.id)
+    : -1;
 
-  const deleteMenu: readonly DropdownMenuItem[] = [
+  const taskMenu: readonly DropdownMenuItem[] = [
+    ...(!archived
+      ? [
+          {
+            disabled: editing,
+            icon: <EditOutlined />,
+            key: "edit",
+            label: "Edit task",
+            onClick: ({ domEvent }) => {
+              domEvent.stopPropagation();
+              if (!detail) return;
+              setDraft(initialDraft(detail, currentUserId));
+              setSaveError(undefined);
+              setEditing(true);
+            },
+          } satisfies DropdownMenuItem,
+          { type: "divider" } as const,
+        ]
+      : []),
     {
       danger: true,
       icon: <DeleteOutlined />,
@@ -525,42 +563,19 @@ export function TaskDetailPanel({
         ) : null}
 
         <div className="task-detail-title-row">
-          {editingTitle ? (
+          {editing ? (
             <Input
               autoFocus
               className="task-detail-title-input"
-              disabled={archived || saving}
+              disabled={saving}
               maxLength={500}
-              onBlur={() => {
-                setEditingTitle(false);
-                const title = draft.title.trim();
-                if (!title) {
-                  setDraft({ ...draft, title: detail.task.title });
-                  return;
-                }
-                if (title && title !== detail.task.title) commitDraft({ ...draft, title });
-              }}
               onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-              onPressEnter={(event) => event.currentTarget.blur()}
               value={draft.title}
-              variant="borderless"
             />
           ) : (
-            <>
-              <Typography.Title className="task-detail-heading" level={2}>
-                {draft.title}
-              </Typography.Title>
-              {!archived ? (
-                <Button
-                  aria-label="Edit task title"
-                  disabled={saving}
-                  icon={<EditOutlined />}
-                  iconOnly
-                  onClick={() => setEditingTitle(true)}
-                  variant="text"
-                />
-              ) : null}
-            </>
+            <Typography.Title className="task-detail-heading" level={2}>
+              {detail.task.title}
+            </Typography.Title>
           )}
         </div>
 
@@ -569,146 +584,185 @@ export function TaskDetailPanel({
             <span aria-hidden className="task-detail-meta-icon task-detail-status-icon" />
             Status
           </div>
-          <Select
-            ariaLabel="Task status"
-            className="task-detail-field"
-            disabled={archived || saving}
-            onChange={(value) => {
-              if (typeof value !== "string" || value === draft.statusId) return;
-              commitDraft({ ...draft, statusId: value });
-            }}
-            options={statusOptions}
-            value={draft.statusId}
-            variant="borderless"
-          />
+          {editing ? (
+            <Select
+              ariaLabel="Task status"
+              className="task-detail-field"
+              disabled={saving}
+              onChange={(value) => {
+                if (typeof value === "string") setDraft({ ...draft, statusId: value });
+              }}
+              options={statusOptions}
+              value={draft.statusId}
+            />
+          ) : (
+            <div className="task-detail-meta-value">
+              <span
+                aria-hidden
+                className="task-detail-status-dot"
+                style={{ background: selectedStatus?.color }}
+              />
+              <Typography.Text>{selectedStatus?.name ?? "Unknown"}</Typography.Text>
+            </div>
+          )}
 
           <div className="task-detail-meta-label">
             <CalendarOutlined />
             Due date
           </div>
-          <DatePicker
-            allowClear
-            className="task-detail-field"
-            disabled={archived || saving}
-            onChange={(value) => {
-              const dueDate = value instanceof Date ? value : null;
-              const nextDueDate = dueDate ? dateKey(dueDate) : undefined;
-              const currentDueDate = draft.dueDate ? dateKey(draft.dueDate) : undefined;
-              if (nextDueDate === currentDueDate) return;
-              commitDraft({ ...draft, dueDate });
-            }}
-            placeholder="No due date"
-            value={draft.dueDate}
-          />
+          {editing ? (
+            <DatePicker
+              allowClear
+              className="task-detail-field"
+              disabled={saving}
+              onChange={(value) =>
+                setDraft({ ...draft, dueDate: value instanceof Date ? value : null })
+              }
+              placeholder="No due date"
+              value={draft.dueDate}
+            />
+          ) : detail.task.dueDate ? (
+            <Typography.Text>
+              {detailDate.format(dateFromKey(detail.task.dueDate) as Date)}
+            </Typography.Text>
+          ) : (
+            <Typography.Text type="secondary">No due date</Typography.Text>
+          )}
 
           <div className="task-detail-meta-label">
             <UserOutlined />
             Assignee
           </div>
-          <Select
-            allowClear
-            ariaLabel="Task assignees"
-            className="task-detail-field"
-            disabled={archived || saving}
-            mode="multiple"
-            notFoundContent="No members"
-            onChange={(value) => {
-              const assigneeUserIds = Array.isArray(value)
-                ? value.filter((userId): userId is string => typeof userId === "string")
-                : [];
-              if (sameIds(assigneeUserIds, draft.assigneeUserIds)) return;
-              commitDraft({ ...draft, assigneeUserIds });
-            }}
-            options={assigneeOptions}
-            placeholder="Unassigned"
-            value={draft.assigneeUserIds}
-          />
-
-          <div className="task-detail-meta-label">
-            <FlagOutlined />
-            Priority
-          </div>
-          <Select
-            ariaLabel="Task priority"
-            className="task-detail-field"
-            disabled={archived || saving}
-            onChange={(value) => {
-              if (value !== "low" && value !== "medium" && value !== "high") return;
-              if (value === draft.priority) return;
-              commitDraft({ ...draft, priority: value });
-            }}
-            options={priorityOptions}
-            value={draft.priority}
-          />
+          {editing ? (
+            <Select
+              allowClear
+              ariaLabel="Task assignees"
+              className="task-detail-field"
+              disabled={saving}
+              mode="multiple"
+              notFoundContent="No members"
+              onChange={(value) => {
+                const assigneeUserIds = Array.isArray(value)
+                  ? value.filter((userId): userId is string => typeof userId === "string")
+                  : [];
+                setDraft({ ...draft, assigneeUserIds });
+              }}
+              options={assigneeOptions}
+              placeholder="Unassigned"
+              value={draft.assigneeUserIds}
+            />
+          ) : detail.task.assigneeUserIds.length > 0 ? (
+            <div className="task-detail-meta-value task-detail-assignee-value">
+              <Avatar.Group max={{ count: 4 }} size="small">
+                {detail.task.assigneeUserIds.map((userId) => (
+                  <Avatar key={userId}>
+                    {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
+                  </Avatar>
+                ))}
+              </Avatar.Group>
+              <Typography.Text>
+                {detail.task.assigneeUserIds
+                  .map((userId) =>
+                    userId === currentUserId ? currentUserName : "Organization member",
+                  )
+                  .join(", ")}
+              </Typography.Text>
+            </div>
+          ) : (
+            <Typography.Text type="secondary">Unassigned</Typography.Text>
+          )}
 
           <div className="task-detail-meta-label">
             <TeamOutlined />
             Team
           </div>
-          <Select
-            allowClear
-            ariaLabel="Task team"
-            className="task-detail-field"
-            disabled={archived || saving}
-            notFoundContent="No teams"
-            onChange={(value) => {
-              const teamId = typeof value === "string" ? value : undefined;
-              if (teamId === draft.teamId) return;
-              commitDraft({ ...draft, teamId });
-            }}
-            options={teamOptions}
-            placeholder="No team"
-            value={draft.teamId}
-          />
+          {editing ? (
+            <Select
+              allowClear
+              ariaLabel="Task team"
+              className="task-detail-field"
+              disabled={saving}
+              notFoundContent="No teams"
+              onChange={(value) =>
+                setDraft({ ...draft, teamId: typeof value === "string" ? value : undefined })
+              }
+              options={teamOptions}
+              placeholder="No team"
+              value={draft.teamId}
+            />
+          ) : selectedTeam ? (
+            <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
+              {selectedTeam.name}
+            </Tag>
+          ) : (
+            <Typography.Text type="secondary">No team</Typography.Text>
+          )}
+
+          <div className="task-detail-meta-label">
+            <FlagOutlined />
+            Priority
+          </div>
+          {editing ? (
+            <Select
+              ariaLabel="Task priority"
+              className="task-detail-field"
+              disabled={saving}
+              onChange={(value) => {
+                if (value === "low" || value === "medium" || value === "high") {
+                  setDraft({ ...draft, priority: value });
+                }
+              }}
+              options={priorityOptions}
+              value={draft.priority}
+            />
+          ) : (
+            <Tag color={priorityPresentation[detail.task.priority].color}>
+              {priorityPresentation[detail.task.priority].label}
+            </Tag>
+          )}
         </div>
 
         <section
           className="task-detail-description"
           aria-labelledby="task-detail-description-label"
         >
-          <div className="task-detail-section-heading">
-            <div className="task-detail-section-label" id="task-detail-description-label">
-              Description
-            </div>
-            {!archived && !editingDescription ? (
-              <Button
-                aria-label="Edit task description"
-                disabled={saving}
-                icon={<EditOutlined />}
-                iconOnly
-                onClick={() => setEditingDescription(true)}
-                size="small"
-                variant="text"
-              />
-            ) : null}
+          <div className="task-detail-section-label" id="task-detail-description-label">
+            Description
           </div>
-          {editingDescription ? (
+          {editing ? (
             <Input.TextArea
-              autoFocus
               autoSize={{ maxRows: 12, minRows: 3 }}
-              className="task-detail-description-input"
-              disabled={archived || saving}
+              disabled={saving}
               maxLength={100_000}
-              onBlur={() => {
-                setEditingDescription(false);
-                if (draft.description !== detail.task.description) {
-                  commitDraft({ ...draft, description: draft.description });
-                }
-              }}
               onChange={(event) => setDraft({ ...draft, description: event.target.value })}
               placeholder="Add a description"
               value={draft.description}
-              variant="borderless"
             />
           ) : (
             <Typography.Paragraph
               className="task-detail-description-text"
-              type={draft.description ? "default" : "secondary"}
+              type={detail.task.description ? "default" : "secondary"}
             >
-              {draft.description || "Add a description"}
+              {detail.task.description || "No description"}
             </Typography.Paragraph>
           )}
         </section>
+
+        {editing ? (
+          <div className="task-detail-edit-actions">
+            <Button disabled={saving} onClick={cancelEditing}>
+              Cancel
+            </Button>
+            <Button
+              disabled={draft.title.trim().length === 0}
+              loading={saving}
+              onClick={() => void saveChanges()}
+              variant="primary"
+            >
+              Save changes
+            </Button>
+          </div>
+        ) : null}
 
         <section
           className="task-detail-attachments"
@@ -904,11 +958,11 @@ export function TaskDetailPanel({
         }}
         className="task-detail-drawer"
         extra={
-          <Dropdown destroyOnHidden menu={{ items: deleteMenu }} trigger={["click"]}>
+          <Dropdown destroyOnHidden menu={{ items: taskMenu }} trigger={["click"]}>
             <Button aria-label="Task actions" icon={<MoreIcon />} iconOnly variant="text" />
           </Dropdown>
         }
-        mask={narrow}
+        mask
         onClose={onClose}
         open={taskId !== undefined}
         placement="right"
