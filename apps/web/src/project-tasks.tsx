@@ -1297,6 +1297,10 @@ export function ProjectTaskOrganization({
                 options={assigneeOptions}
                 placeholder="Unassigned"
                 size="large"
+                styles={{
+                  root: { fontSize: 13 },
+                  selector: { fontSize: 13, lineHeight: "20px" },
+                }}
                 value={draft.assigneeUserIds[0]}
               />
             </Form.Item>
@@ -1327,6 +1331,7 @@ export function ProjectTaskOrganization({
                 placeholder="Select date"
                 size="large"
                 style={{ width: "100%" }}
+                styles={{ input: { fontSize: 13 }, root: { fontSize: 13 } }}
                 value={draft.dueDate}
               />
             </Form.Item>

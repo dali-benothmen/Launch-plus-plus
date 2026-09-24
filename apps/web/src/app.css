@@ -918,17 +918,24 @@
   font-weight: 400;
 }
 
-.task-editor-assignee,
 .task-editor-upload-content {
   display: inline-flex;
   align-items: center;
 }
 
 .task-editor-assignee {
+  display: flex;
+  height: 20px;
+  align-items: center;
+  align-self: center;
   gap: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  vertical-align: middle;
 }
 
 .task-editor-upload-content {
+  align-items: center;
   gap: 7px;
 }
 
