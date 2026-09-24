@@ -82,6 +82,7 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
 });
+const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
 const priorityPresentation: Record<
   TaskPriority,
@@ -602,6 +603,7 @@ export function TaskDetailPanel({
                 if (typeof value === "string") setDraft({ ...draft, statusId: value });
               }}
               options={statusOptions}
+              style={taskDetailFieldStyle}
               value={draft.statusId}
             />
           ) : (
@@ -634,6 +636,7 @@ export function TaskDetailPanel({
                 setDraft({ ...draft, dueDate: value instanceof Date ? value : null })
               }
               placeholder="No due date"
+              style={taskDetailFieldStyle}
               value={draft.dueDate}
             />
           ) : detail.task.dueDate ? (
@@ -664,6 +667,7 @@ export function TaskDetailPanel({
               }}
               options={assigneeOptions}
               placeholder="Unassigned"
+              style={taskDetailFieldStyle}
               value={draft.assigneeUserIds}
             />
           ) : detail.task.assigneeUserIds.length > 0 ? (
@@ -703,6 +707,7 @@ export function TaskDetailPanel({
               }
               options={teamOptions}
               placeholder="No team"
+              style={taskDetailFieldStyle}
               value={draft.teamId}
             />
           ) : selectedTeam ? (
@@ -730,6 +735,7 @@ export function TaskDetailPanel({
                 }
               }}
               options={priorityOptions}
+              style={taskDetailFieldStyle}
               value={draft.priority}
             />
           ) : (
