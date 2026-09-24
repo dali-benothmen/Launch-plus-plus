@@ -1279,12 +1279,12 @@ export function ProjectTaskOrganization({
           onChange={(nextView) => {
             if (nextView === "board" || nextView === "list") navigateToView(nextView);
           }}
+          size="small"
+        />
+      </div>
       <div className={"task-view-content is-" + view}>
         {content ?? (view === "board" ? board : list)}
       </div>
-        />
-      </div>
-      <div className={"task-view-content is-" + view}>{content ?? (view === "board" ? board : list)}</div>
 
       <Modal
         confirmLoading={savingColumn}
