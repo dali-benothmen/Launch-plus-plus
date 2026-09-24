@@ -6,11 +6,13 @@ export type {
   CursorPageQuery,
   InvalidationEvent,
   LabelSummary,
+  OrganizationContext,
+  OrganizationSummary,
   ProblemDetails,
   ProjectCatalog,
   ProjectFolderSummary,
-  ProjectStatusSummary,
   ProjectStatusOrderInput,
+  ProjectStatusSummary,
   ProjectSummary,
   SearchQuery,
   SearchResponse,
@@ -19,11 +21,10 @@ export type {
   TaskComment,
   TaskDetail,
   TaskPage,
+  TaskPriority,
   TaskView,
   TeamInput,
   TeamSummary,
-  OrganizationContext,
-  OrganizationSummary,
 } from "@launchpp/api-contracts";
 export type { CoreApiClient, RequestOptions } from "./generated.js";
 

@@ -12,6 +12,47 @@ export type {
   Installation,
   InstallationRepository,
 } from "./installations/installation.js";
+export {
+  type CreateOrganizationDependencies,
+  type CreateOrganizationInput,
+  CreateOrganizationService,
+} from "./organizations/create-organization.js";
+export {
+  type InitializeOwnerDependencies,
+  type InitializeOwnerInput,
+  InitializeOwnerService,
+} from "./organizations/initialize-owner.js";
+export type {
+  AuditEntry,
+  AuditWriter,
+  Organization,
+  OrganizationMemberRole,
+  OrganizationMemberState,
+  OrganizationMembership,
+  OrganizationMembershipRepository,
+  OrganizationRepository,
+  UserProfile,
+  UserProfileRepository,
+} from "./organizations/organization.js";
+export {
+  OrganizationMembershipRequiredError,
+  OrganizationNameAlreadyExistsError,
+  OrganizationNotFoundError,
+  UserProfileMissingError,
+} from "./organizations/organization.js";
+export {
+  type OrganizationContext,
+  OrganizationQueryService,
+} from "./organizations/organization-query.js";
+export {
+  type RenameOrganizationDependencies,
+  type RenameOrganizationInput,
+  RenameOrganizationService,
+} from "./organizations/rename-organization.js";
+export {
+  type SelectCurrentOrganizationDependencies,
+  SelectCurrentOrganizationService,
+} from "./organizations/select-current-organization.js";
 export type {
   Project,
   ProjectAccess,
@@ -52,6 +93,7 @@ export type {
   TaskCatalog,
   TaskComment,
   TaskDetail,
+  TaskPriority,
   TaskRepository,
   TaskView,
 } from "./tasks/task.js";
@@ -66,49 +108,9 @@ export {
   TaskProjectUnavailableError,
   TaskRevisionConflictError,
   TaskStatusInvalidError,
+  TaskTeamInvalidError,
 } from "./tasks/task.js";
 export { TaskService, type TaskServiceDependencies } from "./tasks/task-service.js";
 export type { Team, TeamRepository } from "./teams/team.js";
 export { TeamNameConflictError } from "./teams/team.js";
 export { TeamService, type TeamServiceDependencies } from "./teams/team-service.js";
-export {
-  type CreateOrganizationDependencies,
-  type CreateOrganizationInput,
-  CreateOrganizationService,
-} from "./organizations/create-organization.js";
-export {
-  type InitializeOwnerDependencies,
-  type InitializeOwnerInput,
-  InitializeOwnerService,
-} from "./organizations/initialize-owner.js";
-export {
-  type RenameOrganizationDependencies,
-  type RenameOrganizationInput,
-  RenameOrganizationService,
-} from "./organizations/rename-organization.js";
-export {
-  type SelectCurrentOrganizationDependencies,
-  SelectCurrentOrganizationService,
-} from "./organizations/select-current-organization.js";
-export type {
-  AuditEntry,
-  AuditWriter,
-  UserProfile,
-  UserProfileRepository,
-  Organization,
-  OrganizationMemberRole,
-  OrganizationMemberState,
-  OrganizationMembership,
-  OrganizationMembershipRepository,
-  OrganizationRepository,
-} from "./organizations/organization.js";
-export {
-  UserProfileMissingError,
-  OrganizationMembershipRequiredError,
-  OrganizationNameAlreadyExistsError,
-  OrganizationNotFoundError,
-} from "./organizations/organization.js";
-export {
-  type OrganizationContext,
-  OrganizationQueryService,
-} from "./organizations/organization-query.js";

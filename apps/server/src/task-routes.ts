@@ -26,6 +26,7 @@ import {
   TaskRevisionConflictError,
   TaskService,
   TaskStatusInvalidError,
+  TaskTeamInvalidError,
   type TaskView,
 } from "@launchpp/core";
 import {
@@ -33,10 +34,11 @@ import {
   type SqliteDatabase,
   SqliteIdempotencyRepository,
   SqliteInstallationRepository,
+  SqliteOrganizationMembershipRepository,
   SqliteOutboxRepository,
   SqliteProjectRepository,
   SqliteTaskRepository,
-  SqliteOrganizationMembershipRepository,
+  SqliteTeamRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -98,10 +100,12 @@ function taskSummary(task: TaskView) {
     number: task.number,
     ...(task.parentTaskId === undefined ? {} : { parentTaskId: task.parentTaskId }),
     position: task.position,
+    priority: task.priority,
     projectId: task.projectId,
     reference: task.reference,
     revision: task.revision,
     statusId: task.statusId,
+    ...(task.teamId === undefined ? {} : { teamId: task.teamId }),
     title: task.title,
     updatedAt: task.updatedAt,
     updatedByUserId: task.updatedByUserId,
@@ -137,6 +141,7 @@ export async function registerTaskRoutes(
     outbox: new SqliteOutboxRepository(),
     projects: new SqliteProjectRepository(),
     tasks: new SqliteTaskRepository(),
+    teams: new SqliteTeamRepository(),
     transactions: input.database,
   });
 
@@ -196,6 +201,7 @@ export async function registerTaskRoutes(
       error instanceof TaskOrderInvalidError ||
       error instanceof TaskParentInvalidError ||
       error instanceof TaskStatusInvalidError ||
+      error instanceof TaskTeamInvalidError ||
       error instanceof TypeError
     ) {
       sendProblem(

@@ -4,6 +4,7 @@ import type {
   Task,
   TaskActivity,
   TaskComment,
+  TaskPriority,
   TaskRepository,
   WriteContext,
 } from "@launchpp/core";
@@ -20,9 +21,11 @@ interface TaskRow {
   readonly number: number;
   readonly parent_task_id: null | string;
   readonly position: number;
+  readonly priority: TaskPriority;
   readonly project_id: string;
   readonly revision: number;
   readonly status_id: string;
+  readonly team_id: null | string;
   readonly title: string;
   readonly updated_at: number;
   readonly updated_by_user_id: string;
@@ -63,8 +66,8 @@ interface ActivityRow {
 }
 
 const taskSelection = `SELECT id, organization_id, project_id, number, parent_task_id, status_id,
-  title, description_markdown, due_date, position, created_by_user_id, updated_by_user_id,
-  created_at, updated_at, archived_at, deleted_at, revision FROM tasks`;
+  team_id, title, description_markdown, due_date, priority, position, created_by_user_id,
+  updated_by_user_id, created_at, updated_at, archived_at, deleted_at, revision FROM tasks`;
 
 const labelSelection = `SELECT id, organization_id, project_id, name, comparison_key, color,
   created_at, updated_at, archived_at, revision FROM labels`;
@@ -81,9 +84,11 @@ function mapTask(row: TaskRow): Task {
     number: row.number,
     ...(row.parent_task_id === null ? {} : { parentTaskId: row.parent_task_id }),
     position: row.position,
+    priority: row.priority,
     projectId: row.project_id,
     revision: row.revision,
     statusId: row.status_id,
+    ...(row.team_id === null ? {} : { teamId: row.team_id }),
     title: row.title,
     updatedAt: row.updated_at,
     updatedByUserId: row.updated_by_user_id,
@@ -183,10 +188,10 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO tasks (
-          id, organization_id, project_id, number, parent_task_id, status_id, title,
-          description_markdown, due_date, position, created_by_user_id, updated_by_user_id,
+          id, organization_id, project_id, number, parent_task_id, status_id, team_id, title,
+          description_markdown, due_date, priority, position, created_by_user_id, updated_by_user_id,
           created_at, updated_at, archived_at, deleted_at, revision
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -195,9 +200,11 @@ export class SqliteTaskRepository implements TaskRepository {
         task.number,
         task.parentTaskId ?? null,
         task.statusId,
+        task.teamId ?? null,
         task.title,
         task.description,
         task.dueDate ?? null,
+        task.priority,
         task.position,
         task.createdByUserId,
         task.updatedByUserId,
@@ -318,10 +325,10 @@ export class SqliteTaskRepository implements TaskRepository {
     return requireSqliteConnection(context)
       .prepare<[string, string], TaskRow>(
         `SELECT task.id, task.organization_id, task.project_id, task.number,
-                task.parent_task_id, task.status_id, task.title, task.description_markdown,
-                task.due_date, task.position, task.created_by_user_id,
-                task.updated_by_user_id, task.created_at, task.updated_at,
-                task.archived_at, task.deleted_at, task.revision
+                task.parent_task_id, task.status_id, task.team_id, task.title,
+                task.description_markdown, task.due_date, task.priority, task.position,
+                task.created_by_user_id, task.updated_by_user_id, task.created_at,
+                task.updated_at, task.archived_at, task.deleted_at, task.revision
          FROM tasks task
          LEFT JOIN tasks parent ON parent.id = task.parent_task_id
          WHERE task.organization_id = ? AND task.project_id = ? AND ${stateClause}
@@ -431,17 +438,19 @@ export class SqliteTaskRepository implements TaskRepository {
   saveTask(context: WriteContext, task: Task): void {
     requireSqliteConnection(context)
       .prepare(
-        `UPDATE tasks SET parent_task_id = ?, status_id = ?, title = ?,
-             description_markdown = ?, due_date = ?, position = ?, updated_by_user_id = ?,
-             updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
+        `UPDATE tasks SET parent_task_id = ?, status_id = ?, team_id = ?, title = ?,
+             description_markdown = ?, due_date = ?, priority = ?, position = ?,
+             updated_by_user_id = ?, updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
          WHERE id = ? AND organization_id = ? AND project_id = ?`,
       )
       .run(
         task.parentTaskId ?? null,
         task.statusId,
+        task.teamId ?? null,
         task.title,
         task.description,
         task.dueDate ?? null,
+        task.priority,
         task.position,
         task.updatedByUserId,
         task.updatedAt,

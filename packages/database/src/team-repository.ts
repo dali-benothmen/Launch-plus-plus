@@ -42,6 +42,16 @@ export class SqliteTeamRepository implements TeamRepository {
       );
   }
 
+  findById(context: ReadContext, teamId: string): Team | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[string], TeamRow>(
+        `SELECT id, organization_id, name, created_by_user_id, created_at, updated_at, revision
+         FROM teams WHERE id = ?`,
+      )
+      .get(teamId);
+    return row ? mapTeam(row) : undefined;
+  }
+
   findByName(context: ReadContext, organizationId: string, name: string): Team | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], TeamRow>(

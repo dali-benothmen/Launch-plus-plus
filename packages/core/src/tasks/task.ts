@@ -1,5 +1,7 @@
 import type { ReadContext, WriteContext } from "../shared/transactions.js";
 
+export type TaskPriority = "high" | "low" | "medium";
+
 export interface Task {
   readonly archivedAt?: number;
   readonly createdAt: number;
@@ -11,9 +13,11 @@ export interface Task {
   readonly number: number;
   readonly parentTaskId?: string;
   readonly position: number;
+  readonly priority: TaskPriority;
   readonly projectId: string;
   readonly revision: number;
   readonly statusId: string;
+  readonly teamId?: string;
   readonly title: string;
   readonly updatedAt: number;
   readonly updatedByUserId: string;
@@ -139,6 +143,10 @@ export class TaskProjectUnavailableError extends Error {
 
 export class TaskStatusInvalidError extends Error {
   override readonly name = "TaskStatusInvalidError";
+}
+
+export class TaskTeamInvalidError extends Error {
+  override readonly name = "TaskTeamInvalidError";
 }
 
 export class TaskParentInvalidError extends Error {

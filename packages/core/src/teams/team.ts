@@ -12,6 +12,7 @@ export interface Team {
 
 export interface TeamRepository {
   create(context: WriteContext, team: Team): void;
+  findById(context: ReadContext, teamId: string): Team | undefined;
   findByName(context: ReadContext, organizationId: string, name: string): Team | undefined;
   list(context: ReadContext, organizationId: string): readonly Team[];
 }

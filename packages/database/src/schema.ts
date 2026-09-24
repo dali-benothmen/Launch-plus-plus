@@ -198,6 +198,7 @@ export const teams = sqliteTable(
       table.organizationId,
       sql`lower(${table.name})`,
     ),
+    uniqueIndex("teams_organization_id_unique").on(table.organizationId, table.id),
     index("teams_organization_created_idx").on(table.organizationId, table.createdAt),
     check("teams_name_not_blank", sql`length(trim(${table.name})) > 0`),
     check("teams_revision_positive", sql`${table.revision} > 0`),
@@ -410,9 +411,13 @@ export const tasks = sqliteTable(
       onDelete: "restrict",
     }),
     statusId: text("status_id").notNull(),
+    teamId: text("team_id"),
     title: text("title").notNull(),
     description: text("description_markdown").notNull().default(""),
     dueDate: text("due_date"),
+    priority: text("priority", { enum: ["low", "medium", "high"] })
+      .notNull()
+      .default("medium"),
     position: integer("position").notNull(),
     createdByUserId: text("created_by_user_id")
       .notNull()
@@ -447,6 +452,11 @@ export const tasks = sqliteTable(
       name: "tasks_organization_project_fk",
     }).onDelete("cascade"),
     foreignKey({
+      columns: [table.organizationId, table.teamId],
+      foreignColumns: [teams.organizationId, teams.id],
+      name: "tasks_organization_team_fk",
+    }).onDelete("set null"),
+    foreignKey({
       columns: [table.organizationId, table.projectId, table.statusId],
       foreignColumns: [
         projectStatuses.organizationId,
@@ -459,6 +469,7 @@ export const tasks = sqliteTable(
     check("tasks_title_not_blank", sql`length(trim(${table.title})) > 0`),
     check("tasks_position_valid", sql`${table.position} >= 0`),
     check("tasks_revision_positive", sql`${table.revision} > 0`),
+    check("tasks_priority_valid", sql`${table.priority} in ('low', 'medium', 'high')`),
     check(
       "tasks_due_date_valid",
       sql`${table.dueDate} is null or ${table.dueDate} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,

@@ -267,6 +267,13 @@ export const LabelSummarySchema = StrictObject(
 );
 export type LabelSummary = Type.Static<typeof LabelSummarySchema>;
 
+export const TaskPrioritySchema = Type.Union([
+  Type.Literal("low"),
+  Type.Literal("medium"),
+  Type.Literal("high"),
+]);
+export type TaskPriority = Type.Static<typeof TaskPrioritySchema>;
+
 export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
@@ -283,10 +290,12 @@ export const TaskViewSchema = StrictObject(
     number: Type.Integer({ minimum: 1 }),
     parentTaskId: Type.Optional(IdentifierSchema),
     position: Type.Integer({ minimum: 0 }),
+    priority: TaskPrioritySchema,
     projectId: IdentifierSchema,
     reference: Type.String({ maxLength: 128, minLength: 1 }),
     revision: RevisionSchema,
     statusId: IdentifierSchema,
+    teamId: Type.Optional(IdentifierSchema),
     title: Type.String({ maxLength: 500, minLength: 1 }),
     updatedAt: TimestampSchema,
     updatedByUserId: IdentifierSchema,
@@ -366,10 +375,16 @@ export type TaskPage = Type.Static<typeof TaskPageSchema>;
 
 export const CreateTaskInputSchema = StrictObject(
   {
+    assigneeUserIds: Type.Optional(
+      Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
+    ),
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
     dueDate: Type.Optional(DateSchema),
+    labelIds: Type.Optional(Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true })),
     parentTaskId: Type.Optional(IdentifierSchema),
+    priority: Type.Optional(TaskPrioritySchema),
     statusId: Type.Optional(IdentifierSchema),
+    teamId: Type.Optional(IdentifierSchema),
     title: Type.String({ maxLength: 500, minLength: 1, pattern: "\\S" }),
   },
   { $id: "LaunchppCreateTaskInputV1" },
@@ -436,7 +451,9 @@ export const UpdateTaskInputSchema = StrictObject(
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
     dueDate: Type.Optional(Type.Union([DateSchema, Type.Null()])),
     expectedRevision: RevisionSchema,
+    priority: Type.Optional(TaskPrioritySchema),
     title: Type.Optional(Type.String({ maxLength: 500, minLength: 1, pattern: "\\S" })),
+    teamId: Type.Optional(Type.Union([IdentifierSchema, Type.Null()])),
   },
   { $id: "LaunchppUpdateTaskInputV1", minProperties: 2 },
 );

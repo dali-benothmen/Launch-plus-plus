@@ -8,7 +8,14 @@ import {
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/api-client";
+import {
+  ApiError,
+  type LabelSummary,
+  type ProjectStatusSummary,
+  type TaskPriority,
+  type TaskView,
+  type TeamSummary,
+} from "@launchpp/api-client";
 import {
   AddIcon,
   Alert,
@@ -46,6 +53,7 @@ type ProjectView = "board" | "list";
 interface ProjectTaskOrganizationProps {
   readonly archived: boolean;
   readonly currentUserId: string;
+  readonly currentUserName: string;
   readonly projectId: string;
   readonly projectName: string;
   readonly statuses: readonly ProjectStatusSummary[];
@@ -57,9 +65,13 @@ interface ProjectTaskOrganizationProps {
 type TaskEditor = Readonly<{ kind: "create" }> | Readonly<{ kind: "edit"; task: TaskView }>;
 
 interface TaskDraft {
+  readonly assigneeUserIds: readonly string[];
   readonly description: string;
   readonly dueDate: Date | null;
+  readonly labelIds: readonly string[];
   readonly statusId: string;
+  readonly priority: TaskPriority;
+  readonly teamId?: string | undefined;
   readonly title: string;
 }
 
@@ -84,6 +96,11 @@ const emptyColumnStyles = {
   description: { color: "rgb(0 0 0 / 45%)" },
   root: { margin: "0 0 6px" },
 } as const;
+const taskPriorityOptions = [
+  { label: "Low", value: "low" },
+  { label: "Medium", value: "medium" },
+  { label: "High", value: "high" },
+] as const;
 
 function dateFromKey(value?: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -100,14 +117,28 @@ function formatDate(value: number | string) {
   return date ? shortDate.format(date) : String(value);
 }
 
-function taskWithDraft(task: TaskView, draft: TaskDraft): TaskView {
-  const { dueDate: _dueDate, ...base } = task;
+function sameIds(first: readonly string[], second: readonly string[]) {
+  if (first.length !== second.length) return false;
+  const values = new Set(first);
+  return second.every((value) => values.has(value));
+}
+
+function taskWithDraft(
+  task: TaskView,
+  draft: TaskDraft,
+  labels: readonly LabelSummary[],
+): TaskView {
+  const { dueDate: _dueDate, teamId: _teamId, ...base } = task;
   const dueDate = draft.dueDate ? dateKey(draft.dueDate) : undefined;
   return {
     ...base,
+    assigneeUserIds: [...draft.assigneeUserIds],
     description: draft.description.trim(),
     ...(dueDate ? { dueDate } : {}),
+    labels: labels.filter((label) => draft.labelIds.includes(label.id)),
+    priority: draft.priority,
     statusId: draft.statusId,
+    ...(draft.teamId ? { teamId: draft.teamId } : {}),
     title: draft.title.trim().replace(/\s+/g, " "),
     updatedAt: Date.now(),
   };
@@ -294,6 +325,7 @@ function SortableTaskShell({
 export function ProjectTaskOrganization({
   archived,
   currentUserId,
+  currentUserName,
   projectId,
   projectName,
   statuses,
@@ -306,6 +338,8 @@ export function ProjectTaskOrganization({
   const [searchParams] = useSearchParams();
   const [messageApi, messageHolder] = message.useMessage();
   const [tasks, setTasks] = useState<readonly TaskView[]>([]);
+  const [availableLabels, setAvailableLabels] = useState<readonly LabelSummary[]>([]);
+  const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -322,8 +356,11 @@ export function ProjectTaskOrganization({
   const [editor, setEditor] = useState<TaskEditor>();
   const [draft, setDraft] = useState<TaskDraft>({
     description: "",
+    assigneeUserIds: [currentUserId],
     dueDate: null,
     statusId: statuses[0]?.id ?? "",
+    labelIds: [],
+    priority: "medium",
     title: "",
   });
   const [editorError, setEditorError] = useState<unknown>();
@@ -354,6 +391,7 @@ export function ProjectTaskOrganization({
           return [...current, ...page.items.filter((task) => !existing.has(task.id))];
         });
         setNextCursor(page.nextCursor);
+        setAvailableLabels(page.labels);
         return page;
       } catch (reason) {
         setLoadError(reason);
@@ -371,6 +409,17 @@ export function ProjectTaskOrganization({
     setNextCursor(undefined);
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    let active = true;
+    void api.teams
+      .list(organizationId)
+      .then((items) => active && setTeams(items))
+      .catch(() => active && setTeams([]));
+    return () => {
+      active = false;
+    };
+  }, [api, organizationId]);
 
   useEffect(() => {
     if (!dragInProgressRef.current) setOrderedStatusIds(statuses.map((status) => status.id));
@@ -397,9 +446,17 @@ export function ProjectTaskOrganization({
     return () => window.removeEventListener(invalidationEventName, reload);
   }, [loadTasks, projectId, organizationId]);
 
-  const statusOptions = useMemo(
-    () => statuses.map((status) => ({ label: status.name, value: status.id })),
-    [statuses],
+  const teamOptions = useMemo(
+    () => teams.map((team) => ({ label: team.name, value: team.id })),
+    [teams],
+  );
+  const labelOptions = useMemo(
+    () => availableLabels.map((label) => ({ label: label.name, value: label.id })),
+    [availableLabels],
+  );
+  const assigneeOptions = useMemo(
+    () => [{ label: currentUserName || "Me", value: currentUserId }],
+    [currentUserId, currentUserName],
   );
   const statusById = useMemo(
     () => new Map(statuses.map((status) => [status.id, status])),
@@ -435,7 +492,15 @@ export function ProjectTaskOrganization({
   };
 
   const openCreate = (statusId = statuses[0]?.id ?? "") => {
-    updateDraft({ description: "", dueDate: null, statusId, title: "" });
+    updateDraft({
+      assigneeUserIds: [currentUserId],
+      description: "",
+      dueDate: null,
+      labelIds: [],
+      priority: "medium",
+      statusId,
+      title: "",
+    });
     setEditorError(undefined);
     setEditor({ kind: "create" });
   };
@@ -443,9 +508,13 @@ export function ProjectTaskOrganization({
   const openEdit = (task: TaskView) => {
     updateDraft({
       description: task.description,
+      assigneeUserIds: task.assigneeUserIds,
       dueDate: dateFromKey(task.dueDate),
       statusId: task.statusId,
+      labelIds: task.labels.map((label) => label.id),
       title: task.title,
+      priority: task.priority,
+      ...(task.teamId ? { teamId: task.teamId } : {}),
     });
     setEditorError(undefined);
     setEditor({ kind: "edit", task });
@@ -539,16 +608,21 @@ export function ProjectTaskOrganization({
 
   const saveTask = async () => {
     const currentDraft = draftRef.current;
-    if (!editor || saving || currentDraft.title.trim().length === 0 || !currentDraft.statusId)
+    if (!editor || saving || currentDraft.title.trim().length === 0 || !currentDraft.statusId) {
       return;
+    }
     setSaving(true);
     setEditorError(undefined);
     if (editor.kind === "create") {
       try {
         const created = await api.tasks.create(organizationId, projectId, {
+          assigneeUserIds: [...currentDraft.assigneeUserIds],
           description: currentDraft.description,
           ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
+          labelIds: [...currentDraft.labelIds],
+          priority: currentDraft.priority,
           statusId: currentDraft.statusId,
+          ...(currentDraft.teamId ? { teamId: currentDraft.teamId } : {}),
           title: currentDraft.title,
         });
         setTasks((current) => [...current, created]);
@@ -563,7 +637,7 @@ export function ProjectTaskOrganization({
 
     const original = editor.task;
     const snapshot = tasks;
-    const optimistic = taskWithDraft(original, currentDraft);
+    const optimistic = taskWithDraft(original, currentDraft, availableLabels);
     setTasks((current) => current.map((task) => (task.id === original.id ? optimistic : task)));
     try {
       const nextDueDate = currentDraft.dueDate ? dateKey(currentDraft.dueDate) : undefined;
@@ -575,12 +649,31 @@ export function ProjectTaskOrganization({
         ...(nextDueDate === original.dueDate
           ? {}
           : { dueDate: nextDueDate === undefined ? null : nextDueDate }),
+        ...(currentDraft.priority === original.priority ? {} : { priority: currentDraft.priority }),
+        ...(currentDraft.teamId === original.teamId ? {} : { teamId: currentDraft.teamId ?? null }),
       };
       let updated = original;
       if (Object.keys(updates).length > 0) {
         updated = await api.tasks.update(organizationId, projectId, original.id, {
           expectedRevision: original.revision,
           ...updates,
+        });
+      }
+      if (
+        !sameIds(
+          currentDraft.labelIds,
+          updated.labels.map((label) => label.id),
+        )
+      ) {
+        updated = await api.tasks.replaceLabels(organizationId, projectId, updated.id, {
+          expectedRevision: updated.revision,
+          labelIds: [...currentDraft.labelIds],
+        });
+      }
+      if (!sameIds(currentDraft.assigneeUserIds, updated.assigneeUserIds)) {
+        updated = await api.tasks.replaceAssignees(organizationId, projectId, updated.id, {
+          expectedRevision: updated.revision,
+          userIds: [...currentDraft.assigneeUserIds],
         });
       }
       setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
@@ -1069,20 +1162,50 @@ export function ProjectTaskOrganization({
       </Modal>
 
       <Modal
+        centered
         confirmLoading={saving}
         destroyOnHidden
-        okButtonProps={{ disabled: !draft.statusId }}
+        footer={(actions) => (
+          <div className="task-editor-footer">
+            <Typography.Text type="secondary">Only the title is required</Typography.Text>
+            <div className="task-editor-footer-actions">{actions}</div>
+          </div>
+        )}
+        okButtonProps={{ disabled: !draft.title.trim() }}
         okText={editor?.kind === "edit" ? "Save task" : "Create task"}
         onCancel={closeEditor}
         onOk={() => void saveTask()}
         open={editor !== undefined}
-        title={editor?.kind === "edit" ? `Edit ${editor.task.reference}` : "Create task"}
+        styles={{
+          body: { padding: "20px 24px" },
+          container: { borderRadius: 12, padding: 0 },
+          footer: {
+            borderTop: "1px solid var(--launch-color-border-secondary)",
+            padding: "16px 24px",
+          },
+          header: {
+            borderBottom: "1px solid var(--launch-color-border-secondary)",
+            marginBottom: 0,
+            padding: "20px 24px",
+          },
+        }}
+        title={
+          <div className="task-editor-title">
+            <Typography.Text strong>
+              {editor?.kind === "edit" ? `Edit ${editor.task.reference}` : "New task"}
+            </Typography.Text>
+            <Typography.Text type="secondary">
+              {projectName} · {statusById.get(draft.statusId)?.name ?? "Task"}
+            </Typography.Text>
+          </div>
+        }
+        width={600}
       >
         {editorError ? (
           <Alert showIcon title={taskError(editorError, "Could not save the task.")} type="error" />
         ) : null}
-        <Form layout="vertical" onFinish={saveTask}>
-          <Form.Item label="Title" required>
+        <Form className="task-editor-form" layout="vertical" onFinish={saveTask}>
+          <Form.Item label="Title">
             <Input
               autoFocus
               defaultValue={draft.title}
@@ -1090,10 +1213,19 @@ export function ProjectTaskOrganization({
               maxLength={500}
               onChange={(event) => {
                 draftRef.current = { ...draftRef.current, title: event.target.value };
+                setDraft(draftRef.current);
               }}
+              placeholder="What needs to be done?"
+              size="large"
             />
           </Form.Item>
-          <Form.Item label="Description">
+          <Form.Item
+            label={
+              <span>
+                Description <span className="task-editor-optional">optional</span>
+              </span>
+            }
+          >
             <Input.TextArea
               autoSize={{ maxRows: 8, minRows: 3 }}
               defaultValue={draft.description}
@@ -1102,32 +1234,96 @@ export function ProjectTaskOrganization({
               onChange={(event) => {
                 draftRef.current = { ...draftRef.current, description: event.target.value };
               }}
+              placeholder="Add detail, paste a link, or leave it empty — you can fill this in later."
             />
           </Form.Item>
-          {editor?.kind === "create" ? (
-            <Form.Item label="Status">
+          <div className="task-editor-grid">
+            <Form.Item label="Team">
               <Select
-                ariaLabel="Task status"
+                allowClear
+                ariaLabel="Task team"
                 disabled={saving}
                 onChange={(value) =>
-                  typeof value === "string" && updateDraft({ ...draftRef.current, statusId: value })
+                  updateDraft({
+                    ...draftRef.current,
+                    teamId: typeof value === "string" ? value : undefined,
+                  })
                 }
-                options={statusOptions}
-                value={draft.statusId}
+                options={teamOptions}
+                placeholder={teamOptions.length > 0 ? "Select team" : "No teams yet"}
+                value={draft.teamId}
               />
             </Form.Item>
-          ) : null}
-          <Form.Item label="Due date">
-            <DatePicker
+            <Form.Item label="Assignee">
+              <Select
+                allowClear
+                ariaLabel="Task assignee"
+                disabled={saving}
+                mode="multiple"
+                onChange={(value) =>
+                  updateDraft({
+                    ...draftRef.current,
+                    assigneeUserIds: Array.isArray(value)
+                      ? value.filter((item): item is string => typeof item === "string")
+                      : [],
+                  })
+                }
+                options={assigneeOptions}
+                placeholder="Unassigned"
+                value={draft.assigneeUserIds}
+              />
+            </Form.Item>
+            <Form.Item label="Priority">
+              <Select
+                ariaLabel="Task priority"
+                disabled={saving}
+                onChange={(value) => {
+                  if (value === "low" || value === "medium" || value === "high") {
+                    updateDraft({ ...draftRef.current, priority: value });
+                  }
+                }}
+                options={taskPriorityOptions}
+                value={draft.priority}
+              />
+            </Form.Item>
+            <Form.Item label="Due date">
+              <DatePicker
+                allowClear
+                disabled={saving}
+                onChange={(value) =>
+                  updateDraft({
+                    ...draftRef.current,
+                    dueDate: value instanceof Date ? value : null,
+                  })
+                }
+                placeholder="Select date"
+                value={draft.dueDate}
+              />
+            </Form.Item>
+          </div>
+          <Form.Item
+            label={
+              <span>
+                Labels <span className="task-editor-optional">optional</span>
+              </span>
+            }
+          >
+            <Select
               allowClear
+              ariaLabel="Task labels"
               disabled={saving}
+              mode="multiple"
               onChange={(value) =>
                 updateDraft({
                   ...draftRef.current,
-                  dueDate: value instanceof Date ? value : null,
+                  labelIds: Array.isArray(value)
+                    ? value.filter((item): item is string => typeof item === "string")
+                    : [],
                 })
               }
-              value={draft.dueDate}
+              options={labelOptions}
+              placeholder={labelOptions.length > 0 ? "Add labels" : "No labels yet"}
+              value={draft.labelIds}
             />
           </Form.Item>
         </Form>

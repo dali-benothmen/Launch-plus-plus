@@ -444,6 +444,7 @@ export function ProjectOverviewPage() {
   const { projectId, taskId, view, organizationId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
+  const [memberName, setMemberName] = useState("");
   const [organizationName, setOrganizationName] = useState("Organization");
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -461,6 +462,7 @@ export function ProjectOverviewPage() {
         if (!session) throw new ApiError(401, "Your session has expired.");
         setCatalog(nextCatalog);
         setMemberId(session.identity.id);
+        setMemberName(session.identity.name);
         const organization = context.organizations.find((item) => item.id === organizationId);
         if (organization) setOrganizationName(organization.name);
       })
@@ -602,6 +604,7 @@ export function ProjectOverviewPage() {
       <ProjectTaskOrganization
         archived={project.archivedAt !== undefined}
         currentUserId={memberId}
+        currentUserName={memberName}
         projectId={project.id}
         projectName={project.name}
         statuses={statuses}

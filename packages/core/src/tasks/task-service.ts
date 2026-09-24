@@ -1,16 +1,18 @@
-import type { Project, ProjectRepository, ProjectStatus } from "../projects/project.js";
-import type { OutboxWriter } from "../shared/outbox.js";
-import type { ReadContext, TransactionManager, WriteContext } from "../shared/transactions.js";
 import type {
   AuditWriter,
   OrganizationMembershipRepository,
 } from "../organizations/organization.js";
+import type { Project, ProjectRepository, ProjectStatus } from "../projects/project.js";
+import type { OutboxWriter } from "../shared/outbox.js";
+import type { ReadContext, TransactionManager, WriteContext } from "../shared/transactions.js";
+import type { TeamRepository } from "../teams/team.js";
 import type {
   Label,
   Task,
   TaskCatalog,
   TaskComment,
   TaskDetail,
+  TaskPriority,
   TaskRepository,
   TaskView,
 } from "./task.js";
@@ -25,6 +27,7 @@ import {
   TaskProjectUnavailableError,
   TaskRevisionConflictError,
   TaskStatusInvalidError,
+  TaskTeamInvalidError,
 } from "./task.js";
 
 interface CommandContext {
@@ -43,6 +46,7 @@ export interface TaskServiceDependencies {
   readonly outbox: OutboxWriter;
   readonly projects: ProjectRepository;
   readonly tasks: TaskRepository;
+  readonly teams: TeamRepository;
   readonly transactions: TransactionManager;
 }
 
@@ -125,6 +129,10 @@ function uniqueIds(values: readonly string[], field: string) {
     throw new TypeError(`${field} must contain unique non-empty identifiers.`);
   }
   return [...values];
+}
+
+function normalizePriority(value: TaskPriority | undefined): TaskPriority {
+  return value ?? "medium";
 }
 
 function withoutOptional<T extends object, K extends keyof T>(value: T, key: K): Omit<T, K> {
@@ -221,10 +229,14 @@ export class TaskService {
   createTask(
     input: CommandContext &
       Readonly<{
+        assigneeUserIds?: readonly string[];
         description?: string;
         dueDate?: string;
+        labelIds?: readonly string[];
         parentTaskId?: string;
+        priority?: TaskPriority;
         statusId?: string;
+        teamId?: string;
         title: string;
       }>,
   ): Promise<TaskView> {
@@ -232,12 +244,44 @@ export class TaskService {
     const title = normalizeTitle(input.title);
     const description = normalizeDescription(input.description);
     const dueDate = normalizeDueDate(input.dueDate);
+    const assigneeUserIds = uniqueIds(input.assigneeUserIds ?? [], "Assignees");
+    const labelIds = uniqueIds(input.labelIds ?? [], "Labels");
+    const priority = normalizePriority(input.priority);
     return this.dependencies.transactions.write((context) => {
       this.requireActor(context, input.organizationId, input.userId);
       const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const statuses = this.activeStatuses(context, input.organizationId, input.projectId);
       const status = input.statusId ? this.requireStatus(statuses, input.statusId) : statuses[0];
       if (!status) throw new TaskStatusInvalidError("The project has no active status.");
+      if (input.teamId) {
+        const team = this.dependencies.teams.findById(context, input.teamId);
+        if (!team || team.organizationId !== input.organizationId) {
+          throw new TaskTeamInvalidError("The selected team is unavailable.");
+        }
+      }
+      for (const userId of assigneeUserIds) {
+        const membership = this.dependencies.memberships.find(
+          context,
+          input.organizationId,
+          userId,
+        );
+        if (membership?.state !== "active") {
+          throw new TaskAssigneeInvalidError(
+            "Every assignee must be an active organization member.",
+          );
+        }
+      }
+      for (const labelId of labelIds) {
+        const label = this.dependencies.tasks.findLabelById(context, labelId);
+        if (
+          !label ||
+          label.organizationId !== input.organizationId ||
+          label.archivedAt !== undefined ||
+          (label.projectId !== undefined && label.projectId !== input.projectId)
+        ) {
+          throw new TaskLabelInvalidError("Every label must be available to the project.");
+        }
+      }
       const parent = input.parentTaskId
         ? this.requireParent(context, input, input.parentTaskId)
         : undefined;
@@ -256,15 +300,35 @@ export class TaskService {
           status.id,
           parent?.id,
         ),
+        priority,
         projectId: input.projectId,
         revision: 1,
         statusId: status.id,
+        ...(input.teamId ? { teamId: input.teamId } : {}),
         title,
         updatedAt: now,
         updatedByUserId: input.userId,
         organizationId: input.organizationId,
       });
       this.dependencies.tasks.createTask(context, task);
+      if (input.assigneeUserIds !== undefined) {
+        this.dependencies.tasks.replaceAssignees(context, {
+          assignedAt: now,
+          assignedByUserId: input.userId,
+          taskId: task.id,
+          userIds: assigneeUserIds,
+          organizationId: input.organizationId,
+        });
+      }
+      if (input.labelIds !== undefined) {
+        this.dependencies.tasks.replaceLabels(context, {
+          appliedAt: now,
+          appliedByUserId: input.userId,
+          labelIds,
+          taskId: task.id,
+          organizationId: input.organizationId,
+        });
+      }
       this.dependencies.projects.saveProject(context, {
         ...project,
         nextTaskNumber: project.nextTaskNumber + 1,
@@ -274,7 +338,9 @@ export class TaskService {
       this.record(context, input, "task.created", task.id, {
         number: task.number,
         parentTaskId: task.parentTaskId ?? null,
+        priority: task.priority,
         statusId: task.statusId,
+        teamId: task.teamId ?? null,
       });
       return this.toView(context, task, project);
     });
@@ -286,7 +352,9 @@ export class TaskService {
         description?: string;
         dueDate?: null | string;
         expectedRevision: number;
+        priority?: TaskPriority;
         taskId: string;
+        teamId?: null | string;
         title?: string;
       }>,
   ): Promise<TaskView> {
@@ -296,12 +364,21 @@ export class TaskService {
     const description =
       input.description === undefined ? undefined : normalizeDescription(input.description);
     const dueDate = input.dueDate === undefined ? undefined : normalizeDueDate(input.dueDate);
+    const priority = input.priority === undefined ? undefined : normalizePriority(input.priority);
     return this.dependencies.transactions.write((context) => {
       this.requireActor(context, input.organizationId, input.userId);
       const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
       this.requireRevision(task, input.expectedRevision);
-      const base = input.dueDate === null ? withoutOptional(task, "dueDate") : task;
+      const withoutDueDate = input.dueDate === null ? withoutOptional(task, "dueDate") : task;
+      const base =
+        input.teamId === null ? withoutOptional(withoutDueDate, "teamId") : withoutDueDate;
+      if (typeof input.teamId === "string") {
+        const team = this.dependencies.teams.findById(context, input.teamId);
+        if (!team || team.organizationId !== input.organizationId) {
+          throw new TaskTeamInvalidError("The selected team is unavailable.");
+        }
+      }
       const updated: Task = Object.freeze({
         ...base,
         ...(title === undefined ? {} : { title }),
@@ -309,6 +386,8 @@ export class TaskService {
         ...(dueDate === undefined ? {} : { dueDate }),
         revision: task.revision + 1,
         updatedAt: this.dependencies.clock(),
+        ...(priority === undefined ? {} : { priority }),
+        ...(typeof input.teamId === "string" ? { teamId: input.teamId } : {}),
         updatedByUserId: input.userId,
       });
       this.dependencies.tasks.saveTask(context, updated);
