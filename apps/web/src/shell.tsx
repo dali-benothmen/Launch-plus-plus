@@ -11,8 +11,8 @@ import {
   Input,
   LogoutIcon,
   MembersIcon,
-  message,
   Modal,
+  message,
   NotificationsIcon,
   OrganizationIcon,
   PluginsIcon,
@@ -286,7 +286,9 @@ export function AppShell() {
               key={item.to}
               to={item.to}
             >
-              {item.icon}
+              <span aria-hidden className="sidebar-icon">
+                {item.icon}
+              </span>
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -332,7 +334,9 @@ export function AppShell() {
           <div className="sidebar-projects">
             {teams.map((team) => (
               <div className="sidebar-link sidebar-team" key={team.id}>
-                <MembersIcon aria-hidden />
+                <span aria-hidden className="sidebar-icon">
+                  <MembersIcon />
+                </span>
                 <span>{team.name}</span>
               </div>
             ))}

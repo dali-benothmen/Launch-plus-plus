@@ -1,12 +1,14 @@
-import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/api-client";
+import { PointerActivationConstraints, PointerSensor } from "@dnd-kit/dom";
 import { move } from "@dnd-kit/helpers";
 import {
-  type DragEndEvent,
   DragDropProvider,
+  type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
   useDroppable,
 } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { ApiError, type ProjectStatusSummary, type TaskView } from "@launchpp/api-client";
 import {
   AddIcon,
   Alert,
@@ -32,15 +34,7 @@ import {
   Tag,
   Typography,
 } from "@launchpp/ui";
-import {
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
@@ -81,6 +75,7 @@ interface SortableShellProps {
 
 interface SortableTaskShellProps extends SortableShellProps {
   readonly group: string;
+  readonly onOpen: (opener: HTMLDivElement) => void;
 }
 
 const taskPageSize = 50;
@@ -212,8 +207,14 @@ function SortableColumnShell({ children, disabled, id, index, label }: SortableS
 function TaskDropZone({
   children,
   empty,
+  placeholderHeight,
   statusId,
-}: Readonly<{ children: ReactNode; empty: boolean; statusId: string }>) {
+}: Readonly<{
+  children: ReactNode;
+  empty: boolean;
+  placeholderHeight?: number | undefined;
+  statusId: string;
+}>) {
   const droppable = useDroppable({
     accept: "task",
     collisionPriority: 1,
@@ -226,6 +227,11 @@ function TaskDropZone({
     <div
       className={`task-column-list${empty ? " is-empty" : ""}${droppable.isDropTarget ? " is-drop-target" : ""}`}
       ref={droppable.ref}
+      style={
+        droppable.isDropTarget && placeholderHeight !== undefined
+          ? { minHeight: placeholderHeight }
+          : undefined
+      }
     >
       {children}
       {empty ? (
@@ -250,6 +256,7 @@ function SortableTaskShell({
   id,
   index,
   label,
+  onOpen,
 }: SortableTaskShellProps) {
   const sortable = useSortable({
     accept: "task",
@@ -269,6 +276,14 @@ function SortableTaskShell({
       className={`task-card-shell${sortable.isDragging ? " is-dragging" : ""}`}
       ref={sortable.ref}
       role="option"
+      onClick={(event) => onOpen(event.currentTarget)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(event.currentTarget);
+        }
+      }}
       tabIndex={0}
     >
       {children}
@@ -299,6 +314,7 @@ export function ProjectTaskOrganization({
   const [orderedStatusIds, setOrderedStatusIds] = useState<readonly string[]>(() =>
     statuses.map((status) => status.id),
   );
+  const [draggedTaskHeight, setDraggedTaskHeight] = useState<number>();
   const [taskLayout, setTaskLayout] = useState<TaskLayout>(() => createTaskLayout(statuses, []));
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -436,8 +452,8 @@ export function ProjectTaskOrganization({
   };
 
   const projectViewPath = `/app/organizations/${organizationId}/projects/${projectId}/${view}`;
-  const openTask = (task: TaskView, event: ReactMouseEvent<HTMLElement>) => {
-    taskOpenerRef.current = event.currentTarget;
+  const openTask = (task: TaskView, opener: HTMLElement) => {
+    taskOpenerRef.current = opener;
     const parameters = searchParams.toString();
     navigate(`${projectViewPath}/tasks/${task.id}${parameters ? `?${parameters}` : ""}`);
   };
@@ -614,9 +630,15 @@ export function ProjectTaskOrganization({
     [visibleTasks],
   );
 
-  const handleDragStart = () => {
+  const handleDragStart = (event: DragStartEvent) => {
     dragInProgressRef.current = true;
     taskLayoutSnapshotRef.current = taskLayoutRef.current;
+    const source = event.operation.source;
+    setDraggedTaskHeight(
+      source?.type === "task" && source.element
+        ? Math.ceil(source.element.getBoundingClientRect().height)
+        : undefined,
+    );
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -630,6 +652,7 @@ export function ProjectTaskOrganization({
 
   const handleDragEnd = (event: DragEndEvent) => {
     dragInProgressRef.current = false;
+    setDraggedTaskHeight(undefined);
     const source = event.operation.source;
     if (!source) return;
 
@@ -672,6 +695,12 @@ export function ProjectTaskOrganization({
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragStart={handleDragStart}
+        sensors={(defaults) => [
+          ...defaults.filter((sensor) => sensor !== PointerSensor),
+          PointerSensor.configure({
+            activationConstraints: [new PointerActivationConstraints.Distance({ value: 5 })],
+          }),
+        ]}
       >
         <div className="task-board-grid">
           {boardStatuses.map((status, statusIndex) => {
@@ -701,7 +730,11 @@ export function ProjectTaskOrganization({
                     variant="text"
                   />
                 </header>
-                <TaskDropZone empty={columnTasks.length === 0} statusId={status.id}>
+                <TaskDropZone
+                  empty={columnTasks.length === 0}
+                  placeholderHeight={draggedTaskHeight}
+                  statusId={status.id}
+                >
                   {columnTasks.map((task, taskIndex) => (
                     <SortableTaskShell
                       disabled={archived || movingTaskId !== undefined || Boolean(query)}
@@ -710,13 +743,17 @@ export function ProjectTaskOrganization({
                       index={taskIndex}
                       key={task.id}
                       label={task.title}
+                      onOpen={(opener) => openTask(task, opener)}
                     >
                       <Card className="task-card" size="small">
                         <div className="task-card-content">
                           <div className="task-card-heading">
                             <Button
                               className="task-title-button"
-                              onClick={(event) => openTask(task, event)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openTask(task, event.currentTarget);
+                              }}
                               size="small"
                               variant="link"
                             >
@@ -732,6 +769,7 @@ export function ProjectTaskOrganization({
                                 disabled={archived}
                                 icon={<MoreIcon />}
                                 iconOnly
+                                onClick={(event) => event.stopPropagation()}
                                 size="small"
                                 variant="text"
                               />
@@ -811,7 +849,7 @@ export function ProjectTaskOrganization({
       key: "task",
       render: (_value, task) => (
         <div className="task-table-title">
-          <Button onClick={(event) => openTask(task, event)} variant="link">
+          <Button onClick={(event) => openTask(task, event.currentTarget)} variant="link">
             {task.title}
           </Button>
           <Typography.Text type="secondary">{task.reference}</Typography.Text>
