@@ -1204,6 +1204,25 @@ export function ProjectTaskOrganization({
     </div>
   ) : null;
 
+  const openColumnEditor = () => {
+    setColumnError(undefined);
+    setColumnModalOpen(true);
+  };
+
+  const openColumnEditorFromPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openColumnEditor();
+  };
+
+  const openTaskEditorFromPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openCreate();
+  };
+
   return (
     <>
       {messageHolder}
@@ -1242,12 +1261,16 @@ export function ProjectTaskOrganization({
           size="small"
         />
         <div className="task-header-actions">
-          <Button onClick={() => setColumnModalOpen(true)} size="small">
+          <Button
+            onClick={openColumnEditor}
+            onPointerDown={openColumnEditorFromPointer}
+            size="small"
+          >
             + Add column
           </Button>
           <Button
-            disabled={displayStatuses.length === 0}
             onClick={() => openCreate()}
+            onPointerDown={openTaskEditorFromPointer}
             size="small"
             variant="primary"
           >
