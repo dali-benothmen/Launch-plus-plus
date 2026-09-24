@@ -890,8 +890,12 @@
   line-height: 24px;
 }
 
-.task-editor-title > :last-child {
+.task-editor-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
+  font-weight: 400;
 }
 
 .task-editor-form {

@@ -1191,9 +1191,10 @@ export function ProjectTaskOrganization({
             <Typography.Text strong>
               {editor?.kind === "edit" ? `Edit ${editor.task.reference}` : "New task"}
             </Typography.Text>
-            <Typography.Text type="secondary">
-              {projectName} · {statusById.get(draft.statusId)?.name ?? "Task"}
-            </Typography.Text>
+            <div className="task-editor-context">
+              <Typography.Text type="secondary">{projectName}</Typography.Text>
+              <Tag color="neutral">{statusById.get(draft.statusId)?.name ?? "Task"}</Tag>
+            </div>
           </div>
         }
         width={600}
