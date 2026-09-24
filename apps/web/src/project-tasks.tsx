@@ -42,7 +42,12 @@ import {
   Upload,
   type UploadFile,
 } from "@launchpp/ui";
-import { FlagOutlined, UploadOutlined } from "@launchpp/ui/icons";
+import {
+  CommentOutlined,
+  FileTextOutlined,
+  FlagOutlined,
+  UploadOutlined,
+} from "@launchpp/ui/icons";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
@@ -64,7 +69,7 @@ interface ProjectTaskOrganizationProps {
   readonly organizationId: string;
 }
 
-type TaskEditor = Readonly<{ kind: "create" }> | Readonly<{ kind: "edit"; task: TaskView }>;
+type TaskEditor = Readonly<{ kind: "create" }>;
 
 interface TaskDraft {
   readonly assigneeUserIds: readonly string[];
@@ -111,6 +116,20 @@ const taskPriorityPresentation: Record<
   medium: { color: "orange", label: "Medium" },
 };
 
+const fallbackStatusColors = [
+  "#faad14",
+  "#1677ff",
+  "#13c2c2",
+  "#52c41a",
+  "#fa8c16",
+  "#eb2f96",
+] as const;
+
+function displayStatusColor(status: ProjectStatusSummary) {
+  if (status.color.toLowerCase() !== "#8c8c8c") return status.color;
+  return fallbackStatusColors[status.position % fallbackStatusColors.length] ?? "#1677ff";
+}
+
 function dateFromKey(value?: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
 }
@@ -132,28 +151,6 @@ function avatarInitials(value: string) {
 function formatDate(value: number | string) {
   const date = typeof value === "number" ? new Date(value) : dateFromKey(value);
   return date ? shortDate.format(date) : String(value);
-}
-
-function sameIds(first: readonly string[], second: readonly string[]) {
-  if (first.length !== second.length) return false;
-  const values = new Set(first);
-  return second.every((value) => values.has(value));
-}
-
-function taskWithDraft(task: TaskView, draft: TaskDraft): TaskView {
-  const { dueDate: _dueDate, teamId: _teamId, ...base } = task;
-  const dueDate = draft.dueDate ? dateKey(draft.dueDate) : undefined;
-  return {
-    ...base,
-    assigneeUserIds: [...draft.assigneeUserIds],
-    description: draft.description.trim(),
-    ...(dueDate ? { dueDate } : {}),
-    priority: draft.priority,
-    statusId: draft.statusId,
-    ...(draft.teamId ? { teamId: draft.teamId } : {}),
-    title: draft.title.trim().replace(/\s+/g, " "),
-    updatedAt: Date.now(),
-  };
 }
 
 function optimisticallyMove(
@@ -474,9 +471,13 @@ export function ProjectTaskOrganization({
     ],
     [currentUserId, currentUserName],
   );
-  const statusById = useMemo(
-    () => new Map(statuses.map((status) => [status.id, status])),
+  const displayStatuses = useMemo(
+    () => statuses.map((status) => ({ ...status, color: displayStatusColor(status) })),
     [statuses],
+  );
+  const statusById = useMemo(
+    () => new Map(displayStatuses.map((status) => [status.id, status])),
+    [displayStatuses],
   );
   const query = (searchParams.get("q") ?? "").trim().toLocaleLowerCase();
   const visibleTasks = useMemo(() => {
@@ -521,24 +522,9 @@ export function ProjectTaskOrganization({
     setEditor({ kind: "create" });
   };
 
-  const openEdit = (task: TaskView) => {
-    updateDraft({
-      description: task.description,
-      assigneeUserIds: task.assigneeUserIds,
-      dueDate: dateFromKey(task.dueDate),
-      statusId: task.statusId,
-      title: task.title,
-      priority: task.priority,
-      ...(task.teamId ? { teamId: task.teamId } : {}),
-    });
-    setAttachmentFiles([]);
-    setEditorError(undefined);
-    setEditor({ kind: "edit", task });
-  };
-
   const projectViewPath = `/app/organizations/${organizationId}/projects/${projectId}/${view}`;
-  const openTask = (task: TaskView, opener: HTMLElement) => {
-    taskOpenerRef.current = opener;
+  const openTask = (task: TaskView, opener?: HTMLElement) => {
+    if (opener) taskOpenerRef.current = opener;
     const parameters = searchParams.toString();
     navigate(`${projectViewPath}/tasks/${task.id}${parameters ? `?${parameters}` : ""}`);
   };
@@ -607,10 +593,10 @@ export function ProjectTaskOrganization({
     {
       key: "edit",
       label: "Edit task",
-      onClick: () => openEdit(task),
+      onClick: () => openTask(task),
     },
     {
-      children: statuses
+      children: displayStatuses
         .filter((status) => status.id !== task.statusId)
         .map((status) => ({
           key: `move-${status.id}`,
@@ -624,79 +610,29 @@ export function ProjectTaskOrganization({
 
   const saveTask = async () => {
     const currentDraft = draftRef.current;
-    if (!editor || saving || !currentDraft.statusId) {
-      return;
-    }
+    if (!editor || saving || !currentDraft.statusId) return;
     if (currentDraft.title.trim().length === 0) {
       setEditorError(new TypeError("A task title is required."));
       return;
     }
     setSaving(true);
     setEditorError(undefined);
-    if (editor.kind === "create") {
-      try {
-        const created = await api.tasks.create(organizationId, projectId, {
-          assigneeUserIds: [...currentDraft.assigneeUserIds],
-          description: currentDraft.description,
-          ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
-          priority: currentDraft.priority,
-          statusId: currentDraft.statusId,
-          ...(currentDraft.teamId ? { teamId: currentDraft.teamId } : {}),
-          title: currentDraft.title,
-        });
-        setTasks((current) => [...current, created]);
-        closeEditor();
-        messageApi.success(`${created.reference} created.`);
-      } catch (reason) {
-        setEditorError(reason);
-        setSaving(false);
-      }
-      return;
-    }
-
-    const original = editor.task;
-    const snapshot = tasks;
-    const optimistic = taskWithDraft(original, currentDraft);
-    setTasks((current) => current.map((task) => (task.id === original.id ? optimistic : task)));
     try {
-      const nextDueDate = currentDraft.dueDate ? dateKey(currentDraft.dueDate) : undefined;
-      const nextTitle = currentDraft.title.trim().replace(/\s+/g, " ");
-      const nextDescription = currentDraft.description.trim();
-      const updates = {
-        ...(nextTitle === original.title ? {} : { title: nextTitle }),
-        ...(nextDescription === original.description ? {} : { description: nextDescription }),
-        ...(nextDueDate === original.dueDate
-          ? {}
-          : { dueDate: nextDueDate === undefined ? null : nextDueDate }),
-        ...(currentDraft.priority === original.priority ? {} : { priority: currentDraft.priority }),
-        ...(currentDraft.teamId === original.teamId ? {} : { teamId: currentDraft.teamId ?? null }),
-      };
-      let updated = original;
-      if (Object.keys(updates).length > 0) {
-        updated = await api.tasks.update(organizationId, projectId, original.id, {
-          expectedRevision: original.revision,
-          ...updates,
-        });
-      }
-      if (!sameIds(currentDraft.assigneeUserIds, updated.assigneeUserIds)) {
-        updated = await api.tasks.replaceAssignees(organizationId, projectId, updated.id, {
-          expectedRevision: updated.revision,
-          userIds: [...currentDraft.assigneeUserIds],
-        });
-      }
-      setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
+      const created = await api.tasks.create(organizationId, projectId, {
+        assigneeUserIds: [...currentDraft.assigneeUserIds],
+        description: currentDraft.description,
+        ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
+        priority: currentDraft.priority,
+        statusId: currentDraft.statusId,
+        ...(currentDraft.teamId ? { teamId: currentDraft.teamId } : {}),
+        title: currentDraft.title,
+      });
+      setTasks((current) => [...current, created]);
       closeEditor();
-      messageApi.success(`${updated.reference} updated.`);
+      messageApi.success(`${created.reference} created.`);
     } catch (reason) {
-      setTasks(snapshot);
-      if (reason instanceof ApiError && reason.status === 409) {
-        closeEditor();
-        messageApi.error("This task changed elsewhere. The latest version has been restored.");
-        await loadTasks(undefined, true);
-      } else {
-        setEditorError(reason);
-        setSaving(false);
-      }
+      setEditorError(reason);
+      setSaving(false);
     }
   };
 
@@ -723,8 +659,8 @@ export function ProjectTaskOrganization({
       return status ? [status] : [];
     });
     const included = new Set(orderedStatusIds);
-    return [...ordered, ...statuses.filter((status) => !included.has(status.id))];
-  }, [orderedStatusIds, statusById, statuses]);
+    return [...ordered, ...displayStatuses.filter((status) => !included.has(status.id))];
+  }, [displayStatuses, orderedStatusIds, statusById]);
 
   const visibleTaskById = useMemo(
     () => new Map(visibleTasks.map((task) => [task.id, task])),
@@ -886,20 +822,25 @@ export function ProjectTaskOrganization({
                                 disabled={archived}
                                 icon={<MoreIcon />}
                                 iconOnly
-                                onClick={(event) => event.stopPropagation()}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  taskOpenerRef.current = event.currentTarget;
+                                }}
                                 size="small"
                                 variant="text"
                               />
                             </Dropdown>
                           </div>
-                          <Typography.Text className="task-card-title">
-                            {task.title}
-                          </Typography.Text>
-                          {task.description ? (
-                            <Typography.Text className="task-card-description" type="secondary">
-                              {task.description}
+                          <div className="task-card-copy">
+                            <Typography.Text className="task-card-title">
+                              {task.title}
                             </Typography.Text>
-                          ) : null}
+                            {task.description ? (
+                              <Typography.Text className="task-card-description" type="secondary">
+                                {task.description}
+                              </Typography.Text>
+                            ) : null}
+                          </div>
                           <div className="task-assignees">
                             <Typography.Text type="secondary">Assignees:</Typography.Text>
                             {task.assigneeUserIds.length > 0 ? (
@@ -935,19 +876,21 @@ export function ProjectTaskOrganization({
                             </Tag>
                           </div>
                           <div className="task-card-footer">
-                            <Typography.Text type="secondary">{task.reference}</Typography.Text>
-                            {task.labels.length > 0 ? (
-                              <div className="task-card-meta">
-                                {task.labels.slice(0, 2).map((label) => (
-                                  <Tag color={label.color} key={label.id}>
-                                    {label.name}
-                                  </Tag>
-                                ))}
-                                {task.labels.length > 2 ? (
-                                  <Tag color="neutral">+{task.labels.length - 2}</Tag>
-                                ) : null}
-                              </div>
-                            ) : null}
+                            <span
+                              aria-label={`${task.commentCount} comments`}
+                              className="task-card-metric"
+                              title="Comments"
+                            >
+                              <CommentOutlined aria-hidden />
+                              {task.commentCount}
+                            </span>
+                            <span
+                              aria-label="0 attached documents"
+                              className="task-card-metric"
+                              title="Attached documents"
+                            >
+                              <FileTextOutlined aria-hidden />0
+                            </span>
                           </div>
                         </div>
                       </Card>
@@ -1019,6 +962,9 @@ export function ProjectTaskOrganization({
             disabled={archived}
             icon={<MoreIcon />}
             iconOnly
+            onClick={(event) => {
+              taskOpenerRef.current = event.currentTarget;
+            }}
             size="small"
             variant="text"
           />
@@ -1199,7 +1145,7 @@ export function ProjectTaskOrganization({
           </div>
         )}
         okButtonProps={{ size: "large" }}
-        okText={editor?.kind === "edit" ? "Save task" : "Create task"}
+        okText="Create task"
         onCancel={closeEditor}
         onOk={() => void saveTask()}
         open={editor !== undefined}
@@ -1218,9 +1164,7 @@ export function ProjectTaskOrganization({
         }}
         title={
           <div className="task-editor-title">
-            <Typography.Text strong>
-              {editor?.kind === "edit" ? `Edit ${editor.task.reference}` : "New task"}
-            </Typography.Text>
+            <Typography.Text strong>New task</Typography.Text>
             <div className="task-editor-context">
               <Typography.Text type="secondary">{projectName}</Typography.Text>
               <Tag color="neutral">{statusById.get(draft.statusId)?.name ?? "Task"}</Tag>
@@ -1383,7 +1327,7 @@ export function ProjectTaskOrganization({
         }
         projectId={projectId}
         projectName={projectName}
-        statuses={statuses}
+        statuses={displayStatuses}
         taskId={taskId}
         organizationId={organizationId}
       />

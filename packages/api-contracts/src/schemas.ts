@@ -278,6 +278,7 @@ export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
     assigneeUserIds: Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
+    commentCount: Type.Integer({ minimum: 0 }),
     createdAt: TimestampSchema,
     createdByUserId: IdentifierSchema,
     description: Type.String({ maxLength: 100_000 }),

@@ -39,6 +39,7 @@ export interface Label {
 
 export interface TaskView extends Task {
   readonly assigneeUserIds: readonly string[];
+  readonly commentCount: number;
   readonly labels: readonly Label[];
   readonly reference: string;
 }

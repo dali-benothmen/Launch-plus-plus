@@ -91,6 +91,7 @@ function taskSummary(task: TaskView) {
   return {
     ...(task.archivedAt === undefined ? {} : { archivedAt: task.archivedAt }),
     assigneeUserIds: task.assigneeUserIds,
+    commentCount: task.commentCount,
     createdAt: task.createdAt,
     createdByUserId: task.createdByUserId,
     description: task.description,

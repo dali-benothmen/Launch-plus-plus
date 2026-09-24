@@ -46,10 +46,19 @@ interface DefaultStatus {
 }
 
 const defaultStatuses: readonly DefaultStatus[] = [
-  { category: "backlog", color: "#8c8c8c", name: "To do" },
+  { category: "backlog", color: "#faad14", name: "To do" },
   { category: "active", color: "#1668dc", name: "In progress" },
   { category: "done", color: "#52c41a", name: "Done" },
 ];
+
+const generatedStatusColors = [
+  "#1677ff",
+  "#13c2c2",
+  "#52c41a",
+  "#fa8c16",
+  "#eb2f96",
+  "#faad14",
+] as const;
 
 function validateContext(input: CommandContext) {
   if (
@@ -238,11 +247,10 @@ export class ProjectCatalogService {
   ): Promise<ProjectStatus> {
     validateContext(input);
     const name = input.name.trim().replace(/\s+/g, " ");
-    const color = input.color ?? "#8c8c8c";
     if (name.length === 0 || name.length > 80) {
       return Promise.reject(new TypeError("Board column name must contain 1 to 80 characters."));
     }
-    if (!/^#[0-9a-f]{6}$/i.test(color)) {
+    if (input.color !== undefined && !/^#[0-9a-f]{6}$/i.test(input.color)) {
       return Promise.reject(new TypeError("Board column color must be a six-digit hex color."));
     }
     return this.dependencies.transactions.write((context) => {
@@ -255,6 +263,10 @@ export class ProjectCatalogService {
       if (projectStatuses.some((status) => status.name.toLowerCase() === name.toLowerCase())) {
         throw new ProjectStatusNameConflictError("A board column with this name already exists.");
       }
+      const color =
+        input.color ??
+        generatedStatusColors[projectStatuses.length % generatedStatusColors.length] ??
+        "#1677ff";
       const now = this.dependencies.clock();
       const status: ProjectStatus = Object.freeze({
         category: input.category ?? "active",

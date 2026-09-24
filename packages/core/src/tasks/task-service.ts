@@ -740,6 +740,7 @@ export class TaskService {
     return Object.freeze({
       ...task,
       assigneeUserIds: this.dependencies.tasks.listAssigneeUserIds(context, task.id),
+      commentCount: this.dependencies.tasks.listComments(context, task.id).length,
       labels: this.dependencies.tasks.listLabelsForTask(context, task.id),
       reference: `${project.key}-${task.number}`,
     });

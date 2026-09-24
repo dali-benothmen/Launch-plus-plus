@@ -713,8 +713,7 @@
 }
 
 .task-card-status-tag,
-.task-card-priority,
-.task-card-meta .launch-ui-tag {
+.task-card-priority {
   height: 20px;
   font-size: 11px;
   line-height: 18px;
@@ -725,6 +724,11 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
+}
+
+.task-card-copy {
+  display: grid;
+  gap: 2px;
 }
 
 .task-card-title {
@@ -739,16 +743,22 @@
 }
 
 .task-card-description {
-  display: -webkit-box;
+  display: block;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  font-size: 11px;
-  line-height: 1.45;
+  color: var(--launch-color-text-muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.task-assignees > * {
-  font-size: 11px;
+.task-assignees {
+  color: var(--launch-color-text-muted);
+}
+
+.task-assignees > .launch-ui-typography {
+  color: inherit;
+  font-size: 10px;
 }
 
 .task-card-due {
@@ -758,20 +768,25 @@
   color: var(--launch-color-text-muted);
 }
 
-.task-card-due > *,
-.task-card-footer > * {
-  font-size: 10px;
+.task-card-due > * {
+  color: inherit;
+  font-size: 9px;
 }
 
 .task-card-footer {
   min-height: 24px;
+  justify-content: flex-start;
+  gap: 14px;
   padding-top: 7px;
   border-top: 1px solid var(--launch-color-border-secondary);
 }
 
-.task-card-meta {
-  justify-content: flex-end;
-  flex-wrap: wrap;
+.task-card-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--launch-color-text-muted);
+  font-size: 10px;
 }
 
 .task-list-groups {
