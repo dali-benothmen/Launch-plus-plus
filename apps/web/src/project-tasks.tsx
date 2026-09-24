@@ -739,7 +739,7 @@ export function ProjectTaskOrganization({
     const pendingTask = pendingTaskMenuOpenRef.current;
     if (!pendingTask) return;
     pendingTaskMenuOpenRef.current = undefined;
-    window.setTimeout(() => openTask(pendingTask), 0);
+    window.setTimeout(() => openTask(pendingTask), 250);
   };
 
   const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
