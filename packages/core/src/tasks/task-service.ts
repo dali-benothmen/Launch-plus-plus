@@ -210,7 +210,13 @@ export class TaskService {
 
   createAttachment(
     input: CommandContext &
-      Readonly<{ content: Uint8Array; contentType: string; name: string; taskId: string }>,
+      Readonly<{
+        commentId?: string;
+        content: Uint8Array;
+        contentType: string;
+        name: string;
+        taskId: string;
+      }>,
   ): Promise<TaskDetail> {
     validateContext(input);
     const name = normalizeAttachmentName(input.name);
@@ -220,12 +226,24 @@ export class TaskService {
       this.requireActor(context, input.organizationId, input.userId);
       const project = this.requireProject(context, input.organizationId, input.projectId, true);
       const task = this.requireTask(context, input, input.taskId);
+      if (input.commentId !== undefined) {
+        const comment = this.dependencies.tasks.findCommentById(context, input.commentId);
+        if (
+          !comment ||
+          comment.organizationId !== input.organizationId ||
+          comment.projectId !== input.projectId ||
+          comment.taskId !== task.id
+        ) {
+          throw new TaskNotFoundError("The task comment does not exist.");
+        }
+      }
       const attachments = this.dependencies.tasks.listAttachments(context, task.id);
       if (attachments.length >= 100) {
         throw new TypeError("A task cannot have more than 100 attachments.");
       }
       const now = this.dependencies.clock();
       const attachment: TaskAttachment = Object.freeze({
+        ...(input.commentId === undefined ? {} : { commentId: input.commentId }),
         content,
         contentType,
         createdAt: now,
@@ -353,6 +371,84 @@ export class TaskService {
       this.dependencies.tasks.createComment(context, comment);
       this.record(context, input, "comment.created", task.id, { commentId: comment.id });
       return comment;
+    });
+  }
+
+  updateComment(
+    input: CommandContext &
+      Readonly<{ body: string; commentId: string; expectedRevision: number; taskId: string }>,
+  ): Promise<TaskDetail> {
+    validateContext(input);
+    validateExpectedRevision(input.expectedRevision);
+    const body = normalizeComment(input.body);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const comment = this.dependencies.tasks.findCommentById(context, input.commentId);
+      if (
+        !comment ||
+        comment.organizationId !== input.organizationId ||
+        comment.projectId !== input.projectId ||
+        comment.taskId !== task.id
+      ) {
+        throw new TaskNotFoundError("The task comment does not exist.");
+      }
+      if (comment.authorUserId !== input.userId) {
+        throw new TaskAccessDeniedError("Only the comment author can edit this comment.");
+      }
+      if (comment.revision !== input.expectedRevision) {
+        throw new TaskRevisionConflictError(comment.id, input.expectedRevision, comment.revision);
+      }
+      const updated: TaskComment = Object.freeze({
+        ...comment,
+        body,
+        revision: comment.revision + 1,
+        updatedAt: this.dependencies.clock(),
+      });
+      this.dependencies.tasks.saveComment(context, updated);
+      this.record(context, input, "comment.updated", task.id, { commentId: comment.id });
+      return this.toDetail(context, task, project);
+    });
+  }
+
+  deleteComment(
+    input: CommandContext &
+      Readonly<{ commentId: string; expectedRevision: number; taskId: string }>,
+  ): Promise<TaskDetail> {
+    validateContext(input);
+    validateExpectedRevision(input.expectedRevision);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const comment = this.dependencies.tasks.findCommentById(context, input.commentId);
+      if (
+        !comment ||
+        comment.organizationId !== input.organizationId ||
+        comment.projectId !== input.projectId ||
+        comment.taskId !== task.id
+      ) {
+        throw new TaskNotFoundError("The task comment does not exist.");
+      }
+      if (comment.authorUserId !== input.userId) {
+        throw new TaskAccessDeniedError("Only the comment author can delete this comment.");
+      }
+      if (comment.revision !== input.expectedRevision) {
+        throw new TaskRevisionConflictError(comment.id, input.expectedRevision, comment.revision);
+      }
+      this.dependencies.tasks.deleteComment(context, comment.id);
+      const now = this.dependencies.clock();
+      const updated = Object.freeze({
+        ...task,
+        attachmentCount: this.dependencies.tasks.listAttachments(context, task.id).length,
+        revision: task.revision + 1,
+        updatedAt: now,
+        updatedByUserId: input.userId,
+      });
+      this.dependencies.tasks.saveTask(context, updated);
+      this.record(context, input, "comment.deleted", task.id, { commentId: comment.id });
+      return this.toDetail(context, updated, project);
     });
   }
 

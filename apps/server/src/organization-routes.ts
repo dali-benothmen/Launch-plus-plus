@@ -154,6 +154,64 @@ export async function registerOrganizationRoutes(
     },
   );
 
+  app.get<{ Params: { readonly organizationId: string } }>(
+    "/api/v1/organizations/:organizationId/members",
+    {
+      schema: {
+        operationId: "listOrganizationMembers",
+        params: { $ref: "LaunchppOrganizationParamsV1#" },
+        response: {
+          200: {
+            items: { $ref: "LaunchppOrganizationMemberSummaryV1#" },
+            maxItems: 1_000,
+            type: "array",
+          },
+          ...problemResponses,
+        },
+        summary: "List organization members",
+        tags: ["Organizations"],
+      },
+    },
+    async (request, reply) => {
+      const session = await sessionFor(request);
+      const actor = actorFromIdentitySession(session);
+      if (!session) {
+        return sendProblem(
+          reply,
+          request,
+          401,
+          "unauthenticated",
+          "Authentication required",
+          "Sign in to access organization members.",
+        );
+      }
+      const membership = input.database.read((context) =>
+        memberships.find(context, request.params.organizationId, session.identity.id),
+      );
+      if (!canAccessOrganization(actor, membership, "organization.read")) {
+        return sendProblem(
+          reply,
+          request,
+          403,
+          "organization_access_denied",
+          "Organization access denied",
+          "Active membership is required to access organization members.",
+        );
+      }
+      return input.database.read((context) =>
+        memberships
+          .list(context, request.params.organizationId)
+          .filter((member) => member.state === "active")
+          .map((member) => ({
+            displayName:
+              profiles.findByUserId(context, member.userId)?.displayName ?? "Organization member",
+            role: member.role,
+            userId: member.userId,
+          })),
+      );
+    },
+  );
+
   app.post<{ Body: CreateOrganizationInput }>(
     "/api/v1/organizations",
     {

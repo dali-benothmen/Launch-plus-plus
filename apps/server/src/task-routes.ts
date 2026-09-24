@@ -5,10 +5,12 @@ import type {
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
+  DeleteTaskCommentInput,
   CursorPageQuery,
   MoveTaskInput,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
+  UpdateTaskCommentInput,
   UpdateTaskInput,
 } from "@launchpp/api-contracts";
 import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
@@ -58,6 +60,10 @@ interface TaskParams extends ProjectParams {
 
 interface AttachmentParams extends TaskParams {
   readonly attachmentId: string;
+}
+
+interface CommentParams extends TaskParams {
+  readonly commentId: string;
 }
 
 const problemResponses = {
@@ -337,6 +343,7 @@ export async function registerTaskRoutes(
       try {
         const detail = await service.createAttachment({
           ...context,
+          ...(request.body.commentId === undefined ? {} : { commentId: request.body.commentId }),
           content: decodeBase64(request.body.contentBase64),
           contentType: request.body.contentType,
           correlationId: request.id,
@@ -457,6 +464,74 @@ export async function registerTaskRoutes(
             });
             return { body: commentSummary(comment), status: 201 };
           },
+        );
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.patch<{ Body: UpdateTaskCommentInput; Params: CommentParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/comments/:commentId",
+    {
+      schema: {
+        body: { $ref: "LaunchppUpdateTaskCommentInputV1#" },
+        operationId: "updateTaskComment",
+        params: { $ref: "LaunchppTaskCommentParamsV1#" },
+        response: { 200: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Update a task comment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        return taskDetailSummary(
+          await service.updateComment({
+            ...context,
+            ...request.body,
+            commentId: request.params.commentId,
+            correlationId: request.id,
+            projectId: request.params.projectId,
+            taskId: request.params.taskId,
+            organizationId: request.params.organizationId,
+          }),
+        );
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Body: DeleteTaskCommentInput; Params: CommentParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/comments/:commentId",
+    {
+      schema: {
+        body: { $ref: "LaunchppDeleteTaskCommentInputV1#" },
+        operationId: "deleteTaskComment",
+        params: { $ref: "LaunchppTaskCommentParamsV1#" },
+        response: { 200: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Delete a task comment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        return taskDetailSummary(
+          await service.deleteComment({
+            ...context,
+            commentId: request.params.commentId,
+            correlationId: request.id,
+            expectedRevision: request.body.expectedRevision,
+            projectId: request.params.projectId,
+            taskId: request.params.taskId,
+            organizationId: request.params.organizationId,
+          }),
         );
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;

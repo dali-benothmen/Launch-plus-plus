@@ -62,6 +62,7 @@ interface CommentRow {
 
 interface AttachmentRow {
   readonly content: Buffer;
+  readonly comment_id: null | string;
   readonly content_type: string;
   readonly created_at: number;
   readonly id: string;
@@ -145,6 +146,7 @@ function mapComment(row: CommentRow): TaskComment {
 function mapAttachment(row: AttachmentRow): TaskAttachment {
   return Object.freeze({
     content: new Uint8Array(row.content),
+    ...(row.comment_id === null ? {} : { commentId: row.comment_id }),
     contentType: row.content_type,
     createdAt: row.created_at,
     id: row.id,
@@ -182,15 +184,16 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `INSERT INTO task_attachments (
-          id, organization_id, project_id, task_id, name, content_type, size, content,
+          id, organization_id, project_id, task_id, comment_id, name, content_type, size, content,
           uploaded_by_user_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         attachment.id,
         attachment.organizationId,
         attachment.projectId,
         attachment.taskId,
+        attachment.commentId ?? null,
         attachment.name,
         attachment.contentType,
         attachment.size,
@@ -282,15 +285,32 @@ export class SqliteTaskRepository implements TaskRepository {
       .run(attachmentId);
   }
 
+  deleteComment(context: WriteContext, commentId: string): void {
+    const connection = requireSqliteConnection(context);
+    connection.prepare("DELETE FROM task_attachments WHERE comment_id = ?").run(commentId);
+    connection.prepare("DELETE FROM task_comments WHERE id = ?").run(commentId);
+  }
+
   findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string], AttachmentRow>(
-        `SELECT id, organization_id, project_id, task_id, name, content_type, size, content,
+        `SELECT id, organization_id, project_id, task_id, comment_id, name, content_type, size, content,
                 uploaded_by_user_id, created_at
          FROM task_attachments WHERE id = ?`,
       )
       .get(attachmentId);
     return row ? mapAttachment(row) : undefined;
+  }
+
+  findCommentById(context: ReadContext, commentId: string): TaskComment | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[string], CommentRow>(
+        `SELECT id, organization_id, project_id, task_id, author_user_id,
+                body_markdown, created_at, updated_at, revision
+         FROM task_comments WHERE id = ?`,
+      )
+      .get(commentId);
+    return row ? mapComment(row) : undefined;
   }
 
   findLabelById(context: ReadContext, labelId: string): Label | undefined {
@@ -329,7 +349,7 @@ export class SqliteTaskRepository implements TaskRepository {
   listAttachments(context: ReadContext, taskId: string): readonly TaskAttachmentSummary[] {
     return requireSqliteConnection(context)
       .prepare<[string], AttachmentRow>(
-        `SELECT id, organization_id, project_id, task_id, name, content_type, size, content,
+        `SELECT id, organization_id, project_id, task_id, comment_id, name, content_type, size, content,
                 uploaded_by_user_id, created_at
          FROM task_attachments WHERE task_id = ? ORDER BY created_at ASC, id ASC`,
       )
@@ -523,6 +543,23 @@ export class SqliteTaskRepository implements TaskRepository {
         input.appliedAt,
       );
     }
+  }
+
+  saveComment(context: WriteContext, comment: TaskComment): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `UPDATE task_comments SET body_markdown = ?, updated_at = ?, revision = ?
+         WHERE id = ? AND organization_id = ? AND project_id = ? AND task_id = ?`,
+      )
+      .run(
+        comment.body,
+        comment.updatedAt,
+        comment.revision,
+        comment.id,
+        comment.organizationId,
+        comment.projectId,
+        comment.taskId,
+      );
   }
 
   saveTask(context: WriteContext, task: Task): void {

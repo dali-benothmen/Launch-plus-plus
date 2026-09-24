@@ -59,6 +59,7 @@ export interface TaskComment {
 
 export interface TaskAttachmentSummary {
   readonly contentType: string;
+  readonly commentId?: string;
   readonly createdAt: number;
   readonly id: string;
   readonly name: string;
@@ -98,10 +99,12 @@ export interface TaskCatalog {
 export interface TaskRepository {
   createAttachment(context: WriteContext, attachment: TaskAttachment): void;
   createComment(context: WriteContext, comment: TaskComment): void;
+  deleteComment(context: WriteContext, commentId: string): void;
   createLabel(context: WriteContext, label: Label): void;
   createTask(context: WriteContext, task: Task): void;
   deleteAttachment(context: WriteContext, attachmentId: string): void;
   findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined;
+  findCommentById(context: ReadContext, commentId: string): TaskComment | undefined;
   findLabelById(context: ReadContext, labelId: string): Label | undefined;
   findLabelByName(
     context: ReadContext,
@@ -153,6 +156,7 @@ export interface TaskRepository {
       organizationId: string;
     }>,
   ): void;
+  saveComment(context: WriteContext, comment: TaskComment): void;
   saveTask(context: WriteContext, task: Task): void;
 }
 

@@ -57,4 +57,15 @@ export class SqliteOrganizationMembershipRepository implements OrganizationMembe
       .get(organizationId, userId);
     return row ? mapMembership(row) : undefined;
   }
+
+  list(context: ReadContext, organizationId: string): readonly OrganizationMembership[] {
+    return requireSqliteConnection(context)
+      .prepare<[string], MembershipRow>(
+        `SELECT organization_id, user_id, role, state, joined_at, updated_at
+         FROM organization_members WHERE organization_id = ?
+         ORDER BY joined_at ASC, user_id ASC`,
+      )
+      .all(organizationId)
+      .map(mapMembership);
+  }
 }

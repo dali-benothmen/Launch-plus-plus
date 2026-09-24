@@ -85,6 +85,7 @@ export interface OrganizationMembershipRepository {
     organizationId: string,
     userId: string,
   ): OrganizationMembership | undefined;
+  list(context: ReadContext, organizationId: string): readonly OrganizationMembership[];
 }
 
 export interface AuditWriter {

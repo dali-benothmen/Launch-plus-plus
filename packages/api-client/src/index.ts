@@ -7,6 +7,7 @@ export type {
   InvalidationEvent,
   LabelSummary,
   OrganizationContext,
+  OrganizationMemberSummary,
   OrganizationSummary,
   ProblemDetails,
   ProjectCatalog,

@@ -1,7 +1,9 @@
 import {
   ApiError,
+  type OrganizationMemberSummary,
   type ProjectStatusSummary,
   type TaskAttachmentSummary,
+  type TaskComment,
   type TaskDetail,
   type TaskPriority,
   type TaskView,
@@ -15,8 +17,11 @@ import {
   Checkbox,
   DatePicker,
   Drawer,
+  Dropdown,
+  type DropdownMenuItem,
   Empty,
   Input,
+  Mentions,
   Modal,
   Progress,
   Select,
@@ -32,10 +37,12 @@ import {
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
+  CommentOutlined,
   DeleteOutlined,
   EditOutlined,
   FlagOutlined,
   FileTextOutlined,
+  MoreOutlined,
   PaperClipOutlined,
   SendOutlined,
   TeamOutlined,
@@ -108,7 +115,7 @@ function dateKey(value: Date) {
   return `${value.getFullYear()}-${month}-${day}`;
 }
 
-function initialDraft(detail: TaskDetail, currentUserId: string): DetailDraft {
+function initialDraft(detail: TaskDetail): DetailDraft {
   return {
     assigneeUserIds: detail.task.assigneeUserIds,
     description: detail.task.description,
@@ -183,10 +190,16 @@ export function TaskDetailPanel({
   const [detail, setDetail] = useState<TaskDetail>();
   const [draft, setDraft] = useState<DetailDraft>();
   const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
+  const [members, setMembers] = useState<readonly OrganizationMemberSummary[]>([]);
   const [loadError, setLoadError] = useState<unknown>();
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
   const [comment, setComment] = useState("");
+  const [commentFiles, setCommentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
+  const [editingCommentId, setEditingCommentId] = useState<string>();
+  const [editingCommentBody, setEditingCommentBody] = useState("");
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<TaskComment>();
+  const [deletingComment, setDeletingComment] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [postingComment, setPostingComment] = useState(false);
   const [creatingSubtask, setCreatingSubtask] = useState(false);
@@ -200,14 +213,18 @@ export function TaskDetailPanel({
     if (!taskId) return;
     setLoadError(undefined);
     try {
-      const [next, nextTeams] = await Promise.all([
+      const [next, nextTeams, nextMembers] = await Promise.all([
         api.tasks.get(organizationId, projectId, taskId),
         api.teams.list(organizationId),
+        api.organizations.listMembers(organizationId),
       ]);
       setDetail(next);
-      setDraft(initialDraft(next, currentUserId));
-      setAttachmentFiles(next.attachments.map(attachmentUploadFile));
+      setDraft(initialDraft(next));
+      setAttachmentFiles(
+        next.attachments.filter((attachment) => !attachment.commentId).map(attachmentUploadFile),
+      );
       setTeams(nextTeams);
+      setMembers(nextMembers);
     } catch (reason) {
       setLoadError(reason);
     }
@@ -221,6 +238,10 @@ export function TaskDetailPanel({
     setEditing(false);
     setSaveError(undefined);
     setComment("");
+    setCommentFiles([]);
+    setEditingCommentId(undefined);
+    setEditingCommentBody("");
+    setCommentDeleteTarget(undefined);
     setSubtaskTitle("");
     setDeleteConfirmOpen(false);
     setPreviewImage(undefined);
@@ -284,20 +305,42 @@ export function TaskDetailPanel({
     [teams],
   );
 
+  const memberName = useCallback(
+    (userId: string) =>
+      members.find((member) => member.userId === userId)?.displayName ??
+      (userId === currentUserId ? currentUserName : "Organization member"),
+    [currentUserId, currentUserName, members],
+  );
   const assigneeOptions = useMemo(() => {
-    const userIds = [...new Set([currentUserId, ...(draft?.assigneeUserIds ?? [])])];
-    return userIds.map((userId) => ({
-      label: (
-        <span className="task-detail-select-option">
-          <Avatar size={20}>
-            {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
-          </Avatar>
-          {userId === currentUserId ? currentUserName : "Organization member"}
-        </span>
-      ),
-      value: userId,
-    }));
-  }, [currentUserId, currentUserName, draft?.assigneeUserIds]);
+    const userIds = [
+      ...new Set([
+        ...members.map((member) => member.userId),
+        currentUserId,
+        ...(draft?.assigneeUserIds ?? []),
+      ]),
+    ];
+    return userIds.map((userId) => {
+      const name = memberName(userId);
+      return {
+        label: (
+          <span className="task-detail-select-option">
+            <Avatar size={20}>{name.slice(0, 1).toUpperCase()}</Avatar>
+            {name}
+          </span>
+        ),
+        value: userId,
+      };
+    });
+  }, [currentUserId, draft?.assigneeUserIds, memberName, members]);
+  const mentionOptions = useMemo(
+    () =>
+      members.map((member) => ({
+        key: member.userId,
+        label: member.displayName,
+        value: member.displayName,
+      })),
+    [members],
+  );
 
   const save = async (nextDraft: DetailDraft): Promise<boolean> => {
     if (!detail || saving || archived) return false;
@@ -362,14 +405,14 @@ export function TaskDetailPanel({
   };
 
   const cancelEditing = () => {
-    if (detail) setDraft(initialDraft(detail, currentUserId));
+    if (detail) setDraft(initialDraft(detail));
     setSaveError(undefined);
     setEditing(false);
   };
 
   const startEditing = () => {
     if (!detail || archived) return;
-    setDraft(initialDraft(detail, currentUserId));
+    setDraft(initialDraft(detail));
     setSaveError(undefined);
     setEditing(true);
   };
@@ -418,13 +461,80 @@ export function TaskDetailPanel({
     setPostingComment(true);
     setSaveError(undefined);
     try {
-      await api.tasks.createComment(organizationId, projectId, detail.task.id, { body: comment });
+      const created = await api.tasks.createComment(organizationId, projectId, detail.task.id, {
+        body: comment,
+      });
+      let nextDetail: TaskDetail | undefined;
+      for (const entry of commentFiles) {
+        const file = entry.originFileObj;
+        if (!file) continue;
+        nextDetail = await api.tasks.createAttachment(organizationId, projectId, detail.task.id, {
+          commentId: created.id,
+          contentBase64: await fileToBase64(file),
+          contentType: file.type || "application/octet-stream",
+          name: file.name,
+        });
+      }
       setComment("");
-      await load();
+      setCommentFiles([]);
+      if (nextDetail) applyDetail(nextDetail);
+      else await load();
     } catch (reason) {
       setSaveError(reason);
+      await load();
     } finally {
       setPostingComment(false);
+    }
+  };
+
+  const startEditingComment = (item: TaskComment) => {
+    setEditingCommentId(item.id);
+    setEditingCommentBody(item.body);
+    setSaveError(undefined);
+  };
+
+  const saveEditedComment = async (item: TaskComment) => {
+    if (!detail || editingCommentBody.trim().length === 0) return;
+    setPostingComment(true);
+    setSaveError(undefined);
+    try {
+      const next = await api.tasks.updateComment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        item.id,
+        { body: editingCommentBody, expectedRevision: item.revision },
+      );
+      setEditingCommentId(undefined);
+      setEditingCommentBody("");
+      applyDetail(next);
+    } catch (reason) {
+      setSaveError(reason);
+      if (reason instanceof ApiError && reason.status === 409) await load();
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const deleteComment = async () => {
+    if (!detail || !commentDeleteTarget || deletingComment) return;
+    setDeletingComment(true);
+    setSaveError(undefined);
+    try {
+      const next = await api.tasks.deleteComment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        commentDeleteTarget.id,
+        { expectedRevision: commentDeleteTarget.revision },
+      );
+      setCommentDeleteTarget(undefined);
+      applyDetail(next);
+    } catch (reason) {
+      setSaveError(reason);
+      if (reason instanceof ApiError && reason.status === 409) await load();
+    } finally {
+      setDeletingComment(false);
     }
   };
 
@@ -448,8 +558,10 @@ export function TaskDetailPanel({
 
   const applyDetail = (next: TaskDetail) => {
     setDetail(next);
-    setDraft((current) => (editing && current ? current : initialDraft(next, currentUserId)));
-    setAttachmentFiles(next.attachments.map(attachmentUploadFile));
+    setDraft((current) => (editing && current ? current : initialDraft(next)));
+    setAttachmentFiles(
+      next.attachments.filter((attachment) => !attachment.commentId).map(attachmentUploadFile),
+    );
     onTaskChanged(next.task);
   };
 
@@ -804,7 +916,8 @@ export function TaskDetailPanel({
           aria-labelledby="task-detail-attachments-label"
         >
           <div className="task-detail-section-label" id="task-detail-attachments-label">
-            <PaperClipOutlined /> Attachments ({detail.attachments.length})
+            <PaperClipOutlined /> Attachments (
+            {detail.attachments.filter((attachment) => !attachment.commentId).length})
           </div>
           <Upload<TaskDetail>
             beforeUpload={(file) => {
@@ -910,74 +1023,184 @@ export function TaskDetailPanel({
             ),
             children: (
               <section className="task-detail-tab-panel" aria-label="Comments">
+                <div className="task-detail-comment-heading">
+                  <span className="task-detail-section-label">
+                    <CommentOutlined /> Comments
+                  </span>
+                </div>
                 {!archived ? (
                   <div className="task-detail-comment-form">
-                    <Input
-                      maxLength={20_000}
-                      onChange={(event) => setComment(event.target.value)}
-                      onPressEnter={() => void createComment()}
-                      placeholder="Type comment"
-                      suffix={
-                        <Space size={2}>
-                          <Upload<TaskDetail>
-                            beforeUpload={(file) => {
-                              if (file.size <= maximumAttachmentBytes) return true;
-                              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
-                              return Upload.LIST_IGNORE;
-                            }}
-                            customRequest={uploadAttachment}
-                            fileList={attachmentFiles}
-                            maxCount={100}
-                            multiple
-                            onChange={({ fileList }) => setAttachmentFiles(fileList)}
-                            showUploadList={false}
-                          >
-                            <Button
-                              aria-label="Attach file to task"
-                              icon={<PaperClipOutlined />}
-                              iconOnly
-                              size="small"
-                              variant="text"
-                            />
-                          </Upload>
-                          <Button
-                            aria-label="Send comment"
-                            disabled={comment.trim().length === 0}
-                            icon={<SendOutlined />}
-                            iconOnly
-                            loading={postingComment}
-                            onClick={() => void createComment()}
-                            size="small"
-                            variant="text"
-                          />
-                        </Space>
-                      }
-                      value={comment}
-                    />
+                    {commentFiles.length > 0 ? (
+                      <Upload<TaskDetail>
+                        className="task-detail-comment-staged-files"
+                        beforeUpload={() => false}
+                        fileList={commentFiles}
+                        maxCount={0}
+                        onChange={({ fileList }) => setCommentFiles(fileList)}
+                        showUploadList={{
+                          extra: (file) =>
+                            file.size === undefined ? null : formatFileSize(file.size),
+                          showDownloadIcon: false,
+                          showPreviewIcon: false,
+                          showRemoveIcon: true,
+                        }}
+                      />
+                    ) : null}
+                    <div className="task-detail-comment-compose">
+                      <Mentions
+                        autoSize={{ maxRows: 5, minRows: 1 }}
+                        className="task-detail-comment-input"
+                        maxLength={20_000}
+                        onChange={setComment}
+                        options={mentionOptions}
+                        placeholder="Type comment"
+                        value={comment}
+                      />
+                      <Upload<TaskDetail>
+                        className="task-detail-comment-attach"
+                        beforeUpload={(file) => {
+                          if (file.size <= maximumAttachmentBytes) return false;
+                          setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+                          return Upload.LIST_IGNORE;
+                        }}
+                        fileList={commentFiles}
+                        maxCount={20}
+                        multiple
+                        onChange={({ fileList }) => setCommentFiles(fileList)}
+                        showUploadList={false}
+                      >
+                        <Button
+                          aria-label="Attach file to comment"
+                          icon={<PaperClipOutlined />}
+                          iconOnly
+                          size="small"
+                          variant="text"
+                        />
+                      </Upload>
+                      <Button
+                        aria-label="Send comment"
+                        disabled={comment.trim().length === 0}
+                        icon={<SendOutlined />}
+                        iconOnly
+                        loading={postingComment}
+                        onClick={() => void createComment()}
+                        size="small"
+                        variant="text"
+                      />
+                    </div>
                   </div>
                 ) : null}
                 {detail.comments.length > 0 ? (
                   <div className="task-detail-comment-list">
-                    {detail.comments.map((item) => (
-                      <article className="task-detail-comment" key={item.id}>
-                        <div className="task-detail-comment-meta">
-                          <Avatar size={20}>
-                            {item.authorUserId === currentUserId
-                              ? currentUserName.slice(0, 1).toUpperCase()
-                              : "M"}
-                          </Avatar>
-                          <Typography.Text strong>
-                            {item.authorUserId === currentUserId
-                              ? currentUserName
-                              : "Organization member"}
-                          </Typography.Text>
-                          <Typography.Text className="task-detail-comment-date" type="secondary">
-                            {detailDateTime.format(new Date(item.createdAt))}
-                          </Typography.Text>
-                        </div>
-                        <Typography.Paragraph>{item.body}</Typography.Paragraph>
-                      </article>
-                    ))}
+                    {detail.comments.map((item) => {
+                      const authorName = memberName(item.authorUserId);
+                      const ownsComment = item.authorUserId === currentUserId;
+                      const commentAttachmentFiles = detail.attachments
+                        .filter((attachment) => attachment.commentId === item.id)
+                        .map(attachmentUploadFile);
+                      const menuItems: readonly DropdownMenuItem[] = [
+                        {
+                          disabled: !ownsComment || archived,
+                          icon: <EditOutlined />,
+                          key: "edit",
+                          label: "Edit",
+                        },
+                        {
+                          danger: true,
+                          disabled: !ownsComment || archived,
+                          icon: <DeleteOutlined />,
+                          key: "delete",
+                          label: "Delete",
+                        },
+                      ];
+                      return (
+                        <article className="task-detail-comment" key={item.id}>
+                          <div className="task-detail-comment-header">
+                            <div className="task-detail-comment-meta">
+                              <Avatar size={20}>{authorName.slice(0, 1).toUpperCase()}</Avatar>
+                              <Typography.Text strong>{authorName}</Typography.Text>
+                              <Typography.Text
+                                className="task-detail-comment-date"
+                                type="secondary"
+                              >
+                                {detailDateTime.format(new Date(item.createdAt))}
+                              </Typography.Text>
+                            </div>
+                            <Dropdown
+                              menu={{
+                                items: menuItems,
+                                onClick: ({ key }) => {
+                                  if (key === "edit") startEditingComment(item);
+                                  if (key === "delete") setCommentDeleteTarget(item);
+                                },
+                              }}
+                              placement="bottomRight"
+                              trigger={["click"]}
+                            >
+                              <Button
+                                aria-label={`Actions for comment by ${authorName}`}
+                                icon={<MoreOutlined />}
+                                iconOnly
+                                size="small"
+                                variant="text"
+                              />
+                            </Dropdown>
+                          </div>
+                          {editingCommentId === item.id ? (
+                            <div className="task-detail-comment-editor">
+                              <Mentions
+                                autoFocus
+                                autoSize={{ maxRows: 8, minRows: 2 }}
+                                maxLength={20_000}
+                                onChange={setEditingCommentBody}
+                                options={mentionOptions}
+                                value={editingCommentBody}
+                              />
+                              <Space size={8}>
+                                <Button
+                                  disabled={postingComment}
+                                  onClick={() => {
+                                    setEditingCommentId(undefined);
+                                    setEditingCommentBody("");
+                                  }}
+                                  size="small"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  color="primary"
+                                  disabled={editingCommentBody.trim().length === 0}
+                                  loading={postingComment}
+                                  onClick={() => void saveEditedComment(item)}
+                                  size="small"
+                                >
+                                  Save
+                                </Button>
+                              </Space>
+                            </div>
+                          ) : (
+                            <Typography.Paragraph>{item.body}</Typography.Paragraph>
+                          )}
+                          {commentAttachmentFiles.length > 0 ? (
+                            <Upload<TaskDetail>
+                              className="task-detail-comment-files"
+                              disabled
+                              fileList={commentAttachmentFiles}
+                              maxCount={0}
+                              onDownload={(file) => void downloadAttachment(file)}
+                              onPreview={(file) => void previewAttachment(file)}
+                              showUploadList={{
+                                extra: (file) =>
+                                  file.size === undefined ? null : formatFileSize(file.size),
+                                showDownloadIcon: true,
+                                showPreviewIcon: (file) => isImageAttachment(file),
+                                showRemoveIcon: false,
+                              }}
+                            />
+                          ) : null}
+                        </article>
+                      );
+                    })}
                   </div>
                 ) : (
                   <Empty description="No comments yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -1099,6 +1322,23 @@ export function TaskDetailPanel({
             src={previewImage.url}
           />
         ) : null}
+      </Modal>
+
+      <Modal
+        cancelButtonProps={{ disabled: deletingComment }}
+        centered
+        confirmLoading={deletingComment}
+        destroyOnHidden
+        okButtonProps={{ danger: true }}
+        okText="Delete comment"
+        onCancel={() => setCommentDeleteTarget(undefined)}
+        onOk={() => void deleteComment()}
+        open={commentDeleteTarget !== undefined}
+        title="Delete comment?"
+      >
+        <Typography.Paragraph>
+          Delete this comment and its attached files? This action cannot be undone.
+        </Typography.Paragraph>
       </Modal>
 
       <Modal

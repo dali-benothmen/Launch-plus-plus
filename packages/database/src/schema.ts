@@ -494,6 +494,7 @@ export const taskAttachments = sqliteTable(
     organizationId: text("organization_id").notNull(),
     projectId: text("project_id").notNull(),
     taskId: text("task_id").notNull(),
+    commentId: text("comment_id"),
     name: text("name").notNull(),
     contentType: text("content_type").notNull(),
     size: integer("size").notNull(),
@@ -503,6 +504,7 @@ export const taskAttachments = sqliteTable(
   },
   (table) => [
     index("task_attachments_task_time_idx").on(table.taskId, table.createdAt),
+    index("task_attachments_comment_time_idx").on(table.commentId, table.createdAt),
     foreignKey({
       columns: [table.organizationId, table.projectId],
       foreignColumns: [projects.organizationId, projects.id],

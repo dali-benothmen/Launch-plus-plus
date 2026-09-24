@@ -7,9 +7,11 @@ import type {
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
+  DeleteTaskCommentInput,
   CursorPageQuery,
   LabelSummary,
   MoveTaskInput,
+  OrganizationMemberSummary,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
@@ -27,6 +29,7 @@ import type {
   TeamInput,
   TeamSummary,
   UpdateProjectInput,
+  UpdateTaskCommentInput,
   UpdateTaskInput,
   OrganizationContext,
   OrganizationSummary,
@@ -74,6 +77,16 @@ function attachmentPath(
 ): string {
   const root = `${taskPath(organizationId, projectId, taskId)}/attachments`;
   return attachmentId ? `${root}/${encodeURIComponent(attachmentId)}` : root;
+}
+
+function commentPath(
+  organizationId: string,
+  projectId: string,
+  taskId: string,
+  commentId?: string,
+): string {
+  const root = `${taskPath(organizationId, projectId, taskId)}/comments`;
+  return commentId ? `${root}/${encodeURIComponent(commentId)}` : root;
 }
 
 export interface CoreApiClient {
@@ -151,6 +164,20 @@ export interface CoreApiClient {
       input: CreateTaskCommentInput,
       options?: RequestOptions,
     ): Promise<TaskComment>;
+    deleteComment(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      commentId: string,
+      input: DeleteTaskCommentInput,
+    ): Promise<TaskDetail>;
+    updateComment(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      commentId: string,
+      input: UpdateTaskCommentInput,
+    ): Promise<TaskDetail>;
     createLabel(
       organizationId: string,
       projectId: string,
@@ -203,6 +230,7 @@ export interface CoreApiClient {
   readonly organizations: {
     create(name: string, options?: RequestOptions): Promise<OrganizationSummary>;
     list(query?: CursorPageQuery): Promise<OrganizationContext>;
+    listMembers(organizationId: string): Promise<readonly OrganizationMemberSummary[]>;
     rename(organizationId: string, name: string): Promise<OrganizationSummary>;
     select(organizationId: string): Promise<void>;
   };
@@ -378,6 +406,30 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+      deleteComment: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        commentId: string,
+        input: DeleteTaskCommentInput,
+      ) =>
+        json<TaskDetail>(commentPath(organizationId, projectId, taskId, commentId), {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "DELETE",
+        }),
+      updateComment: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        commentId: string,
+        input: UpdateTaskCommentInput,
+      ) =>
+        json<TaskDetail>(commentPath(organizationId, projectId, taskId, commentId), {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
+        }),
       createLabel: (
         organizationId: string,
         projectId: string,
@@ -469,6 +521,10 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
         }),
       list: (query?: CursorPageQuery) =>
         json<OrganizationContext>(`/api/v1/organizations${queryString(query)}`),
+      listMembers: (organizationId: string) =>
+        json<readonly OrganizationMemberSummary[]>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/members`,
+        ),
       rename: (organizationId: string, name: string) =>
         json<OrganizationSummary>(`/api/v1/organizations/${encodeURIComponent(organizationId)}`, {
           body: JSON.stringify({ name }),

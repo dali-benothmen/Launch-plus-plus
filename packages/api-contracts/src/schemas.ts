@@ -77,6 +77,16 @@ export const OrganizationContextSchema = StrictObject(
 
 export type OrganizationContext = Type.Static<typeof OrganizationContextSchema>;
 
+export const OrganizationMemberSummarySchema = StrictObject(
+  {
+    displayName: Type.String({ maxLength: 200, minLength: 1 }),
+    role: Type.Union([Type.Literal("admin"), Type.Literal("member"), Type.Literal("owner")]),
+    userId: IdentifierSchema,
+  },
+  { $id: "LaunchppOrganizationMemberSummaryV1" },
+);
+export type OrganizationMemberSummary = Type.Static<typeof OrganizationMemberSummarySchema>;
+
 export const TeamSummarySchema = StrictObject(
   {
     id: IdentifierSchema,
@@ -325,6 +335,7 @@ export type TaskComment = Type.Static<typeof TaskCommentSchema>;
 
 export const TaskAttachmentSummarySchema = StrictObject(
   {
+    commentId: Type.Optional(IdentifierSchema),
     contentType: Type.String({ maxLength: 127, minLength: 1 }),
     createdAt: TimestampSchema,
     id: IdentifierSchema,
@@ -341,6 +352,7 @@ export type TaskAttachmentSummary = Type.Static<typeof TaskAttachmentSummarySche
 
 export const CreateTaskAttachmentInputSchema = StrictObject(
   {
+    commentId: Type.Optional(IdentifierSchema),
     contentBase64: Type.String({ maxLength: 6_990_508, minLength: 4 }),
     contentType: Type.String({ maxLength: 127, minLength: 1 }),
     name: Type.String({ maxLength: 255, minLength: 1, pattern: "\\S" }),
@@ -430,6 +442,21 @@ export const CreateTaskCommentInputSchema = StrictObject(
   { $id: "LaunchppCreateTaskCommentInputV1" },
 );
 export type CreateTaskCommentInput = Type.Static<typeof CreateTaskCommentInputSchema>;
+
+export const UpdateTaskCommentInputSchema = StrictObject(
+  {
+    body: Type.String({ maxLength: 20_000, minLength: 1, pattern: "\\S" }),
+    expectedRevision: RevisionSchema,
+  },
+  { $id: "LaunchppUpdateTaskCommentInputV1" },
+);
+export type UpdateTaskCommentInput = Type.Static<typeof UpdateTaskCommentInputSchema>;
+
+export const DeleteTaskCommentInputSchema = StrictObject(
+  { expectedRevision: RevisionSchema },
+  { $id: "LaunchppDeleteTaskCommentInputV1" },
+);
+export type DeleteTaskCommentInput = Type.Static<typeof DeleteTaskCommentInputSchema>;
 
 export const SearchQuerySchema = StrictObject(
   {
@@ -576,12 +603,23 @@ export const TaskParamsSchema = StrictObject(
   { $id: "LaunchppTaskParamsV1" },
 );
 
+export const TaskCommentParamsSchema = StrictObject(
+  {
+    commentId: IdentifierSchema,
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+    organizationId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskCommentParamsV1" },
+);
+
 export const CORE_API_SCHEMAS = Object.freeze([
   ProblemDetailsSchema,
   CursorPageQuerySchema,
   IdempotencyHeadersSchema,
   OrganizationSummarySchema,
   OrganizationContextSchema,
+  OrganizationMemberSummarySchema,
   TeamSummarySchema,
   TeamInputSchema,
   CreateOrganizationInputSchema,
@@ -609,6 +647,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskPageSchema,
   CreateTaskInputSchema,
   CreateTaskCommentInputSchema,
+  UpdateTaskCommentInputSchema,
+  DeleteTaskCommentInputSchema,
   SearchQuerySchema,
   SearchResultSchema,
   SearchResponseSchema,
@@ -624,5 +664,6 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ProjectStatusParamsSchema,
   ProjectFolderParamsSchema,
   TaskParamsSchema,
+  TaskCommentParamsSchema,
   TaskAttachmentParamsSchema,
 ] as const);
