@@ -935,49 +935,208 @@
 }
 
 .task-detail-content {
-  display: grid;
-  gap: 4px;
+  min-height: 100%;
 }
 
-.task-detail-content section {
-  min-width: 0;
-}
-
-.task-detail-property-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
+.task-detail-state,
 .task-detail-loading {
   display: grid;
   min-height: 240px;
+  padding: 24px;
   place-items: center;
 }
 
-.task-detail-list-row,
-.task-detail-comment-meta,
-.task-detail-compose-row {
+.task-detail-overview {
+  display: grid;
+  gap: 24px;
+  padding: 24px 28px 28px;
+}
+
+.task-detail-breadcrumb,
+.task-detail-select-option,
+.task-detail-meta-label,
+.task-detail-assignee,
+.task-detail-section-label,
+.task-detail-section-heading,
+.task-detail-subtask-heading,
+.task-detail-subtask-progress,
+.task-detail-compose-row,
+.task-detail-comment-meta {
   display: flex;
   min-width: 0;
   align-items: center;
+}
+
+.task-detail-breadcrumb,
+.task-detail-select-option,
+.task-detail-meta-label,
+.task-detail-section-label,
+.task-detail-subtask-progress,
+.task-detail-comment-meta {
+  gap: 7px;
+}
+
+.task-detail-heading {
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.3;
+}
+
+.task-detail-meta {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.task-detail-meta-label,
+.task-detail-section-label {
+  color: var(--launch-color-text-secondary);
+  font-size: 13px;
+}
+
+.task-detail-meta-label svg,
+.task-detail-section-label svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.task-detail-meta-icon {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 1px solid var(--launch-color-text-secondary);
+  border-radius: 50%;
+}
+
+.task-detail-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.task-detail-assignee {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-detail-description,
+.task-detail-attachments,
+.task-detail-tab-panel {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.task-detail-description-text {
+  min-height: 48px;
+  margin: 0;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.task-detail-section-heading,
+.task-detail-subtask-heading {
   justify-content: space-between;
   gap: 12px;
 }
 
-.task-detail-compose-row,
-.task-detail-comment-form {
-  margin-top: 12px;
+.task-detail-attachment-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--launch-color-border-secondary);
+  border-radius: var(--launch-radius-lg);
+}
+
+.task-detail-attachment-summary > svg {
+  width: 20px;
+  height: 20px;
+  color: var(--launch-color-text-secondary);
+}
+
+.task-detail-tabs {
+  border-top: 1px solid var(--launch-color-border-secondary);
+}
+
+.task-detail-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-detail-tab-count {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--launch-color-bg-subtle);
+  color: var(--launch-color-text-secondary);
+  font-size: 11px;
+  line-height: 17px;
+  text-align: center;
+}
+
+.task-detail-subtask-progress {
+  margin-inline-start: auto;
+}
+
+.task-detail-subtask-list,
+.task-detail-comment-list {
+  display: grid;
+  gap: 10px;
+}
+
+.task-detail-subtask {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--launch-color-border-secondary);
+  border-radius: var(--launch-radius-lg);
+}
+
+.task-detail-compose-row {
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .task-detail-compose-row > :first-child {
   flex: 1 1 auto;
 }
 
-.task-detail-comment,
-.task-detail-comment-form {
+.task-detail-comment {
   display: grid;
-  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--launch-color-border-secondary);
+}
+
+.task-detail-comment-meta {
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.task-detail-comment p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.task-detail-comment-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.task-detail-comment-form > :first-child {
+  flex: 1 1 auto;
 }
 
 .global-search {
@@ -1187,11 +1346,6 @@
   .task-view-controls > :last-child {
     width: 100%;
     margin-inline-start: 0;
-  }
-
-  .task-detail-property-grid {
-    grid-template-columns: 1fr;
-    gap: 0;
   }
 
   .plugin-proof-grid {

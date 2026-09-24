@@ -420,7 +420,7 @@ export function ProjectTaskOrganization({
   const [deleteError, setDeleteError] = useState<unknown>();
   const [deleting, setDeleting] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
-  const pendingTaskMenuOpenRef = useRef<TaskView>();
+  const pendingTaskMenuOpenRef = useRef<TaskView | undefined>(undefined);
   const suppressTaskCardOpenRef = useRef(false);
   const taskLayoutRef = useRef(taskLayout);
   const taskLayoutSnapshotRef = useRef(taskLayout);
@@ -1615,11 +1615,16 @@ export function ProjectTaskOrganization({
       <TaskDetailPanel
         archived={archived}
         currentUserId={currentUserId}
+        currentUserName={currentUserName}
         onAfterClose={() => taskOpenerRef.current?.focus()}
         onClose={closeTask}
         onTaskChanged={(updated) =>
           setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)))
         }
+        onTaskDeleted={(deleted) => {
+          setTasks((current) => current.filter((task) => task.id !== deleted.id));
+          messageApi.success(`${deleted.title} deleted.`);
+        }}
         projectId={projectId}
         projectName={projectName}
         statuses={displayStatuses}
