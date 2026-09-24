@@ -320,6 +320,36 @@
   background: #9254de;
 }
 
+.team-nav-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.team-nav-icon.is-color-1 {
+  background: #1677ff;
+}
+
+.team-nav-icon.is-color-2 {
+  background: #13c2c2;
+}
+
+.team-nav-icon.is-color-3 {
+  background: #52c41a;
+}
+
+.team-nav-icon.is-color-4 {
+  background: #fa8c16;
+}
+
+.team-nav-icon.is-color-5 {
+  background: #722ed1;
+}
+
+.team-nav-icon.is-color-6 {
+  background: #eb2f96;
+}
+
 .sidebar-link.is-muted {
   color: rgb(0 0 0 / 45%);
 }

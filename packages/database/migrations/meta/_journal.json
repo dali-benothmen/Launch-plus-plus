@@ -85,6 +85,13 @@
       "when": 1790216504164,
       "tag": "0011_secret_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790231170081,
+      "tag": "0012_shiny_vanisher",
+      "breakpoints": true
     }
   ]
 }

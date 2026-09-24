@@ -198,6 +198,7 @@ export function AppShell() {
       setTeamModalOpen(false);
       setTeamName("");
       messageApi.success(`${team.name} created.`);
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
     } catch (error) {
       setTeamError(error);
     } finally {
@@ -332,11 +333,9 @@ export function AppShell() {
             Teams
           </Typography.Text>
           <div className="sidebar-projects">
-            {teams.map((team) => (
+            {teams.map((team, index) => (
               <div className="sidebar-link sidebar-team" key={team.id}>
-                <span aria-hidden className="sidebar-icon">
-                  <MembersIcon />
-                </span>
+                <span aria-hidden className={`team-nav-icon is-color-${(index % 6) + 1}`} />
                 <span>{team.name}</span>
               </div>
             ))}

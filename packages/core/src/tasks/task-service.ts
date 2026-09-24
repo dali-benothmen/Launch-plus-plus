@@ -88,6 +88,14 @@ function normalizeDescription(value: string | undefined) {
   return description;
 }
 
+function normalizeAttachmentCount(value: number | undefined) {
+  const count = value ?? 0;
+  if (!Number.isSafeInteger(count) || count < 0 || count > 100) {
+    throw new TypeError("Attachment count must be an integer between 0 and 100.");
+  }
+  return count;
+}
+
 function normalizeComment(value: string) {
   const body = value.trim();
   if (body.length === 0) throw new TypeError("Comment text is required.");
@@ -230,6 +238,7 @@ export class TaskService {
     input: CommandContext &
       Readonly<{
         assigneeUserIds?: readonly string[];
+        attachmentCount?: number;
         description?: string;
         dueDate?: string;
         labelIds?: readonly string[];
@@ -243,6 +252,7 @@ export class TaskService {
     validateContext(input);
     const title = normalizeTitle(input.title);
     const description = normalizeDescription(input.description);
+    const attachmentCount = normalizeAttachmentCount(input.attachmentCount);
     const dueDate = normalizeDueDate(input.dueDate);
     const assigneeUserIds = uniqueIds(input.assigneeUserIds ?? [], "Assignees");
     const labelIds = uniqueIds(input.labelIds ?? [], "Labels");
@@ -287,6 +297,7 @@ export class TaskService {
         : undefined;
       const now = this.dependencies.clock();
       const task: Task = Object.freeze({
+        attachmentCount,
         createdAt: now,
         createdByUserId: input.userId,
         description,
@@ -336,6 +347,7 @@ export class TaskService {
         updatedAt: now,
       });
       this.record(context, input, "task.created", task.id, {
+        attachmentCount: task.attachmentCount,
         number: task.number,
         parentTaskId: task.parentTaskId ?? null,
         priority: task.priority,

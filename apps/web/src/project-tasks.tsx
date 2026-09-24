@@ -120,6 +120,16 @@ const taskPriorityPresentation: Record<
   low: { color: "green", label: "Low" },
   medium: { color: "orange", label: "Medium" },
 };
+const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
+
+function renderTeamTag(teams: readonly TeamSummary[], teamId: string | undefined) {
+  if (!teamId) return null;
+  const index = teams.findIndex((team) => team.id === teamId);
+  const team = teams[index];
+  if (!team) return null;
+  return <Tag color={teamTagColors[index % teamTagColors.length] ?? "blue"}>{team.name}</Tag>;
+}
+
 const fallbackStatusColors = [
   "#faad14",
   "#1677ff",
@@ -428,16 +438,20 @@ export function ProjectTaskOrganization({
     void loadTasks();
   }, [loadTasks]);
 
-  useEffect(() => {
-    let active = true;
-    void api.teams
-      .list(organizationId)
-      .then((items) => active && setTeams(items))
-      .catch(() => active && setTeams([]));
-    return () => {
-      active = false;
-    };
+  const loadTeams = useCallback(async () => {
+    try {
+      setTeams(await api.teams.list(organizationId));
+    } catch {
+      setTeams([]);
+    }
   }, [api, organizationId]);
+
+  useEffect(() => {
+    void loadTeams();
+    const reload = () => void loadTeams();
+    window.addEventListener(projectNavigationChangedEvent, reload);
+    return () => window.removeEventListener(projectNavigationChangedEvent, reload);
+  }, [loadTeams]);
 
   useEffect(() => {
     if (!dragInProgressRef.current) setOrderedStatusIds(statuses.map((status) => status.id));
@@ -465,11 +479,11 @@ export function ProjectTaskOrganization({
   }, [loadTasks, projectId, organizationId]);
 
   const teamOptions = useMemo(
-    () => teams.map((team) => ({ label: team.name, value: team.id })),
-    [teams],
-  );
-  const teamNamesById = useMemo(
-    () => new Map(teams.map((team) => [team.id, team.name])),
+    () =>
+      teams.map((team, index) => ({
+        label: <Tag color={teamTagColors[index % teamTagColors.length] ?? "blue"}>{team.name}</Tag>,
+        value: team.id,
+      })),
     [teams],
   );
   const assigneeOptions = useMemo(
@@ -524,6 +538,7 @@ export function ProjectTaskOrganization({
   };
 
   const openCreate = (statusId = statuses[0]?.id ?? "") => {
+    void loadTeams();
     updateDraft({
       assigneeUserIds: [currentUserId],
       description: "",
@@ -737,6 +752,7 @@ export function ProjectTaskOrganization({
     try {
       const created = await api.tasks.create(organizationId, projectId, {
         assigneeUserIds: [...currentDraft.assigneeUserIds],
+        attachmentCount: attachmentFiles.length,
         description: currentDraft.description,
         ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
         priority: currentDraft.priority,
@@ -976,9 +992,7 @@ export function ProjectTaskOrganization({
                             <Tag color={taskPriorityPresentation[task.priority].color}>
                               {taskPriorityPresentation[task.priority].label}
                             </Tag>
-                            {task.teamId && teamNamesById.has(task.teamId) ? (
-                              <Tag color="blue">{teamNamesById.get(task.teamId)}</Tag>
-                            ) : null}
+                            {renderTeamTag(teams, task.teamId)}
                           </div>
                           <div className="task-card-summary">
                             <div className="task-card-metrics">
@@ -1001,13 +1015,13 @@ export function ProjectTaskOrganization({
                                 {task.commentCount}
                               </Tag>
                               <Tag
-                                aria-label="0 attachments"
+                                aria-label={`${task.attachmentCount} attachments`}
                                 className="task-card-footer-tag"
                                 icon={<PaperClipOutlined aria-hidden />}
                                 title="Attachments"
                                 variant="outlined"
                               >
-                                0
+                                {task.attachmentCount}
                               </Tag>
                             </div>
                             {task.assigneeUserIds.length > 0 ? (
@@ -1228,23 +1242,12 @@ export function ProjectTaskOrganization({
         size="small"
         tabBarExtraContent={
           <div className="task-header-actions">
-            <Button
-              onClick={(event) => {
-                event.stopPropagation();
-                setColumnModalOpen(true);
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
-              size="small"
-            >
+            <Button onClick={() => setColumnModalOpen(true)} size="small">
               + Add column
             </Button>
             <Button
               disabled={displayStatuses.length === 0}
-              onClick={(event) => {
-                event.stopPropagation();
-                openCreate();
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => openCreate()}
               size="small"
               variant="primary"
             >

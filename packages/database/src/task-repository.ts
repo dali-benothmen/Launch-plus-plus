@@ -12,6 +12,7 @@ import { requireSqliteConnection } from "./context.js";
 
 interface TaskRow {
   readonly archived_at: null | number;
+  readonly attachment_count: number;
   readonly created_at: number;
   readonly created_by_user_id: string;
   readonly deleted_at: null | number;
@@ -66,7 +67,7 @@ interface ActivityRow {
 }
 
 const taskSelection = `SELECT id, organization_id, project_id, number, parent_task_id, status_id,
-  team_id, title, description_markdown, due_date, priority, position, created_by_user_id,
+  team_id, title, description_markdown, attachment_count, due_date, priority, position, created_by_user_id,
   updated_by_user_id, created_at, updated_at, archived_at, deleted_at, revision FROM tasks`;
 
 const labelSelection = `SELECT id, organization_id, project_id, name, comparison_key, color,
@@ -75,6 +76,7 @@ const labelSelection = `SELECT id, organization_id, project_id, name, comparison
 function mapTask(row: TaskRow): Task {
   return Object.freeze({
     ...(row.archived_at === null ? {} : { archivedAt: row.archived_at }),
+    attachmentCount: row.attachment_count,
     createdAt: row.created_at,
     createdByUserId: row.created_by_user_id,
     ...(row.deleted_at === null ? {} : { deletedAt: row.deleted_at }),
@@ -189,9 +191,9 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare(
         `INSERT INTO tasks (
           id, organization_id, project_id, number, parent_task_id, status_id, team_id, title,
-          description_markdown, due_date, priority, position, created_by_user_id, updated_by_user_id,
-          created_at, updated_at, archived_at, deleted_at, revision
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          description_markdown, attachment_count, due_date, priority, position, created_by_user_id,
+          updated_by_user_id, created_at, updated_at, archived_at, deleted_at, revision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -203,6 +205,7 @@ export class SqliteTaskRepository implements TaskRepository {
         task.teamId ?? null,
         task.title,
         task.description,
+        task.attachmentCount,
         task.dueDate ?? null,
         task.priority,
         task.position,
@@ -326,7 +329,8 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare<[string, string], TaskRow>(
         `SELECT task.id, task.organization_id, task.project_id, task.number,
                 task.parent_task_id, task.status_id, task.team_id, task.title,
-                task.description_markdown, task.due_date, task.priority, task.position,
+                task.description_markdown, task.attachment_count, task.due_date, task.priority,
+                task.position,
                 task.created_by_user_id, task.updated_by_user_id, task.created_at,
                 task.updated_at, task.archived_at, task.deleted_at, task.revision
          FROM tasks task

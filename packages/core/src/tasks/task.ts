@@ -4,6 +4,7 @@ export type TaskPriority = "high" | "low" | "medium";
 
 export interface Task {
   readonly archivedAt?: number;
+  readonly attachmentCount: number;
   readonly createdAt: number;
   readonly createdByUserId: string;
   readonly deletedAt?: number;

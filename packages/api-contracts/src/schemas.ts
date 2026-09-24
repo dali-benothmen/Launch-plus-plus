@@ -278,6 +278,7 @@ export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
     assigneeUserIds: Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
+    attachmentCount: Type.Integer({ maximum: 100, minimum: 0 }),
     commentCount: Type.Integer({ minimum: 0 }),
     createdAt: TimestampSchema,
     createdByUserId: IdentifierSchema,
@@ -379,6 +380,7 @@ export const CreateTaskInputSchema = StrictObject(
     assigneeUserIds: Type.Optional(
       Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
     ),
+    attachmentCount: Type.Optional(Type.Integer({ maximum: 100, minimum: 0 })),
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
     dueDate: Type.Optional(DateSchema),
     labelIds: Type.Optional(Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true })),

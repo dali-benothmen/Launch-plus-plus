@@ -414,6 +414,7 @@ export const tasks = sqliteTable(
     teamId: text("team_id"),
     title: text("title").notNull(),
     description: text("description_markdown").notNull().default(""),
+    attachmentCount: integer("attachment_count").notNull().default(0),
     dueDate: text("due_date"),
     priority: text("priority", { enum: ["low", "medium", "high"] })
       .notNull()
@@ -468,6 +469,10 @@ export const tasks = sqliteTable(
     check("tasks_number_positive", sql`${table.number} > 0`),
     check("tasks_title_not_blank", sql`length(trim(${table.title})) > 0`),
     check("tasks_position_valid", sql`${table.position} >= 0`),
+    check(
+      "tasks_attachment_count_valid",
+      sql`${table.attachmentCount} >= 0 and ${table.attachmentCount} <= 100`,
+    ),
     check("tasks_revision_positive", sql`${table.revision} > 0`),
     check("tasks_priority_valid", sql`${table.priority} in ('low', 'medium', 'high')`),
     check(
