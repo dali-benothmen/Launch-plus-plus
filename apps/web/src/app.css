@@ -970,7 +970,8 @@
 }
 
 .task-detail-field {
-  width: 100%;
+  width: 220px;
+  max-width: 100%;
 }
 
 .task-detail-meta-value,
@@ -982,6 +983,11 @@
 
 .task-detail-meta-value {
   gap: 8px;
+}
+
+.task-detail-tag-value {
+  width: fit-content;
+  justify-self: start;
 }
 
 .task-detail-assignee-value {

@@ -37,6 +37,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   FlagOutlined,
+  FileTextOutlined,
   PaperClipOutlined,
   TeamOutlined,
   UserOutlined,
@@ -567,6 +568,14 @@ export function TaskDetailPanel({
             <Input
               autoFocus
               className="task-detail-title-input"
+              styles={{
+                input: {
+                  fontSize: 25,
+                  fontWeight: 600,
+                  height: 42,
+                  lineHeight: 1.3,
+                },
+              }}
               disabled={saving}
               maxLength={500}
               onChange={(event) => setDraft({ ...draft, title: event.target.value })}
@@ -596,13 +605,19 @@ export function TaskDetailPanel({
               value={draft.statusId}
             />
           ) : (
-            <div className="task-detail-meta-value">
-              <span
-                aria-hidden
-                className="task-detail-status-dot"
-                style={{ background: selectedStatus?.color }}
-              />
-              <Typography.Text>{selectedStatus?.name ?? "Unknown"}</Typography.Text>
+            <div className="task-detail-meta-value task-detail-tag-value">
+              <Tag
+                color={selectedStatus?.color ?? "default"}
+                icon={
+                  <span
+                    aria-hidden
+                    className="task-detail-status-dot"
+                    style={{ background: selectedStatus?.color }}
+                  />
+                }
+              >
+                {selectedStatus?.name ?? "Unknown"}
+              </Tag>
             </div>
           )}
 
@@ -691,9 +706,11 @@ export function TaskDetailPanel({
               value={draft.teamId}
             />
           ) : selectedTeam ? (
-            <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
-              {selectedTeam.name}
-            </Tag>
+            <div className="task-detail-meta-value task-detail-tag-value">
+              <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
+                {selectedTeam.name}
+              </Tag>
+            </div>
           ) : (
             <Typography.Text type="secondary">No team</Typography.Text>
           )}
@@ -716,9 +733,11 @@ export function TaskDetailPanel({
               value={draft.priority}
             />
           ) : (
-            <Tag color={priorityPresentation[detail.task.priority].color}>
-              {priorityPresentation[detail.task.priority].label}
-            </Tag>
+            <div className="task-detail-meta-value task-detail-tag-value">
+              <Tag color={priorityPresentation[detail.task.priority].color}>
+                {priorityPresentation[detail.task.priority].label}
+              </Tag>
+            </div>
           )}
         </div>
 
@@ -727,6 +746,7 @@ export function TaskDetailPanel({
           aria-labelledby="task-detail-description-label"
         >
           <div className="task-detail-section-label" id="task-detail-description-label">
+            <FileTextOutlined />
             Description
           </div>
           {editing ? (
