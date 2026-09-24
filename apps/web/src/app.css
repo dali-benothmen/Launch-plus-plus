@@ -159,6 +159,9 @@
   font-size: 14px;
   text-decoration: none;
 }
+.rail-link > * {
+  pointer-events: none;
+}
 
 .rail-link:hover,
 .rail-link.is-active {

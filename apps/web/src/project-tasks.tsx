@@ -722,7 +722,11 @@ export function ProjectTaskOrganization({
                             >
                               {task.title}
                             </Button>
-                            <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+                            <Dropdown
+                              destroyOnHidden
+                              menu={{ items: taskMenu(task) }}
+                              trigger={["click"]}
+                            >
                               <Button
                                 aria-label={`Actions for ${task.title}`}
                                 disabled={archived}
@@ -852,7 +856,7 @@ export function ProjectTaskOrganization({
     {
       key: "actions",
       render: (_value, task) => (
-        <Dropdown menu={{ items: taskMenu(task) }} trigger={["click"]}>
+        <Dropdown destroyOnHidden menu={{ items: taskMenu(task) }} trigger={["click"]}>
           <Button
             aria-label={`Actions for ${task.title}`}
             disabled={archived}
