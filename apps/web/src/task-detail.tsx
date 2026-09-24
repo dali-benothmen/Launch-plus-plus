@@ -14,15 +14,13 @@ import {
   Button,
   Checkbox,
   DatePicker,
-  Dropdown,
-  type DropdownMenuItem,
   Drawer,
   Empty,
   Input,
   Modal,
-  MoreIcon,
   Progress,
   Select,
+  Space,
   Spin,
   Tabs,
   Tag,
@@ -40,6 +38,7 @@ import {
   FileTextOutlined,
   PaperClipOutlined,
   TeamOutlined,
+  UserAddOutlined,
   UserOutlined,
 } from "@launchpp/ui/icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -92,6 +91,10 @@ const priorityPresentation: Record<
   low: { color: "green", label: "Low" },
   medium: { color: "orange", label: "Medium" },
 };
+
+function isImageAttachment(file: UploadFile<TaskDetail>) {
+  return file.type?.startsWith("image/") || /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(file.name);
+}
 
 function dateFromKey(value?: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -168,6 +171,7 @@ export function TaskDetailPanel({
   onTaskChanged,
   onTaskDeleted,
   projectId,
+  projectName,
   statuses,
   taskId,
   organizationId,
@@ -188,6 +192,7 @@ export function TaskDetailPanel({
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [attachmentFiles, setAttachmentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
+  const [previewImage, setPreviewImage] = useState<Readonly<{ name: string; url: string }>>();
 
   const load = useCallback(async () => {
     if (!taskId) return;
@@ -216,6 +221,7 @@ export function TaskDetailPanel({
     setComment("");
     setSubtaskTitle("");
     setDeleteConfirmOpen(false);
+    setPreviewImage(undefined);
     void load();
   }, [load, taskId]);
 
@@ -235,6 +241,8 @@ export function TaskDetailPanel({
     window.addEventListener(invalidationEventName, reload);
     return () => window.removeEventListener(invalidationEventName, reload);
   }, [load, projectId, taskId]);
+
+  useEffect(() => () => previewImage && URL.revokeObjectURL(previewImage.url), [previewImage]);
 
   const statusOptions = useMemo(
     () =>
@@ -355,6 +363,13 @@ export function TaskDetailPanel({
     if (detail) setDraft(initialDraft(detail, currentUserId));
     setSaveError(undefined);
     setEditing(false);
+  };
+
+  const startEditing = () => {
+    if (!detail || archived) return;
+    setDraft(initialDraft(detail, currentUserId));
+    setSaveError(undefined);
+    setEditing(true);
   };
 
   const createSubtask = async () => {
@@ -492,6 +507,26 @@ export function TaskDetailPanel({
     }
   };
 
+  const previewAttachment = async (file: UploadFile<TaskDetail>) => {
+    if (!detail) return;
+    if (!isImageAttachment(file)) {
+      await downloadAttachment(file);
+      return;
+    }
+    setSaveError(undefined);
+    try {
+      const blob = await api.tasks.downloadAttachment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        file.uid,
+      );
+      setPreviewImage({ name: file.name, url: URL.createObjectURL(blob) });
+    } catch (reason) {
+      setSaveError(reason);
+    }
+  };
+
   const completedStatus =
     statuses.find((status) => /^(done|complete|completed)$/i.test(status.name)) ?? statuses.at(-1);
   const completedSubtasks =
@@ -508,37 +543,6 @@ export function TaskDetailPanel({
   const selectedTeamIndex = selectedTeam
     ? teams.findIndex((team) => team.id === selectedTeam.id)
     : -1;
-
-  const taskMenu: readonly DropdownMenuItem[] = [
-    ...(!archived
-      ? [
-          {
-            disabled: editing,
-            icon: <EditOutlined />,
-            key: "edit",
-            label: "Edit task",
-            onClick: ({ domEvent }) => {
-              domEvent.stopPropagation();
-              if (!detail) return;
-              setDraft(initialDraft(detail, currentUserId));
-              setSaveError(undefined);
-              setEditing(true);
-            },
-          } satisfies DropdownMenuItem,
-          { type: "divider" } as const,
-        ]
-      : []),
-    {
-      danger: true,
-      icon: <DeleteOutlined />,
-      key: "delete",
-      label: "Delete task",
-      onClick: ({ domEvent }) => {
-        domEvent.stopPropagation();
-        setDeleteConfirmOpen(true);
-      },
-    },
-  ];
 
   const content = loadError ? (
     <div className="task-detail-state">
@@ -564,187 +568,206 @@ export function TaskDetailPanel({
           />
         ) : null}
 
-        <div className="task-detail-title-row">
-          {editing ? (
-            <Input
-              autoFocus
-              className="task-detail-title-input"
-              styles={{
-                input: {
-                  fontSize: 25,
-                  fontWeight: 600,
-                  height: 42,
-                  lineHeight: 1.3,
-                },
-              }}
-              disabled={saving}
-              maxLength={500}
-              onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-              value={draft.title}
-            />
-          ) : (
-            <Typography.Title className="task-detail-heading" level={2}>
-              {detail.task.title}
-            </Typography.Title>
-          )}
-        </div>
-
-        <div className="task-detail-meta">
-          <div className="task-detail-meta-label">
-            <span aria-hidden className="task-detail-meta-icon task-detail-status-icon" />
-            Status
+        <div className="task-detail-summary">
+          <div className="task-detail-title-row">
+            {editing ? (
+              <Input
+                autoFocus
+                className="task-detail-title-input"
+                styles={{
+                  input: {
+                    fontSize: 25,
+                    fontWeight: 600,
+                    height: 42,
+                    lineHeight: 1.3,
+                  },
+                }}
+                disabled={saving}
+                maxLength={500}
+                onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+                value={draft.title}
+              />
+            ) : (
+              <Typography.Title className="task-detail-heading" level={2}>
+                {detail.task.title}
+              </Typography.Title>
+            )}
           </div>
-          {editing ? (
-            <Select
-              ariaLabel="Task status"
-              className="task-detail-field"
-              disabled={saving}
-              onChange={(value) => {
-                if (typeof value === "string") setDraft({ ...draft, statusId: value });
-              }}
-              options={statusOptions}
-              style={taskDetailFieldStyle}
-              value={draft.statusId}
-            />
-          ) : (
-            <div className="task-detail-meta-value task-detail-tag-value">
-              <Tag
-                color={selectedStatus?.color ?? "default"}
-                icon={
-                  <span
-                    aria-hidden
-                    className="task-detail-status-dot"
-                    style={{ background: selectedStatus?.color }}
-                  />
-                }
-              >
-                {selectedStatus?.name ?? "Unknown"}
-              </Tag>
+
+          <div className="task-detail-meta">
+            <div className="task-detail-meta-label">
+              <span aria-hidden className="task-detail-meta-icon task-detail-status-icon" />
+              Status
             </div>
-          )}
+            {editing ? (
+              <Select
+                ariaLabel="Task status"
+                className="task-detail-field"
+                disabled={saving}
+                onChange={(value) => {
+                  if (typeof value === "string") setDraft({ ...draft, statusId: value });
+                }}
+                options={statusOptions}
+                style={taskDetailFieldStyle}
+                value={draft.statusId}
+              />
+            ) : (
+              <div className="task-detail-meta-value task-detail-tag-value">
+                <Tag
+                  color={selectedStatus?.color ?? "default"}
+                  icon={
+                    <span
+                      aria-hidden
+                      className="task-detail-status-dot"
+                      style={{ background: selectedStatus?.color }}
+                    />
+                  }
+                >
+                  {selectedStatus?.name ?? "Unknown"}
+                </Tag>
+              </div>
+            )}
 
-          <div className="task-detail-meta-label">
-            <CalendarOutlined />
-            Due date
-          </div>
-          {editing ? (
-            <DatePicker
-              allowClear
-              className="task-detail-field"
-              disabled={saving}
-              onChange={(value) =>
-                setDraft({ ...draft, dueDate: value instanceof Date ? value : null })
-              }
-              placeholder="No due date"
-              style={taskDetailFieldStyle}
-              value={draft.dueDate}
-            />
-          ) : detail.task.dueDate ? (
-            <Typography.Text>
-              {detailDate.format(dateFromKey(detail.task.dueDate) as Date)}
-            </Typography.Text>
-          ) : (
-            <Typography.Text type="secondary">No due date</Typography.Text>
-          )}
-
-          <div className="task-detail-meta-label">
-            <UserOutlined />
-            Assignee
-          </div>
-          {editing ? (
-            <Select
-              allowClear
-              ariaLabel="Task assignees"
-              className="task-detail-field"
-              disabled={saving}
-              mode="multiple"
-              notFoundContent="No members"
-              onChange={(value) => {
-                const assigneeUserIds = Array.isArray(value)
-                  ? value.filter((userId): userId is string => typeof userId === "string")
-                  : [];
-                setDraft({ ...draft, assigneeUserIds });
-              }}
-              options={assigneeOptions}
-              placeholder="Unassigned"
-              style={taskDetailFieldStyle}
-              value={draft.assigneeUserIds}
-            />
-          ) : detail.task.assigneeUserIds.length > 0 ? (
-            <div className="task-detail-meta-value task-detail-assignee-value">
-              <Avatar.Group max={{ count: 4 }} size="small">
-                {detail.task.assigneeUserIds.map((userId) => (
-                  <Avatar key={userId}>
-                    {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
-                  </Avatar>
-                ))}
-              </Avatar.Group>
+            <div className="task-detail-meta-label">
+              <CalendarOutlined />
+              Due date
+            </div>
+            {editing ? (
+              <DatePicker
+                allowClear
+                className="task-detail-field"
+                disabled={saving}
+                onChange={(value) =>
+                  setDraft({ ...draft, dueDate: value instanceof Date ? value : null })
+                }
+                placeholder="No due date"
+                style={taskDetailFieldStyle}
+                value={draft.dueDate}
+              />
+            ) : detail.task.dueDate ? (
               <Typography.Text>
-                {detail.task.assigneeUserIds
-                  .map((userId) =>
-                    userId === currentUserId ? currentUserName : "Organization member",
-                  )
-                  .join(", ")}
+                {detailDate.format(dateFromKey(detail.task.dueDate) as Date)}
+              </Typography.Text>
+            ) : (
+              <Typography.Text type="secondary">No due date</Typography.Text>
+            )}
+
+            <div className="task-detail-meta-label">
+              <UserAddOutlined />
+              Created by
+            </div>
+            <div className="task-detail-meta-value task-detail-assignee-value">
+              <Avatar size={20}>
+                {detail.task.createdByUserId === currentUserId
+                  ? currentUserName.slice(0, 1).toUpperCase()
+                  : "M"}
+              </Avatar>
+              <Typography.Text>
+                {detail.task.createdByUserId === currentUserId
+                  ? currentUserName
+                  : "Organization member"}
               </Typography.Text>
             </div>
-          ) : (
-            <Typography.Text type="secondary">Unassigned</Typography.Text>
-          )}
 
-          <div className="task-detail-meta-label">
-            <TeamOutlined />
-            Team
-          </div>
-          {editing ? (
-            <Select
-              allowClear
-              ariaLabel="Task team"
-              className="task-detail-field"
-              disabled={saving}
-              notFoundContent="No teams"
-              onChange={(value) =>
-                setDraft({ ...draft, teamId: typeof value === "string" ? value : undefined })
-              }
-              options={teamOptions}
-              placeholder="No team"
-              style={taskDetailFieldStyle}
-              value={draft.teamId}
-            />
-          ) : selectedTeam ? (
-            <div className="task-detail-meta-value task-detail-tag-value">
-              <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
-                {selectedTeam.name}
-              </Tag>
+            <div className="task-detail-meta-label">
+              <UserOutlined />
+              Assignee
             </div>
-          ) : (
-            <Typography.Text type="secondary">No team</Typography.Text>
-          )}
+            {editing ? (
+              <Select
+                allowClear
+                ariaLabel="Task assignees"
+                className="task-detail-field"
+                disabled={saving}
+                mode="multiple"
+                notFoundContent="No members"
+                onChange={(value) => {
+                  const assigneeUserIds = Array.isArray(value)
+                    ? value.filter((userId): userId is string => typeof userId === "string")
+                    : [];
+                  setDraft({ ...draft, assigneeUserIds });
+                }}
+                options={assigneeOptions}
+                placeholder="Unassigned"
+                style={taskDetailFieldStyle}
+                value={draft.assigneeUserIds}
+              />
+            ) : detail.task.assigneeUserIds.length > 0 ? (
+              <div className="task-detail-meta-value task-detail-assignee-value">
+                <Avatar.Group max={{ count: 4 }} size="small">
+                  {detail.task.assigneeUserIds.map((userId) => (
+                    <Avatar key={userId}>
+                      {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
+                    </Avatar>
+                  ))}
+                </Avatar.Group>
+                <Typography.Text>
+                  {detail.task.assigneeUserIds
+                    .map((userId) =>
+                      userId === currentUserId ? currentUserName : "Organization member",
+                    )
+                    .join(", ")}
+                </Typography.Text>
+              </div>
+            ) : (
+              <Typography.Text type="secondary">Unassigned</Typography.Text>
+            )}
 
-          <div className="task-detail-meta-label">
-            <FlagOutlined />
-            Priority
-          </div>
-          {editing ? (
-            <Select
-              ariaLabel="Task priority"
-              className="task-detail-field"
-              disabled={saving}
-              onChange={(value) => {
-                if (value === "low" || value === "medium" || value === "high") {
-                  setDraft({ ...draft, priority: value });
+            <div className="task-detail-meta-label">
+              <TeamOutlined />
+              Team
+            </div>
+            {editing ? (
+              <Select
+                allowClear
+                ariaLabel="Task team"
+                className="task-detail-field"
+                disabled={saving}
+                notFoundContent="No teams"
+                onChange={(value) =>
+                  setDraft({ ...draft, teamId: typeof value === "string" ? value : undefined })
                 }
-              }}
-              options={priorityOptions}
-              style={taskDetailFieldStyle}
-              value={draft.priority}
-            />
-          ) : (
-            <div className="task-detail-meta-value task-detail-tag-value">
-              <Tag color={priorityPresentation[detail.task.priority].color}>
-                {priorityPresentation[detail.task.priority].label}
-              </Tag>
+                options={teamOptions}
+                placeholder="No team"
+                style={taskDetailFieldStyle}
+                value={draft.teamId}
+              />
+            ) : selectedTeam ? (
+              <div className="task-detail-meta-value task-detail-tag-value">
+                <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
+                  {selectedTeam.name}
+                </Tag>
+              </div>
+            ) : (
+              <Typography.Text type="secondary">No team</Typography.Text>
+            )}
+
+            <div className="task-detail-meta-label">
+              <FlagOutlined />
+              Priority
             </div>
-          )}
+            {editing ? (
+              <Select
+                ariaLabel="Task priority"
+                className="task-detail-field"
+                disabled={saving}
+                onChange={(value) => {
+                  if (value === "low" || value === "medium" || value === "high") {
+                    setDraft({ ...draft, priority: value });
+                  }
+                }}
+                options={priorityOptions}
+                style={taskDetailFieldStyle}
+                value={draft.priority}
+              />
+            ) : (
+              <div className="task-detail-meta-value task-detail-tag-value">
+                <Tag color={priorityPresentation[detail.task.priority].color}>
+                  {priorityPresentation[detail.task.priority].label}
+                </Tag>
+              </div>
+            )}
+          </div>
         </div>
 
         <section
@@ -774,22 +797,6 @@ export function TaskDetailPanel({
           )}
         </section>
 
-        {editing ? (
-          <div className="task-detail-edit-actions">
-            <Button disabled={saving} onClick={cancelEditing}>
-              Cancel
-            </Button>
-            <Button
-              disabled={draft.title.trim().length === 0}
-              loading={saving}
-              onClick={() => void saveChanges()}
-              variant="primary"
-            >
-              Save changes
-            </Button>
-          </div>
-        ) : null}
-
         <section
           className="task-detail-attachments"
           aria-labelledby="task-detail-attachments-label"
@@ -810,6 +817,7 @@ export function TaskDetailPanel({
             multiple
             onChange={({ fileList }) => setAttachmentFiles(fileList)}
             onDownload={(file) => void downloadAttachment(file)}
+            onPreview={(file) => void previewAttachment(file)}
             onRemove={removeAttachment}
             styles={{ root: { width: "100%" } }}
             showUploadList={{
@@ -817,7 +825,7 @@ export function TaskDetailPanel({
               showDownloadIcon: (file) =>
                 file.status === "done" &&
                 detail.attachments.some((attachment) => attachment.id === file.uid),
-              showPreviewIcon: false,
+              showPreviewIcon: (file) => file.status === "done" && isImageAttachment(file),
               showRemoveIcon: !archived,
             }}
           >
@@ -984,20 +992,80 @@ export function TaskDetailPanel({
         }}
         className="task-detail-drawer"
         extra={
-          <Dropdown destroyOnHidden menu={{ items: taskMenu }} trigger={["click"]}>
-            <Button aria-label="Task actions" icon={<MoreIcon />} iconOnly variant="text" />
-          </Dropdown>
+          <Space size={8}>
+            {editing ? (
+              <>
+                <Button disabled={saving} onClick={cancelEditing} size="small">
+                  Cancel
+                </Button>
+                <Button
+                  disabled={!draft || draft.title.trim().length === 0}
+                  loading={saving}
+                  onClick={() => void saveChanges()}
+                  size="small"
+                  variant="primary"
+                >
+                  Save
+                </Button>
+              </>
+            ) : (
+              <>
+                {!archived ? (
+                  <Button
+                    aria-label="Edit task"
+                    icon={<EditOutlined />}
+                    iconOnly
+                    onClick={startEditing}
+                    variant="filled"
+                  />
+                ) : null}
+                <Button
+                  aria-label="Delete task"
+                  danger
+                  icon={<DeleteOutlined />}
+                  iconOnly
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  variant="filled"
+                />
+              </>
+            )}
+          </Space>
         }
         mask
         onClose={onClose}
         open={taskId !== undefined}
         placement="right"
-        size={narrow ? "100%" : 680}
-        styles={{ body: { padding: 0 } }}
-        title={null}
+        size={narrow ? "100%" : 620}
+        styles={{
+          body: { padding: 0 },
+          title: {
+            color: "var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45))",
+            fontSize: 13,
+            fontWeight: 400,
+          },
+        }}
+        title={projectName}
       >
         {content}
       </Drawer>
+
+      <Modal
+        centered
+        destroyOnHidden
+        footer={null}
+        onCancel={() => setPreviewImage(undefined)}
+        open={previewImage !== undefined}
+        title={previewImage?.name}
+        width={720}
+      >
+        {previewImage ? (
+          <img
+            alt={previewImage.name}
+            className="task-detail-image-preview"
+            src={previewImage.url}
+          />
+        ) : null}
+      </Modal>
 
       <Modal
         cancelButtonProps={{ disabled: deleting }}
