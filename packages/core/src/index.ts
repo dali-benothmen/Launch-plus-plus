@@ -92,6 +92,8 @@ export type {
   Label,
   Task,
   TaskActivity,
+  TaskAttachment,
+  TaskAttachmentSummary,
   TaskCatalog,
   TaskComment,
   TaskDetail,

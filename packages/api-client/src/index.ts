@@ -18,6 +18,7 @@ export type {
   SearchResponse,
   SearchResult,
   TaskActivity,
+  TaskAttachmentSummary,
   TaskComment,
   TaskDetail,
   TaskPage,
@@ -75,7 +76,15 @@ export class ApiError extends Error {
   }
 }
 
-export interface ApiClient extends CoreApiClient {
+export interface ApiClient extends Omit<CoreApiClient, "tasks"> {
+  readonly tasks: CoreApiClient["tasks"] & {
+    downloadAttachment(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      attachmentId: string,
+    ): Promise<Blob>;
+  };
   readonly auth: {
     recoveryCapabilities(): Promise<{
       readonly email: boolean;
@@ -211,7 +220,32 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
       },
       status: () => json<SetupStatus>("/api/setup/status"),
     }),
-    tasks: core.tasks,
+    tasks: Object.freeze({
+      ...core.tasks,
+      async downloadAttachment(
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        attachmentId: string,
+      ): Promise<Blob> {
+        const path = `/api/v1/organizations/${encodeURIComponent(organizationId)}/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}/attachments/${encodeURIComponent(attachmentId)}/content`;
+        const response = await request(`${baseUrl}${path}`, {
+          credentials: "include",
+          headers: { accept: "*/*" },
+        });
+        if (!response.ok) {
+          let message = `Request failed with status ${response.status}`;
+          try {
+            const payload: unknown = await response.json();
+            if (isProblemDetails(payload)) message = payload.detail;
+          } catch {
+            // Keep the status-based fallback for non-JSON responses.
+          }
+          throw new ApiError(response.status, message);
+        }
+        return response.blob();
+      },
+    }),
     teams: core.teams,
     organizations: core.organizations,
   });

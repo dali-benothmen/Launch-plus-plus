@@ -4,6 +4,7 @@ import type {
   ArchiveTaskInput,
   CreateLabelInput,
   CreateProjectInput,
+  CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
   CursorPageQuery,
@@ -64,6 +65,15 @@ function statusPath(organizationId: string, projectId: string, statusId: string)
 function taskPath(organizationId: string, projectId: string, taskId?: string): string {
   const root = `${projectPath(organizationId, projectId)}/tasks`;
   return taskId ? `${root}/${encodeURIComponent(taskId)}` : root;
+}
+function attachmentPath(
+  organizationId: string,
+  projectId: string,
+  taskId: string,
+  attachmentId?: string,
+): string {
+  const root = `${taskPath(organizationId, projectId, taskId)}/attachments`;
+  return attachmentId ? `${root}/${encodeURIComponent(attachmentId)}` : root;
 }
 
 export interface CoreApiClient {
@@ -128,6 +138,12 @@ export interface CoreApiClient {
       input: CreateTaskInput,
       options?: RequestOptions,
     ): Promise<TaskView>;
+    createAttachment(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      input: CreateTaskAttachmentInput,
+    ): Promise<TaskDetail>;
     createComment(
       organizationId: string,
       projectId: string,
@@ -141,6 +157,12 @@ export interface CoreApiClient {
       input: CreateLabelInput,
       options?: RequestOptions,
     ): Promise<LabelSummary>;
+    deleteAttachment(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      attachmentId: string,
+    ): Promise<TaskDetail>;
     get(organizationId: string, projectId: string, taskId: string): Promise<TaskDetail>;
     list(organizationId: string, projectId: string, query?: CursorPageQuery): Promise<TaskPage>;
     move(
@@ -333,6 +355,17 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+      createAttachment: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        input: CreateTaskAttachmentInput,
+      ) =>
+        json<TaskDetail>(attachmentPath(organizationId, projectId, taskId), {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }),
       createComment: (
         organizationId: string,
         projectId: string,
@@ -355,6 +388,15 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",
+        }),
+      deleteAttachment: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        attachmentId: string,
+      ) =>
+        json<TaskDetail>(attachmentPath(organizationId, projectId, taskId, attachmentId), {
+          method: "DELETE",
         }),
       get: (organizationId: string, projectId: string, taskId: string) =>
         json<TaskDetail>(taskPath(organizationId, projectId, taskId)),

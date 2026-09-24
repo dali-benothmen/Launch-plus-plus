@@ -2,6 +2,8 @@ import type {
   Label,
   ReadContext,
   Task,
+  TaskAttachment,
+  TaskAttachmentSummary,
   TaskActivity,
   TaskComment,
   TaskPriority,
@@ -55,6 +57,19 @@ interface CommentRow {
   readonly revision: number;
   readonly task_id: string;
   readonly updated_at: number;
+  readonly organization_id: string;
+}
+
+interface AttachmentRow {
+  readonly content: Buffer;
+  readonly content_type: string;
+  readonly created_at: number;
+  readonly id: string;
+  readonly name: string;
+  readonly project_id: string;
+  readonly size: number;
+  readonly task_id: string;
+  readonly uploaded_by_user_id: string;
   readonly organization_id: string;
 }
 
@@ -127,6 +142,26 @@ function mapComment(row: CommentRow): TaskComment {
   });
 }
 
+function mapAttachment(row: AttachmentRow): TaskAttachment {
+  return Object.freeze({
+    content: new Uint8Array(row.content),
+    contentType: row.content_type,
+    createdAt: row.created_at,
+    id: row.id,
+    name: row.name,
+    projectId: row.project_id,
+    size: row.size,
+    taskId: row.task_id,
+    uploadedByUserId: row.uploaded_by_user_id,
+    organizationId: row.organization_id,
+  });
+}
+
+function attachmentSummary(attachment: TaskAttachment): TaskAttachmentSummary {
+  const { content: _content, ...summary } = attachment;
+  return Object.freeze(summary);
+}
+
 function mapActivity(row: ActivityRow): TaskActivity {
   const metadata = JSON.parse(row.metadata_json) as Readonly<Record<string, unknown>>;
   return Object.freeze({
@@ -143,6 +178,28 @@ function parentClause(parentTaskId: string | undefined) {
 }
 
 export class SqliteTaskRepository implements TaskRepository {
+  createAttachment(context: WriteContext, attachment: TaskAttachment): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `INSERT INTO task_attachments (
+          id, organization_id, project_id, task_id, name, content_type, size, content,
+          uploaded_by_user_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        attachment.id,
+        attachment.organizationId,
+        attachment.projectId,
+        attachment.taskId,
+        attachment.name,
+        attachment.contentType,
+        attachment.size,
+        Buffer.from(attachment.content),
+        attachment.uploadedByUserId,
+        attachment.createdAt,
+      );
+  }
+
   createComment(context: WriteContext, comment: TaskComment): void {
     requireSqliteConnection(context)
       .prepare(
@@ -219,6 +276,23 @@ export class SqliteTaskRepository implements TaskRepository {
       );
   }
 
+  deleteAttachment(context: WriteContext, attachmentId: string): void {
+    requireSqliteConnection(context)
+      .prepare("DELETE FROM task_attachments WHERE id = ?")
+      .run(attachmentId);
+  }
+
+  findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[string], AttachmentRow>(
+        `SELECT id, organization_id, project_id, task_id, name, content_type, size, content,
+                uploaded_by_user_id, created_at
+         FROM task_attachments WHERE id = ?`,
+      )
+      .get(attachmentId);
+    return row ? mapAttachment(row) : undefined;
+  }
+
   findLabelById(context: ReadContext, labelId: string): Label | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string], LabelRow>(`${labelSelection} WHERE id = ?`)
@@ -250,6 +324,18 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare<[string], TaskRow>(`${taskSelection} WHERE id = ?`)
       .get(taskId);
     return row ? mapTask(row) : undefined;
+  }
+
+  listAttachments(context: ReadContext, taskId: string): readonly TaskAttachmentSummary[] {
+    return requireSqliteConnection(context)
+      .prepare<[string], AttachmentRow>(
+        `SELECT id, organization_id, project_id, task_id, name, content_type, size, content,
+                uploaded_by_user_id, created_at
+         FROM task_attachments WHERE task_id = ? ORDER BY created_at ASC, id ASC`,
+      )
+      .all(taskId)
+      .map(mapAttachment)
+      .map(attachmentSummary);
   }
 
   listAssigneeUserIds(context: ReadContext, taskId: string): readonly string[] {
@@ -443,7 +529,7 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `UPDATE tasks SET parent_task_id = ?, status_id = ?, team_id = ?, title = ?,
-             description_markdown = ?, due_date = ?, priority = ?, position = ?,
+             description_markdown = ?, attachment_count = ?, due_date = ?, priority = ?, position = ?,
              updated_by_user_id = ?, updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
          WHERE id = ? AND organization_id = ? AND project_id = ?`,
       )
@@ -453,6 +539,7 @@ export class SqliteTaskRepository implements TaskRepository {
         task.teamId ?? null,
         task.title,
         task.description,
+        task.attachmentCount,
         task.dueDate ?? null,
         task.priority,
         task.position,

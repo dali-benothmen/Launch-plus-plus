@@ -1,6 +1,7 @@
 import {
   ApiError,
   type ProjectStatusSummary,
+  type TaskAttachmentSummary,
   type TaskDetail,
   type TaskPriority,
   type TaskView,
@@ -8,6 +9,7 @@ import {
 } from "@launchpp/api-client";
 import {
   Alert,
+  AddIcon,
   Avatar,
   Button,
   Checkbox,
@@ -25,11 +27,15 @@ import {
   Tabs,
   Tag,
   Timeline,
+  Upload,
+  type UploadFile,
+  type UploadRequestOptions,
   Typography,
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
   DeleteOutlined,
+  EditOutlined,
   FlagOutlined,
   PaperClipOutlined,
   TeamOutlined,
@@ -37,6 +43,12 @@ import {
 } from "@launchpp/ui/icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApiClient } from "./api-client-context.js";
+import {
+  downloadBlob,
+  fileToBase64,
+  formatFileSize,
+  maximumAttachmentBytes,
+} from "./attachments.js";
 import { invalidationEventName } from "./invalidation.js";
 
 interface TaskDetailPanelProps {
@@ -55,7 +67,7 @@ interface TaskDetailPanelProps {
 }
 
 interface DetailDraft {
-  readonly assignedToMe: boolean;
+  readonly assigneeUserIds: readonly string[];
   readonly description: string;
   readonly dueDate: Date | null;
   readonly priority: TaskPriority;
@@ -90,13 +102,23 @@ function dateKey(value: Date) {
 
 function initialDraft(detail: TaskDetail, currentUserId: string): DetailDraft {
   return {
-    assignedToMe: detail.task.assigneeUserIds.includes(currentUserId),
+    assigneeUserIds: detail.task.assigneeUserIds,
     description: detail.task.description,
     dueDate: dateFromKey(detail.task.dueDate),
     priority: detail.task.priority,
     statusId: detail.task.statusId,
     teamId: detail.task.teamId,
     title: detail.task.title,
+  };
+}
+
+function attachmentUploadFile(attachment: TaskAttachmentSummary): UploadFile<TaskDetail> {
+  return {
+    name: attachment.name,
+    size: attachment.size,
+    status: "done",
+    type: attachment.contentType,
+    uid: attachment.id,
   };
 }
 
@@ -110,6 +132,8 @@ function activityText(operation: string) {
   const labels: Readonly<Record<string, string>> = {
     "comment.created": "added a comment",
     "task.archived": "deleted the task",
+    "task.attachment_added": "added an attachment",
+    "task.attachment_deleted": "deleted an attachment",
     "task.assignees_changed": "changed the assignees",
     "task.created": "created the task",
     "task.labels_changed": "changed the labels",
@@ -141,7 +165,6 @@ export function TaskDetailPanel({
   onTaskChanged,
   onTaskDeleted,
   projectId,
-  projectName,
   statuses,
   taskId,
   organizationId,
@@ -160,6 +183,9 @@ export function TaskDetailPanel({
   const [creatingSubtask, setCreatingSubtask] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
 
   const load = useCallback(async () => {
     if (!taskId) return;
@@ -171,6 +197,7 @@ export function TaskDetailPanel({
       ]);
       setDetail(next);
       setDraft(initialDraft(next, currentUserId));
+      setAttachmentFiles(next.attachments.map(attachmentUploadFile));
       setTeams(nextTeams);
     } catch (reason) {
       setLoadError(reason);
@@ -181,6 +208,9 @@ export function TaskDetailPanel({
     if (!taskId) return;
     setDetail(undefined);
     setDraft(undefined);
+    setAttachmentFiles([]);
+    setEditingTitle(false);
+    setEditingDescription(false);
     setSaveError(undefined);
     setComment("");
     setSubtaskTitle("");
@@ -243,6 +273,21 @@ export function TaskDetailPanel({
     [teams],
   );
 
+  const assigneeOptions = useMemo(() => {
+    const userIds = [...new Set([currentUserId, ...(draft?.assigneeUserIds ?? [])])];
+    return userIds.map((userId) => ({
+      label: (
+        <span className="task-detail-select-option">
+          <Avatar size={20}>
+            {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
+          </Avatar>
+          {userId === currentUserId ? currentUserName : "Organization member"}
+        </span>
+      ),
+      value: userId,
+    }));
+  }, [currentUserId, currentUserName, draft?.assigneeUserIds]);
+
   const save = async (nextDraft: DetailDraft) => {
     if (!detail || saving || archived || nextDraft.title.trim().length === 0) return;
     setSaving(true);
@@ -277,13 +322,11 @@ export function TaskDetailPanel({
           expectedRevision: task.revision,
         });
       }
-      const assigneeUserIds = nextDraft.assignedToMe
-        ? [...new Set([...task.assigneeUserIds, currentUserId])]
-        : task.assigneeUserIds.filter((userId) => userId !== currentUserId);
+      const assigneeUserIds = nextDraft.assigneeUserIds;
       if (!sameIds(assigneeUserIds, task.assigneeUserIds)) {
         task = await api.tasks.replaceAssignees(organizationId, projectId, task.id, {
           expectedRevision: task.revision,
-          userIds: assigneeUserIds,
+          userIds: [...assigneeUserIds],
         });
       }
       onTaskChanged(task);
@@ -373,9 +416,69 @@ export function TaskDetailPanel({
     }
   };
 
-  const selectedStatus = detail
-    ? statuses.find((status) => status.id === detail.task.statusId)
-    : undefined;
+  const applyDetail = (next: TaskDetail) => {
+    setDetail(next);
+    setDraft(initialDraft(next, currentUserId));
+    setAttachmentFiles(next.attachments.map(attachmentUploadFile));
+    onTaskChanged(next.task);
+  };
+
+  const uploadAttachment = ({ file, onError, onSuccess }: UploadRequestOptions<TaskDetail>) => {
+    void (async () => {
+      if (!detail) {
+        onError(new Error("Task details are not available."));
+        return;
+      }
+      try {
+        const next = await api.tasks.createAttachment(organizationId, projectId, detail.task.id, {
+          contentBase64: await fileToBase64(file),
+          contentType: file.type || "application/octet-stream",
+          name: file.name,
+        });
+        onSuccess(next);
+        applyDetail(next);
+      } catch (reason) {
+        const error = reason instanceof Error ? reason : new Error("Could not upload attachment.");
+        setSaveError(error);
+        onError(error);
+      }
+    })();
+  };
+
+  const removeAttachment = async (file: UploadFile<TaskDetail>): Promise<boolean> => {
+    if (!detail) return false;
+    if (!detail.attachments.some((attachment) => attachment.id === file.uid)) return true;
+    setSaveError(undefined);
+    try {
+      const next = await api.tasks.deleteAttachment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        file.uid,
+      );
+      applyDetail(next);
+    } catch (reason) {
+      setSaveError(reason);
+    }
+    return false;
+  };
+
+  const downloadAttachment = async (file: UploadFile<TaskDetail>) => {
+    if (!detail) return;
+    setSaveError(undefined);
+    try {
+      const blob = await api.tasks.downloadAttachment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        file.uid,
+      );
+      downloadBlob(blob, file.name);
+    } catch (reason) {
+      setSaveError(reason);
+    }
+  };
+
   const completedStatus =
     statuses.find((status) => /^(done|complete|completed)$/i.test(status.name)) ?? statuses.at(-1);
   const completedSubtasks =
@@ -421,24 +524,45 @@ export function TaskDetailPanel({
           />
         ) : null}
 
-        <Typography.Title
-          className="task-detail-heading"
-          disabled={archived || saving}
-          editable={{
-            maxLength: 500,
-            onChange: (value) => {
-              const title = value.trim();
-              if (!title || title === draft.title) return;
-              commitDraft({ ...draft, title });
-            },
-            text: draft.title,
-            tooltip: false,
-            triggerType: ["icon"],
-          }}
-          level={2}
-        >
-          {draft.title}
-        </Typography.Title>
+        <div className="task-detail-title-row">
+          {editingTitle ? (
+            <Input
+              autoFocus
+              className="task-detail-title-input"
+              disabled={archived || saving}
+              maxLength={500}
+              onBlur={() => {
+                setEditingTitle(false);
+                const title = draft.title.trim();
+                if (!title) {
+                  setDraft({ ...draft, title: detail.task.title });
+                  return;
+                }
+                if (title && title !== detail.task.title) commitDraft({ ...draft, title });
+              }}
+              onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+              onPressEnter={(event) => event.currentTarget.blur()}
+              value={draft.title}
+              variant="borderless"
+            />
+          ) : (
+            <>
+              <Typography.Title className="task-detail-heading" level={2}>
+                {draft.title}
+              </Typography.Title>
+              {!archived ? (
+                <Button
+                  aria-label="Edit task title"
+                  disabled={saving}
+                  icon={<EditOutlined />}
+                  iconOnly
+                  onClick={() => setEditingTitle(true)}
+                  variant="text"
+                />
+              ) : null}
+            </>
+          )}
+        </div>
 
         <div className="task-detail-meta">
           <div className="task-detail-meta-label">
@@ -447,6 +571,7 @@ export function TaskDetailPanel({
           </div>
           <Select
             ariaLabel="Task status"
+            className="task-detail-field"
             disabled={archived || saving}
             onChange={(value) => {
               if (typeof value !== "string" || value === draft.statusId) return;
@@ -463,6 +588,7 @@ export function TaskDetailPanel({
           </div>
           <DatePicker
             allowClear
+            className="task-detail-field"
             disabled={archived || saving}
             onChange={(value) => {
               const dueDate = value instanceof Date ? value : null;
@@ -473,35 +599,30 @@ export function TaskDetailPanel({
             }}
             placeholder="No due date"
             value={draft.dueDate}
-            variant="borderless"
           />
 
           <div className="task-detail-meta-label">
             <UserOutlined />
             Assignee
           </div>
-          <div className="task-detail-assignee">
-            {detail.task.assigneeUserIds.length > 0 ? (
-              <Avatar.Group max={{ count: 4 }} size="small">
-                {detail.task.assigneeUserIds.map((userId) => (
-                  <Avatar key={userId}>
-                    {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
-                  </Avatar>
-                ))}
-              </Avatar.Group>
-            ) : (
-              <Typography.Text type="secondary">Unassigned</Typography.Text>
-            )}
-            <Button
-              disabled={archived || saving}
-              icon={draft.assignedToMe ? undefined : <UserOutlined />}
-              onClick={() => commitDraft({ ...draft, assignedToMe: !draft.assignedToMe })}
-              size="small"
-              variant="text"
-            >
-              {draft.assignedToMe ? "Remove me" : "Assign to me"}
-            </Button>
-          </div>
+          <Select
+            allowClear
+            ariaLabel="Task assignees"
+            className="task-detail-field"
+            disabled={archived || saving}
+            mode="multiple"
+            notFoundContent="No members"
+            onChange={(value) => {
+              const assigneeUserIds = Array.isArray(value)
+                ? value.filter((userId): userId is string => typeof userId === "string")
+                : [];
+              if (sameIds(assigneeUserIds, draft.assigneeUserIds)) return;
+              commitDraft({ ...draft, assigneeUserIds });
+            }}
+            options={assigneeOptions}
+            placeholder="Unassigned"
+            value={draft.assigneeUserIds}
+          />
 
           <div className="task-detail-meta-label">
             <FlagOutlined />
@@ -509,6 +630,7 @@ export function TaskDetailPanel({
           </div>
           <Select
             ariaLabel="Task priority"
+            className="task-detail-field"
             disabled={archived || saving}
             onChange={(value) => {
               if (value !== "low" && value !== "medium" && value !== "high") return;
@@ -517,7 +639,6 @@ export function TaskDetailPanel({
             }}
             options={priorityOptions}
             value={draft.priority}
-            variant="borderless"
           />
 
           <div className="task-detail-meta-label">
@@ -527,6 +648,7 @@ export function TaskDetailPanel({
           <Select
             allowClear
             ariaLabel="Task team"
+            className="task-detail-field"
             disabled={archived || saving}
             notFoundContent="No teams"
             onChange={(value) => {
@@ -537,7 +659,6 @@ export function TaskDetailPanel({
             options={teamOptions}
             placeholder="No team"
             value={draft.teamId}
-            variant="borderless"
           />
         </div>
 
@@ -545,49 +666,85 @@ export function TaskDetailPanel({
           className="task-detail-description"
           aria-labelledby="task-detail-description-label"
         >
-          <div className="task-detail-section-label" id="task-detail-description-label">
-            Description
+          <div className="task-detail-section-heading">
+            <div className="task-detail-section-label" id="task-detail-description-label">
+              Description
+            </div>
+            {!archived && !editingDescription ? (
+              <Button
+                aria-label="Edit task description"
+                disabled={saving}
+                icon={<EditOutlined />}
+                iconOnly
+                onClick={() => setEditingDescription(true)}
+                size="small"
+                variant="text"
+              />
+            ) : null}
           </div>
-          <Typography.Paragraph
-            className="task-detail-description-text"
-            disabled={archived || saving}
-            editable={{
-              autoSize: { maxRows: 12, minRows: 3 },
-              maxLength: 100_000,
-              onChange: (value) => {
-                if (value === draft.description) return;
-                commitDraft({ ...draft, description: value });
-              },
-              text: draft.description,
-              tooltip: false,
-              triggerType: ["icon"],
-            }}
-            type={draft.description ? "default" : "secondary"}
-          >
-            {draft.description || "Add a description"}
-          </Typography.Paragraph>
+          {editingDescription ? (
+            <Input.TextArea
+              autoFocus
+              autoSize={{ maxRows: 12, minRows: 3 }}
+              className="task-detail-description-input"
+              disabled={archived || saving}
+              maxLength={100_000}
+              onBlur={() => {
+                setEditingDescription(false);
+                if (draft.description !== detail.task.description) {
+                  commitDraft({ ...draft, description: draft.description });
+                }
+              }}
+              onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+              placeholder="Add a description"
+              value={draft.description}
+              variant="borderless"
+            />
+          ) : (
+            <Typography.Paragraph
+              className="task-detail-description-text"
+              type={draft.description ? "default" : "secondary"}
+            >
+              {draft.description || "Add a description"}
+            </Typography.Paragraph>
+          )}
         </section>
 
         <section
           className="task-detail-attachments"
           aria-labelledby="task-detail-attachments-label"
         >
-          <div className="task-detail-section-heading">
-            <div className="task-detail-section-label" id="task-detail-attachments-label">
-              <PaperClipOutlined /> Attachment ({detail.task.attachmentCount})
-            </div>
+          <div className="task-detail-section-label" id="task-detail-attachments-label">
+            <PaperClipOutlined /> Attachments ({detail.attachments.length})
           </div>
-          {detail.task.attachmentCount > 0 ? (
-            <div className="task-detail-attachment-summary">
-              <PaperClipOutlined />
-              <Typography.Text>
-                {detail.task.attachmentCount} attached{" "}
-                {detail.task.attachmentCount === 1 ? "file" : "files"}
-              </Typography.Text>
-            </div>
-          ) : (
-            <Typography.Text type="secondary">No attachments</Typography.Text>
-          )}
+          <Upload<TaskDetail>
+            beforeUpload={(file) => {
+              if (file.size <= maximumAttachmentBytes) return true;
+              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+              return Upload.LIST_IGNORE;
+            }}
+            customRequest={uploadAttachment}
+            disabled={archived}
+            fileList={attachmentFiles}
+            maxCount={100}
+            multiple
+            onChange={({ fileList }) => setAttachmentFiles(fileList)}
+            onDownload={(file) => void downloadAttachment(file)}
+            onRemove={removeAttachment}
+            styles={{ root: { width: "100%" } }}
+            showUploadList={{
+              extra: (file) => (file.size === undefined ? null : formatFileSize(file.size)),
+              showDownloadIcon: (file) =>
+                file.status === "done" &&
+                detail.attachments.some((attachment) => attachment.id === file.uid),
+              showPreviewIcon: false,
+              showRemoveIcon: !archived,
+            }}
+          >
+            <Button disabled={archived} icon={<AddIcon />}>
+              Add attachment
+            </Button>
+          </Upload>
         </section>
       </div>
 
@@ -757,13 +914,7 @@ export function TaskDetailPanel({
         placement="right"
         size={narrow ? "100%" : 680}
         styles={{ body: { padding: 0 } }}
-        title={
-          <div className="task-detail-breadcrumb">
-            <Typography.Text type="secondary">{projectName}</Typography.Text>
-            <Typography.Text type="secondary">/</Typography.Text>
-            <Typography.Text type="secondary">{selectedStatus?.name ?? "Task"}</Typography.Text>
-          </div>
-        }
+        title={null}
       >
         {content}
       </Drawer>

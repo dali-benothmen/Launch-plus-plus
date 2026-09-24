@@ -52,6 +52,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { fileToBase64, maximumAttachmentBytes } from "./attachments.js";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
@@ -780,7 +781,6 @@ export function ProjectTaskOrganization({
       },
     },
   ];
-
   const saveTask = async () => {
     const currentDraft = draftRef.current;
     if (!editor || saving || !currentDraft.statusId) return;
@@ -791,9 +791,8 @@ export function ProjectTaskOrganization({
     setSaving(true);
     setEditorError(undefined);
     try {
-      const created = await api.tasks.create(organizationId, projectId, {
+      let created = await api.tasks.create(organizationId, projectId, {
         assigneeUserIds: [...currentDraft.assigneeUserIds],
-        attachmentCount: attachmentFiles.length,
         description: currentDraft.description,
         ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
         priority: currentDraft.priority,
@@ -801,9 +800,29 @@ export function ProjectTaskOrganization({
         ...(currentDraft.teamId ? { teamId: currentDraft.teamId } : {}),
         title: currentDraft.title,
       });
+      let attachmentFailures = 0;
+      for (const attachment of attachmentFiles) {
+        const file = attachment.originFileObj;
+        if (!file) continue;
+        try {
+          const next = await api.tasks.createAttachment(organizationId, projectId, created.id, {
+            contentBase64: await fileToBase64(file),
+            contentType: file.type || "application/octet-stream",
+            name: file.name,
+          });
+          created = next.task;
+        } catch {
+          attachmentFailures += 1;
+        }
+      }
       setTasks((current) => [...current, created]);
       closeEditor();
       messageApi.success(`${created.reference} created.`);
+      if (attachmentFailures > 0) {
+        messageApi.warning(
+          `${attachmentFailures} ${attachmentFailures === 1 ? "attachment" : "attachments"} could not be uploaded.`,
+        );
+      }
     } catch (reason) {
       setEditorError(reason);
       setSaving(false);
@@ -1506,7 +1525,11 @@ export function ProjectTaskOrganization({
           </Form.Item>
           <Form.Item label={<span className="task-editor-label">Attachments</span>}>
             <Upload.Dragger
-              beforeUpload={() => false}
+              beforeUpload={(file) => {
+                if (file.size <= maximumAttachmentBytes) return false;
+                setEditorError(new TypeError("Attachments must be 5 MB or smaller."));
+                return Upload.LIST_IGNORE;
+              }}
               classNames={{ trigger: "task-editor-upload-trigger" }}
               disabled={saving}
               fileList={attachmentFiles}

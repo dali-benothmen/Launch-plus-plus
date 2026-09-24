@@ -9,6 +9,7 @@ import type { TeamRepository } from "../teams/team.js";
 import type {
   Label,
   Task,
+  TaskAttachment,
   TaskCatalog,
   TaskComment,
   TaskDetail,
@@ -88,12 +89,26 @@ function normalizeDescription(value: string | undefined) {
   return description;
 }
 
-function normalizeAttachmentCount(value: number | undefined) {
-  const count = value ?? 0;
-  if (!Number.isSafeInteger(count) || count < 0 || count > 100) {
-    throw new TypeError("Attachment count must be an integer between 0 and 100.");
+function normalizeAttachmentName(value: string) {
+  const name = value.trim();
+  if (name.length === 0) throw new TypeError("Attachment name is required.");
+  if (name.length > 255) throw new TypeError("Attachment name cannot exceed 255 characters.");
+  return name;
+}
+
+function normalizeAttachmentContentType(value: string) {
+  const contentType = value.trim() || "application/octet-stream";
+  if (contentType.length > 127) {
+    throw new TypeError("Attachment content type cannot exceed 127 characters.");
   }
-  return count;
+  return contentType;
+}
+
+function normalizeAttachmentContent(value: Uint8Array) {
+  if (value.byteLength === 0 || value.byteLength > 5_242_880) {
+    throw new TypeError("Attachments must be between 1 byte and 5 MB.");
+  }
+  return new Uint8Array(value);
 }
 
 function normalizeComment(value: string) {
@@ -189,21 +204,128 @@ export class TaskService {
       this.requireActor(context, input.organizationId, input.userId);
       const project = this.requireProject(context, input.organizationId, input.projectId);
       const task = this.requireTask(context, input, input.taskId);
-      const subtasks = this.dependencies.tasks
-        .listTasks(context, input.organizationId, input.projectId)
-        .filter((item) => item.parentTaskId === task.id)
-        .map((item) => this.toView(context, item, project));
-      return Object.freeze({
-        activity: this.dependencies.tasks.listTaskActivity(context, input.organizationId, task.id),
-        availableLabels: this.dependencies.tasks.listLabels(
-          context,
-          input.organizationId,
-          input.projectId,
-        ),
-        comments: this.dependencies.tasks.listComments(context, task.id),
-        subtasks,
-        task: this.toView(context, task, project),
+      return this.toDetail(context, task, project);
+    });
+  }
+
+  createAttachment(
+    input: CommandContext &
+      Readonly<{ content: Uint8Array; contentType: string; name: string; taskId: string }>,
+  ): Promise<TaskDetail> {
+    validateContext(input);
+    const name = normalizeAttachmentName(input.name);
+    const contentType = normalizeAttachmentContentType(input.contentType);
+    const content = normalizeAttachmentContent(input.content);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const attachments = this.dependencies.tasks.listAttachments(context, task.id);
+      if (attachments.length >= 100) {
+        throw new TypeError("A task cannot have more than 100 attachments.");
+      }
+      const now = this.dependencies.clock();
+      const attachment: TaskAttachment = Object.freeze({
+        content,
+        contentType,
+        createdAt: now,
+        id: this.dependencies.generateId(),
+        name,
+        projectId: input.projectId,
+        size: content.byteLength,
+        taskId: task.id,
+        uploadedByUserId: input.userId,
+        organizationId: input.organizationId,
       });
+      this.dependencies.tasks.createAttachment(context, attachment);
+      const updated: Task = Object.freeze({
+        ...task,
+        attachmentCount: attachments.length + 1,
+        revision: task.revision + 1,
+        updatedAt: now,
+        updatedByUserId: input.userId,
+      });
+      this.dependencies.tasks.saveTask(context, updated);
+      this.record(context, input, "task.attachment_added", task.id, {
+        attachmentId: attachment.id,
+        name: attachment.name,
+        revision: updated.revision,
+        size: attachment.size,
+      });
+      return this.toDetail(context, updated, project);
+    });
+  }
+
+  deleteAttachment(
+    input: CommandContext & Readonly<{ attachmentId: string; taskId: string }>,
+  ): Promise<TaskDetail> {
+    validateContext(input);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const attachment = this.dependencies.tasks.findAttachmentById(context, input.attachmentId);
+      if (
+        !attachment ||
+        attachment.organizationId !== input.organizationId ||
+        attachment.projectId !== input.projectId ||
+        attachment.taskId !== task.id
+      ) {
+        throw new TaskNotFoundError("The task attachment does not exist.");
+      }
+      this.dependencies.tasks.deleteAttachment(context, attachment.id);
+      const now = this.dependencies.clock();
+      const updated: Task = Object.freeze({
+        ...task,
+        attachmentCount: this.dependencies.tasks.listAttachments(context, task.id).length,
+        revision: task.revision + 1,
+        updatedAt: now,
+        updatedByUserId: input.userId,
+      });
+      this.dependencies.tasks.saveTask(context, updated);
+      this.record(context, input, "task.attachment_deleted", task.id, {
+        attachmentId: attachment.id,
+        name: attachment.name,
+        revision: updated.revision,
+      });
+      return this.toDetail(context, updated, project);
+    });
+  }
+
+  getAttachment(
+    input: Readonly<{
+      attachmentId: string;
+      projectId: string;
+      taskId: string;
+      userId: string;
+      organizationId: string;
+    }>,
+  ): TaskAttachment {
+    if (
+      input.attachmentId.length === 0 ||
+      input.projectId.length === 0 ||
+      input.taskId.length === 0 ||
+      input.userId.length === 0 ||
+      input.organizationId.length === 0
+    ) {
+      throw new TypeError(
+        "Organization, project, task, attachment, and user identifiers are required.",
+      );
+    }
+    return this.dependencies.transactions.read((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      this.requireProject(context, input.organizationId, input.projectId);
+      const task = this.requireTask(context, input, input.taskId);
+      const attachment = this.dependencies.tasks.findAttachmentById(context, input.attachmentId);
+      if (
+        !attachment ||
+        attachment.organizationId !== input.organizationId ||
+        attachment.projectId !== input.projectId ||
+        attachment.taskId !== task.id
+      ) {
+        throw new TaskNotFoundError("The task attachment does not exist.");
+      }
+      return attachment;
     });
   }
 
@@ -238,7 +360,6 @@ export class TaskService {
     input: CommandContext &
       Readonly<{
         assigneeUserIds?: readonly string[];
-        attachmentCount?: number;
         description?: string;
         dueDate?: string;
         labelIds?: readonly string[];
@@ -252,7 +373,6 @@ export class TaskService {
     validateContext(input);
     const title = normalizeTitle(input.title);
     const description = normalizeDescription(input.description);
-    const attachmentCount = normalizeAttachmentCount(input.attachmentCount);
     const dueDate = normalizeDueDate(input.dueDate);
     const assigneeUserIds = uniqueIds(input.assigneeUserIds ?? [], "Assignees");
     const labelIds = uniqueIds(input.labelIds ?? [], "Labels");
@@ -297,7 +417,7 @@ export class TaskService {
         : undefined;
       const now = this.dependencies.clock();
       const task: Task = Object.freeze({
-        attachmentCount,
+        attachmentCount: 0,
         createdAt: now,
         createdByUserId: input.userId,
         description,
@@ -745,6 +865,25 @@ export class TaskService {
       revision: task.revision + 1,
       updatedAt: now,
       updatedByUserId: userId,
+    });
+  }
+
+  private toDetail(context: ReadContext, task: Task, project: Project): TaskDetail {
+    const subtasks = this.dependencies.tasks
+      .listTasks(context, task.organizationId, task.projectId)
+      .filter((item) => item.parentTaskId === task.id)
+      .map((item) => this.toView(context, item, project));
+    return Object.freeze({
+      activity: this.dependencies.tasks.listTaskActivity(context, task.organizationId, task.id),
+      attachments: this.dependencies.tasks.listAttachments(context, task.id),
+      availableLabels: this.dependencies.tasks.listLabels(
+        context,
+        task.organizationId,
+        task.projectId,
+      ),
+      comments: this.dependencies.tasks.listComments(context, task.id),
+      subtasks,
+      task: this.toView(context, task, project),
     });
   }
 

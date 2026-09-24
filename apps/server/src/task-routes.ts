@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   ArchiveTaskInput,
   CreateLabelInput,
+  CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
   CursorPageQuery,
@@ -17,6 +18,7 @@ import {
   TaskAccessDeniedError,
   TaskAssigneeInvalidError,
   type TaskComment,
+  type TaskDetail,
   TaskLabelInvalidError,
   TaskLabelNameConflictError,
   TaskNotFoundError,
@@ -52,6 +54,10 @@ interface ProjectParams {
 
 interface TaskParams extends ProjectParams {
   readonly taskId: string;
+}
+
+interface AttachmentParams extends TaskParams {
+  readonly attachmentId: string;
 }
 
 const problemResponses = {
@@ -113,6 +119,32 @@ function taskSummary(task: TaskView) {
     updatedByUserId: task.updatedByUserId,
     organizationId: task.organizationId,
   };
+}
+
+function taskDetailSummary(detail: TaskDetail) {
+  return {
+    activity: detail.activity,
+    attachments: detail.attachments,
+    availableLabels: detail.availableLabels.map(labelSummary),
+    comments: detail.comments.map(commentSummary),
+    subtasks: detail.subtasks.map(taskSummary),
+    task: taskSummary(detail.task),
+  };
+}
+
+function decodeBase64(value: string) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
+    throw new TypeError("Attachment content must be valid base64.");
+  }
+  const content = Buffer.from(value, "base64");
+  if (content.toString("base64") !== value) {
+    throw new TypeError("Attachment content must use canonical base64 encoding.");
+  }
+  return content;
+}
+
+function contentDisposition(name: string) {
+  return `attachment; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 
 function commentSummary(comment: TaskComment) {
@@ -278,13 +310,108 @@ export async function registerTaskRoutes(
           userId: context.userId,
           organizationId: request.params.organizationId,
         });
-        return {
-          activity: detail.activity,
-          availableLabels: detail.availableLabels.map(labelSummary),
-          comments: detail.comments.map(commentSummary),
-          subtasks: detail.subtasks.map(taskSummary),
-          task: taskSummary(detail.task),
-        };
+        return taskDetailSummary(detail);
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: CreateTaskAttachmentInput; Params: TaskParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/attachments",
+    {
+      bodyLimit: 7_100_000,
+      schema: {
+        body: { $ref: "LaunchppCreateTaskAttachmentInputV1#" },
+        operationId: "createTaskAttachment",
+        params: { $ref: "LaunchppTaskParamsV1#" },
+        response: { 201: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Upload a task attachment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        const detail = await service.createAttachment({
+          ...context,
+          content: decodeBase64(request.body.contentBase64),
+          contentType: request.body.contentType,
+          correlationId: request.id,
+          name: request.body.name,
+          projectId: request.params.projectId,
+          taskId: request.params.taskId,
+          organizationId: request.params.organizationId,
+        });
+        reply.code(201);
+        return taskDetailSummary(detail);
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Params: AttachmentParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/attachments/:attachmentId",
+    {
+      schema: {
+        operationId: "deleteTaskAttachment",
+        params: { $ref: "LaunchppTaskAttachmentParamsV1#" },
+        response: { 200: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Delete a task attachment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        return taskDetailSummary(
+          await service.deleteAttachment({
+            ...context,
+            attachmentId: request.params.attachmentId,
+            correlationId: request.id,
+            projectId: request.params.projectId,
+            taskId: request.params.taskId,
+            organizationId: request.params.organizationId,
+          }),
+        );
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.get<{ Params: AttachmentParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/attachments/:attachmentId/content",
+    {
+      schema: {
+        operationId: "downloadTaskAttachment",
+        params: { $ref: "LaunchppTaskAttachmentParamsV1#" },
+        response: { ...problemResponses },
+        summary: "Download a task attachment",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        const attachment = service.getAttachment({
+          attachmentId: request.params.attachmentId,
+          projectId: request.params.projectId,
+          taskId: request.params.taskId,
+          userId: context.userId,
+          organizationId: request.params.organizationId,
+        });
+        return reply
+          .header("content-disposition", contentDisposition(attachment.name))
+          .type(attachment.contentType)
+          .send(Buffer.from(attachment.content));
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;

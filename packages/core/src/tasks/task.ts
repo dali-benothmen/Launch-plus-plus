@@ -57,6 +57,22 @@ export interface TaskComment {
   readonly organizationId: string;
 }
 
+export interface TaskAttachmentSummary {
+  readonly contentType: string;
+  readonly createdAt: number;
+  readonly id: string;
+  readonly name: string;
+  readonly projectId: string;
+  readonly size: number;
+  readonly taskId: string;
+  readonly uploadedByUserId: string;
+  readonly organizationId: string;
+}
+
+export interface TaskAttachment extends TaskAttachmentSummary {
+  readonly content: Uint8Array;
+}
+
 export interface TaskActivity {
   readonly actorUserId?: string;
   readonly id: string;
@@ -67,6 +83,7 @@ export interface TaskActivity {
 
 export interface TaskDetail {
   readonly activity: readonly TaskActivity[];
+  readonly attachments: readonly TaskAttachmentSummary[];
   readonly availableLabels: readonly Label[];
   readonly comments: readonly TaskComment[];
   readonly subtasks: readonly TaskView[];
@@ -79,9 +96,12 @@ export interface TaskCatalog {
 }
 
 export interface TaskRepository {
+  createAttachment(context: WriteContext, attachment: TaskAttachment): void;
   createComment(context: WriteContext, comment: TaskComment): void;
   createLabel(context: WriteContext, label: Label): void;
   createTask(context: WriteContext, task: Task): void;
+  deleteAttachment(context: WriteContext, attachmentId: string): void;
+  findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined;
   findLabelById(context: ReadContext, labelId: string): Label | undefined;
   findLabelByName(
     context: ReadContext,
@@ -91,6 +111,7 @@ export interface TaskRepository {
   ): Label | undefined;
   findTaskById(context: ReadContext, taskId: string): Task | undefined;
   listAssigneeUserIds(context: ReadContext, taskId: string): readonly string[];
+  listAttachments(context: ReadContext, taskId: string): readonly TaskAttachmentSummary[];
   listComments(context: ReadContext, taskId: string): readonly TaskComment[];
   listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[];
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[];

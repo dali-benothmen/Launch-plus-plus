@@ -323,6 +323,32 @@ export const TaskCommentSchema = StrictObject(
 );
 export type TaskComment = Type.Static<typeof TaskCommentSchema>;
 
+export const TaskAttachmentSummarySchema = StrictObject(
+  {
+    contentType: Type.String({ maxLength: 127, minLength: 1 }),
+    createdAt: TimestampSchema,
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 255, minLength: 1 }),
+    projectId: IdentifierSchema,
+    size: Type.Integer({ maximum: 5_242_880, minimum: 1 }),
+    taskId: IdentifierSchema,
+    uploadedByUserId: IdentifierSchema,
+    organizationId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskAttachmentSummaryV1" },
+);
+export type TaskAttachmentSummary = Type.Static<typeof TaskAttachmentSummarySchema>;
+
+export const CreateTaskAttachmentInputSchema = StrictObject(
+  {
+    contentBase64: Type.String({ maxLength: 6_990_508, minLength: 4 }),
+    contentType: Type.String({ maxLength: 127, minLength: 1 }),
+    name: Type.String({ maxLength: 255, minLength: 1, pattern: "\\S" }),
+  },
+  { $id: "LaunchppCreateTaskAttachmentInputV1" },
+);
+export type CreateTaskAttachmentInput = Type.Static<typeof CreateTaskAttachmentInputSchema>;
+
 export const TaskActivitySchema = StrictObject(
   {
     actorUserId: Type.Optional(IdentifierSchema),
@@ -339,6 +365,12 @@ export const TaskDetailSchema = StrictObject(
   {
     activity: Type.Array(
       Type.Unsafe<Type.Static<typeof TaskActivitySchema>>(Type.Ref("LaunchppTaskActivityV1")),
+      { maxItems: 100 },
+    ),
+    attachments: Type.Array(
+      Type.Unsafe<Type.Static<typeof TaskAttachmentSummarySchema>>(
+        Type.Ref("LaunchppTaskAttachmentSummaryV1"),
+      ),
       { maxItems: 100 },
     ),
     availableLabels: Type.Array(
@@ -380,7 +412,6 @@ export const CreateTaskInputSchema = StrictObject(
     assigneeUserIds: Type.Optional(
       Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
     ),
-    attachmentCount: Type.Optional(Type.Integer({ maximum: 100, minimum: 0 })),
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
     dueDate: Type.Optional(DateSchema),
     labelIds: Type.Optional(Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true })),
@@ -525,6 +556,16 @@ export const ProjectStatusParamsSchema = StrictObject(
   { $id: "LaunchppProjectStatusParamsV1" },
 );
 
+export const TaskAttachmentParamsSchema = StrictObject(
+  {
+    attachmentId: IdentifierSchema,
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+    organizationId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskAttachmentParamsV1" },
+);
+
 export const ProjectFolderParamsSchema = StrictObject(
   { folderId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppProjectFolderParamsV1" },
@@ -561,6 +602,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   LabelSummarySchema,
   TaskViewSchema,
   TaskCommentSchema,
+  TaskAttachmentSummarySchema,
+  CreateTaskAttachmentInputSchema,
   TaskActivitySchema,
   TaskDetailSchema,
   TaskPageSchema,
@@ -581,4 +624,5 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ProjectStatusParamsSchema,
   ProjectFolderParamsSchema,
   TaskParamsSchema,
+  TaskAttachmentParamsSchema,
 ] as const);

@@ -47,6 +47,7 @@ export {
   projectStatuses,
   projects,
   taskAssignees,
+  taskAttachments,
   taskComments,
   taskLabels,
   tasks,

@@ -92,6 +92,13 @@
       "when": 1790231170081,
       "tag": "0012_shiny_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790245396828,
+      "tag": "0013_smart_dark_beast",
+      "breakpoints": true
     }
   ]
 }

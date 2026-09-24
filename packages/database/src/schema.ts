@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnySQLiteColumn,
+  blob,
   check,
   customType,
   foreignKey,
@@ -483,6 +484,43 @@ export const tasks = sqliteTable(
       "tasks_parent_not_self",
       sql`${table.parentTaskId} is null or ${table.parentTaskId} <> ${table.id}`,
     ),
+  ],
+);
+
+export const taskAttachments = sqliteTable(
+  "task_attachments",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    projectId: text("project_id").notNull(),
+    taskId: text("task_id").notNull(),
+    name: text("name").notNull(),
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull(),
+    content: blob("content", { mode: "buffer" }).notNull(),
+    uploadedByUserId: text("uploaded_by_user_id").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    index("task_attachments_task_time_idx").on(table.taskId, table.createdAt),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "task_attachments_organization_project_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.taskId],
+      foreignColumns: [tasks.organizationId, tasks.id],
+      name: "task_attachments_organization_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.uploadedByUserId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "task_attachments_organization_uploader_fk",
+    }).onDelete("restrict"),
+    check("task_attachments_name_not_blank", sql`length(trim(${table.name})) > 0`),
+    check("task_attachments_content_type_not_blank", sql`length(trim(${table.contentType})) > 0`),
+    check("task_attachments_size_valid", sql`${table.size} > 0 and ${table.size} <= 5242880`),
   ],
 );
 

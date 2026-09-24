@@ -126,10 +126,19 @@ const apiClient: ApiClient = {
     create: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
+    createAttachment: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
     createComment: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
     createLabel: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    deleteAttachment: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    downloadAttachment: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
     get: vi.fn(async () => {
