@@ -902,11 +902,46 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 14px;
+  row-gap: 18px;
+}
+
+.task-editor-label {
+  font-weight: 600;
 }
 
 .task-editor-optional {
-  color: var(--launch-color-text-muted);
+  color: rgb(0 0 0 / 45%);
   font-weight: 400;
+}
+
+.task-editor-assignee,
+.task-editor-upload-content {
+  display: inline-flex;
+  align-items: center;
+}
+
+.task-editor-assignee {
+  gap: 8px;
+}
+
+.task-editor-upload-content {
+  gap: 7px;
+}
+
+.task-editor-upload-content > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.task-editor-upload-trigger {
+  transition:
+    background-color var(--launch-ui-mid) var(--launch-ui-ease),
+    border-color var(--launch-ui-mid) var(--launch-ui-ease);
+}
+
+.task-editor-upload-trigger:hover {
+  border-color: var(--launch-color-primary);
+  background: var(--launch-ui-fill-quaternary);
 }
 
 .task-editor-footer {

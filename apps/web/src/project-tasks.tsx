@@ -10,7 +10,6 @@ import {
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
   ApiError,
-  type LabelSummary,
   type ProjectStatusSummary,
   type TaskPriority,
   type TaskView,
@@ -40,7 +39,10 @@ import {
   Tabs,
   Tag,
   Typography,
+  Upload,
+  type UploadFile,
 } from "@launchpp/ui";
+import { UploadOutlined } from "@launchpp/ui/icons";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
@@ -68,7 +70,6 @@ interface TaskDraft {
   readonly assigneeUserIds: readonly string[];
   readonly description: string;
   readonly dueDate: Date | null;
-  readonly labelIds: readonly string[];
   readonly statusId: string;
   readonly priority: TaskPriority;
   readonly teamId?: string | undefined;
@@ -97,9 +98,9 @@ const emptyColumnStyles = {
   root: { margin: "0 0 6px" },
 } as const;
 const taskPriorityOptions = [
-  { label: "Low", value: "low" },
-  { label: "Medium", value: "medium" },
-  { label: "High", value: "high" },
+  { label: <Tag color="green">Low</Tag>, value: "low" },
+  { label: <Tag color="orange">Medium</Tag>, value: "medium" },
+  { label: <Tag color="red">High</Tag>, value: "high" },
 ] as const;
 
 function dateFromKey(value?: string) {
@@ -110,6 +111,14 @@ function dateKey(value: Date) {
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
   return `${value.getFullYear()}-${month}-${day}`;
+}
+
+function avatarInitials(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "ME";
+  const initials =
+    parts.length === 1 ? parts[0]?.slice(0, 2) : `${parts[0]?.[0]}${parts.at(-1)?.[0]}`;
+  return (initials || "ME").toUpperCase();
 }
 
 function formatDate(value: number | string) {
@@ -123,11 +132,7 @@ function sameIds(first: readonly string[], second: readonly string[]) {
   return second.every((value) => values.has(value));
 }
 
-function taskWithDraft(
-  task: TaskView,
-  draft: TaskDraft,
-  labels: readonly LabelSummary[],
-): TaskView {
+function taskWithDraft(task: TaskView, draft: TaskDraft): TaskView {
   const { dueDate: _dueDate, teamId: _teamId, ...base } = task;
   const dueDate = draft.dueDate ? dateKey(draft.dueDate) : undefined;
   return {
@@ -135,7 +140,6 @@ function taskWithDraft(
     assigneeUserIds: [...draft.assigneeUserIds],
     description: draft.description.trim(),
     ...(dueDate ? { dueDate } : {}),
-    labels: labels.filter((label) => draft.labelIds.includes(label.id)),
     priority: draft.priority,
     statusId: draft.statusId,
     ...(draft.teamId ? { teamId: draft.teamId } : {}),
@@ -338,7 +342,7 @@ export function ProjectTaskOrganization({
   const [searchParams] = useSearchParams();
   const [messageApi, messageHolder] = message.useMessage();
   const [tasks, setTasks] = useState<readonly TaskView[]>([]);
-  const [availableLabels, setAvailableLabels] = useState<readonly LabelSummary[]>([]);
+  const [attachmentFiles, setAttachmentFiles] = useState<readonly UploadFile[]>([]);
   const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string>();
   const [loading, setLoading] = useState(true);
@@ -359,7 +363,6 @@ export function ProjectTaskOrganization({
     assigneeUserIds: [currentUserId],
     dueDate: null,
     statusId: statuses[0]?.id ?? "",
-    labelIds: [],
     priority: "medium",
     title: "",
   });
@@ -391,7 +394,6 @@ export function ProjectTaskOrganization({
           return [...current, ...page.items.filter((task) => !existing.has(task.id))];
         });
         setNextCursor(page.nextCursor);
-        setAvailableLabels(page.labels);
         return page;
       } catch (reason) {
         setLoadError(reason);
@@ -450,12 +452,18 @@ export function ProjectTaskOrganization({
     () => teams.map((team) => ({ label: team.name, value: team.id })),
     [teams],
   );
-  const labelOptions = useMemo(
-    () => availableLabels.map((label) => ({ label: label.name, value: label.id })),
-    [availableLabels],
-  );
   const assigneeOptions = useMemo(
-    () => [{ label: currentUserName || "Me", value: currentUserId }],
+    () => [
+      {
+        label: (
+          <span className="task-editor-assignee">
+            <Avatar size={20}>{avatarInitials(currentUserName || "Me")}</Avatar>
+            {currentUserName || "Me"}
+          </span>
+        ),
+        value: currentUserId,
+      },
+    ],
     [currentUserId, currentUserName],
   );
   const statusById = useMemo(
@@ -496,11 +504,11 @@ export function ProjectTaskOrganization({
       assigneeUserIds: [currentUserId],
       description: "",
       dueDate: null,
-      labelIds: [],
       priority: "medium",
       statusId,
       title: "",
     });
+    setAttachmentFiles([]);
     setEditorError(undefined);
     setEditor({ kind: "create" });
   };
@@ -511,11 +519,11 @@ export function ProjectTaskOrganization({
       assigneeUserIds: task.assigneeUserIds,
       dueDate: dateFromKey(task.dueDate),
       statusId: task.statusId,
-      labelIds: task.labels.map((label) => label.id),
       title: task.title,
       priority: task.priority,
       ...(task.teamId ? { teamId: task.teamId } : {}),
     });
+    setAttachmentFiles([]);
     setEditorError(undefined);
     setEditor({ kind: "edit", task });
   };
@@ -619,7 +627,6 @@ export function ProjectTaskOrganization({
           assigneeUserIds: [...currentDraft.assigneeUserIds],
           description: currentDraft.description,
           ...(currentDraft.dueDate ? { dueDate: dateKey(currentDraft.dueDate) } : {}),
-          labelIds: [...currentDraft.labelIds],
           priority: currentDraft.priority,
           statusId: currentDraft.statusId,
           ...(currentDraft.teamId ? { teamId: currentDraft.teamId } : {}),
@@ -637,7 +644,7 @@ export function ProjectTaskOrganization({
 
     const original = editor.task;
     const snapshot = tasks;
-    const optimistic = taskWithDraft(original, currentDraft, availableLabels);
+    const optimistic = taskWithDraft(original, currentDraft);
     setTasks((current) => current.map((task) => (task.id === original.id ? optimistic : task)));
     try {
       const nextDueDate = currentDraft.dueDate ? dateKey(currentDraft.dueDate) : undefined;
@@ -657,17 +664,6 @@ export function ProjectTaskOrganization({
         updated = await api.tasks.update(organizationId, projectId, original.id, {
           expectedRevision: original.revision,
           ...updates,
-        });
-      }
-      if (
-        !sameIds(
-          currentDraft.labelIds,
-          updated.labels.map((label) => label.id),
-        )
-      ) {
-        updated = await api.tasks.replaceLabels(organizationId, projectId, updated.id, {
-          expectedRevision: updated.revision,
-          labelIds: [...currentDraft.labelIds],
         });
       }
       if (!sameIds(currentDraft.assigneeUserIds, updated.assigneeUserIds)) {
@@ -1163,6 +1159,7 @@ export function ProjectTaskOrganization({
 
       <Modal
         centered
+        cancelButtonProps={{ size: "large" }}
         confirmLoading={saving}
         destroyOnHidden
         footer={(actions) => (
@@ -1171,7 +1168,7 @@ export function ProjectTaskOrganization({
             <div className="task-editor-footer-actions">{actions}</div>
           </div>
         )}
-        okButtonProps={{ disabled: !draft.title.trim() }}
+        okButtonProps={{ disabled: !draft.title.trim(), size: "large" }}
         okText={editor?.kind === "edit" ? "Save task" : "Create task"}
         onCancel={closeEditor}
         onOk={() => void saveTask()}
@@ -1205,7 +1202,7 @@ export function ProjectTaskOrganization({
           <Alert showIcon title={taskError(editorError, "Could not save the task.")} type="error" />
         ) : null}
         <Form className="task-editor-form" layout="vertical" onFinish={saveTask}>
-          <Form.Item label="Title">
+          <Form.Item label={<span className="task-editor-label">Title</span>}>
             <Input
               autoFocus
               defaultValue={draft.title}
@@ -1221,7 +1218,7 @@ export function ProjectTaskOrganization({
           </Form.Item>
           <Form.Item
             label={
-              <span>
+              <span className="task-editor-label">
                 Description <span className="task-editor-optional">optional</span>
               </span>
             }
@@ -1237,8 +1234,38 @@ export function ProjectTaskOrganization({
               placeholder="Add detail, paste a link, or leave it empty — you can fill this in later."
             />
           </Form.Item>
+          <Form.Item label={<span className="task-editor-label">Attachments</span>}>
+            <Upload.Dragger
+              beforeUpload={() => false}
+              classNames={{ trigger: "task-editor-upload-trigger" }}
+              disabled={saving}
+              fileList={attachmentFiles}
+              multiple
+              onChange={({ fileList }) => setAttachmentFiles(fileList)}
+              styles={{
+                root: { width: "100%" },
+                trigger: {
+                  alignItems: "center",
+                  border: "1px dashed var(--launch-color-border)",
+                  borderRadius: 6,
+                  display: "flex",
+                  justifyContent: "center",
+                  minHeight: 52,
+                  padding: "0 16px",
+                  textAlign: "start",
+                  width: "100%",
+                },
+              }}
+            >
+              <span className="task-editor-upload-content">
+                <UploadOutlined />
+                <span>Add attachment</span>
+                <Typography.Text type="secondary">or drop a file here</Typography.Text>
+              </span>
+            </Upload.Dragger>
+          </Form.Item>
           <div className="task-editor-grid">
-            <Form.Item label="Team">
+            <Form.Item label={<span className="task-editor-label">Team</span>}>
               <Select
                 allowClear
                 ariaLabel="Task team"
@@ -1251,29 +1278,28 @@ export function ProjectTaskOrganization({
                 }
                 options={teamOptions}
                 placeholder={teamOptions.length > 0 ? "Select team" : "No teams yet"}
+                size="large"
                 value={draft.teamId}
               />
             </Form.Item>
-            <Form.Item label="Assignee">
+            <Form.Item label={<span className="task-editor-label">Assignee</span>}>
               <Select
                 allowClear
                 ariaLabel="Task assignee"
                 disabled={saving}
-                mode="multiple"
                 onChange={(value) =>
                   updateDraft({
                     ...draftRef.current,
-                    assigneeUserIds: Array.isArray(value)
-                      ? value.filter((item): item is string => typeof item === "string")
-                      : [],
+                    assigneeUserIds: typeof value === "string" ? [value] : [],
                   })
                 }
                 options={assigneeOptions}
                 placeholder="Unassigned"
-                value={draft.assigneeUserIds}
+                size="large"
+                value={draft.assigneeUserIds[0]}
               />
             </Form.Item>
-            <Form.Item label="Priority">
+            <Form.Item label={<span className="task-editor-label">Priority</span>}>
               <Select
                 ariaLabel="Task priority"
                 disabled={saving}
@@ -1283,10 +1309,11 @@ export function ProjectTaskOrganization({
                   }
                 }}
                 options={taskPriorityOptions}
+                size="large"
                 value={draft.priority}
               />
             </Form.Item>
-            <Form.Item label="Due date">
+            <Form.Item label={<span className="task-editor-label">Due date</span>}>
               <DatePicker
                 allowClear
                 disabled={saving}
@@ -1297,35 +1324,12 @@ export function ProjectTaskOrganization({
                   })
                 }
                 placeholder="Select date"
+                size="large"
+                style={{ width: "100%" }}
                 value={draft.dueDate}
               />
             </Form.Item>
           </div>
-          <Form.Item
-            label={
-              <span>
-                Labels <span className="task-editor-optional">optional</span>
-              </span>
-            }
-          >
-            <Select
-              allowClear
-              ariaLabel="Task labels"
-              disabled={saving}
-              mode="multiple"
-              onChange={(value) =>
-                updateDraft({
-                  ...draftRef.current,
-                  labelIds: Array.isArray(value)
-                    ? value.filter((item): item is string => typeof item === "string")
-                    : [],
-                })
-              }
-              options={labelOptions}
-              placeholder={labelOptions.length > 0 ? "Add labels" : "No labels yet"}
-              value={draft.labelIds}
-            />
-          </Form.Item>
         </Form>
       </Modal>
 
