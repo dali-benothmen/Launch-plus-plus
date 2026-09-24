@@ -82,6 +82,7 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
+const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
 const priorityPresentation: Record<
   TaskPriority,
@@ -992,44 +993,52 @@ export function TaskDetailPanel({
         }}
         className="task-detail-drawer"
         extra={
-          <Space size={8}>
-            {editing ? (
-              <>
-                <Button disabled={saving} onClick={cancelEditing} size="small">
-                  Cancel
-                </Button>
+          editing ? (
+            <Space size={12}>
+              <Button
+                disabled={saving}
+                onClick={cancelEditing}
+                size="small"
+                style={taskDetailHeaderButtonStyle}
+                variant="outlined"
+              >
+                Cancel
+              </Button>
+              <Button
+                color="primary"
+                disabled={!draft || draft.title.trim().length === 0}
+                loading={saving}
+                onClick={() => void saveChanges()}
+                size="small"
+                style={taskDetailHeaderButtonStyle}
+                variant="outlined"
+              >
+                Save
+              </Button>
+            </Space>
+          ) : (
+            <Space size={12}>
+              {!archived ? (
                 <Button
-                  disabled={!draft || draft.title.trim().length === 0}
-                  loading={saving}
-                  onClick={() => void saveChanges()}
-                  size="small"
-                  variant="primary"
-                >
-                  Save
-                </Button>
-              </>
-            ) : (
-              <>
-                {!archived ? (
-                  <Button
-                    aria-label="Edit task"
-                    icon={<EditOutlined />}
-                    iconOnly
-                    onClick={startEditing}
-                    variant="filled"
-                  />
-                ) : null}
-                <Button
-                  aria-label="Delete task"
-                  danger
-                  icon={<DeleteOutlined />}
+                  aria-label="Edit task"
+                  icon={<EditOutlined />}
                   iconOnly
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  variant="filled"
+                  onClick={startEditing}
+                  style={taskDetailHeaderButtonStyle}
+                  variant="outlined"
                 />
-              </>
-            )}
-          </Space>
+              ) : null}
+              <Button
+                aria-label="Delete task"
+                danger
+                icon={<DeleteOutlined />}
+                iconOnly
+                onClick={() => setDeleteConfirmOpen(true)}
+                style={taskDetailHeaderButtonStyle}
+                variant="outlined"
+              />
+            </Space>
+          )
         }
         mask
         onClose={onClose}

@@ -1027,7 +1027,7 @@
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
   align-items: center;
-  gap: 8px 16px;
+  gap: 14px 16px;
 }
 
 .task-detail-meta-label,
