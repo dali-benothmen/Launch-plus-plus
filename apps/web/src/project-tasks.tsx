@@ -42,7 +42,7 @@ import {
   Upload,
   type UploadFile,
 } from "@launchpp/ui";
-import { UploadOutlined } from "@launchpp/ui/icons";
+import { FlagOutlined, UploadOutlined } from "@launchpp/ui/icons";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
@@ -102,6 +102,14 @@ const taskPriorityOptions = [
   { label: <Tag color="orange">Medium</Tag>, value: "medium" },
   { label: <Tag color="red">High</Tag>, value: "high" },
 ] as const;
+const taskPriorityPresentation: Record<
+  TaskPriority,
+  Readonly<{ color: "blue" | "orange" | "red"; label: string }>
+> = {
+  high: { color: "red", label: "High" },
+  low: { color: "blue", label: "Low" },
+  medium: { color: "orange", label: "Medium" },
+};
 
 function dateFromKey(value?: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -814,14 +822,28 @@ export function ProjectTaskOrganization({
                   <span className="task-column-count" style={{ backgroundColor: status.color }}>
                     {columnTasks.length}
                   </span>
-                  <Button
-                    aria-label={`${status.name} actions`}
-                    className="task-column-menu"
-                    icon={<MoreIcon />}
-                    iconOnly
-                    size="small"
-                    variant="text"
-                  />
+                  <div className="task-column-actions">
+                    <Button
+                      aria-label={`Add task to ${status.name}`}
+                      disabled={archived}
+                      icon={<AddIcon aria-hidden />}
+                      iconOnly
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openCreate(status.id);
+                      }}
+                      size="small"
+                      variant="text"
+                    />
+                    <Button
+                      aria-label={`${status.name} actions`}
+                      className="task-column-menu"
+                      icon={<MoreIcon />}
+                      iconOnly
+                      size="small"
+                      variant="text"
+                    />
+                  </div>
                 </header>
                 <TaskDropZone
                   empty={columnTasks.length === 0}
@@ -840,18 +862,20 @@ export function ProjectTaskOrganization({
                     >
                       <Card className="task-card" size="small">
                         <div className="task-card-content">
-                          <div className="task-card-heading">
-                            <Button
-                              className="task-title-button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openTask(task, event.currentTarget);
-                              }}
-                              size="small"
-                              variant="link"
+                          <div className="task-card-topline">
+                            <Tag
+                              className="task-card-status-tag"
+                              color={status.color}
+                              icon={
+                                <span
+                                  aria-hidden
+                                  className="task-card-status-dot"
+                                  style={{ backgroundColor: status.color }}
+                                />
+                              }
                             >
-                              {task.title}
-                            </Button>
+                              {status.name}
+                            </Tag>
                             <Dropdown
                               destroyOnHidden
                               menu={{ items: taskMenu(task) }}
@@ -868,35 +892,23 @@ export function ProjectTaskOrganization({
                               />
                             </Dropdown>
                           </div>
+                          <Typography.Text className="task-card-title">
+                            {task.title}
+                          </Typography.Text>
                           {task.description ? (
                             <Typography.Text className="task-card-description" type="secondary">
                               {task.description}
                             </Typography.Text>
                           ) : null}
-                          <div className="task-card-status">
-                            <Typography.Text type="secondary">{status.name}</Typography.Text>
-                            <span
-                              aria-hidden
-                              className="task-status-line"
-                              style={{ backgroundColor: status.color }}
-                            />
-                          </div>
-                          {task.labels.length > 0 ? (
-                            <div className="task-card-meta">
-                              {task.labels.map((label) => (
-                                <Tag color={label.color} key={label.id}>
-                                  {label.name}
-                                </Tag>
-                              ))}
-                            </div>
-                          ) : null}
                           <div className="task-assignees">
-                            <Typography.Text type="secondary">Assigned to</Typography.Text>
+                            <Typography.Text type="secondary">Assignees:</Typography.Text>
                             {task.assigneeUserIds.length > 0 ? (
-                              <Avatar.Group max={{ count: 3 }} size="small">
+                              <Avatar.Group max={{ count: 3 }} size={20}>
                                 {task.assigneeUserIds.map((userId) => (
                                   <Avatar key={userId}>
-                                    {userId === currentUserId ? "Me" : "M"}
+                                    {userId === currentUserId
+                                      ? avatarInitials(currentUserName)
+                                      : "M"}
                                   </Avatar>
                                 ))}
                               </Avatar.Group>
@@ -904,12 +916,37 @@ export function ProjectTaskOrganization({
                               <Typography.Text type="secondary">Unassigned</Typography.Text>
                             )}
                           </div>
-                          <div className="task-card-summary">
-                            <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                          <div className="task-card-details">
                             {task.dueDate ? (
-                              <Typography.Text type="secondary">
-                                {formatDate(task.dueDate)}
-                              </Typography.Text>
+                              <span className="task-card-due">
+                                <FlagOutlined aria-hidden />
+                                <Typography.Text type="secondary">
+                                  {formatDate(task.dueDate)}
+                                </Typography.Text>
+                              </span>
+                            ) : (
+                              <span />
+                            )}
+                            <Tag
+                              className="task-card-priority"
+                              color={taskPriorityPresentation[task.priority].color}
+                            >
+                              {taskPriorityPresentation[task.priority].label}
+                            </Tag>
+                          </div>
+                          <div className="task-card-footer">
+                            <Typography.Text type="secondary">{task.reference}</Typography.Text>
+                            {task.labels.length > 0 ? (
+                              <div className="task-card-meta">
+                                {task.labels.slice(0, 2).map((label) => (
+                                  <Tag color={label.color} key={label.id}>
+                                    {label.name}
+                                  </Tag>
+                                ))}
+                                {task.labels.length > 2 ? (
+                                  <Tag color="neutral">+{task.labels.length - 2}</Tag>
+                                ) : null}
+                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -917,17 +954,6 @@ export function ProjectTaskOrganization({
                     </SortableTaskShell>
                   ))}
                 </TaskDropZone>
-                <Button
-                  block
-                  disabled={archived}
-                  className="task-add-button"
-                  onClick={() => openCreate(status.id)}
-                  icon={<AddIcon aria-hidden />}
-                  size="small"
-                  variant="dashed"
-                >
-                  Add task
-                </Button>
               </SortableColumnShell>
             );
           })}
