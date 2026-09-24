@@ -616,7 +616,11 @@ export function ProjectTaskOrganization({
 
   const saveTask = async () => {
     const currentDraft = draftRef.current;
-    if (!editor || saving || currentDraft.title.trim().length === 0 || !currentDraft.statusId) {
+    if (!editor || saving || !currentDraft.statusId) {
+      return;
+    }
+    if (currentDraft.title.trim().length === 0) {
+      setEditorError(new TypeError("A task title is required."));
       return;
     }
     setSaving(true);
@@ -1168,7 +1172,7 @@ export function ProjectTaskOrganization({
             <div className="task-editor-footer-actions">{actions}</div>
           </div>
         )}
-        okButtonProps={{ disabled: !draft.title.trim(), size: "large" }}
+        okButtonProps={{ size: "large" }}
         okText={editor?.kind === "edit" ? "Save task" : "Create task"}
         onCancel={closeEditor}
         onOk={() => void saveTask()}
@@ -1211,7 +1215,6 @@ export function ProjectTaskOrganization({
               maxLength={500}
               onChange={(event) => {
                 draftRef.current = { ...draftRef.current, title: event.target.value };
-                setDraft(draftRef.current);
               }}
               placeholder="What needs to be done?"
               size="large"
