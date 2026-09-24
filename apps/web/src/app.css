@@ -750,24 +750,40 @@
   white-space: nowrap;
 }
 
+.task-card-labels,
 .task-card-metrics {
-  display: inline-flex;
+  display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 14px;
+  gap: 6px;
+  overflow: hidden;
 }
 
-.task-card-metric {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.task-card-labels .launch-ui-tag {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.task-card-summary {
+  padding-top: 8px;
+  border-top: 1px solid var(--launch-color-border-secondary);
+}
+
+.task-card-footer-tag {
+  height: 20px;
+  padding: 0 6px;
+  border-color: var(--launch-color-border-secondary);
+  background: transparent;
   color: rgb(0 0 0 / 45%);
   font-size: 10px;
+  line-height: 18px;
 }
 
-.task-card-metric svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
+.task-card-footer-tag svg {
+  width: 13px;
+  height: 13px;
 }
 
 .task-card-unassigned {

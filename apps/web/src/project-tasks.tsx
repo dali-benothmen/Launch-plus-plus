@@ -43,6 +43,7 @@ import {
   type UploadFile,
 } from "@launchpp/ui";
 import {
+  CalendarOutlined,
   CommentOutlined,
   PaperClipOutlined,
   UploadOutlined,
@@ -111,6 +112,14 @@ const taskPriorityOptions = [
   { label: <Tag color="orange">Medium</Tag>, value: "medium" },
   { label: <Tag color="red">High</Tag>, value: "high" },
 ] as const;
+const taskPriorityPresentation: Record<
+  TaskPriority,
+  Readonly<{ color: "green" | "orange" | "red"; label: string }>
+> = {
+  high: { color: "red", label: "High" },
+  low: { color: "green", label: "Low" },
+  medium: { color: "orange", label: "Medium" },
+};
 const fallbackStatusColors = [
   "#faad14",
   "#1677ff",
@@ -457,6 +466,10 @@ export function ProjectTaskOrganization({
 
   const teamOptions = useMemo(
     () => teams.map((team) => ({ label: team.name, value: team.id })),
+    [teams],
+  );
+  const teamNamesById = useMemo(
+    () => new Map(teams.map((team) => [team.id, team.name])),
     [teams],
   );
   const assigneeOptions = useMemo(
@@ -958,26 +971,46 @@ export function ProjectTaskOrganization({
                               </Typography.Text>
                             ) : null}
                           </div>
+                          <div className="task-card-labels">
+                            <Tag color={taskPriorityPresentation[task.priority].color}>
+                              {taskPriorityPresentation[task.priority].label}
+                            </Tag>
+                            {task.teamId && teamNamesById.has(task.teamId) ? (
+                              <Tag color="blue">{teamNamesById.get(task.teamId)}</Tag>
+                            ) : null}
+                          </div>
                           <div className="task-card-summary">
                             <div className="task-card-metrics">
-                              <span
+                              {task.dueDate ? (
+                                <Tag
+                                  className="task-card-footer-tag"
+                                  icon={<CalendarOutlined aria-hidden />}
+                                  variant="outlined"
+                                >
+                                  {formatDate(task.dueDate)}
+                                </Tag>
+                              ) : null}
+                              <Tag
                                 aria-label={`${task.commentCount} comments`}
-                                className="task-card-metric"
+                                className="task-card-footer-tag"
+                                icon={<CommentOutlined aria-hidden />}
                                 title="Comments"
+                                variant="outlined"
                               >
-                                <CommentOutlined aria-hidden />
                                 {task.commentCount}
-                              </span>
-                              <span
+                              </Tag>
+                              <Tag
                                 aria-label="0 attachments"
-                                className="task-card-metric"
+                                className="task-card-footer-tag"
+                                icon={<PaperClipOutlined aria-hidden />}
                                 title="Attachments"
+                                variant="outlined"
                               >
-                                <PaperClipOutlined aria-hidden />0
-                              </span>
+                                0
+                              </Tag>
                             </div>
                             {task.assigneeUserIds.length > 0 ? (
-                              <Avatar.Group max={{ count: 3 }} size={20}>
+                              <Avatar.Group max={{ count: 3 }} size={24}>
                                 {task.assigneeUserIds.map((userId) => (
                                   <Avatar key={userId}>
                                     {userId === currentUserId
