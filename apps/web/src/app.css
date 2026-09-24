@@ -1035,7 +1035,7 @@
 
 .task-detail-meta-label,
 .task-detail-section-label {
-  color: var(--launch-color-text-secondary);
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
   font-size: 13px;
 }
 
@@ -1050,7 +1050,7 @@
   width: 10px;
   height: 10px;
   flex: 0 0 auto;
-  border: 1px solid var(--launch-color-text-secondary);
+  border: 1px solid currentColor;
   border-radius: 50%;
 }
 
