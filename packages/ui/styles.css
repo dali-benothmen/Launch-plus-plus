@@ -7930,7 +7930,6 @@
 
 .launch-ui-modal-mask[data-state="closed"] {
   animation: launch-ui-fade-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-modal-container {
@@ -7964,7 +7963,6 @@
 
 .launch-ui-modal-container[data-state="closed"] {
   animation: launch-ui-modal-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-modal-container.is-centered[data-state="open"] {
@@ -8082,7 +8080,6 @@
 
 .launch-ui-drawer-mask[data-state="closed"] {
   animation: launch-ui-fade-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-drawer-content {
@@ -8135,7 +8132,6 @@
 
 .launch-ui-drawer-content.is-right[data-state="closed"] {
   animation: launch-ui-drawer-right-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-drawer-content.is-left[data-state="open"] {
@@ -8144,7 +8140,6 @@
 
 .launch-ui-drawer-content.is-left[data-state="closed"] {
   animation: launch-ui-drawer-left-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-drawer-content.is-top[data-state="open"] {
@@ -8153,7 +8148,6 @@
 
 .launch-ui-drawer-content.is-top[data-state="closed"] {
   animation: launch-ui-drawer-top-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-drawer-content.is-bottom[data-state="open"] {
@@ -8162,7 +8156,6 @@
 
 .launch-ui-drawer-content.is-bottom[data-state="closed"] {
   animation: launch-ui-drawer-bottom-out var(--launch-ui-mid) var(--launch-ui-ease) forwards;
-  pointer-events: none;
 }
 
 .launch-ui-drawer-root:not(.has-opened) [data-state="closed"] {
