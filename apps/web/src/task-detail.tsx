@@ -563,7 +563,6 @@ export function TaskDetailPanel({
         if (!open) onAfterClose();
       }}
       className="task-detail-drawer"
-      destroyOnHidden
       extra={selectedStatus ? <Tag color={selectedStatus.color}>{selectedStatus.name}</Tag> : null}
       mask={narrow}
       onClose={onClose}

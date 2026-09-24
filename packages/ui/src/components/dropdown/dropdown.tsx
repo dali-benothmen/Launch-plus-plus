@@ -398,6 +398,8 @@ export function Dropdown(dropdownProps: DropdownProps) {
                   resolvedClassNames.root,
                 )}
                 collisionPadding={8}
+                data-launch-ui-popup="dropdown"
+                onClick={(event) => event.stopPropagation()}
                 onPointerEnter={clearCloseTimer}
                 onPointerLeave={closeFromHover}
                 sideOffset={4}
@@ -474,6 +476,8 @@ export function Dropdown(dropdownProps: DropdownProps) {
           align={resolvedPlacement.align}
           avoidCollisions={autoAdjustOverflow}
           className={classes("launch-ui-dropdown-content", resolvedClassNames.root)}
+          data-launch-ui-popup="dropdown"
+          onClick={(event) => event.stopPropagation()}
           collisionPadding={8}
           onAnimationEnd={(event) => {
             if (

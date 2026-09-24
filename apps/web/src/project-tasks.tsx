@@ -346,7 +346,11 @@ function SortableTaskShell({
       className={`task-card-shell${sortable.isDragging ? " is-dragging" : ""}`}
       ref={sortable.ref}
       role="option"
-      onClick={(event) => onOpen(event.currentTarget)}
+      onClick={(event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest("[data-launch-ui-popup]")) return;
+        onOpen(event.currentTarget);
+      }}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
@@ -727,7 +731,7 @@ export function ProjectTaskOrganization({
       label: "Edit task",
       onClick: ({ domEvent }) => {
         domEvent.stopPropagation();
-        openTask(task);
+        window.requestAnimationFrame(() => openTask(task));
       },
     },
     {
