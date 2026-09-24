@@ -480,6 +480,46 @@ export class SqliteProjectRepository implements ProjectRepository {
       );
   }
 
+  saveStatus(context: WriteContext, status: ProjectStatus): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `UPDATE project_statuses
+         SET name = ?, color = ?, icon = ?, position = ?, category = ?, updated_at = ?,
+             archived_at = ?, revision = ?
+         WHERE id = ? AND organization_id = ? AND project_id = ?`,
+      )
+      .run(
+        status.name,
+        status.color,
+        status.icon ?? null,
+        status.position,
+        status.category,
+        status.updatedAt,
+        status.archivedAt ?? null,
+        status.revision,
+        status.id,
+        status.organizationId,
+        status.projectId,
+      );
+  }
+
+  statusHasActiveTasks(
+    context: ReadContext,
+    organizationId: string,
+    projectId: string,
+    statusId: string,
+  ): boolean {
+    const row = requireSqliteConnection(context)
+      .prepare<[string, string, string], { readonly found: number }>(
+        `SELECT 1 AS found FROM tasks
+         WHERE organization_id = ? AND project_id = ? AND status_id = ?
+           AND archived_at IS NULL AND deleted_at IS NULL
+         LIMIT 1`,
+      )
+      .get(organizationId, projectId, statusId);
+    return row?.found === 1;
+  }
+
   setPreference(
     context: WriteContext,
     input: Readonly<{

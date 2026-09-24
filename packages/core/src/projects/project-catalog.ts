@@ -20,7 +20,9 @@ import {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusInUseError,
   ProjectStatusNameConflictError,
+  ProjectStatusNotFoundError,
 } from "./project.js";
 
 export interface ProjectCatalogDependencies {
@@ -289,6 +291,85 @@ export class ProjectCatalogService {
         projectId: input.projectId,
       });
       return status;
+    });
+  }
+
+  renameStatus(
+    input: CommandContext & Readonly<{ name: string; projectId: string; statusId: string }>,
+  ): Promise<ProjectStatus> {
+    validateContext(input);
+    const name = input.name.trim().replace(/\s+/g, " ");
+    if (name.length === 0 || name.length > 80) {
+      return Promise.reject(new TypeError("Board column name must contain 1 to 80 characters."));
+    }
+    return this.dependencies.transactions.write((context) => {
+      this.requireProject(context, input.organizationId, input.projectId);
+      const statuses = this.dependencies.projects
+        .listStatuses(context, input.organizationId)
+        .filter(
+          (status) => status.projectId === input.projectId && status.archivedAt === undefined,
+        );
+      const status = statuses.find((item) => item.id === input.statusId);
+      if (!status) throw new ProjectStatusNotFoundError("The board column does not exist.");
+      if (
+        statuses.some(
+          (item) => item.id !== status.id && item.name.toLowerCase() === name.toLowerCase(),
+        )
+      ) {
+        throw new ProjectStatusNameConflictError("A board column with this name already exists.");
+      }
+      if (status.name === name) return status;
+      const updated = Object.freeze({
+        ...status,
+        name,
+        revision: status.revision + 1,
+        updatedAt: this.dependencies.clock(),
+      });
+      this.dependencies.projects.saveStatus(context, updated);
+      this.record(context, input, "project_status.renamed", status.id, {
+        name,
+        projectId: input.projectId,
+      });
+      return updated;
+    });
+  }
+
+  deleteStatus(
+    input: CommandContext & Readonly<{ projectId: string; statusId: string }>,
+  ): Promise<void> {
+    validateContext(input);
+    return this.dependencies.transactions.write((context) => {
+      this.requireProject(context, input.organizationId, input.projectId);
+      const statuses = this.dependencies.projects
+        .listStatuses(context, input.organizationId)
+        .filter(
+          (status) => status.projectId === input.projectId && status.archivedAt === undefined,
+        );
+      const status = statuses.find((item) => item.id === input.statusId);
+      if (!status) throw new ProjectStatusNotFoundError("The board column does not exist.");
+      if (statuses.length <= 1) {
+        throw new ProjectStatusInUseError("A project must keep at least one board column.");
+      }
+      if (
+        this.dependencies.projects.statusHasActiveTasks(
+          context,
+          input.organizationId,
+          input.projectId,
+          status.id,
+        )
+      ) {
+        throw new ProjectStatusInUseError("Move every task out of this column before deleting it.");
+      }
+      const now = this.dependencies.clock();
+      this.dependencies.projects.saveStatus(context, {
+        ...status,
+        archivedAt: now,
+        revision: status.revision + 1,
+        updatedAt: now,
+      });
+      this.record(context, input, "project_status.deleted", status.id, {
+        projectId: input.projectId,
+      });
     });
   }
 

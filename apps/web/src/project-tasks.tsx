@@ -52,7 +52,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import { invalidationEventName } from "./invalidation.js";
-import { openProjectCreationEvent, projectNavigationChangedEvent } from "./project-navigation.js";
+import { projectNavigationChangedEvent } from "./project-navigation.js";
 import { TaskDetailPanel } from "./task-detail.js";
 
 type ProjectView = "board" | "list";
@@ -70,6 +70,9 @@ interface ProjectTaskOrganizationProps {
 }
 
 type TaskEditor = Readonly<{ kind: "create" }>;
+type DeleteTarget =
+  | Readonly<{ kind: "task"; task: TaskView }>
+  | Readonly<{ kind: "status"; status: ProjectStatusSummary; taskCount: number }>;
 
 interface TaskDraft {
   readonly assigneeUserIds: readonly string[];
@@ -102,6 +105,9 @@ const emptyColumnStyles = {
   description: { color: "rgb(0 0 0 / 45%)" },
   root: { margin: "0 0 6px" },
 } as const;
+const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 10 } as const;
+const taskCardAssigneeStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 11 } as const;
+const taskCardDateStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 10 } as const;
 const taskPriorityOptions = [
   { label: <Tag color="green">Low</Tag>, value: "low" },
   { label: <Tag color="orange">Medium</Tag>, value: "medium" },
@@ -377,6 +383,13 @@ export function ProjectTaskOrganization({
   const [columnName, setColumnName] = useState("");
   const [columnError, setColumnError] = useState<unknown>();
   const [savingColumn, setSavingColumn] = useState(false);
+  const [renamingStatus, setRenamingStatus] = useState<ProjectStatusSummary>();
+  const [renameColumnName, setRenameColumnName] = useState("");
+  const [columnActionError, setColumnActionError] = useState<unknown>();
+  const [savingColumnAction, setSavingColumnAction] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>();
+  const [deleteError, setDeleteError] = useState<unknown>();
+  const [deleting, setDeleting] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
   const taskLayoutRef = useRef(taskLayout);
   const taskLayoutSnapshotRef = useRef(taskLayout);
@@ -577,6 +590,67 @@ export function ProjectTaskOrganization({
     }
   };
 
+  const openRenameColumn = (status: ProjectStatusSummary) => {
+    setRenameColumnName(status.name);
+    setColumnActionError(undefined);
+    setRenamingStatus(status);
+  };
+
+  const renameColumn = async () => {
+    if (!renamingStatus || !renameColumnName.trim() || savingColumnAction) return;
+    setSavingColumnAction(true);
+    setColumnActionError(undefined);
+    try {
+      const updated = await api.projects.renameStatus(
+        organizationId,
+        projectId,
+        renamingStatus.id,
+        renameColumnName,
+      );
+      setRenamingStatus(undefined);
+      setRenameColumnName("");
+      messageApi.success(`${updated.name} renamed.`);
+      window.dispatchEvent(new Event(projectNavigationChangedEvent));
+    } catch (reason) {
+      setColumnActionError(reason);
+    } finally {
+      setSavingColumnAction(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    if (
+      deleteTarget.kind === "status" &&
+      (deleteTarget.taskCount > 0 || displayStatuses.length <= 1)
+    ) {
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(undefined);
+    try {
+      if (deleteTarget.kind === "task") {
+        await api.tasks.archive(organizationId, projectId, deleteTarget.task.id, {
+          expectedRevision: deleteTarget.task.revision,
+        });
+        setTasks((current) => current.filter((task) => task.id !== deleteTarget.task.id));
+        messageApi.success(`${deleteTarget.task.title} deleted.`);
+      } else {
+        await api.projects.deleteStatus(organizationId, projectId, deleteTarget.status.id);
+        setOrderedStatusIds((current) =>
+          current.filter((statusId) => statusId !== deleteTarget.status.id),
+        );
+        messageApi.success(`${deleteTarget.status.name} deleted.`);
+        window.dispatchEvent(new Event(projectNavigationChangedEvent));
+      }
+      setDeleteTarget(undefined);
+    } catch (reason) {
+      setDeleteError(reason);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const persistColumnOrder = async (next: readonly string[], snapshot: readonly string[]) => {
     try {
       await api.projects.reorderStatuses(organizationId, projectId, {
@@ -589,11 +663,38 @@ export function ProjectTaskOrganization({
     }
   };
 
+  const columnMenu = (
+    status: ProjectStatusSummary,
+    taskCount: number,
+  ): readonly DropdownMenuItem[] => [
+    {
+      key: "rename",
+      label: "Rename column",
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        openRenameColumn(status);
+      },
+    },
+    {
+      danger: true,
+      key: "delete",
+      label: "Delete column",
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        setDeleteError(undefined);
+        setDeleteTarget({ kind: "status", status, taskCount });
+      },
+    },
+  ];
+
   const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
     {
       key: "edit",
       label: "Edit task",
-      onClick: () => openTask(task),
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        openTask(task);
+      },
     },
     {
       children: displayStatuses
@@ -601,10 +702,24 @@ export function ProjectTaskOrganization({
         .map((status) => ({
           key: `move-${status.id}`,
           label: status.name,
-          onClick: () => void moveTask(task, status.id),
+          onClick: ({ domEvent }) => {
+            domEvent.stopPropagation();
+            void moveTask(task, status.id);
+          },
         })),
       key: "move",
       label: "Move to",
+    },
+    { type: "divider" },
+    {
+      danger: true,
+      key: "delete",
+      label: "Delete task",
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        setDeleteError(undefined);
+        setDeleteTarget({ kind: "task", task });
+      },
     },
   ];
 
@@ -768,17 +883,26 @@ export function ProjectTaskOrganization({
                         event.stopPropagation();
                         openCreate(status.id);
                       }}
+                      onPointerDown={(event) => event.stopPropagation()}
                       size="small"
                       variant="text"
                     />
-                    <Button
-                      aria-label={`${status.name} actions`}
-                      className="task-column-menu"
-                      icon={<MoreIcon />}
-                      iconOnly
-                      size="small"
-                      variant="text"
-                    />
+                    <Dropdown
+                      destroyOnHidden
+                      menu={{ items: columnMenu(status, columnTasks.length) }}
+                      trigger={["click"]}
+                    >
+                      <Button
+                        aria-label={`${status.name} actions`}
+                        className="task-column-menu"
+                        icon={<MoreIcon />}
+                        iconOnly
+                        onClick={(event) => event.stopPropagation()}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        size="small"
+                        variant="text"
+                      />
+                    </Dropdown>
                   </div>
                 </header>
                 <TaskDropZone
@@ -836,13 +960,19 @@ export function ProjectTaskOrganization({
                               {task.title}
                             </Typography.Text>
                             {task.description ? (
-                              <Typography.Text className="task-card-description" type="secondary">
+                              <Typography.Text
+                                className="task-card-description"
+                                style={taskCardDescriptionStyle}
+                                type="secondary"
+                              >
                                 {task.description}
                               </Typography.Text>
                             ) : null}
                           </div>
                           <div className="task-assignees">
-                            <Typography.Text type="secondary">Assignees:</Typography.Text>
+                            <Typography.Text style={taskCardAssigneeStyle} type="secondary">
+                              Assignees:
+                            </Typography.Text>
                             {task.assigneeUserIds.length > 0 ? (
                               <Avatar.Group max={{ count: 3 }} size={20}>
                                 {task.assigneeUserIds.map((userId) => (
@@ -854,14 +984,16 @@ export function ProjectTaskOrganization({
                                 ))}
                               </Avatar.Group>
                             ) : (
-                              <Typography.Text type="secondary">Unassigned</Typography.Text>
+                              <Typography.Text style={taskCardDescriptionStyle} type="secondary">
+                                Unassigned
+                              </Typography.Text>
                             )}
                           </div>
                           <div className="task-card-details">
                             {task.dueDate ? (
                               <span className="task-card-due">
                                 <FlagOutlined aria-hidden />
-                                <Typography.Text type="secondary">
+                                <Typography.Text style={taskCardDateStyle} type="secondary">
                                   {formatDate(task.dueDate)}
                                 </Typography.Text>
                               </span>
@@ -1087,15 +1219,27 @@ export function ProjectTaskOrganization({
         size="small"
         tabBarExtraContent={
           <div className="task-header-actions">
-            <Button onClick={() => setColumnModalOpen(true)} size="small">
+            <Button
+              onClick={(event) => {
+                event.stopPropagation();
+                setColumnModalOpen(true);
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+              size="small"
+            >
               + Add column
             </Button>
             <Button
-              onClick={() => window.dispatchEvent(new Event(openProjectCreationEvent))}
+              disabled={displayStatuses.length === 0}
+              onClick={(event) => {
+                event.stopPropagation();
+                openCreate();
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
               size="small"
               variant="primary"
             >
-              + New project
+              + New task
             </Button>
           </div>
         }
@@ -1131,6 +1275,83 @@ export function ProjectTaskOrganization({
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        confirmLoading={savingColumnAction}
+        okButtonProps={{ disabled: !renameColumnName.trim() }}
+        okText="Rename column"
+        onCancel={() => {
+          setRenamingStatus(undefined);
+          setRenameColumnName("");
+          setColumnActionError(undefined);
+        }}
+        onOk={() => void renameColumn()}
+        open={renamingStatus !== undefined}
+        title="Rename board column"
+      >
+        {columnActionError ? (
+          <Alert
+            showIcon
+            title={taskError(columnActionError, "Could not rename the board column.")}
+            type="error"
+          />
+        ) : null}
+        <Form layout="vertical" onFinish={renameColumn}>
+          <Form.Item label="Column name" required>
+            <Input
+              autoFocus
+              maxLength={80}
+              onChange={(event) => setRenameColumnName(event.target.value)}
+              value={renameColumnName}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        confirmLoading={deleting}
+        okButtonProps={{
+          danger: true,
+          disabled:
+            deleteTarget?.kind === "status" &&
+            (deleteTarget.taskCount > 0 || displayStatuses.length <= 1),
+        }}
+        okText="Delete"
+        onCancel={() => {
+          setDeleteTarget(undefined);
+          setDeleteError(undefined);
+        }}
+        onOk={() => void confirmDelete()}
+        open={deleteTarget !== undefined}
+        title={deleteTarget?.kind === "status" ? "Delete board column?" : "Delete task?"}
+      >
+        {deleteError ? (
+          <Alert
+            showIcon
+            title={taskError(deleteError, "Could not delete this item.")}
+            type="error"
+          />
+        ) : null}
+        {deleteTarget?.kind === "status" ? (
+          deleteTarget.taskCount > 0 ? (
+            <Alert
+              showIcon
+              title="Move every task out of this column before deleting it."
+              type="warning"
+            />
+          ) : displayStatuses.length <= 1 ? (
+            <Alert showIcon title="A project must keep at least one board column." type="warning" />
+          ) : (
+            <Typography.Paragraph>
+              Delete the {deleteTarget.status.name} column? This action cannot be undone.
+            </Typography.Paragraph>
+          )
+        ) : deleteTarget?.kind === "task" ? (
+          <Typography.Paragraph>
+            Delete {deleteTarget.task.title}? Its history will remain archived.
+          </Typography.Paragraph>
+        ) : null}
       </Modal>
 
       <Modal

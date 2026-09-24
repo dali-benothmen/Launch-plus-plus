@@ -69,6 +69,7 @@ export {
   ProjectParamsSchema,
   ProjectStatusInputSchema,
   ProjectStatusOrderInputSchema,
+  ProjectStatusParamsSchema,
   ProjectStatusSummarySchema,
   ProjectSummarySchema,
   RenameOrganizationInputSchema,

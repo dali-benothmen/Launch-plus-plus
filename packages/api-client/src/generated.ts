@@ -57,6 +57,10 @@ function projectPath(organizationId: string, projectId?: string): string {
   return projectId ? `${root}/${encodeURIComponent(projectId)}` : root;
 }
 
+function statusPath(organizationId: string, projectId: string, statusId: string): string {
+  return `${projectPath(organizationId, projectId)}/statuses/${encodeURIComponent(statusId)}`;
+}
+
 function taskPath(organizationId: string, projectId: string, taskId?: string): string {
   const root = `${projectPath(organizationId, projectId)}/tasks`;
   return taskId ? `${root}/${encodeURIComponent(taskId)}` : root;
@@ -76,6 +80,13 @@ export interface CoreApiClient {
       organizationId: string,
       projectId: string,
       input: ProjectStatusInput,
+    ): Promise<ProjectStatusSummary>;
+    deleteStatus(organizationId: string, projectId: string, statusId: string): Promise<void>;
+    renameStatus(
+      organizationId: string,
+      projectId: string,
+      statusId: string,
+      name: string,
     ): Promise<ProjectStatusSummary>;
     delete(organizationId: string, projectId: string): Promise<void>;
     deleteFolder(organizationId: string, folderId: string): Promise<void>;
@@ -209,6 +220,19 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "POST",
+        }),
+      async deleteStatus(
+        organizationId: string,
+        projectId: string,
+        statusId: string,
+      ): Promise<void> {
+        await json(statusPath(organizationId, projectId, statusId), { method: "DELETE" });
+      },
+      renameStatus: (organizationId: string, projectId: string, statusId: string, name: string) =>
+        json<ProjectStatusSummary>(statusPath(organizationId, projectId, statusId), {
+          body: JSON.stringify({ name }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
         }),
       async delete(organizationId: string, projectId: string): Promise<void> {
         await json(projectPath(organizationId, projectId), { method: "DELETE" });

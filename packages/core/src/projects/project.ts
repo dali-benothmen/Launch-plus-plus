@@ -113,6 +113,13 @@ export interface ProjectRepository {
   ): void;
   saveFolder(context: WriteContext, folder: ProjectFolder): void;
   saveProject(context: WriteContext, project: Project): void;
+  saveStatus(context: WriteContext, status: ProjectStatus): void;
+  statusHasActiveTasks(
+    context: ReadContext,
+    organizationId: string,
+    projectId: string,
+    statusId: string,
+  ): boolean;
   setPreference(
     context: WriteContext,
     input: Readonly<{
@@ -139,6 +146,14 @@ export class ProjectFolderNameConflictError extends Error {
 
 export class ProjectStatusNameConflictError extends Error {
   override readonly name = "ProjectStatusNameConflictError";
+}
+
+export class ProjectStatusNotFoundError extends Error {
+  override readonly name = "ProjectStatusNotFoundError";
+}
+
+export class ProjectStatusInUseError extends Error {
+  override readonly name = "ProjectStatusInUseError";
 }
 
 export class ProjectOrderInvalidError extends Error {

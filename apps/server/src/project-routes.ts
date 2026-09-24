@@ -19,7 +19,9 @@ import {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusInUseError,
   ProjectStatusNameConflictError,
+  ProjectStatusNotFoundError,
   type Project,
   type ProjectCatalog,
   type ProjectFolder,
@@ -210,7 +212,22 @@ export async function registerProjectRoutes(
       );
       return true;
     }
-    if (error instanceof ProjectFolderNotFoundError || error instanceof ProjectNotFoundError) {
+    if (error instanceof ProjectStatusInUseError) {
+      sendProblem(
+        reply,
+        request,
+        409,
+        "project_status_in_use",
+        "Board column is in use",
+        error.message,
+      );
+      return true;
+    }
+    if (
+      error instanceof ProjectFolderNotFoundError ||
+      error instanceof ProjectNotFoundError ||
+      error instanceof ProjectStatusNotFoundError
+    ) {
       sendProblem(
         reply,
         request,
@@ -499,6 +516,81 @@ export async function registerProjectRoutes(
           organizationId: request.params.organizationId,
         });
         return reply.status(201).send(statusSummary(status));
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.patch<{
+    Body: ProjectStatusInput;
+    Params: {
+      readonly organizationId: string;
+      readonly projectId: string;
+      readonly statusId: string;
+    };
+  }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/statuses/:statusId",
+    {
+      schema: {
+        body: { $ref: "LaunchppProjectStatusInputV1#" },
+        operationId: "renameProjectStatus",
+        params: { $ref: "LaunchppProjectStatusParamsV1#" },
+        response: { 200: { $ref: "LaunchppProjectStatusSummaryV1#" }, ...problemResponses },
+        summary: "Rename a project board column",
+        tags: ["Projects"],
+      },
+    },
+    async (request, reply) => {
+      const access = await authorize(request, reply, request.params.organizationId, true);
+      if (!access) return;
+      try {
+        const status = await catalog.renameStatus({
+          ...access,
+          correlationId: request.id,
+          name: request.body.name,
+          projectId: request.params.projectId,
+          statusId: request.params.statusId,
+          organizationId: request.params.organizationId,
+        });
+        return statusSummary(status);
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{
+    Params: {
+      readonly organizationId: string;
+      readonly projectId: string;
+      readonly statusId: string;
+    };
+  }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/statuses/:statusId",
+    {
+      schema: {
+        operationId: "deleteProjectStatus",
+        params: { $ref: "LaunchppProjectStatusParamsV1#" },
+        response: { 204: { type: "null" }, ...problemResponses },
+        summary: "Delete an empty project board column",
+        tags: ["Projects"],
+      },
+    },
+    async (request, reply) => {
+      const access = await authorize(request, reply, request.params.organizationId, true);
+      if (!access) return;
+      try {
+        await catalog.deleteStatus({
+          ...access,
+          correlationId: request.id,
+          projectId: request.params.projectId,
+          statusId: request.params.statusId,
+          organizationId: request.params.organizationId,
+        });
+        return reply.status(204).send();
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;

@@ -68,7 +68,9 @@ export {
   ProjectFolderNotFoundError,
   ProjectNotFoundError,
   ProjectOrderInvalidError,
+  ProjectStatusInUseError,
   ProjectStatusNameConflictError,
+  ProjectStatusNotFoundError,
 } from "./projects/project.js";
 export {
   type ProjectCatalogDependencies,

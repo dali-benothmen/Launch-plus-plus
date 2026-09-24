@@ -514,6 +514,15 @@ export const ProjectParamsSchema = StrictObject(
   { $id: "LaunchppProjectParamsV1" },
 );
 
+export const ProjectStatusParamsSchema = StrictObject(
+  {
+    organizationId: IdentifierSchema,
+    projectId: IdentifierSchema,
+    statusId: IdentifierSchema,
+  },
+  { $id: "LaunchppProjectStatusParamsV1" },
+);
+
 export const ProjectFolderParamsSchema = StrictObject(
   { folderId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppProjectFolderParamsV1" },
@@ -567,6 +576,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   CreateLabelInputSchema,
   OrganizationParamsSchema,
   ProjectParamsSchema,
+  ProjectStatusParamsSchema,
   ProjectFolderParamsSchema,
   TaskParamsSchema,
 ] as const);
