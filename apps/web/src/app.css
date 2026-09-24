@@ -741,13 +741,14 @@
 }
 
 .task-card-description {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: rgb(0 0 0 / 45%);
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: 13px;
+  line-height: 1.4;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .task-card-labels,
@@ -776,7 +777,7 @@
   padding: 0 6px;
   border-color: var(--launch-color-border-secondary);
   background: transparent;
-  color: rgb(0 0 0 / 45%);
+  color: var(--launch-color-border-secondary);
   font-size: 10px;
   line-height: 18px;
 }

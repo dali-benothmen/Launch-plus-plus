@@ -106,7 +106,7 @@ const emptyColumnStyles = {
   description: { color: "rgb(0 0 0 / 45%)" },
   root: { margin: "0 0 6px" },
 } as const;
-const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 11 } as const;
+const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 13 } as const;
 const taskPriorityOptions = [
   { label: <Tag color="green">Low</Tag>, value: "low" },
   { label: <Tag color="orange">Medium</Tag>, value: "medium" },
