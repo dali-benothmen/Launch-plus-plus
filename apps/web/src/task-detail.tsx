@@ -200,6 +200,7 @@ export function TaskDetailPanel({
   const [saving, setSaving] = useState(false);
   const [comment, setComment] = useState("");
   const commentInputRef = useRef<MentionsRef>(null);
+  const commentSelectionRef = useRef({ end: 0, start: 0 });
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [commentFiles, setCommentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string>();
@@ -244,6 +245,7 @@ export function TaskDetailPanel({
     setEditing(false);
     setSaveError(undefined);
     setComment("");
+    commentSelectionRef.current = { end: 0, start: 0 };
     setEmojiOpen(false);
     setCommentFiles([]);
     setEditingCommentId(undefined);
@@ -350,11 +352,12 @@ export function TaskDetailPanel({
   );
 
   const insertEmoji = (emoji: string) => {
-    const input = commentInputRef.current?.nativeElement;
-    const start = input?.selectionStart ?? comment.length;
-    const end = input?.selectionEnd ?? start;
+    const storedSelection = commentSelectionRef.current;
+    const start = Math.max(0, Math.min(storedSelection.start, comment.length));
+    const end = Math.max(start, Math.min(storedSelection.end, comment.length));
     const nextComment = `${comment.slice(0, start)}${emoji}${comment.slice(end)}`;
     const nextCursor = start + emoji.length;
+    commentSelectionRef.current = { end: nextCursor, start: nextCursor };
     setComment(nextComment);
     setEmojiOpen(false);
     requestAnimationFrame(() => {
@@ -497,6 +500,7 @@ export function TaskDetailPanel({
         });
       }
       setComment("");
+      commentSelectionRef.current = { end: 0, start: 0 };
       setCommentFiles([]);
       if (nextDetail) applyDetail(nextDetail);
       else await load();
@@ -1109,6 +1113,14 @@ export function TaskDetailPanel({
                               aria-label="Add emoji"
                               icon={<SmileOutlined />}
                               iconOnly
+                              onPointerDown={() => {
+                                const input = commentInputRef.current?.nativeElement;
+                                if (!input) return;
+                                commentSelectionRef.current = {
+                                  end: input.selectionEnd,
+                                  start: input.selectionStart,
+                                };
+                              }}
                               size="small"
                               variant="text"
                             />
@@ -1148,6 +1160,12 @@ export function TaskDetailPanel({
                         </>
                       }
                       maxLength={20_000}
+                      onBlur={(event) => {
+                        commentSelectionRef.current = {
+                          end: event.currentTarget.selectionEnd,
+                          start: event.currentTarget.selectionStart,
+                        };
+                      }}
                       onChange={setComment}
                       onPressEnter={(event) => {
                         if (event.shiftKey || event.nativeEvent.isComposing) return;
