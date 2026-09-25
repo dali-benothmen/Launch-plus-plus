@@ -313,7 +313,11 @@ function OrganizationProjectExperience({ page }: { readonly page: "home" | "proj
       key: "project",
       title: "Project",
       render: (_, project) => (
-        <Dropdown menu={{ items: projectMenu(project) }} trigger={["contextMenu"]}>
+        <Dropdown
+          destroyOnHidden
+          menu={{ items: projectMenu(project) }}
+          trigger={["contextMenu"]}
+        >
           <div className="project-table-name">
             <Typography.Link
               href={`/app/organizations/${project.organizationId}/projects/${project.id}/board`}
@@ -357,7 +361,12 @@ function OrganizationProjectExperience({ page }: { readonly page: "home" | "proj
   }
 
   const renderProjectCard = (project: ProjectSummary) => (
-    <Dropdown key={project.id} menu={{ items: projectMenu(project) }} trigger={["contextMenu"]}>
+    <Dropdown
+      destroyOnHidden
+      key={project.id}
+      menu={{ items: projectMenu(project) }}
+      trigger={["contextMenu"]}
+    >
       <Card hoverable onDoubleClick={() => openProject(project)} size="small">
         <div className="project-card-copy">
           <Typography.Link
@@ -458,6 +467,7 @@ function OrganizationProjectExperience({ page }: { readonly page: "home" | "proj
                   .toSorted((first, second) => first.position - second.position)
                   .map((folder) => (
                     <Dropdown
+                      destroyOnHidden
                       key={folder.id}
                       menu={{ items: folderMenu(folder) }}
                       trigger={["contextMenu"]}
