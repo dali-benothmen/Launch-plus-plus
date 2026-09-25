@@ -3202,6 +3202,25 @@
   padding-bottom: 24px;
 }
 
+.launch-ui-textarea-footer {
+  display: flex;
+  min-height: 32px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+
+.launch-ui-textarea-footer .launch-ui-textarea-count {
+  position: static;
+  margin-inline-end: auto;
+}
+
+.launch-ui-textarea-wrapper.has-footer:has(.launch-ui-textarea-count) .launch-ui-textarea {
+  padding-bottom: 4px;
+}
+
 .launch-ui-otp {
   display: inline-flex;
   align-items: center;
@@ -3729,6 +3748,27 @@
     background-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
     border-color var(--launch-ui-hover-duration) var(--launch-ui-hover-ease),
     box-shadow var(--launch-ui-hover-duration) var(--launch-ui-hover-ease);
+}
+
+.launch-ui-mentions.has-footer {
+  flex-wrap: wrap;
+}
+
+.launch-ui-mentions.has-footer .launch-ui-mentions-textarea {
+  flex: 0 0 100%;
+}
+
+.launch-ui-mentions-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 32px;
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 0 8px 8px;
 }
 
 .launch-ui-mentions:hover:not(.is-disabled):not(.is-readonly) {

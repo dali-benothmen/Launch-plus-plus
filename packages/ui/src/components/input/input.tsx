@@ -69,7 +69,7 @@ export interface TextAreaAutoSizeConfig {
   readonly minRows?: number;
 }
 
-export type TextAreaSemanticName = "clear" | "count" | "root" | "textarea";
+export type TextAreaSemanticName = "clear" | "count" | "footer" | "root" | "textarea";
 export type TextAreaClassNames = Partial<Record<TextAreaSemanticName, string>>;
 export type TextAreaStyles = Partial<Record<TextAreaSemanticName, CSSProperties>>;
 
@@ -80,6 +80,7 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
     | TextAreaClassNames
     | ((info: { readonly props: TextAreaProps }) => TextAreaClassNames);
   readonly count?: InputCountConfig;
+  readonly footer?: ReactNode;
   readonly onClear?: () => void;
   readonly onPressEnter?: KeyboardEventHandler<HTMLTextAreaElement>;
   readonly showCount?: boolean | InputShowCountConfig;
@@ -349,6 +350,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
       count,
       defaultValue,
       disabled = false,
+      footer,
       maxLength,
       onChange,
       onClear,
@@ -378,6 +380,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
       displayValue.length > 0 &&
       !disabled;
     const showCounter = showCount !== false || count?.show !== undefined;
+    const hasFooter = footer !== undefined && footer !== null;
     const exceeded = count?.max !== undefined && countCharacters(displayValue, count) > count.max;
 
     useEffect(() => {
@@ -412,6 +415,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           status && `is-${status}`,
           disabled && "is-disabled",
           exceeded && "is-count-exceeded",
+          hasFooter && "has-footer",
           resolvedClassNames.root,
           className,
         )}
@@ -459,7 +463,22 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
             {clearConfig?.clearIcon ?? <CloseIcon />}
           </button>
         ) : null}
-        {showCounter ? (
+        {hasFooter ? (
+          <div
+            className={classes("launch-ui-textarea-footer", resolvedClassNames.footer)}
+            style={resolvedStyles.footer}
+          >
+            {showCounter ? (
+              <span
+                className={classes("launch-ui-textarea-count", resolvedClassNames.count)}
+                style={resolvedStyles.count}
+              >
+                {renderCount(displayValue, maxLength, showCount, count)}
+              </span>
+            ) : null}
+            {footer}
+          </div>
+        ) : showCounter ? (
           <span
             className={classes("launch-ui-textarea-count", resolvedClassNames.count)}
             style={resolvedStyles.count}

@@ -459,7 +459,7 @@ Default outlined input:
 - Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
 - Border, background, and focus-ring changes use the shared one-second hover transition.
 
-Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
+Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump. Multiline inputs and mention fields may expose a footer slot for compact actions; the slot sits at the bottom right inside the field while character counts remain aligned to the opposite edge.
 
 ### Select and combobox
 

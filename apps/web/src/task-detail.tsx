@@ -20,6 +20,7 @@ import {
   Dropdown,
   type DropdownMenuItem,
   Empty,
+  EmojiPicker,
   Input,
   Mentions,
   type MentionsRef,
@@ -95,7 +96,6 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
-const commentEmojis = ["😀", "😂", "😍", "👍", "🎉", "❤️", "🔥", "✅", "👏", "🚀"] as const;
 const priorityPresentation: Record<
   TaskPriority,
   Readonly<{ color: "green" | "orange" | "red"; label: string }>
@@ -1085,6 +1085,67 @@ export function TaskDetailPanel({
                     <Mentions
                       autoSize={{ maxRows: 7, minRows: 2 }}
                       className="task-detail-comment-input"
+                      footer={
+                        <>
+                          <Popover
+                            arrow={false}
+                            content={
+                              <EmojiPicker
+                                height={350}
+                                lazyLoadEmojis
+                                onSelect={(emoji) => insertEmoji(emoji)}
+                                previewConfig={{ showPreview: false }}
+                                width={300}
+                              />
+                            }
+                            onOpenChange={setEmojiOpen}
+                            open={emojiOpen}
+                            placement="topRight"
+                            styles={{ content: { padding: 0 } }}
+                            trigger="click"
+                          >
+                            <Button
+                              aria-label="Add emoji"
+                              icon={<SmileOutlined />}
+                              iconOnly
+                              size="small"
+                              variant="text"
+                            />
+                          </Popover>
+                          <Upload<TaskDetail>
+                            beforeUpload={(file) => {
+                              if (file.size <= maximumAttachmentBytes) return false;
+                              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+                              return Upload.LIST_IGNORE;
+                            }}
+                            className="task-detail-comment-attach"
+                            fileList={commentFiles}
+                            maxCount={20}
+                            multiple
+                            onChange={({ fileList }) => setCommentFiles(fileList)}
+                            showUploadList={false}
+                          >
+                            <Button
+                              aria-label="Attach file to comment"
+                              icon={<PaperClipOutlined />}
+                              iconOnly
+                              size="small"
+                              variant="text"
+                            />
+                          </Upload>
+                          <Button
+                            aria-label="Send comment"
+                            color="primary"
+                            disabled={comment.trim().length === 0}
+                            icon={<SendOutlined />}
+                            iconOnly
+                            loading={postingComment}
+                            onClick={() => void createComment()}
+                            size="small"
+                            variant="filled"
+                          />
+                        </>
+                      }
                       maxLength={20_000}
                       onChange={setComment}
                       onPressEnter={(event) => {
@@ -1099,72 +1160,6 @@ export function TaskDetailPanel({
                       value={comment}
                       variant="borderless"
                     />
-                    <div className="task-detail-comment-footer">
-                      <Popover
-                        content={
-                          <div className="task-detail-emoji-picker">
-                            {commentEmojis.map((emoji) => (
-                              <Button
-                                aria-label={`Insert ${emoji} emoji`}
-                                key={emoji}
-                                onClick={() => insertEmoji(emoji)}
-                                size="small"
-                                variant="text"
-                              >
-                                <span aria-hidden className="task-detail-emoji-option">
-                                  {emoji}
-                                </span>
-                              </Button>
-                            ))}
-                          </div>
-                        }
-                        onOpenChange={setEmojiOpen}
-                        open={emojiOpen}
-                        placement="topRight"
-                        styles={{ content: { padding: 6 } }}
-                        trigger="click"
-                      >
-                        <Button
-                          aria-label="Add emoji"
-                          icon={<SmileOutlined />}
-                          iconOnly
-                          size="small"
-                          variant="text"
-                        />
-                      </Popover>
-                      <Upload<TaskDetail>
-                        beforeUpload={(file) => {
-                          if (file.size <= maximumAttachmentBytes) return false;
-                          setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
-                          return Upload.LIST_IGNORE;
-                        }}
-                        className="task-detail-comment-attach"
-                        fileList={commentFiles}
-                        maxCount={20}
-                        multiple
-                        onChange={({ fileList }) => setCommentFiles(fileList)}
-                        showUploadList={false}
-                      >
-                        <Button
-                          aria-label="Attach file to comment"
-                          icon={<PaperClipOutlined />}
-                          iconOnly
-                          size="small"
-                          variant="text"
-                        />
-                      </Upload>
-                      <Button
-                        aria-label="Send comment"
-                        color="primary"
-                        disabled={comment.trim().length === 0}
-                        icon={<SendOutlined />}
-                        iconOnly
-                        loading={postingComment}
-                        onClick={() => void createComment()}
-                        size="small"
-                        variant="filled"
-                      />
-                    </div>
                   </div>
                 ) : null}
                 {detail.comments.length > 0 ? (

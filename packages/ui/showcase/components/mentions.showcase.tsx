@@ -468,6 +468,11 @@ export const mentionsShowcase = defineShowcase({
       type: "false | (input, option) => boolean",
     },
     {
+      name: "footer",
+      description: "Adds compact actions to the bottom-right edge of the field.",
+      type: "ReactNode",
+    },
+    {
       name: "autoSize",
       description: "Grows the field with content, optionally between row limits.",
       type: "boolean | { minRows, maxRows }",

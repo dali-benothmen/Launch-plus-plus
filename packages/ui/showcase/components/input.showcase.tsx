@@ -75,6 +75,28 @@ function TextAreas() {
   );
 }
 
+function TextAreaFooter() {
+  return (
+    <Input.TextArea
+      aria-label="Comment"
+      autoSize={{ minRows: 3, maxRows: 6 }}
+      footer={
+        <Space size="small">
+          <Button size="small" variant="text">
+            Attach
+          </Button>
+          <Button size="small" variant="primary">
+            Send
+          </Button>
+        </Space>
+      }
+      maxLength={280}
+      placeholder="Write a comment"
+      showCount
+    />
+  );
+}
+
 function OTPInputs() {
   return (
     <Flex align="start" gap="medium" vertical>
@@ -371,6 +393,17 @@ const { OTP, Password, Search, TextArea } = Input;`,
 <Input.TextArea rows={4} maxLength={60} />`,
     },
     {
+      id: "input-textarea-footer",
+      name: "TextArea footer",
+      description: "Place compact actions at the bottom right without leaving the field surface.",
+      preview: TextAreaFooter,
+      code: `<Input.TextArea
+  autoSize={{ minRows: 3, maxRows: 6 }}
+  footer={<Space><Button>Attach</Button><Button>Send</Button></Space>}
+  showCount
+/>`,
+    },
+    {
       id: "input-otp",
       name: "OTP",
       description: "Collect fixed-length codes with formatting, masking, and separators.",
@@ -520,6 +553,11 @@ const { OTP, Password, Search, TextArea } = Input;`,
       name: "showCount / count",
       type: "boolean | InputCountConfig",
       description: "Displays and customizes character counting.",
+    },
+    {
+      name: "footer",
+      type: "ReactNode",
+      description: "Adds compact actions to the bottom-right edge of Input.TextArea.",
     },
     {
       name: "autoSize",
