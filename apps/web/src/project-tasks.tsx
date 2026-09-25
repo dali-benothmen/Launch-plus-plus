@@ -46,6 +46,7 @@ import {
   CaretDownOutlined,
   CaretRightOutlined,
   CommentOutlined,
+  HolderOutlined,
   PaperClipOutlined,
   UploadOutlined,
   UserOutlined,
@@ -102,6 +103,10 @@ interface SortableShellProps {
 interface SortableTaskShellProps extends SortableShellProps {
   readonly group: string;
   readonly onOpen: (opener: HTMLDivElement) => void;
+}
+
+interface SortableListSectionProps extends Omit<SortableShellProps, "children"> {
+  readonly children: (handleRef: (element: Element | null) => void) => ReactNode;
 }
 
 const taskPageSize = 50;
@@ -255,6 +260,33 @@ function SortableColumnShell({ children, disabled, id, index, label }: SortableS
     >
       <div className="task-board-column-content">{children}</div>
     </Card>
+  );
+}
+
+function SortableListSection({
+  children,
+  disabled,
+  id,
+  index,
+  label,
+}: SortableListSectionProps) {
+  const sortable = useSortable({
+    accept: "column",
+    data: { kind: "column", label, statusId: id },
+    disabled,
+    id: `column:${id}`,
+    index,
+    transition: { duration: 200, easing: "cubic-bezier(0.25, 1, 0.5, 1)", idle: true },
+    type: "column",
+  });
+
+  return (
+    <section
+      className={`task-list-group${sortable.isDragging ? " is-section-dragging" : ""}`}
+      ref={sortable.ref}
+    >
+      {children(sortable.handleRef)}
+    </section>
   );
 }
 
@@ -1325,111 +1357,143 @@ export function ProjectTaskOrganization({
   const list = (
     <>
       {loadWarning}
-      <div className="task-list-groups">
-        {boardStatuses.map((status) => {
-          const statusTasks = visibleTasks.filter((task) => task.statusId === status.id);
-          const collapsed = collapsedStatusIds.has(status.id);
-          return (
-            <section className="task-list-group" key={status.id}>
-              <header
-                className="task-list-group-header"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${status.color} 8%, white)`,
-                }}
+      <DragDropProvider
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragStart={handleDragStart}
+        sensors={(defaults) => [
+          ...defaults.filter((sensor) => sensor !== PointerSensor),
+          PointerSensor.configure({
+            activationConstraints: [new PointerActivationConstraints.Distance({ value: 5 })],
+          }),
+        ]}
+      >
+        <div className="task-list-groups">
+          {boardStatuses.map((status, statusIndex) => {
+            const statusTasks = visibleTasks.filter((task) => task.statusId === status.id);
+            const collapsed = collapsedStatusIds.has(status.id);
+            return (
+              <SortableListSection
+                disabled={archived || movingTaskId !== undefined}
+                id={status.id}
+                index={statusIndex}
+                key={status.id}
+                label={status.name}
               >
-                <Button
-                  className="task-list-group-toggle"
-                  icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
-                  onClick={() => toggleStatusGroup(status.id)}
-                  size="small"
-                  variant="text"
-                >
-                  <span
-                    className="task-status-dot"
-                    style={{ backgroundColor: status.color }}
-                  />
-                  <span>{status.name}</span>
-                  <Tag color="neutral">{statusTasks.length}</Tag>
-                </Button>
-                <div className="task-list-group-actions">
-                  <Button
-                    aria-label={`Add task to ${status.name}`}
-                    disabled={archived}
-                    icon={<AddIcon aria-hidden />}
-                    iconOnly
-                    onClick={() => openCreate(status.id)}
-                    size="small"
-                    variant="text"
-                  />
-                  <Dropdown
-                    destroyOnHidden
-                    menu={{ items: columnMenu(status, statusTasks.length) }}
-                    trigger={["click"]}
-                  >
-                    <Button
-                      aria-label={`${status.name} actions`}
-                      icon={<MoreIcon />}
-                      iconOnly
-                      size="small"
-                      variant="text"
-                    />
-                  </Dropdown>
-                </div>
-              </header>
-              <div
-                aria-hidden={collapsed}
-                className={
-                  collapsed
-                    ? "task-list-group-content is-collapsed"
-                    : "task-list-group-content"
-                }
-                inert={collapsed}
-              >
-                <Table
-                  classNames={{
-                    cell: "task-list-table-cell",
-                    empty: "task-list-table-empty",
-                    header: "task-list-table-header",
-                    root: "task-list-table-root",
-                    row: "task-list-table-row",
-                  }}
-                  columns={columns}
-                  dataSource={statusTasks}
-                  locale={{ emptyText: "No tasks in this status" }}
-                  onRow={(task) => ({
-                    "aria-label": `Open ${task.title}`,
-                    onClick: (event) => {
-                      const target = event.target;
-                      if (
-                        target instanceof Element &&
-                        target.closest("button, a, input, [data-launch-ui-popup]")
-                      ) {
-                        return;
+                {(handleRef) => (
+                  <>
+                    <header
+                      className="task-list-group-header"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${status.color} 8%, white)`,
+                      }}
+                    >
+                      <Button
+                        className="task-list-group-toggle"
+                        icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                        onClick={() => toggleStatusGroup(status.id)}
+                        size="small"
+                        variant="text"
+                      >
+                        <span
+                          className="task-status-dot"
+                          style={{ backgroundColor: status.color }}
+                        />
+                        <span>{status.name}</span>
+                        <Tag color="neutral">{statusTasks.length}</Tag>
+                      </Button>
+                      <div className="task-list-group-actions">
+                        <Button
+                          aria-label={`Add task to ${status.name}`}
+                          disabled={archived}
+                          icon={<AddIcon aria-hidden />}
+                          iconOnly
+                          onClick={() => openCreate(status.id)}
+                          size="small"
+                          variant="text"
+                        />
+                        <span className="task-list-group-drag-handle" ref={handleRef}>
+                          <Button
+                            aria-label={`Reorder ${status.name}`}
+                            disabled={archived}
+                            icon={<HolderOutlined aria-hidden />}
+                            iconOnly
+                            size="small"
+                            variant="text"
+                          />
+                        </span>
+                        <Dropdown
+                          destroyOnHidden
+                          menu={{ items: columnMenu(status, statusTasks.length) }}
+                          trigger={["click"]}
+                        >
+                          <Button
+                            aria-label={`${status.name} actions`}
+                            icon={<MoreIcon />}
+                            iconOnly
+                            size="small"
+                            variant="text"
+                          />
+                        </Dropdown>
+                      </div>
+                    </header>
+                    <div
+                      aria-hidden={collapsed}
+                      className={
+                        collapsed
+                          ? "task-list-group-content is-collapsed"
+                          : "task-list-group-content"
                       }
-                      openTask(task, event.currentTarget);
-                    },
-                    onKeyDown: (event) => {
-                      if (
-                        event.target === event.currentTarget &&
-                        (event.key === "Enter" || event.key === " ")
-                      ) {
-                        event.preventDefault();
-                        openTask(task, event.currentTarget);
-                      }
-                    },
-                    tabIndex: 0,
-                  })}
-                  pagination={false}
-                  rowKey="id"
-                  scroll={{ x: 850 }}
-                  size="small"
-                  styles={{ cell: { padding: "7px 10px" } }}
-                />
-              </div>
-            </section>
-          );
-        })}
-      </div>
+                      inert={collapsed}
+                    >
+                      <Table
+                        classNames={{
+                          cell: "task-list-table-cell",
+                          empty: "task-list-table-empty",
+                          header: "task-list-table-header",
+                          root: "task-list-table-root",
+                          row: "task-list-table-row",
+                        }}
+                        columns={columns}
+                        dataSource={statusTasks}
+                        locale={{ emptyText: "No tasks in this status" }}
+                        onRow={(task) => ({
+                          "aria-label": `Open ${task.title}`,
+                          onClick: (event) => {
+                            const target = event.target;
+                            if (
+                              target instanceof Element &&
+                              target.closest("button, a, input, [data-launch-ui-popup]")
+                            ) {
+                              return;
+                            }
+                            openTask(task, event.currentTarget);
+                          },
+                          onKeyDown: (event) => {
+                            if (
+                              event.target === event.currentTarget &&
+                              (event.key === "Enter" || event.key === " ")
+                            ) {
+                              event.preventDefault();
+                              openTask(task, event.currentTarget);
+                            }
+                          },
+                          tabIndex: 0,
+                        })}
+                        pagination={false}
+                        rowKey="id"
+                        scroll={{ x: 850 }}
+                        size="small"
+                        styles={{ cell: { padding: "7px 10px" } }}
+                      />
+                    </div>
+                  </>
+                )}
+              </SortableListSection>
+            );
+          })}
+        </div>
+      </DragDropProvider>
       {loadMore}
     </>
   );
