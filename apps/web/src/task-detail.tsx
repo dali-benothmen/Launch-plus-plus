@@ -199,6 +199,7 @@ export function TaskDetailPanel({
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
   const [comment, setComment] = useState("");
+  const [commentComposerRevision, setCommentComposerRevision] = useState(0);
   const commentInputRef = useRef<MentionsRef>(null);
   const commentSelectionRef = useRef({ end: 0, start: 0 });
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -245,6 +246,7 @@ export function TaskDetailPanel({
     setEditing(false);
     setSaveError(undefined);
     setComment("");
+    setCommentComposerRevision(0);
     commentSelectionRef.current = { end: 0, start: 0 };
     setEmojiOpen(false);
     setCommentFiles([]);
@@ -500,7 +502,9 @@ export function TaskDetailPanel({
         });
       }
       setComment("");
+      setCommentComposerRevision((revision) => revision + 1);
       commentSelectionRef.current = { end: 0, start: 0 };
+      setEmojiOpen(false);
       setCommentFiles([]);
       if (nextDetail) applyDetail(nextDetail);
       else await load();
@@ -1158,6 +1162,7 @@ export function TaskDetailPanel({
                           />
                         </>
                       }
+                      key={commentComposerRevision}
                       maxLength={20_000}
                       onBlur={(event) => {
                         commentSelectionRef.current = {
