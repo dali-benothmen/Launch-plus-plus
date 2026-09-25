@@ -313,6 +313,7 @@ export function TaskDetailPanel({
   const [activeDetailTab, setActiveDetailTab] = useState("subtasks");
   const [commentsSeenAt, setCommentsSeenAt] = useState(0);
   const [visibleCommentCount, setVisibleCommentCount] = useState(10);
+  const [visibleActivityCount, setVisibleActivityCount] = useState(10);
   const [comment, setComment] = useState("");
   const [commentComposerRevision, setCommentComposerRevision] = useState(0);
   const commentInputRef = useRef<MentionsRef>(null);
@@ -384,6 +385,7 @@ export function TaskDetailPanel({
     );
     setComment("");
     setVisibleCommentCount(10);
+    setVisibleActivityCount(10);
     setCommentComposerRevision(0);
     commentSelectionRef.current = { end: 0, start: 0 };
     setEmojiOpen(false);
@@ -987,8 +989,9 @@ export function TaskDetailPanel({
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
   const visibleComments = detail?.comments.slice(0, visibleCommentCount) ?? [];
-  const visibleActivity =
+  const activity =
     detail?.activity.filter((item) => !item.operation.startsWith("comment.")) ?? [];
+  const visibleActivity = activity.slice(0, visibleActivityCount);
   const renderSubtaskRow = (subtask: TaskView) => {
     const complete = subtask.statusId === completedStatus?.id;
     const isEditing = editingSubtaskId === subtask.id;
@@ -1942,14 +1945,38 @@ export function TaskDetailPanel({
                 aria-label="Activities"
               >
                 {visibleActivity.length > 0 ? (
-                  <Timeline
-                    items={visibleActivity.map((item) => ({
-                      content: `${item.actorUserId === currentUserId ? currentUserName : "An organization member"} ${activityText(item.operation, item.metadata, statuses)}.`,
-                      key: item.id,
-                      title: detailDateTime.format(new Date(item.occurredAt)),
-                    }))}
-                    titleSpan={140}
-                  />
+                  <>
+                    <Timeline
+                      items={visibleActivity.map((item) => ({
+                        content: (
+                          <div className="task-detail-activity">
+                            <span>
+                              {item.actorUserId === currentUserId
+                                ? currentUserName
+                                : "An organization member"}{" "}
+                              {activityText(item.operation, item.metadata, statuses)}.
+                            </span>
+                            <span className="task-detail-activity-date">
+                              {detailDateTime.format(new Date(item.occurredAt))}
+                            </span>
+                          </div>
+                        ),
+                        key: item.id,
+                      }))}
+                      titleSpan={0}
+                    />
+                    {visibleActivityCount < activity.length ? (
+                      <div className="task-load-more">
+                        <Button
+                          onClick={() =>
+                            setVisibleActivityCount((current) => current + 10)
+                          }
+                        >
+                          Load more activities
+                        </Button>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <Empty
                     description="No activity yet"

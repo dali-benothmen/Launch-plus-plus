@@ -1083,6 +1083,16 @@
   gap: 12px;
 }
 
+.task-detail-activity {
+  display: grid;
+  gap: 2px;
+}
+
+.task-detail-activity-date {
+  color: var(--launch-color-text-secondary);
+  font-size: 12px;
+}
+
 .task-detail-description-text {
   min-height: 48px;
   margin: 0;
