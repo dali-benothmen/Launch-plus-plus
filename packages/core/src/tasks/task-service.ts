@@ -377,7 +377,11 @@ export class TaskService {
         organizationId: input.organizationId,
       });
       this.dependencies.tasks.createComment(context, comment);
-      this.record(context, input, "comment.created", task.id, { commentId: comment.id });
+      this.record(context, input, "comment.created", task.id, {
+        body: comment.body,
+        commentAuthorUserId: comment.authorUserId,
+        commentId: comment.id,
+      });
       return comment;
     });
   }
@@ -417,7 +421,11 @@ export class TaskService {
         input,
         input.active ? "comment.reaction_added" : "comment.reaction_removed",
         task.id,
-        { commentId: comment.id, emoji },
+        {
+          commentAuthorUserId: comment.authorUserId,
+          commentId: comment.id,
+          emoji,
+        },
       );
       return this.toDetail(context, task, project, input.userId);
     });
@@ -456,7 +464,11 @@ export class TaskService {
         updatedAt: this.dependencies.clock(),
       });
       this.dependencies.tasks.saveComment(context, updated);
-      this.record(context, input, "comment.updated", task.id, { commentId: comment.id });
+      this.record(context, input, "comment.updated", task.id, {
+        body: updated.body,
+        commentAuthorUserId: updated.authorUserId,
+        commentId: updated.id,
+      });
       return this.toDetail(context, task, project, input.userId);
     });
   }
@@ -496,7 +508,11 @@ export class TaskService {
         updatedByUserId: input.userId,
       });
       this.dependencies.tasks.saveTask(context, updated);
-      this.record(context, input, "comment.deleted", task.id, { commentId: comment.id });
+      this.record(context, input, "comment.deleted", task.id, {
+        body: comment.body,
+        commentAuthorUserId: comment.authorUserId,
+        commentId: comment.id,
+      });
       return this.toDetail(context, updated, project, input.userId);
     });
   }
@@ -650,11 +666,13 @@ export class TaskService {
       const withoutDueDate = input.dueDate === null ? withoutOptional(task, "dueDate") : task;
       const base =
         input.teamId === null ? withoutOptional(withoutDueDate, "teamId") : withoutDueDate;
+      let teamName: string | undefined;
       if (typeof input.teamId === "string") {
         const team = this.dependencies.teams.findById(context, input.teamId);
         if (!team || team.organizationId !== input.organizationId) {
           throw new TaskTeamInvalidError("The selected team is unavailable.");
         }
+        teamName = team.name;
       }
       const updated: Task = Object.freeze({
         ...base,
@@ -668,7 +686,35 @@ export class TaskService {
         updatedByUserId: input.userId,
       });
       this.dependencies.tasks.saveTask(context, updated);
-      this.record(context, input, "task.updated", task.id, { revision: updated.revision });
+      const changedTextFields = [
+        ...(updated.title === task.title ? [] : ["title"]),
+        ...(updated.description === task.description ? [] : ["description"]),
+      ];
+      if (changedTextFields.length > 0) {
+        this.record(context, input, "task.updated", task.id, {
+          changedFields: changedTextFields,
+          revision: updated.revision,
+        });
+      }
+      if (updated.dueDate !== task.dueDate) {
+        this.record(context, input, "task.due_date_changed", task.id, {
+          dueDate: updated.dueDate ?? null,
+          revision: updated.revision,
+        });
+      }
+      if (updated.priority !== task.priority) {
+        this.record(context, input, "task.priority_changed", task.id, {
+          priority: updated.priority,
+          revision: updated.revision,
+        });
+      }
+      if (updated.teamId !== task.teamId) {
+        this.record(context, input, "task.team_changed", task.id, {
+          revision: updated.revision,
+          teamId: updated.teamId ?? null,
+          teamName: teamName ?? null,
+        });
+      }
       return this.toView(context, updated, project);
     });
   }

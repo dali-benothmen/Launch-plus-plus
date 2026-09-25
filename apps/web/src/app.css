@@ -1093,6 +1093,15 @@
   font-size: 12px;
 }
 
+.task-detail-activity-comment {
+  margin-top: 6px;
+}
+
+.task-detail-activity-comment-body {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .task-detail-description-text {
   min-height: 48px;
   margin: 0;

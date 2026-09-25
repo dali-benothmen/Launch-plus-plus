@@ -2,6 +2,7 @@ import {
   ApiError,
   type OrganizationMemberSummary,
   type ProjectStatusSummary,
+  type TaskActivity,
   type TaskAttachmentSummary,
   type TaskComment,
   type TaskDetail,
@@ -14,6 +15,7 @@ import {
   Alert,
   Avatar,
   Button,
+  Card,
   Checkbox,
   DatePicker,
   Drawer,
@@ -56,7 +58,14 @@ import {
   UserAddOutlined,
   UserOutlined,
 } from "@launchpp/ui/icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useApiClient } from "./api-client-context.js";
 import {
   downloadBlob,
@@ -239,37 +248,43 @@ function renderCommentBody(body: string, memberNames: readonly string[]) {
   return content;
 }
 
-function activityText(
-  operation: string,
+function metadataString(
   metadata: Readonly<Record<string, unknown>>,
-  statuses: readonly ProjectStatusSummary[],
+  key: string,
 ) {
-  if (operation === "task.moved") {
-    const fromStatusId =
-      typeof metadata["fromStatusId"] === "string" ? metadata["fromStatusId"] : undefined;
-    const toStatusId = typeof metadata["toStatusId"] === "string" ? metadata["toStatusId"] : undefined;
-    if (fromStatusId === toStatusId) return "reordered the task";
-    const recordedStatusName =
-      typeof metadata["toStatusName"] === "string" ? metadata["toStatusName"] : undefined;
-    const currentStatusName = statuses.find((status) => status.id === toStatusId)?.name;
-    const statusName = recordedStatusName ?? currentStatusName;
-    return statusName
-      ? `changed the task status to ${statusName}`
-      : "changed the task status";
+  const value = metadata[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function bodyMentionsName(body: string, displayName: string) {
+  const name = displayName.trim().replace(/\s+/g, " ");
+  if (name.length === 0) return false;
+  const token = `@${name}`;
+  let start = body.indexOf(token);
+  while (start >= 0) {
+    const previous = body[start - 1];
+    const next = body[start + token.length];
+    const validStart =
+      start === 0 || previous === undefined || /\s|[([{]/.test(previous);
+    const validEnd = next === undefined || /\s|[.,!?;:)\]}]/.test(next);
+    if (validStart && validEnd) return true;
+    start = body.indexOf(token, start + token.length);
   }
+  return false;
+}
+
+function fallbackActivityText(operation: string) {
   const labels: Readonly<Record<string, string>> = {
+    "comment.deleted": "deleted a comment",
+    "comment.updated": "updated a comment",
     "task.archived": "deleted the task",
-    "task.attachment_added": "added an attachment",
-    "task.attachment_deleted": "deleted an attachment",
     "task.assignees_changed": "changed the assignees",
     "task.created": "created the task",
     "task.labels_changed": "changed the labels",
     "task.restored": "restored the task",
     "task.updated": "updated the task",
   };
-  return (
-    labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ")
-  );
+  return labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ");
 }
 
 function useNarrowScreen() {
@@ -989,9 +1004,128 @@ export function TaskDetailPanel({
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
   const visibleComments = detail?.comments.slice(0, visibleCommentCount) ?? [];
-  const activity =
-    detail?.activity.filter((item) => !item.operation.startsWith("comment.")) ?? [];
+  const activity = detail?.activity ?? [];
   const visibleActivity = activity.slice(0, visibleActivityCount);
+  const activityComment = (item: TaskActivity) => {
+    const commentId = metadataString(item.metadata, "commentId");
+    return commentId
+      ? detail?.comments.find((commentItem) => commentItem.id === commentId)
+      : undefined;
+  };
+  const activityCommentBody = (item: TaskActivity) =>
+    metadataString(item.metadata, "body") ?? activityComment(item)?.body;
+  const activityCommentAuthorId = (item: TaskActivity) =>
+    metadataString(item.metadata, "commentAuthorUserId") ??
+    activityComment(item)?.authorUserId;
+  const renderActivityAction = (item: TaskActivity): ReactNode => {
+    const { metadata, operation } = item;
+    if (operation === "task.moved") {
+      const fromStatusId = metadataString(metadata, "fromStatusId");
+      const toStatusId = metadataString(metadata, "toStatusId");
+      if (fromStatusId === toStatusId) return "reordered the task";
+      const status = statuses.find((statusItem) => statusItem.id === toStatusId);
+      const statusName = metadataString(metadata, "toStatusName") ?? status?.name;
+      return statusName ? (
+        <>
+          changed the task status to <Tag color={status?.color ?? "blue"}>{statusName}</Tag>
+        </>
+      ) : (
+        "changed the task status"
+      );
+    }
+    if (operation === "task.team_changed") {
+      const teamId = metadataString(metadata, "teamId");
+      const team = teams.find((teamItem) => teamItem.id === teamId);
+      const teamName = metadataString(metadata, "teamName") ?? team?.name;
+      const teamIndex = teams.findIndex((teamItem) => teamItem.id === teamId);
+      return teamName ? (
+        <>
+          changed the task team to{" "}
+          <Tag color={teamTagColors[teamIndex % teamTagColors.length] ?? "blue"}>
+            {teamName}
+          </Tag>
+        </>
+      ) : (
+        "removed the task team"
+      );
+    }
+    if (operation === "task.priority_changed") {
+      const priority = metadataString(metadata, "priority");
+      if (priority === "low" || priority === "medium" || priority === "high") {
+        return (
+          <>
+            changed the task priority to{" "}
+            <Tag color={priorityPresentation[priority].color}>
+              {priorityPresentation[priority].label}
+            </Tag>
+          </>
+        );
+      }
+      return "changed the task priority";
+    }
+    if (operation === "task.due_date_changed") {
+      const dueDate = metadataString(metadata, "dueDate");
+      return dueDate
+        ? `changed the task due date to ${detailDate.format(dateFromKey(dueDate) ?? new Date(dueDate))}`
+        : "removed the task due date";
+    }
+    if (operation === "task.assignees_changed") {
+      const assigneeUserIds = Array.isArray(metadata["assigneeUserIds"])
+        ? metadata["assigneeUserIds"].filter(
+            (userId): userId is string => typeof userId === "string",
+          )
+        : [];
+      return assigneeUserIds.length > 0
+        ? `changed the task assignees to ${assigneeUserIds.map(memberName).join(", ")}`
+        : "removed all task assignees";
+    }
+    if (operation === "task.attachment_added") {
+      const name = metadataString(metadata, "name");
+      return name ? `added the attachment “${name}”` : "added an attachment";
+    }
+    if (operation === "task.attachment_deleted") {
+      const name = metadataString(metadata, "name");
+      return name ? `deleted the attachment “${name}”` : "deleted an attachment";
+    }
+    if (operation === "comment.created") {
+      const body = activityCommentBody(item) ?? "";
+      const currentMemberName =
+        members.find((member) => member.userId === currentUserId)?.displayName ??
+        currentUserName;
+      if (bodyMentionsName(body, currentMemberName)) {
+        return "mentioned you in the comments";
+      }
+      const mentionedNames = members
+        .filter(
+          (member) =>
+            member.userId !== currentUserId &&
+            bodyMentionsName(body, member.displayName),
+        )
+        .map((member) => member.displayName);
+      return mentionedNames.length > 0
+        ? `mentioned ${mentionedNames.join(", ")} in the comments`
+        : "added a new comment";
+    }
+    if (operation === "comment.reaction_added") {
+      const emoji = metadataString(metadata, "emoji") ?? "a reaction";
+      const authorUserId = activityCommentAuthorId(item);
+      const owner =
+        authorUserId === currentUserId
+          ? "your"
+          : `${authorUserId ? memberName(authorUserId) : "a user"}’s`;
+      return `reacted ${emoji} to ${owner} comment`;
+    }
+    if (operation === "comment.reaction_removed") {
+      const emoji = metadataString(metadata, "emoji") ?? "a";
+      const authorUserId = activityCommentAuthorId(item);
+      const owner =
+        authorUserId === currentUserId
+          ? "your"
+          : `${authorUserId ? memberName(authorUserId) : "a user"}’s`;
+      return `removed the ${emoji} reaction from ${owner} comment`;
+    }
+    return fallbackActivityText(operation);
+  };
   const renderSubtaskRow = (subtask: TaskView) => {
     const complete = subtask.statusId === completedStatus?.id;
     const isEditing = editingSubtaskId === subtask.id;
@@ -1947,22 +2081,42 @@ export function TaskDetailPanel({
                 {visibleActivity.length > 0 ? (
                   <>
                     <Timeline
-                      items={visibleActivity.map((item) => ({
-                        content: (
-                          <div className="task-detail-activity">
-                            <span>
-                              {item.actorUserId === currentUserId
-                                ? currentUserName
-                                : "An organization member"}{" "}
-                              {activityText(item.operation, item.metadata, statuses)}.
-                            </span>
-                            <span className="task-detail-activity-date">
-                              {detailDateTime.format(new Date(item.occurredAt))}
-                            </span>
-                          </div>
-                        ),
-                        key: item.id,
-                      }))}
+                      items={visibleActivity.map((item) => {
+                        const actorName = item.actorUserId
+                          ? memberName(item.actorUserId)
+                          : "An organization member";
+                        const commentBody =
+                          item.operation === "comment.created"
+                            ? activityCommentBody(item)
+                            : undefined;
+                        return {
+                          content: (
+                            <div className="task-detail-activity">
+                              <span>
+                                <strong>{actorName}</strong>{" "}
+                                {renderActivityAction(item)}.
+                              </span>
+                              <span className="task-detail-activity-date">
+                                {detailDateTime.format(new Date(item.occurredAt))}
+                              </span>
+                              {commentBody ? (
+                                <Card
+                                  className="task-detail-activity-comment"
+                                  size="small"
+                                >
+                                  <div className="task-detail-activity-comment-body">
+                                    {renderCommentBody(
+                                      commentBody,
+                                      mentionOptions.map((option) => option.value),
+                                    )}
+                                  </div>
+                                </Card>
+                              ) : null}
+                            </div>
+                          ),
+                          key: item.id,
+                        };
+                      })}
                       titleSpan={0}
                     />
                     {visibleActivityCount < activity.length ? (
