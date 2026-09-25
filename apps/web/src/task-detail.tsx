@@ -284,7 +284,9 @@ function fallbackActivityText(operation: string) {
     "task.restored": "restored the task",
     "task.updated": "updated the task",
   };
-  return labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ");
+  return (
+    labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ")
+  );
 }
 
 function useNarrowScreen() {
@@ -1023,11 +1025,15 @@ export function TaskDetailPanel({
       const fromStatusId = metadataString(metadata, "fromStatusId");
       const toStatusId = metadataString(metadata, "toStatusId");
       if (fromStatusId === toStatusId) return "reordered the task";
-      const status = statuses.find((statusItem) => statusItem.id === toStatusId);
-      const statusName = metadataString(metadata, "toStatusName") ?? status?.name;
+      const status = statuses.find(
+        (statusItem) => statusItem.id === toStatusId,
+      );
+      const statusName =
+        metadataString(metadata, "toStatusName") ?? status?.name;
       return statusName ? (
         <>
-          changed the task status to <Tag color={status?.color ?? "blue"}>{statusName}</Tag>
+          changed the task status to{" "}
+          <Tag color={status?.color ?? "blue"}>{statusName}</Tag>
         </>
       ) : (
         "changed the task status"
@@ -1041,7 +1047,9 @@ export function TaskDetailPanel({
       return teamName ? (
         <>
           changed the task team to{" "}
-          <Tag color={teamTagColors[teamIndex % teamTagColors.length] ?? "blue"}>
+          <Tag
+            color={teamTagColors[teamIndex % teamTagColors.length] ?? "blue"}
+          >
             {teamName}
           </Tag>
         </>
@@ -1085,13 +1093,15 @@ export function TaskDetailPanel({
     }
     if (operation === "task.attachment_deleted") {
       const name = metadataString(metadata, "name");
-      return name ? `deleted the attachment “${name}”` : "deleted an attachment";
+      return name
+        ? `deleted the attachment “${name}”`
+        : "deleted an attachment";
     }
     if (operation === "comment.created") {
       const body = activityCommentBody(item) ?? "";
       const currentMemberName =
-        members.find((member) => member.userId === currentUserId)?.displayName ??
-        currentUserName;
+        members.find((member) => member.userId === currentUserId)
+          ?.displayName ?? currentUserName;
       if (bodyMentionsName(body, currentMemberName)) {
         return "mentioned you in the comments";
       }
@@ -2097,17 +2107,22 @@ export function TaskDetailPanel({
                                 {renderActivityAction(item)}.
                               </span>
                               <span className="task-detail-activity-date">
-                                {detailDateTime.format(new Date(item.occurredAt))}
+                                {detailDateTime.format(
+                                  new Date(item.occurredAt),
+                                )}
                               </span>
                               {commentBody ? (
                                 <Card
                                   className="task-detail-activity-comment"
                                   size="small"
+                                  style={{ background: "#f8fafb" }}
                                 >
                                   <div className="task-detail-activity-comment-body">
                                     {renderCommentBody(
                                       commentBody,
-                                      mentionOptions.map((option) => option.value),
+                                      mentionOptions.map(
+                                        (option) => option.value,
+                                      ),
                                     )}
                                   </div>
                                 </Card>
