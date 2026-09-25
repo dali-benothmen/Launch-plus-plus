@@ -134,8 +134,15 @@ function findActiveMention(
   return match;
 }
 
-function findMentions(value: string, prefixes: ReadonlyArray<string>) {
+function findMentions(
+  value: string,
+  prefixes: ReadonlyArray<string>,
+  knownValues: ReadonlyArray<string> = [],
+) {
   const mentions: MentionMatch[] = [];
+  const orderedKnownValues = [...new Set(knownValues.filter(Boolean))].sort(
+    (left, right) => right.length - left.length,
+  );
   let cursor = 0;
   while (cursor < value.length) {
     const prefix = prefixes.find((item) => value.startsWith(item, cursor));
@@ -146,6 +153,18 @@ function findMentions(value: string, prefixes: ReadonlyArray<string>) {
     }
 
     const valueStart = cursor + prefix.length;
+    const knownValue = orderedKnownValues.find((candidate) => {
+      if (!value.startsWith(candidate, valueStart)) return false;
+      const next = value[valueStart + candidate.length];
+      return next === undefined || /\s|[.,!?;:)\]}]/.test(next);
+    });
+    if (knownValue) {
+      const end = valueStart + knownValue.length;
+      mentions.push({ end, prefix, start: cursor, value: knownValue });
+      cursor = end;
+      continue;
+    }
+
     let tokenEnd = valueStart;
     while (tokenEnd < value.length && !/\s/.test(value[tokenEnd] ?? "")) tokenEnd += 1;
     let end = tokenEnd;
@@ -251,8 +270,13 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
     }, [activeMention, filterOption, options]);
     const popupOpen = focused && !dismissed && activeMention !== null;
     const mentionMatches = useMemo(
-      () => findMentions(displayValue, prefixes),
-      [displayValue, prefixes],
+      () =>
+        findMentions(
+          displayValue,
+          prefixes,
+          options.map((option) => option.value),
+        ),
+      [displayValue, options, prefixes],
     );
     const decoratedContent = useMemo(() => {
       const content: ReactNode[] = [];
