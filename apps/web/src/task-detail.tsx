@@ -1097,7 +1097,6 @@ export function TaskDetailPanel({
                               <EmojiPicker
                                 height={350}
                                 lazyLoadEmojis
-                                mode="reactions"
                                 onSelect={(emoji) => insertEmoji(emoji)}
                                 previewConfig={{ showPreview: false }}
                                 width={300}
