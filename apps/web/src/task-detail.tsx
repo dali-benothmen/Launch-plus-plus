@@ -116,6 +116,7 @@ function writeCommentsSeenAt(key: string, value: number) {
 }
 
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
+const taskDetailTagStyle = { fontSize: 14 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
 const priorityPresentation: Record<
@@ -1054,6 +1055,7 @@ export function TaskDetailPanel({
               <div className="task-detail-meta-value task-detail-tag-value">
                 <Tag
                   color={selectedStatus?.color ?? "default"}
+                  style={taskDetailTagStyle}
                   icon={
                     <span
                       aria-hidden
@@ -1173,7 +1175,10 @@ export function TaskDetailPanel({
               />
             ) : selectedTeam ? (
               <div className="task-detail-meta-value task-detail-tag-value">
-                <Tag color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}>
+                <Tag
+                  color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}
+                  style={taskDetailTagStyle}
+                >
                   {selectedTeam.name}
                 </Tag>
               </div>
@@ -1201,7 +1206,10 @@ export function TaskDetailPanel({
               />
             ) : (
               <div className="task-detail-meta-value task-detail-tag-value">
-                <Tag color={priorityPresentation[detail.task.priority].color}>
+                <Tag
+                  color={priorityPresentation[detail.task.priority].color}
+                  style={taskDetailTagStyle}
+                >
                   {priorityPresentation[detail.task.priority].label}
                 </Tag>
               </div>

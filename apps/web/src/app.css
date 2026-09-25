@@ -976,6 +976,8 @@
 }
 
 .task-detail-field {
+  --launch-ui-font-size: 14px;
+
   width: 220px;
   max-width: 100%;
 }
@@ -1024,6 +1026,8 @@
 }
 
 .task-detail-meta {
+  --launch-ui-font-size: 14px;
+
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
   align-items: center;
@@ -1033,7 +1037,16 @@
 .task-detail-meta-label,
 .task-detail-section-label {
   color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+}
+
+.task-detail-section-label {
   font-size: 13px;
+}
+
+.task-detail-meta-label,
+.task-detail-description > .task-detail-section-label,
+.task-detail-attachments > .task-detail-section-label {
+  font-size: 14px;
 }
 
 .task-detail-meta-label svg,
@@ -1056,6 +1069,10 @@
   height: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
+}
+
+.task-detail-description {
+  --launch-ui-font-size: 14px;
 }
 
 .task-detail-description,
