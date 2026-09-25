@@ -22,7 +22,9 @@ import {
   Empty,
   Input,
   Mentions,
+  type MentionsRef,
   Modal,
+  Popover,
   Progress,
   Select,
   Space,
@@ -45,11 +47,12 @@ import {
   MoreOutlined,
   PaperClipOutlined,
   SendOutlined,
+  SmileOutlined,
   TeamOutlined,
   UserAddOutlined,
   UserOutlined,
 } from "@launchpp/ui/icons";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiClient } from "./api-client-context.js";
 import {
   downloadBlob,
@@ -92,6 +95,7 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
+const commentEmojis = ["😀", "😂", "😍", "👍", "🎉", "❤️", "🔥", "✅", "👏", "🚀"] as const;
 const priorityPresentation: Record<
   TaskPriority,
   Readonly<{ color: "green" | "orange" | "red"; label: string }>
@@ -195,6 +199,8 @@ export function TaskDetailPanel({
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
   const [comment, setComment] = useState("");
+  const commentInputRef = useRef<MentionsRef>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [commentFiles, setCommentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string>();
   const [editingCommentBody, setEditingCommentBody] = useState("");
@@ -238,6 +244,7 @@ export function TaskDetailPanel({
     setEditing(false);
     setSaveError(undefined);
     setComment("");
+    setEmojiOpen(false);
     setCommentFiles([]);
     setEditingCommentId(undefined);
     setEditingCommentBody("");
@@ -341,6 +348,20 @@ export function TaskDetailPanel({
       })),
     [members],
   );
+
+  const insertEmoji = (emoji: string) => {
+    const input = commentInputRef.current?.nativeElement;
+    const start = input?.selectionStart ?? comment.length;
+    const end = input?.selectionEnd ?? start;
+    const nextComment = `${comment.slice(0, start)}${emoji}${comment.slice(end)}`;
+    const nextCursor = start + emoji.length;
+    setComment(nextComment);
+    setEmojiOpen(false);
+    requestAnimationFrame(() => {
+      commentInputRef.current?.focus();
+      commentInputRef.current?.nativeElement?.setSelectionRange(nextCursor, nextCursor);
+    });
+  };
 
   const save = async (nextDraft: DetailDraft): Promise<boolean> => {
     if (!detail || saving || archived) return false;
@@ -1066,13 +1087,51 @@ export function TaskDetailPanel({
                       className="task-detail-comment-input"
                       maxLength={20_000}
                       onChange={setComment}
+                      onPressEnter={(event) => {
+                        if (event.shiftKey || event.nativeEvent.isComposing) return;
+                        event.preventDefault();
+                        if (comment.trim().length > 0) void createComment();
+                      }}
                       options={mentionOptions}
                       placeholder="Type comment"
+                      ref={commentInputRef}
                       styles={{ root: { borderColor: "transparent", boxShadow: "none" } }}
                       value={comment}
                       variant="borderless"
                     />
                     <div className="task-detail-comment-footer">
+                      <Popover
+                        content={
+                          <div className="task-detail-emoji-picker">
+                            {commentEmojis.map((emoji) => (
+                              <Button
+                                aria-label={`Insert ${emoji} emoji`}
+                                key={emoji}
+                                onClick={() => insertEmoji(emoji)}
+                                size="small"
+                                variant="text"
+                              >
+                                <span aria-hidden className="task-detail-emoji-option">
+                                  {emoji}
+                                </span>
+                              </Button>
+                            ))}
+                          </div>
+                        }
+                        onOpenChange={setEmojiOpen}
+                        open={emojiOpen}
+                        placement="topRight"
+                        styles={{ content: { padding: 6 } }}
+                        trigger="click"
+                      >
+                        <Button
+                          aria-label="Add emoji"
+                          icon={<SmileOutlined />}
+                          iconOnly
+                          size="small"
+                          variant="text"
+                        />
+                      </Popover>
                       <Upload<TaskDetail>
                         beforeUpload={(file) => {
                           if (file.size <= maximumAttachmentBytes) return false;

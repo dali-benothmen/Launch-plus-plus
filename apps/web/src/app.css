@@ -1237,6 +1237,17 @@
   flex: 0 0 auto;
 }
 
+.task-detail-emoji-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 32px);
+  gap: 2px;
+}
+
+.task-detail-emoji-option {
+  font-size: 17px;
+  line-height: 1;
+}
+
 .task-detail-comment-editor > :last-child {
   justify-content: flex-end;
 }

@@ -78,6 +78,7 @@ export interface MentionsProps
   readonly onChange?: (value: string) => void;
   readonly onClear?: () => void;
   readonly onPopupScroll?: (event: UIEvent<HTMLDivElement>) => void;
+  readonly onPressEnter?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   readonly onResize?: (size: { readonly height: number; readonly width: number }) => void;
   readonly onSearch?: (text: string, prefix: string) => void;
   readonly onSelect?: (option: MentionsOption, prefix: string) => void;
@@ -213,6 +214,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       onKeyDown,
       onKeyUp,
       onPopupScroll,
+      onPressEnter,
       onResize,
       onScroll,
       onSearch,
@@ -386,20 +388,26 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
       onKeyDown?.(event);
-      if (event.defaultPrevented || !popupOpen) return;
-      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-        event.preventDefault();
-        moveActiveOption(event.key === "ArrowDown" ? 1 : -1);
-      } else if (event.key === "Enter" || event.key === "Tab") {
-        const option = filteredOptions[activeIndex];
-        if (option && !option.disabled) {
+      if (event.defaultPrevented) return;
+      if (popupOpen) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
           event.preventDefault();
-          selectOption(option);
+          moveActiveOption(event.key === "ArrowDown" ? 1 : -1);
+        } else if (
+          (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) ||
+          event.key === "Tab"
+        ) {
+          const option = filteredOptions[activeIndex];
+          if (option && !option.disabled) {
+            event.preventDefault();
+            selectOption(option);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          setDismissed(true);
         }
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        setDismissed(true);
       }
+      if (!event.defaultPrevented && event.key === "Enter") onPressEnter?.(event);
     };
 
     const menu = (
