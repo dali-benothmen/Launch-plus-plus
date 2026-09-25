@@ -1022,6 +1022,7 @@ export class TaskService {
     const subtasks = this.dependencies.tasks
       .listTasks(context, task.organizationId, task.projectId)
       .filter((item) => item.parentTaskId === task.id)
+      .toSorted((first, second) => first.number - second.number)
       .map((item) => this.toView(context, item, project));
     const reactionGroups = new Map<
       string,
