@@ -422,6 +422,7 @@ export function ProjectTaskOrganization({
   const [deleteError, setDeleteError] = useState<unknown>();
   const [deleting, setDeleting] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
+  const initializedStatusIdsRef = useRef<Set<string>>(new Set());
   const pendingTaskMenuOpenRef = useRef<TaskView | undefined>(undefined);
   const suppressTaskCardOpenRef = useRef(false);
   const taskLayoutRef = useRef(taskLayout);
@@ -458,6 +459,8 @@ export function ProjectTaskOrganization({
   );
 
   useEffect(() => {
+    initializedStatusIdsRef.current.clear();
+    setCollapsedStatusIds(new Set());
     setTasks([]);
     setNextCursor(undefined);
     void loadTasks();
@@ -550,6 +553,29 @@ export function ProjectTaskOrganization({
       );
     });
   }, [query, statusById, tasks]);
+
+  useEffect(() => {
+    if (loading) return;
+    setCollapsedStatusIds((current) => {
+      const next = new Set(current);
+      let changed = false;
+      for (const status of statuses) {
+        if (initializedStatusIdsRef.current.has(status.id)) continue;
+        initializedStatusIdsRef.current.add(status.id);
+        const hasTasks = tasks.some(
+          (task) =>
+            task.statusId === status.id &&
+            task.archivedAt === undefined &&
+            task.parentTaskId === undefined,
+        );
+        if (!hasTasks) {
+          next.add(status.id);
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [loading, statuses, tasks]);
 
   const closeEditor = () => {
     setEditor(undefined);
@@ -1298,17 +1324,40 @@ export function ProjectTaskOrganization({
                   <span>{status.name}</span>
                   <Tag color="neutral">{statusTasks.length}</Tag>
                 </Button>
-                <Button
-                  aria-label={`Add task to ${status.name}`}
-                  disabled={archived}
-                  icon={<AddIcon aria-hidden />}
-                  iconOnly
-                  onClick={() => openCreate(status.id)}
-                  size="small"
-                  variant="text"
-                />
+                <div className="task-list-group-actions">
+                  <Button
+                    aria-label={`Add task to ${status.name}`}
+                    disabled={archived}
+                    icon={<AddIcon aria-hidden />}
+                    iconOnly
+                    onClick={() => openCreate(status.id)}
+                    size="small"
+                    variant="text"
+                  />
+                  <Dropdown
+                    destroyOnHidden
+                    menu={{ items: columnMenu(status, statusTasks.length) }}
+                    trigger={["click"]}
+                  >
+                    <Button
+                      aria-label={`${status.name} actions`}
+                      icon={<MoreIcon />}
+                      iconOnly
+                      size="small"
+                      variant="text"
+                    />
+                  </Dropdown>
+                </div>
               </header>
-              {collapsed ? null : (
+              <div
+                aria-hidden={collapsed}
+                className={
+                  collapsed
+                    ? "task-list-group-content is-collapsed"
+                    : "task-list-group-content"
+                }
+                inert={collapsed}
+              >
                 <Table
                   classNames={{
                     cell: "task-list-table-cell",
@@ -1349,7 +1398,7 @@ export function ProjectTaskOrganization({
                   size="small"
                   styles={{ cell: { padding: "7px 10px" } }}
                 />
-              )}
+              </div>
             </section>
           );
         })}

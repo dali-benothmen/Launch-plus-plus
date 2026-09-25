@@ -440,7 +440,6 @@ export function ProjectCreationEntryPage() {
 
 export function ProjectOverviewPage() {
   const api = useApiClient();
-  const navigate = useNavigate();
   const { projectId, taskId, view, organizationId } = useParams();
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
@@ -588,12 +587,6 @@ export function ProjectOverviewPage() {
         </div>
         <div className="project-member-actions">
           <div className="project-task-actions-host" ref={setTaskActionsContainer} />
-          <Button disabled size="small" title="Activity is coming with collaboration">
-            Activity
-          </Button>
-          <Button onClick={() => navigate("/app/members")} size="small">
-            Member
-          </Button>
           <Dropdown menu={{ items: projectMenuItems }} trigger={["click"]}>
             <Button
               aria-label="Project actions"

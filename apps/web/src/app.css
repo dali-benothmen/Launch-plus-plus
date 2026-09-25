@@ -892,7 +892,6 @@
 .task-list-group {
   display: grid;
   min-width: 0;
-  gap: 6px;
 }
 
 .task-list-group-header {
@@ -918,8 +917,34 @@
   margin-inline-start: auto;
 }
 
+.task-list-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.task-list-group-content {
+  display: grid;
+  grid-template-rows: 1fr;
+  padding-top: 6px;
+  opacity: 1;
+  transition:
+    grid-template-rows 220ms ease,
+    padding-top 220ms ease,
+    opacity 160ms ease;
+}
+
+.task-list-group-content.is-collapsed {
+  grid-template-rows: 0fr;
+  padding-top: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .task-list-table-root {
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .task-list-table-header .task-list-table-cell {
