@@ -1294,7 +1294,13 @@ export function TaskDetailPanel({
               showRemoveIcon: !archived,
             }}
           >
-            <Button disabled={archived} icon={<AddIcon />} size="small" variant="dashed">
+            <Button
+              className="task-detail-add-attachment"
+              disabled={archived}
+              icon={<AddIcon />}
+              size="small"
+              variant="dashed"
+            >
               Add attachment
             </Button>
           </Upload>

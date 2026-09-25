@@ -1119,6 +1119,10 @@
   color: var(--launch-color-text-secondary);
 }
 
+.task-detail-add-attachment {
+  border-color: rgb(0 0 0 / 25%);
+}
+
 .task-detail-tabs {
   border-top: 1px solid var(--launch-color-border-secondary);
 }
