@@ -40,15 +40,14 @@ import {
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
+  CheckSquareOutlined,
   CommentOutlined,
   DeleteOutlined,
-  DownOutlined,
   EditOutlined,
   FileTextOutlined,
   FlagOutlined,
   MoreOutlined,
   PaperClipOutlined,
-  RightOutlined,
   SendOutlined,
   SmileOutlined,
   TeamOutlined,
@@ -282,13 +281,14 @@ export function TaskDetailPanel({
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<TaskComment>();
   const [deletingComment, setDeletingComment] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
-  const [subtaskComposerDivisionId, setSubtaskComposerDivisionId] = useState<string>();
-  const [divisionName, setDivisionName] = useState("");
-  const [addingDivision, setAddingDivision] = useState(false);
-  const [creatingDivision, setCreatingDivision] = useState(false);
-  const [collapsedDivisionIds, setCollapsedDivisionIds] = useState<readonly string[]>([]);
-  const [postingComment, setPostingComment] = useState(false);
+  const [subtaskComposerOpen, setSubtaskComposerOpen] = useState(false);
   const [creatingSubtask, setCreatingSubtask] = useState(false);
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string>();
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
+  const [savingSubtask, setSavingSubtask] = useState(false);
+  const [subtaskDeleteTarget, setSubtaskDeleteTarget] = useState<TaskView>();
+  const [deletingSubtask, setDeletingSubtask] = useState(false);
+  const [postingComment, setPostingComment] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -338,11 +338,10 @@ export function TaskDetailPanel({
     setEditingCommentBody("");
     setCommentDeleteTarget(undefined);
     setSubtaskTitle("");
-    setSubtaskComposerDivisionId(undefined);
-    setDivisionName("");
-    setAddingDivision(false);
-    setCreatingDivision(false);
-    setCollapsedDivisionIds([]);
+    setSubtaskComposerOpen(false);
+    setEditingSubtaskId(undefined);
+    setEditingSubtaskTitle("");
+    setSubtaskDeleteTarget(undefined);
     setDeleteConfirmOpen(false);
     setPreviewImage(undefined);
     void load();
@@ -554,37 +553,18 @@ export function TaskDetailPanel({
     setEditing(true);
   };
 
-  const createDivision = async () => {
-    if (!detail || creatingDivision || divisionName.trim().length === 0) return;
-    setCreatingDivision(true);
-    setSaveError(undefined);
-    try {
-      const next = await api.tasks.createDivision(organizationId, projectId, detail.task.id, {
-        name: divisionName,
-      });
-      setDivisionName("");
-      setAddingDivision(false);
-      applyDetail(next);
-    } catch (reason) {
-      setSaveError(reason);
-    } finally {
-      setCreatingDivision(false);
-    }
-  };
-
   const createSubtask = async () => {
     if (!detail || creatingSubtask || subtaskTitle.trim().length === 0) return;
     setCreatingSubtask(true);
     setSaveError(undefined);
     try {
       await api.tasks.create(organizationId, projectId, {
-        ...(subtaskComposerDivisionId ? { divisionId: subtaskComposerDivisionId } : {}),
         parentTaskId: detail.task.id,
         statusId: detail.task.statusId,
         title: subtaskTitle,
       });
       setSubtaskTitle("");
-      setSubtaskComposerDivisionId(undefined);
+      setSubtaskComposerOpen(false);
       await load();
     } catch (reason) {
       setSaveError(reason);
@@ -610,6 +590,44 @@ export function TaskDetailPanel({
       await load();
     } catch (reason) {
       setSaveError(reason);
+    }
+  };
+
+  const saveSubtaskTitle = async (subtask: TaskView) => {
+    if (savingSubtask || editingSubtaskTitle.trim().length === 0) return;
+    setSavingSubtask(true);
+    setSaveError(undefined);
+    try {
+      await api.tasks.update(organizationId, projectId, subtask.id, {
+        expectedRevision: subtask.revision,
+        title: editingSubtaskTitle,
+      });
+      setEditingSubtaskId(undefined);
+      setEditingSubtaskTitle("");
+      await load();
+    } catch (reason) {
+      setSaveError(reason);
+      if (reason instanceof ApiError && reason.status === 409) await load();
+    } finally {
+      setSavingSubtask(false);
+    }
+  };
+
+  const deleteSubtask = async () => {
+    if (!subtaskDeleteTarget || deletingSubtask) return;
+    setDeletingSubtask(true);
+    setSaveError(undefined);
+    try {
+      await api.tasks.archive(organizationId, projectId, subtaskDeleteTarget.id, {
+        expectedRevision: subtaskDeleteTarget.revision,
+      });
+      setSubtaskDeleteTarget(undefined);
+      await load();
+    } catch (reason) {
+      setSaveError(reason);
+      if (reason instanceof ApiError && reason.status === 409) await load();
+    } finally {
+      setDeletingSubtask(false);
     }
   };
 
@@ -830,28 +848,86 @@ export function TaskDetailPanel({
   const subtaskProgress = detail?.subtasks.length
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
-  const ungroupedSubtasks = detail?.subtasks.filter((subtask) => !subtask.divisionId) ?? [];
-
   const renderSubtaskRow = (subtask: TaskView) => {
     const complete = subtask.statusId === completedStatus?.id;
+    const isEditing = editingSubtaskId === subtask.id;
     return (
       <div className="task-detail-subtask" key={subtask.id}>
-        <Checkbox
-          checked={complete}
-          disabled={archived}
-          onChange={(event) => void toggleSubtask(subtask, event.target.checked)}
-        >
-          <Typography.Text delete={complete}>{subtask.title}</Typography.Text>
-        </Checkbox>
-        {subtask.assigneeUserIds.includes(currentUserId) ? (
-          <Avatar size={20}>{currentUserName.slice(0, 1).toUpperCase()}</Avatar>
-        ) : null}
+        {isEditing ? (
+          <div className="task-detail-subtask-editor">
+            <Input
+              autoFocus
+              maxLength={500}
+              onChange={(event) => setEditingSubtaskTitle(event.target.value)}
+              onPressEnter={() => void saveSubtaskTitle(subtask)}
+              value={editingSubtaskTitle}
+            />
+            <Space size={8}>
+              <Button
+                disabled={editingSubtaskTitle.trim().length === 0}
+                loading={savingSubtask}
+                onClick={() => void saveSubtaskTitle(subtask)}
+                size="small"
+              >
+                Save
+              </Button>
+              <Button
+                disabled={savingSubtask}
+                onClick={() => {
+                  setEditingSubtaskId(undefined);
+                  setEditingSubtaskTitle("");
+                }}
+                size="small"
+                variant="text"
+              >
+                Cancel
+              </Button>
+            </Space>
+          </div>
+        ) : (
+          <>
+            <Checkbox
+              checked={complete}
+              disabled={archived}
+              onChange={(event) => void toggleSubtask(subtask, event.target.checked)}
+            >
+              <Typography.Text delete={complete}>{subtask.title}</Typography.Text>
+            </Checkbox>
+            <div className="task-detail-subtask-actions">
+              {subtask.assigneeUserIds.includes(currentUserId) ? (
+                <Avatar size={20}>{currentUserName.slice(0, 1).toUpperCase()}</Avatar>
+              ) : null}
+              <Button
+                aria-label={`Edit ${subtask.title}`}
+                disabled={archived}
+                icon={<EditOutlined />}
+                iconOnly
+                onClick={() => {
+                  setEditingSubtaskId(subtask.id);
+                  setEditingSubtaskTitle(subtask.title);
+                }}
+                size="small"
+                variant="text"
+              />
+              <Button
+                aria-label={`Delete ${subtask.title}`}
+                color="danger"
+                disabled={archived}
+                icon={<DeleteOutlined />}
+                iconOnly
+                onClick={() => setSubtaskDeleteTarget(subtask)}
+                size="small"
+                variant="text"
+              />
+            </div>
+          </>
+        )}
       </div>
     );
   };
 
-  const renderSubtaskComposer = (divisionId: string) =>
-    subtaskComposerDivisionId === divisionId ? (
+  const renderSubtaskComposer = () =>
+    subtaskComposerOpen ? (
       <div className="task-detail-subtask-composer">
         <Input
           autoFocus
@@ -861,25 +937,27 @@ export function TaskDetailPanel({
           placeholder="Task name"
           value={subtaskTitle}
         />
-        <Button
-          disabled={subtaskTitle.trim().length === 0}
-          loading={creatingSubtask}
-          onClick={() => void createSubtask()}
-          size="small"
-        >
-          Add
-        </Button>
-        <Button
-          disabled={creatingSubtask}
-          onClick={() => {
-            setSubtaskComposerDivisionId(undefined);
-            setSubtaskTitle("");
-          }}
-          size="small"
-          variant="text"
-        >
-          Cancel
-        </Button>
+        <Space className="task-detail-subtask-composer-actions" size={8}>
+          <Button
+            disabled={subtaskTitle.trim().length === 0}
+            loading={creatingSubtask}
+            onClick={() => void createSubtask()}
+            size="small"
+          >
+            Add task
+          </Button>
+          <Button
+            disabled={creatingSubtask}
+            onClick={() => {
+              setSubtaskComposerOpen(false);
+              setSubtaskTitle("");
+            }}
+            size="small"
+            variant="text"
+          >
+            Cancel
+          </Button>
+        </Space>
       </div>
     ) : (
       <Button
@@ -888,7 +966,7 @@ export function TaskDetailPanel({
         icon={<AddIcon />}
         onClick={() => {
           setSubtaskTitle("");
-          setSubtaskComposerDivisionId(divisionId);
+          setSubtaskComposerOpen(true);
         }}
         variant="text"
       >
@@ -1217,7 +1295,9 @@ export function TaskDetailPanel({
             children: (
               <section className="task-detail-tab-panel" aria-label="Subtasks">
                 <div className="task-detail-subtask-heading">
-                  <Typography.Text strong>Subtasks</Typography.Text>
+                  <span className="task-detail-section-label">
+                    <CheckSquareOutlined /> Subtasks
+                  </span>
                   <div className="task-detail-subtask-progress">
                     <Progress percent={subtaskProgress} showInfo={false} size={18} type="circle" />
                     <Typography.Text type="secondary">
@@ -1227,88 +1307,8 @@ export function TaskDetailPanel({
                 </div>
 
                 <div className="task-detail-subtask-list">
-                  {ungroupedSubtasks.map(renderSubtaskRow)}
-                  {!archived ? renderSubtaskComposer("") : null}
-
-                  {detail.divisions.map((division) => {
-                    const divisionSubtasks = detail.subtasks.filter(
-                      (subtask) => subtask.divisionId === division.id,
-                    );
-                    const collapsed = collapsedDivisionIds.includes(division.id);
-                    return (
-                      <div className="task-detail-division" key={division.id}>
-                        <div className="task-detail-division-header">
-                          <Button
-                            aria-expanded={!collapsed}
-                            className="task-detail-division-toggle"
-                            icon={collapsed ? <RightOutlined /> : <DownOutlined />}
-                            onClick={() =>
-                              setCollapsedDivisionIds((current) =>
-                                current.includes(division.id)
-                                  ? current.filter((id) => id !== division.id)
-                                  : [...current, division.id],
-                              )
-                            }
-                            variant="text"
-                          >
-                            <Typography.Text strong>{division.name}</Typography.Text>
-                            <Typography.Text type="secondary">
-                              {divisionSubtasks.length}
-                            </Typography.Text>
-                          </Button>
-                        </div>
-                        {!collapsed ? (
-                          <div className="task-detail-division-content">
-                            {divisionSubtasks.map(renderSubtaskRow)}
-                            {!archived ? renderSubtaskComposer(division.id) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-
-                  {!archived ? (
-                    addingDivision ? (
-                      <div className="task-detail-division-composer">
-                        <Input
-                          autoFocus
-                          maxLength={80}
-                          onChange={(event) => setDivisionName(event.target.value)}
-                          onPressEnter={() => void createDivision()}
-                          placeholder="Division name"
-                          value={divisionName}
-                        />
-                        <Button
-                          disabled={divisionName.trim().length === 0}
-                          loading={creatingDivision}
-                          onClick={() => void createDivision()}
-                          size="small"
-                        >
-                          Add
-                        </Button>
-                        <Button
-                          disabled={creatingDivision}
-                          onClick={() => {
-                            setAddingDivision(false);
-                            setDivisionName("");
-                          }}
-                          size="small"
-                          variant="text"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        className="task-detail-add-division"
-                        icon={<AddIcon />}
-                        onClick={() => setAddingDivision(true)}
-                        size="small"
-                      >
-                        Add division
-                      </Button>
-                    )
-                  ) : null}
+                  {detail.subtasks.map(renderSubtaskRow)}
+                  {!archived ? renderSubtaskComposer() : null}
                 </div>
               </section>
             ),
@@ -1788,6 +1788,23 @@ export function TaskDetailPanel({
       >
         <Typography.Paragraph>
           Delete this comment and its attached files? This action cannot be undone.
+        </Typography.Paragraph>
+      </Modal>
+
+      <Modal
+        cancelButtonProps={{ disabled: deletingSubtask }}
+        centered
+        confirmLoading={deletingSubtask}
+        destroyOnHidden
+        okButtonProps={{ danger: true }}
+        okText="Delete subtask"
+        onCancel={() => setSubtaskDeleteTarget(undefined)}
+        onOk={() => void deleteSubtask()}
+        open={subtaskDeleteTarget !== undefined}
+        title="Delete subtask?"
+      >
+        <Typography.Paragraph>
+          Delete {subtaskDeleteTarget?.title ?? "this subtask"}? This action cannot be undone.
         </Typography.Paragraph>
       </Modal>
 

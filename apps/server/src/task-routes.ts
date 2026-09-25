@@ -4,7 +4,6 @@ import type {
   CreateLabelInput,
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
-  CreateTaskDivisionInput,
   CreateTaskInput,
   CursorPageQuery,
   DeleteTaskCommentInput,
@@ -110,7 +109,6 @@ function taskSummary(task: TaskView) {
     createdAt: task.createdAt,
     createdByUserId: task.createdByUserId,
     description: task.description,
-    ...(task.divisionId === undefined ? {} : { divisionId: task.divisionId }),
     ...(task.dueDate === undefined ? {} : { dueDate: task.dueDate }),
     id: task.id,
     labels: task.labels.map(labelSummary),
@@ -130,25 +128,12 @@ function taskSummary(task: TaskView) {
   };
 }
 
-function divisionSummary(division: TaskDetail["divisions"][number]) {
-  return {
-    createdAt: division.createdAt,
-    id: division.id,
-    name: division.name,
-    position: division.position,
-    projectId: division.projectId,
-    taskId: division.taskId,
-    organizationId: division.organizationId,
-  };
-}
-
 function taskDetailSummary(detail: TaskDetail) {
   return {
     activity: detail.activity,
     attachments: detail.attachments,
     availableLabels: detail.availableLabels.map(labelSummary),
     comments: detail.comments.map(commentSummary),
-    divisions: detail.divisions.map(divisionSummary),
     subtasks: detail.subtasks.map(taskSummary),
     task: taskSummary(detail.task),
   };
@@ -582,54 +567,6 @@ export async function registerTaskRoutes(
             projectId: request.params.projectId,
             taskId: request.params.taskId,
             organizationId: request.params.organizationId,
-          }),
-        );
-      } catch (error) {
-        if (sendDomainError(error, request, reply)) return;
-        throw error;
-      }
-    },
-  );
-
-  app.post<{ Body: CreateTaskDivisionInput; Params: TaskParams }>(
-    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/divisions",
-    {
-      schema: {
-        body: { $ref: "LaunchppCreateTaskDivisionInputV1#" },
-        headers: IdempotencyHeadersSchema,
-        operationId: "createTaskDivision",
-        params: { $ref: "LaunchppTaskParamsV1#" },
-        response: { 201: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
-        summary: "Create a subtask division",
-        tags: ["Tasks"],
-      },
-    },
-    async (request, reply) => {
-      const context = await contextFor(request, reply);
-      if (!context) return;
-      try {
-        return await executeIdempotent(
-          request,
-          reply,
-          idempotency,
-          {
-            actorUserId: context.userId,
-            operation: "task.division.create",
-            payload: request.body,
-            scopeKey: `task:${request.params.taskId}`,
-          },
-          async () => ({
-            body: taskDetailSummary(
-              await service.createDivision({
-                ...context,
-                ...request.body,
-                correlationId: request.id,
-                projectId: request.params.projectId,
-                taskId: request.params.taskId,
-                organizationId: request.params.organizationId,
-              }),
-            ),
-            status: 201,
           }),
         );
       } catch (error) {

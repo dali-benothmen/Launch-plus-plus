@@ -132,9 +132,6 @@ const apiClient: ApiClient = {
     createComment: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
-    createDivision: vi.fn(async () => {
-      throw new Error("Task API is not used by this shell fixture.");
-    }),
     createLabel: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),

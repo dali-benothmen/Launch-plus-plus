@@ -1121,50 +1121,31 @@
   gap: 0;
 }
 
-.task-detail-division {
-  display: grid;
-  margin-top: 16px;
-}
-
-.task-detail-division-header {
-  border-bottom: 1px solid var(--launch-color-border-secondary);
-}
-
-.task-detail-division-toggle {
-  width: 100%;
-  justify-content: flex-start;
-  padding-inline: 0;
-}
-
-.task-detail-division-content {
-  display: grid;
-}
-
 .task-detail-add-subtask {
   width: fit-content;
   justify-content: flex-start;
-  margin-top: 4px;
+  margin-top: 8px;
   padding-inline: 4px;
   color: var(--launch-color-text-secondary);
 }
 
-.task-detail-add-division {
-  width: fit-content;
-  margin-top: 16px;
+.task-detail-subtask-composer,
+.task-detail-subtask-editor {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 10px 4px;
 }
 
-.task-detail-subtask-composer,
-.task-detail-division-composer {
+.task-detail-subtask-composer-actions {
+  justify-self: start;
+}
+
+.task-detail-subtask-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.task-detail-subtask-composer > :first-child,
-.task-detail-division-composer > :first-child {
-  min-width: 0;
-  flex: 1 1 auto;
+  gap: 4px;
+  flex: 0 0 auto;
 }
 
 .task-detail-comment-heading {
@@ -1185,7 +1166,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 4px;
-  border-bottom: 1px solid var(--launch-color-border-secondary);
+  border-bottom: 1px solid var(--launch-color-border);
 }
 
 .task-detail-comment {

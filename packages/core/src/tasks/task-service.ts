@@ -150,13 +150,6 @@ function normalizeLabelName(value: string) {
   return name;
 }
 
-function normalizeDivisionName(value: string) {
-  const name = value.trim().replace(/\s+/g, " ");
-  if (name.length === 0) throw new TypeError("Division name is required.");
-  if (name.length > 80) throw new TypeError("Division name cannot exceed 80 characters.");
-  return name;
-}
-
 function comparisonKey(value: string) {
   return value.normalize("NFKC").toLocaleLowerCase("en-US");
 }
@@ -508,45 +501,11 @@ export class TaskService {
     });
   }
 
-  createDivision(
-    input: CommandContext & Readonly<{ name: string; taskId: string }>,
-  ): Promise<TaskDetail> {
-    validateContext(input);
-    const name = normalizeDivisionName(input.name);
-    const key = comparisonKey(name);
-    return this.dependencies.transactions.write((context) => {
-      this.requireActor(context, input.organizationId, input.userId);
-      const project = this.requireProject(context, input.organizationId, input.projectId, true);
-      const task = this.requireTask(context, input, input.taskId);
-      if (task.parentTaskId !== undefined) {
-        throw new TaskParentInvalidError("Subtask divisions can only be added to a parent task.");
-      }
-      if (this.dependencies.tasks.findDivisionByName(context, task.id, key)) {
-        throw new TypeError("A division with this name already exists.");
-      }
-      const divisions = this.dependencies.tasks.listDivisions(context, task.id);
-      const now = this.dependencies.clock();
-      this.dependencies.tasks.createDivision(context, {
-        comparisonKey: key,
-        createdAt: now,
-        id: this.dependencies.generateId(),
-        name,
-        position: divisions.length,
-        projectId: task.projectId,
-        taskId: task.id,
-        organizationId: task.organizationId,
-      });
-      this.record(context, input, "task.division_created", task.id, { name });
-      return this.toDetail(context, task, project, input.userId);
-    });
-  }
-
   createTask(
     input: CommandContext &
       Readonly<{
         assigneeUserIds?: readonly string[];
         description?: string;
-        divisionId?: string;
         dueDate?: string;
         labelIds?: readonly string[];
         parentTaskId?: string;
@@ -601,27 +560,12 @@ export class TaskService {
       const parent = input.parentTaskId
         ? this.requireParent(context, input, input.parentTaskId)
         : undefined;
-      if (input.divisionId && !parent) {
-        throw new TaskParentInvalidError("Only subtasks can belong to a division.");
-      }
-      if (input.divisionId) {
-        const division = this.dependencies.tasks.findDivisionById(context, input.divisionId);
-        if (
-          !division ||
-          division.organizationId !== input.organizationId ||
-          division.projectId !== input.projectId ||
-          division.taskId !== parent?.id
-        ) {
-          throw new TaskParentInvalidError("The selected subtask division is unavailable.");
-        }
-      }
       const now = this.dependencies.clock();
       const task: Task = Object.freeze({
         attachmentCount: 0,
         createdAt: now,
         createdByUserId: input.userId,
         description,
-        ...(input.divisionId ? { divisionId: input.divisionId } : {}),
         ...(dueDate ? { dueDate } : {}),
         id: this.dependencies.generateId(),
         number: project.nextTaskNumber,
@@ -670,7 +614,6 @@ export class TaskService {
       this.record(context, input, "task.created", task.id, {
         attachmentCount: task.attachmentCount,
         number: task.number,
-        divisionId: task.divisionId ?? null,
         parentTaskId: task.parentTaskId ?? null,
         priority: task.priority,
         statusId: task.statusId,
@@ -1113,7 +1056,6 @@ export class TaskService {
         task.projectId,
       ),
       comments,
-      divisions: this.dependencies.tasks.listDivisions(context, task.id),
       subtasks,
       task: this.toView(context, task, project),
     });

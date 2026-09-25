@@ -7,7 +7,6 @@ import type {
   TaskAttachmentSummary,
   TaskComment,
   TaskCommentReaction,
-  TaskDivision,
   TaskPriority,
   TaskRepository,
   WriteContext,
@@ -21,7 +20,6 @@ interface TaskRow {
   readonly created_by_user_id: string;
   readonly deleted_at: null | number;
   readonly description_markdown: string;
-  readonly division_id: null | string;
   readonly due_date: null | string;
   readonly id: string;
   readonly number: number;
@@ -35,17 +33,6 @@ interface TaskRow {
   readonly title: string;
   readonly updated_at: number;
   readonly updated_by_user_id: string;
-  readonly organization_id: string;
-}
-
-interface DivisionRow {
-  readonly comparison_key: string;
-  readonly created_at: number;
-  readonly id: string;
-  readonly name: string;
-  readonly position: number;
-  readonly project_id: string;
-  readonly task_id: string;
   readonly organization_id: string;
 }
 
@@ -105,7 +92,7 @@ interface ActivityRow {
 }
 
 const taskSelection = `SELECT id, organization_id, project_id, number, parent_task_id, status_id,
-  team_id, title, description_markdown, division_id, attachment_count, due_date, priority, position, created_by_user_id,
+  team_id, title, description_markdown, attachment_count, due_date, priority, position, created_by_user_id,
   updated_by_user_id, created_at, updated_at, archived_at, deleted_at, revision FROM tasks`;
 
 const labelSelection = `SELECT id, organization_id, project_id, name, comparison_key, color,
@@ -119,7 +106,6 @@ function mapTask(row: TaskRow): Task {
     createdByUserId: row.created_by_user_id,
     ...(row.deleted_at === null ? {} : { deletedAt: row.deleted_at }),
     description: row.description_markdown,
-    ...(row.division_id === null ? {} : { divisionId: row.division_id }),
     ...(row.due_date === null ? {} : { dueDate: row.due_date }),
     id: row.id,
     number: row.number,
@@ -133,19 +119,6 @@ function mapTask(row: TaskRow): Task {
     title: row.title,
     updatedAt: row.updated_at,
     updatedByUserId: row.updated_by_user_id,
-    organizationId: row.organization_id,
-  });
-}
-
-function mapDivision(row: DivisionRow): TaskDivision {
-  return Object.freeze({
-    comparisonKey: row.comparison_key,
-    createdAt: row.created_at,
-    id: row.id,
-    name: row.name,
-    position: row.position,
-    projectId: row.project_id,
-    taskId: row.task_id,
     organizationId: row.organization_id,
   });
 }
@@ -278,25 +251,6 @@ export class SqliteTaskRepository implements TaskRepository {
       );
   }
 
-  createDivision(context: WriteContext, division: TaskDivision): void {
-    requireSqliteConnection(context)
-      .prepare(
-        `INSERT INTO task_divisions (
-          id, organization_id, project_id, task_id, name, comparison_key, position, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        division.id,
-        division.organizationId,
-        division.projectId,
-        division.taskId,
-        division.name,
-        division.comparisonKey,
-        division.position,
-        division.createdAt,
-      );
-  }
-
   createLabel(context: WriteContext, label: Label): void {
     requireSqliteConnection(context)
       .prepare(
@@ -324,9 +278,9 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare(
         `INSERT INTO tasks (
           id, organization_id, project_id, number, parent_task_id, status_id, team_id, title,
-          description_markdown, division_id, attachment_count, due_date, priority, position, created_by_user_id,
+          description_markdown, attachment_count, due_date, priority, position, created_by_user_id,
           updated_by_user_id, created_at, updated_at, archived_at, deleted_at, revision
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -338,7 +292,6 @@ export class SqliteTaskRepository implements TaskRepository {
         task.teamId ?? null,
         task.title,
         task.description,
-        task.divisionId ?? null,
         task.attachmentCount,
         task.dueDate ?? null,
         task.priority,
@@ -398,30 +351,6 @@ export class SqliteTaskRepository implements TaskRepository {
       )
       .get(commentId);
     return row ? mapComment(row) : undefined;
-  }
-
-  findDivisionById(context: ReadContext, divisionId: string): TaskDivision | undefined {
-    const row = requireSqliteConnection(context)
-      .prepare<[string], DivisionRow>(
-        `SELECT id, organization_id, project_id, task_id, name, comparison_key, position, created_at
-         FROM task_divisions WHERE id = ?`,
-      )
-      .get(divisionId);
-    return row ? mapDivision(row) : undefined;
-  }
-
-  findDivisionByName(
-    context: ReadContext,
-    taskId: string,
-    comparisonKey: string,
-  ): TaskDivision | undefined {
-    const row = requireSqliteConnection(context)
-      .prepare<[string, string], DivisionRow>(
-        `SELECT id, organization_id, project_id, task_id, name, comparison_key, position, created_at
-         FROM task_divisions WHERE task_id = ? AND comparison_key = ?`,
-      )
-      .get(taskId, comparisonKey);
-    return row ? mapDivision(row) : undefined;
   }
 
   findLabelById(context: ReadContext, labelId: string): Label | undefined {
@@ -509,16 +438,6 @@ export class SqliteTaskRepository implements TaskRepository {
           userId: row.user_id,
         }),
       );
-  }
-
-  listDivisions(context: ReadContext, taskId: string): readonly TaskDivision[] {
-    return requireSqliteConnection(context)
-      .prepare<[string], DivisionRow>(
-        `SELECT id, organization_id, project_id, task_id, name, comparison_key, position, created_at
-         FROM task_divisions WHERE task_id = ? ORDER BY position ASC, id ASC`,
-      )
-      .all(taskId)
-      .map(mapDivision);
   }
 
   listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[] {
@@ -709,7 +628,7 @@ export class SqliteTaskRepository implements TaskRepository {
     requireSqliteConnection(context)
       .prepare(
         `UPDATE tasks SET parent_task_id = ?, status_id = ?, team_id = ?, title = ?,
-             description_markdown = ?, division_id = ?, attachment_count = ?, due_date = ?, priority = ?, position = ?,
+             description_markdown = ?, attachment_count = ?, due_date = ?, priority = ?, position = ?,
              updated_by_user_id = ?, updated_at = ?, archived_at = ?, deleted_at = ?, revision = ?
          WHERE id = ? AND organization_id = ? AND project_id = ?`,
       )
@@ -719,7 +638,6 @@ export class SqliteTaskRepository implements TaskRepository {
         task.teamId ?? null,
         task.title,
         task.description,
-        task.divisionId ?? null,
         task.attachmentCount,
         task.dueDate ?? null,
         task.priority,

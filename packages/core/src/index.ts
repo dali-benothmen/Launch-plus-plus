@@ -99,7 +99,6 @@ export type {
   TaskCommentReaction,
   TaskCommentReactionSummary,
   TaskDetail,
-  TaskDivision,
   TaskPriority,
   TaskRepository,
   TaskView,

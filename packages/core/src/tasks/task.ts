@@ -9,7 +9,6 @@ export interface Task {
   readonly createdByUserId: string;
   readonly deletedAt?: number;
   readonly description: string;
-  readonly divisionId?: string;
   readonly dueDate?: string;
   readonly id: string;
   readonly number: number;
@@ -23,17 +22,6 @@ export interface Task {
   readonly title: string;
   readonly updatedAt: number;
   readonly updatedByUserId: string;
-  readonly organizationId: string;
-}
-
-export interface TaskDivision {
-  readonly comparisonKey: string;
-  readonly createdAt: number;
-  readonly id: string;
-  readonly name: string;
-  readonly position: number;
-  readonly projectId: string;
-  readonly taskId: string;
   readonly organizationId: string;
 }
 
@@ -114,7 +102,6 @@ export interface TaskDetail {
   readonly attachments: readonly TaskAttachmentSummary[];
   readonly availableLabels: readonly Label[];
   readonly comments: readonly TaskComment[];
-  readonly divisions: readonly TaskDivision[];
   readonly subtasks: readonly TaskView[];
   readonly task: TaskView;
 }
@@ -128,7 +115,6 @@ export interface TaskRepository {
   createAttachment(context: WriteContext, attachment: TaskAttachment): void;
   createComment(context: WriteContext, comment: TaskComment): void;
   createCommentReaction(context: WriteContext, reaction: TaskCommentReaction): void;
-  createDivision(context: WriteContext, division: TaskDivision): void;
   deleteComment(context: WriteContext, commentId: string): void;
   deleteCommentReaction(
     context: WriteContext,
@@ -141,12 +127,6 @@ export interface TaskRepository {
   deleteAttachment(context: WriteContext, attachmentId: string): void;
   findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined;
   findCommentById(context: ReadContext, commentId: string): TaskComment | undefined;
-  findDivisionById(context: ReadContext, divisionId: string): TaskDivision | undefined;
-  findDivisionByName(
-    context: ReadContext,
-    taskId: string,
-    comparisonKey: string,
-  ): TaskDivision | undefined;
   findLabelById(context: ReadContext, labelId: string): Label | undefined;
   findLabelByName(
     context: ReadContext,
@@ -159,7 +139,6 @@ export interface TaskRepository {
   listAttachments(context: ReadContext, taskId: string): readonly TaskAttachmentSummary[];
   listComments(context: ReadContext, taskId: string): readonly TaskComment[];
   listCommentReactions(context: ReadContext, taskId: string): readonly TaskCommentReaction[];
-  listDivisions(context: ReadContext, taskId: string): readonly TaskDivision[];
   listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[];
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[];
   listTaskActivity(
