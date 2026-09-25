@@ -423,6 +423,9 @@ export function ProjectTaskOrganization({
   const [deleting, setDeleting] = useState(false);
   const taskOpenerRef = useRef<HTMLElement | null>(null);
   const initializedStatusIdsRef = useRef<Set<string>>(new Set());
+  const loadedProjectIdRef = useRef<string | undefined>(undefined);
+  const statusesRef = useRef(statuses);
+  statusesRef.current = statuses;
   const pendingTaskMenuOpenRef = useRef<TaskView | undefined>(undefined);
   const suppressTaskCardOpenRef = useRef(false);
   const taskLayoutRef = useRef(taskLayout);
@@ -445,6 +448,29 @@ export function ProjectTaskOrganization({
           const existing = new Set(current.map((task) => task.id));
           return [...current, ...page.items.filter((task) => !existing.has(task.id))];
         });
+        if (!cursor && loadedProjectIdRef.current !== projectId) {
+          loadedProjectIdRef.current = projectId;
+          const currentStatuses = statusesRef.current;
+          initializedStatusIdsRef.current = new Set(
+            currentStatuses.map((status) => status.id),
+          );
+          const populatedStatusIds = new Set(
+            page.items
+              .filter(
+                (task) =>
+                  task.archivedAt === undefined &&
+                  task.parentTaskId === undefined,
+              )
+              .map((task) => task.statusId),
+          );
+          setCollapsedStatusIds(
+            new Set(
+              currentStatuses
+                .filter((status) => !populatedStatusIds.has(status.id))
+                .map((status) => status.id),
+            ),
+          );
+        }
         setNextCursor(page.nextCursor);
         return page;
       } catch (reason) {
@@ -460,6 +486,7 @@ export function ProjectTaskOrganization({
 
   useEffect(() => {
     initializedStatusIdsRef.current.clear();
+    loadedProjectIdRef.current = undefined;
     setCollapsedStatusIds(new Set());
     setTasks([]);
     setNextCursor(undefined);
@@ -555,7 +582,7 @@ export function ProjectTaskOrganization({
   }, [query, statusById, tasks]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loadedProjectIdRef.current !== projectId) return;
     setCollapsedStatusIds((current) => {
       const next = new Set(current);
       let changed = false;
@@ -575,7 +602,7 @@ export function ProjectTaskOrganization({
       }
       return changed ? next : current;
     });
-  }, [loading, statuses, tasks]);
+  }, [projectId, statuses, tasks]);
 
   const closeEditor = () => {
     setEditor(undefined);
