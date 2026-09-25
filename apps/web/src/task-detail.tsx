@@ -1068,6 +1068,7 @@ export function TaskDetailPanel({
                       onChange={setComment}
                       options={mentionOptions}
                       placeholder="Type comment"
+                      styles={{ root: { borderColor: "transparent", boxShadow: "none" } }}
                       value={comment}
                       variant="borderless"
                     />

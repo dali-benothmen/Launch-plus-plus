@@ -1212,6 +1212,10 @@
     box-shadow 160ms ease;
 }
 
+.task-detail-comment-form:hover {
+  border-color: var(--launch-color-accent-hover);
+}
+
 .task-detail-comment-form:focus-within {
   border-color: var(--launch-color-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--launch-color-accent) 10%, transparent);
