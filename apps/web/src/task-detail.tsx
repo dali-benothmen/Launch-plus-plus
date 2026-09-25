@@ -228,7 +228,7 @@ export function TaskDetailPanel({
     } catch (reason) {
       setLoadError(reason);
     }
-  }, [api, currentUserId, projectId, taskId, organizationId]);
+  }, [api, projectId, taskId, organizationId]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -1032,8 +1032,8 @@ export function TaskDetailPanel({
                   <div className="task-detail-comment-form">
                     {commentFiles.length > 0 ? (
                       <Upload<TaskDetail>
-                        className="task-detail-comment-staged-files"
                         beforeUpload={() => false}
+                        className="task-detail-comment-staged-files"
                         fileList={commentFiles}
                         maxCount={0}
                         onChange={({ fileList }) => setCommentFiles(fileList)}
@@ -1044,25 +1044,41 @@ export function TaskDetailPanel({
                           showPreviewIcon: false,
                           showRemoveIcon: true,
                         }}
+                        styles={{
+                          item: {
+                            background: "var(--launch-color-bg-subtle)",
+                            border: "1px solid var(--launch-color-border-secondary)",
+                            maxWidth: 240,
+                            padding: "3px 7px",
+                          },
+                          list: {
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                            margin: 0,
+                          },
+                          root: { width: "100%" },
+                        }}
                       />
                     ) : null}
-                    <div className="task-detail-comment-compose">
-                      <Mentions
-                        autoSize={{ maxRows: 5, minRows: 1 }}
-                        className="task-detail-comment-input"
-                        maxLength={20_000}
-                        onChange={setComment}
-                        options={mentionOptions}
-                        placeholder="Type comment"
-                        value={comment}
-                      />
+                    <Mentions
+                      autoSize={{ maxRows: 7, minRows: 2 }}
+                      className="task-detail-comment-input"
+                      maxLength={20_000}
+                      onChange={setComment}
+                      options={mentionOptions}
+                      placeholder="Type comment"
+                      value={comment}
+                      variant="borderless"
+                    />
+                    <div className="task-detail-comment-footer">
                       <Upload<TaskDetail>
-                        className="task-detail-comment-attach"
                         beforeUpload={(file) => {
                           if (file.size <= maximumAttachmentBytes) return false;
                           setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
                           return Upload.LIST_IGNORE;
                         }}
+                        className="task-detail-comment-attach"
                         fileList={commentFiles}
                         maxCount={20}
                         multiple
@@ -1079,13 +1095,13 @@ export function TaskDetailPanel({
                       </Upload>
                       <Button
                         aria-label="Send comment"
+                        color="primary"
                         disabled={comment.trim().length === 0}
                         icon={<SendOutlined />}
                         iconOnly
                         loading={postingComment}
                         onClick={() => void createComment()}
                         size="small"
-                        variant="text"
                       />
                     </div>
                   </div>

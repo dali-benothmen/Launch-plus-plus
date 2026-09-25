@@ -1201,22 +1201,35 @@
 }
 
 .task-detail-comment-form {
-  padding-bottom: 4px;
+  gap: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--launch-color-border-secondary);
+  border-radius: var(--launch-radius-lg);
+  background: var(--launch-color-bg-elevated);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.task-detail-comment-compose {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
+.task-detail-comment-form:focus-within {
+  border-color: var(--launch-color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--launch-color-accent) 10%, transparent);
 }
 
 .task-detail-comment-input {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
-.task-detail-comment-attach,
-.task-detail-comment-compose > button {
+.task-detail-comment-footer {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.task-detail-comment-attach {
   flex: 0 0 auto;
 }
 
