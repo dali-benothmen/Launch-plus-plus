@@ -54,6 +54,18 @@ interface MyWorkData {
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 const myTaskTeamColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
+const myTaskProjectColors = [
+  "#1677ff",
+  "#13c2c2",
+  "#52c41a",
+  "#faad14",
+  "#fa8c16",
+  "#eb2f96",
+  "#722ed1",
+  "#2f54eb",
+  "#a0d911",
+  "#f5222d",
+] as const;
 const myTaskPriorityPresentation = {
   high: { color: "red", label: "High", order: 0 },
   medium: { color: "orange", label: "Medium", order: 1 },
@@ -289,11 +301,18 @@ export function MyWorkPage() {
         />
       ) : (
         <div className="task-list-groups">
-          {projectGroups.map(({ items, project }) => {
+          {projectGroups.map(({ items, project }, projectIndex) => {
             const collapsed = collapsedProjectIds.has(project.id);
+            const sectionColor =
+              myTaskProjectColors[projectIndex % myTaskProjectColors.length] ?? "#1677ff";
             return (
               <section className="task-list-group" key={project.id}>
-                <header className="task-list-group-header my-tasks-project-header">
+                <header
+                  className="task-list-group-header my-tasks-project-header"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${sectionColor} 8%, white)`,
+                  }}
+                >
                   <Button
                     className="task-list-group-toggle"
                     icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
@@ -301,7 +320,7 @@ export function MyWorkPage() {
                     size="small"
                     variant="text"
                   >
-                    <ProjectsIcon aria-hidden />
+                    <ProjectsIcon aria-hidden style={{ color: sectionColor }} />
                     <span>{project.name}</span>
                     <Tag color="neutral">{items.length}</Tag>
                   </Button>

@@ -567,10 +567,6 @@
   line-height: 26px;
 }
 
-.my-tasks-project-header {
-  background: var(--launch-color-bg-subtle);
-}
-
 .task-list-group-header.my-tasks-project-header > :last-child {
   margin-inline-start: 0;
 }
