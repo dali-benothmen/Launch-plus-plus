@@ -627,8 +627,7 @@
 .task-view-controls,
 .task-column-header,
 .task-card-meta,
-.task-list-group-header,
-.task-table-title {
+.task-list-group-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -886,20 +885,25 @@
 
 .task-list-groups {
   display: grid;
-  gap: 18px;
+  gap: 16px;
+  padding-bottom: 12px;
 }
 
 .task-list-group {
-  overflow: hidden;
-  border: 1px solid var(--launch-color-border);
-  border-radius: var(--launch-radius-lg);
+  display: grid;
+  min-width: 0;
+  gap: 6px;
 }
 
 .task-list-group-header {
-  min-height: 38px;
-  padding: 3px 8px;
-  border-bottom: 1px solid var(--launch-color-border);
-  background: var(--launch-color-bg-subtle);
+  min-height: 36px;
+  padding: 2px 6px;
+  border-radius: var(--launch-radius-md);
+}
+
+.task-list-group-toggle {
+  color: var(--launch-color-text);
+  font-weight: 600;
 }
 
 .task-status-dot {
@@ -914,12 +918,82 @@
   margin-inline-start: auto;
 }
 
-.task-list-group > .launch-ui-button:last-child {
-  margin: 4px 8px;
+.task-list-table-root {
+  min-width: 0;
 }
 
-.task-table-title {
-  flex-wrap: wrap;
+.task-list-table-header .task-list-table-cell {
+  background: var(--launch-color-bg-container);
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.task-list-table-row {
+  cursor: pointer;
+}
+
+.task-list-table-row .task-list-table-cell {
+  color: var(--launch-color-text);
+}
+
+.task-list-table-row:focus-visible {
+  outline: 2px solid var(--launch-color-primary);
+  outline-offset: -2px;
+}
+
+.task-list-table-empty {
+  height: 56px;
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+}
+
+.task-list-name,
+.task-list-date,
+.task-list-metric {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.task-list-name {
+  gap: 8px;
+}
+
+.task-list-reference {
+  width: 54px;
+  flex: 0 0 54px;
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+  font-size: 11px;
+}
+
+.task-list-title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.task-list-metric {
+  flex: 0 0 auto;
+  gap: 3px;
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+  font-size: 11px;
+}
+
+.task-list-metric svg,
+.task-list-date svg {
+  width: 12px;
+  height: 12px;
+}
+
+.task-list-date {
+  gap: 5px;
+  font-size: 12px;
+}
+
+.task-list-date.is-empty,
+.task-list-empty-value {
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
 }
 
 .task-load-more {

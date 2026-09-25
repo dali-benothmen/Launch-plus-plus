@@ -25,7 +25,6 @@ import {
   DatePicker,
   Dropdown,
   type DropdownMenuItem,
-  Empty,
   Form,
   Input,
   ListIcon,
@@ -44,6 +43,8 @@ import {
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
+  CaretDownOutlined,
+  CaretRightOutlined,
   CommentOutlined,
   PaperClipOutlined,
   UploadOutlined,
@@ -1127,23 +1128,84 @@ export function ProjectTaskOrganization({
     </>
   );
 
+  const priorityOrder: Readonly<Record<TaskPriority, number>> = {
+    high: 0,
+    medium: 1,
+    low: 2,
+  };
   const columns: ReadonlyArray<TableColumn<TaskView>> = [
     {
-      key: "task",
+      key: "name",
       render: (_value, task) => (
-        <div className="task-table-title">
-          <Button onClick={(event) => openTask(task, event.currentTarget)} variant="link">
+        <div className="task-list-name">
+          <span className="task-list-reference">{task.reference}</span>
+          <span className="task-list-title" title={task.title}>
             {task.title}
-          </Button>
-          <Typography.Text type="secondary">{task.reference}</Typography.Text>
-          {task.labels.map((label) => (
-            <Tag color={label.color} key={label.id}>
-              {label.name}
-            </Tag>
-          ))}
+          </span>
+          {task.commentCount > 0 ? (
+            <span
+              aria-label={`${task.commentCount} comments`}
+              className="task-list-metric"
+              title={`${task.commentCount} comments`}
+            >
+              <CommentOutlined aria-hidden />
+              {task.commentCount}
+            </span>
+          ) : null}
+          {task.attachmentCount > 0 ? (
+            <span
+              aria-label={`${task.attachmentCount} attachments`}
+              className="task-list-metric"
+              title={`${task.attachmentCount} attachments`}
+            >
+              <PaperClipOutlined aria-hidden />
+              {task.attachmentCount}
+            </span>
+          ) : null}
         </div>
       ),
-      title: "Task",
+      sorter: (first, second) => first.title.localeCompare(second.title),
+      title: "Name",
+      width: "42%",
+    },
+    {
+      key: "priority",
+      render: (_value, task) => (
+        <Tag color={taskPriorityPresentation[task.priority].color}>
+          {taskPriorityPresentation[task.priority].label}
+        </Tag>
+      ),
+      sorter: (first, second) =>
+        priorityOrder[first.priority] - priorityOrder[second.priority],
+      title: "Priority",
+      width: 110,
+    },
+    {
+      key: "team",
+      render: (_value, task) =>
+        renderTeamTag(teams, task.teamId) ?? (
+          <span className="task-list-empty-value">No team</span>
+        ),
+      sorter: (first, second) => {
+        const firstName = teams.find((team) => team.id === first.teamId)?.name ?? "";
+        const secondName = teams.find((team) => team.id === second.teamId)?.name ?? "";
+        return firstName.localeCompare(secondName);
+      },
+      title: "Team",
+      width: 130,
+    },
+    {
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (_value, task) => (
+        <span className={task.dueDate ? "task-list-date" : "task-list-date is-empty"}>
+          <CalendarOutlined aria-hidden />
+          {task.dueDate ? formatDate(task.dueDate) : "No due date"}
+        </span>
+      ),
+      sorter: (first, second) => (first.dueDate ?? "").localeCompare(second.dueDate ?? ""),
+      title: "Due date",
+      width: 130,
     },
     {
       key: "assignee",
@@ -1151,30 +1213,26 @@ export function ProjectTaskOrganization({
         task.assigneeUserIds.length > 0 ? (
           <Avatar.Group max={{ count: 3 }} size="small">
             {task.assigneeUserIds.map((userId) => (
-              <Avatar key={userId}>{userId === currentUserId ? "Me" : "M"}</Avatar>
+              <Avatar
+                key={userId}
+                title={userId === currentUserId ? currentUserName : "Organization member"}
+              >
+                {userId === currentUserId
+                  ? avatarInitials(currentUserName)
+                  : "M"}
+              </Avatar>
             ))}
           </Avatar.Group>
         ) : (
-          <Typography.Text type="secondary">Unassigned</Typography.Text>
+          <span className="task-list-empty-value">Unassigned</span>
         ),
+      sorter: (first, second) =>
+        first.assigneeUserIds.length - second.assigneeUserIds.length,
       title: "Assignee",
       width: 120,
     },
     {
-      dataIndex: "dueDate",
-      key: "dueDate",
-      render: (_value, task) => (task.dueDate ? formatDate(task.dueDate) : "—"),
-      title: "Due",
-      width: 110,
-    },
-    {
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      render: (_value, task) => formatDate(task.updatedAt),
-      title: "Updated",
-      width: 110,
-    },
-    {
+      align: "right",
       key: "actions",
       render: (_value, task) => (
         <Dropdown
@@ -1189,6 +1247,7 @@ export function ProjectTaskOrganization({
             icon={<MoreIcon />}
             iconOnly
             onClick={(event) => {
+              event.stopPropagation();
               taskOpenerRef.current = event.currentTarget;
             }}
             size="small"
@@ -1197,7 +1256,7 @@ export function ProjectTaskOrganization({
         </Dropdown>
       ),
       title: "",
-      width: 48,
+      width: 44,
     },
   ];
 
@@ -1219,38 +1278,77 @@ export function ProjectTaskOrganization({
           const collapsed = collapsedStatusIds.has(status.id);
           return (
             <section className="task-list-group" key={status.id}>
-              <header className="task-list-group-header">
-                <Button onClick={() => toggleStatusGroup(status.id)} size="small" variant="text">
-                  <span aria-hidden>{collapsed ? "›" : "⌄"}</span>
-                  <span className="task-status-dot" style={{ backgroundColor: status.color }} />
-                  {status.name}
+              <header
+                className="task-list-group-header"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${status.color} 8%, white)`,
+                }}
+              >
+                <Button
+                  className="task-list-group-toggle"
+                  icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                  onClick={() => toggleStatusGroup(status.id)}
+                  size="small"
+                  variant="text"
+                >
+                  <span
+                    className="task-status-dot"
+                    style={{ backgroundColor: status.color }}
+                  />
+                  <span>{status.name}</span>
+                  <Tag color="neutral">{statusTasks.length}</Tag>
                 </Button>
-                <Typography.Text type="secondary">{statusTasks.length}</Typography.Text>
+                <Button
+                  aria-label={`Add task to ${status.name}`}
+                  disabled={archived}
+                  icon={<AddIcon aria-hidden />}
+                  iconOnly
+                  onClick={() => openCreate(status.id)}
+                  size="small"
+                  variant="text"
+                />
               </header>
               {collapsed ? null : (
-                <>
-                  <Table
-                    columns={columns}
-                    dataSource={statusTasks}
-                    locale={{
-                      emptyText: (
-                        <Empty description="No tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                      ),
-                    }}
-                    pagination={false}
-                    rowKey="id"
-                    scroll={{ x: 680 }}
-                    size="small"
-                  />
-                  <Button
-                    disabled={archived}
-                    onClick={() => openCreate(status.id)}
-                    size="small"
-                    variant="text"
-                  >
-                    + Add task
-                  </Button>
-                </>
+                <Table
+                  classNames={{
+                    cell: "task-list-table-cell",
+                    empty: "task-list-table-empty",
+                    header: "task-list-table-header",
+                    root: "task-list-table-root",
+                    row: "task-list-table-row",
+                  }}
+                  columns={columns}
+                  dataSource={statusTasks}
+                  locale={{ emptyText: "No tasks in this status" }}
+                  onRow={(task) => ({
+                    "aria-label": `Open ${task.title}`,
+                    onClick: (event) => {
+                      const target = event.target;
+                      if (
+                        target instanceof Element &&
+                        target.closest("button, a, input, [data-launch-ui-popup]")
+                      ) {
+                        return;
+                      }
+                      openTask(task, event.currentTarget);
+                    },
+                    onKeyDown: (event) => {
+                      if (
+                        event.target === event.currentTarget &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
+                        event.preventDefault();
+                        openTask(task, event.currentTarget);
+                      }
+                    },
+                    tabIndex: 0,
+                  })}
+                  pagination={false}
+                  rowKey="id"
+                  scroll={{ x: 850 }}
+                  size="small"
+                  styles={{ cell: { padding: "7px 10px" } }}
+                />
               )}
             </section>
           );
