@@ -10,8 +10,8 @@ import {
   type TeamSummary,
 } from "@launchpp/api-client";
 import {
-  Alert,
   AddIcon,
+  Alert,
   Avatar,
   Button,
   Checkbox,
@@ -19,8 +19,8 @@ import {
   Drawer,
   Dropdown,
   type DropdownMenuItem,
-  Empty,
   EmojiPicker,
+  Empty,
   Input,
   Mentions,
   type MentionsRef,
@@ -33,18 +33,18 @@ import {
   Tabs,
   Tag,
   Timeline,
+  Typography,
   Upload,
   type UploadFile,
   type UploadRequestOptions,
-  Typography,
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
   CommentOutlined,
   DeleteOutlined,
   EditOutlined,
-  FlagOutlined,
   FileTextOutlined,
+  FlagOutlined,
   MoreOutlined,
   PaperClipOutlined,
   SendOutlined,
@@ -203,6 +203,8 @@ export function TaskDetailPanel({
   const commentInputRef = useRef<MentionsRef>(null);
   const commentSelectionRef = useRef({ end: 0, start: 0 });
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string>();
+  const [pendingReaction, setPendingReaction] = useState<string>();
   const [commentFiles, setCommentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string>();
   const [editingCommentBody, setEditingCommentBody] = useState("");
@@ -249,6 +251,8 @@ export function TaskDetailPanel({
     setCommentComposerRevision(0);
     commentSelectionRef.current = { end: 0, start: 0 };
     setEmojiOpen(false);
+    setReactionPickerCommentId(undefined);
+    setPendingReaction(undefined);
     setCommentFiles([]);
     setEditingCommentId(undefined);
     setEditingCommentBody("");
@@ -542,6 +546,28 @@ export function TaskDetailPanel({
       if (reason instanceof ApiError && reason.status === 409) await load();
     } finally {
       setPostingComment(false);
+    }
+  };
+
+  const setCommentReaction = async (item: TaskComment, emoji: string, active: boolean) => {
+    if (!detail) return;
+    const pendingKey = `${item.id}:${emoji}`;
+    setPendingReaction(pendingKey);
+    setSaveError(undefined);
+    try {
+      const next = await api.tasks.setCommentReaction(
+        organizationId,
+        projectId,
+        detail.task.id,
+        item.id,
+        { active, emoji },
+      );
+      setReactionPickerCommentId(undefined);
+      applyDetail(next);
+    } catch (reason) {
+      setSaveError(reason);
+    } finally {
+      setPendingReaction(undefined);
     }
   };
 
@@ -1216,7 +1242,9 @@ export function TaskDetailPanel({
                               <Typography.Text strong>{authorName}</Typography.Text>
                               <Typography.Text
                                 className="task-detail-comment-date"
-                                type="secondary"
+                                style={{
+                                  color: "var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45))",
+                                }}
                               >
                                 {detailDateTime.format(new Date(item.createdAt))}
                               </Typography.Text>
@@ -1276,6 +1304,64 @@ export function TaskDetailPanel({
                           ) : (
                             <Typography.Paragraph>{item.body}</Typography.Paragraph>
                           )}
+                          <div className="task-detail-comment-reactions">
+                            {item.reactions.map((reaction) => {
+                              const pendingKey = `${item.id}:${reaction.emoji}`;
+                              return (
+                                <Button
+                                  aria-label={`${reaction.reactedByCurrentUser ? "Remove" : "Add"} ${reaction.emoji} reaction`}
+                                  aria-pressed={reaction.reactedByCurrentUser}
+                                  className={
+                                    reaction.reactedByCurrentUser
+                                      ? "task-detail-comment-reaction is-selected"
+                                      : "task-detail-comment-reaction"
+                                  }
+                                  disabled={pendingReaction !== undefined}
+                                  key={reaction.emoji}
+                                  loading={pendingReaction === pendingKey}
+                                  onClick={() =>
+                                    void setCommentReaction(
+                                      item,
+                                      reaction.emoji,
+                                      !reaction.reactedByCurrentUser,
+                                    )
+                                  }
+                                  size="small"
+                                >
+                                  <span aria-hidden>{reaction.emoji}</span>
+                                  <span>{reaction.count}</span>
+                                </Button>
+                              );
+                            })}
+                            <Popover
+                              arrow={false}
+                              content={
+                                <EmojiPicker
+                                  allowExpandReactions
+                                  mode="reactions"
+                                  onSelect={(emoji) => void setCommentReaction(item, emoji, true)}
+                                  previewConfig={{ showPreview: false }}
+                                  width={300}
+                                />
+                              }
+                              onOpenChange={(open) =>
+                                setReactionPickerCommentId(open ? item.id : undefined)
+                              }
+                              open={reactionPickerCommentId === item.id}
+                              placement="topLeft"
+                              styles={{ content: { padding: 0 } }}
+                              trigger="click"
+                            >
+                              <Button
+                                aria-label={`Add reaction to comment by ${authorName}`}
+                                className="task-detail-comment-reaction-add"
+                                disabled={pendingReaction !== undefined}
+                                icon={<SmileOutlined />}
+                                iconOnly
+                                size="small"
+                              />
+                            </Popover>
+                          </div>
                           {commentAttachmentFiles.length > 0 ? (
                             <Upload<TaskDetail>
                               className="task-detail-comment-files"
@@ -1290,6 +1376,21 @@ export function TaskDetailPanel({
                                 showDownloadIcon: true,
                                 showPreviewIcon: (file) => isImageAttachment(file),
                                 showRemoveIcon: false,
+                              }}
+                              styles={{
+                                item: {
+                                  background: "var(--launch-color-bg-subtle)",
+                                  border: "1px solid var(--launch-color-border-secondary)",
+                                  maxWidth: 240,
+                                  padding: "3px 7px",
+                                },
+                                list: {
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 6,
+                                  margin: 0,
+                                },
+                                root: { width: "100%" },
                               }}
                             />
                           ) : null}

@@ -317,6 +317,16 @@ export const TaskViewSchema = StrictObject(
 );
 export type TaskView = Type.Static<typeof TaskViewSchema>;
 
+export const TaskCommentReactionSummarySchema = StrictObject(
+  {
+    count: Type.Integer({ minimum: 1 }),
+    emoji: Type.String({ maxLength: 32, minLength: 1 }),
+    reactedByCurrentUser: Type.Boolean(),
+  },
+  { $id: "LaunchppTaskCommentReactionSummaryV1" },
+);
+export type TaskCommentReactionSummary = Type.Static<typeof TaskCommentReactionSummarySchema>;
+
 export const TaskCommentSchema = StrictObject(
   {
     authorUserId: IdentifierSchema,
@@ -325,6 +335,12 @@ export const TaskCommentSchema = StrictObject(
     id: IdentifierSchema,
     projectId: IdentifierSchema,
     revision: RevisionSchema,
+    reactions: Type.Array(
+      Type.Unsafe<Type.Static<typeof TaskCommentReactionSummarySchema>>(
+        Type.Ref("LaunchppTaskCommentReactionSummaryV1"),
+      ),
+      { maxItems: 100 },
+    ),
     taskId: IdentifierSchema,
     updatedAt: TimestampSchema,
     organizationId: IdentifierSchema,
@@ -442,6 +458,15 @@ export const CreateTaskCommentInputSchema = StrictObject(
   { $id: "LaunchppCreateTaskCommentInputV1" },
 );
 export type CreateTaskCommentInput = Type.Static<typeof CreateTaskCommentInputSchema>;
+
+export const SetTaskCommentReactionInputSchema = StrictObject(
+  {
+    active: Type.Boolean(),
+    emoji: Type.String({ maxLength: 32, minLength: 1, pattern: "\\S" }),
+  },
+  { $id: "LaunchppSetTaskCommentReactionInputV1" },
+);
+export type SetTaskCommentReactionInput = Type.Static<typeof SetTaskCommentReactionInputSchema>;
 
 export const UpdateTaskCommentInputSchema = StrictObject(
   {
@@ -639,6 +664,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   UpdateProjectInputSchema,
   LabelSummarySchema,
   TaskViewSchema,
+  TaskCommentReactionSummarySchema,
   TaskCommentSchema,
   TaskAttachmentSummarySchema,
   CreateTaskAttachmentInputSchema,
@@ -647,6 +673,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskPageSchema,
   CreateTaskInputSchema,
   CreateTaskCommentInputSchema,
+  SetTaskCommentReactionInputSchema,
   UpdateTaskCommentInputSchema,
   DeleteTaskCommentInputSchema,
   SearchQuerySchema,

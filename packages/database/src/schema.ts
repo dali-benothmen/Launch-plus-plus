@@ -563,6 +563,29 @@ export const taskComments = sqliteTable(
   ],
 );
 
+export const taskCommentReactions = sqliteTable(
+  "task_comment_reactions",
+  {
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => taskComments.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").notNull(),
+    userId: text("user_id").notNull(),
+    emoji: text("emoji").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.commentId, table.userId, table.emoji] }),
+    index("task_comment_reactions_comment_time_idx").on(table.commentId, table.createdAt),
+    foreignKey({
+      columns: [table.organizationId, table.userId],
+      foreignColumns: [organizationMembers.organizationId, organizationMembers.userId],
+      name: "task_comment_reactions_organization_member_fk",
+    }).onDelete("cascade"),
+    check("task_comment_reactions_emoji_not_blank", sql`length(trim(${table.emoji})) > 0`),
+  ],
+);
+
 export const taskAssignees = sqliteTable(
   "task_assignees",
   {
@@ -733,6 +756,7 @@ export const databaseSchema = {
   projectStatuses,
   projects,
   taskAssignees,
+  taskCommentReactions,
   taskComments,
   taskLabels,
   tasks,

@@ -18,6 +18,7 @@ export type {
   SearchQuery,
   SearchResponse,
   SearchResult,
+  SetTaskCommentReactionInput,
   TaskActivity,
   TaskAttachmentSummary,
   TaskComment,

@@ -96,6 +96,8 @@ export type {
   TaskAttachmentSummary,
   TaskCatalog,
   TaskComment,
+  TaskCommentReaction,
+  TaskCommentReactionSummary,
   TaskDetail,
   TaskPriority,
   TaskRepository,

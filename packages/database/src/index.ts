@@ -23,6 +23,8 @@ export {
   verifySqliteDatabase,
 } from "./local-operations.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
+export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
+export { SqliteOrganizationRepository } from "./organization-repository.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
 export {
@@ -41,6 +43,8 @@ export {
   installations,
   invalidationEvents,
   labels,
+  organizationMembers,
+  organizations,
   outboxMessages,
   projectFolders,
   projectPreferences,
@@ -48,13 +52,12 @@ export {
   projects,
   taskAssignees,
   taskAttachments,
+  taskCommentReactions,
   taskComments,
   taskLabels,
   tasks,
   teams,
   userProfiles,
-  organizationMembers,
-  organizations,
 } from "./schema.js";
 export { SqliteSearchRepository } from "./search-repository.js";
 export {
@@ -65,5 +68,3 @@ export {
 export { SqliteTaskRepository } from "./task-repository.js";
 export { SqliteTeamRepository } from "./team-repository.js";
 export { SqliteUserProfileRepository } from "./user-profile-repository.js";
-export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
-export { SqliteOrganizationRepository } from "./organization-repository.js";

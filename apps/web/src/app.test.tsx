@@ -160,6 +160,9 @@ const apiClient: ApiClient = {
     restore: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
+    setCommentReaction: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
     update: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),

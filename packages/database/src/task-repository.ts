@@ -2,10 +2,11 @@ import type {
   Label,
   ReadContext,
   Task,
+  TaskActivity,
   TaskAttachment,
   TaskAttachmentSummary,
-  TaskActivity,
   TaskComment,
+  TaskCommentReaction,
   TaskPriority,
   TaskRepository,
   WriteContext,
@@ -58,6 +59,14 @@ interface CommentRow {
   readonly task_id: string;
   readonly updated_at: number;
   readonly organization_id: string;
+}
+
+interface CommentReactionRow {
+  readonly comment_id: string;
+  readonly created_at: number;
+  readonly emoji: string;
+  readonly organization_id: string;
+  readonly user_id: string;
 }
 
 interface AttachmentRow {
@@ -137,6 +146,7 @@ function mapComment(row: CommentRow): TaskComment {
     id: row.id,
     projectId: row.project_id,
     revision: row.revision,
+    reactions: [],
     taskId: row.task_id,
     updatedAt: row.updated_at,
     organizationId: row.organization_id,
@@ -224,6 +234,23 @@ export class SqliteTaskRepository implements TaskRepository {
       );
   }
 
+  createCommentReaction(context: WriteContext, reaction: TaskCommentReaction): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `INSERT INTO task_comment_reactions (
+          comment_id, organization_id, user_id, emoji, created_at
+        ) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(comment_id, user_id, emoji) DO NOTHING`,
+      )
+      .run(
+        reaction.commentId,
+        reaction.organizationId,
+        reaction.userId,
+        reaction.emoji,
+        reaction.createdAt,
+      );
+  }
+
   createLabel(context: WriteContext, label: Label): void {
     requireSqliteConnection(context)
       .prepare(
@@ -289,6 +316,19 @@ export class SqliteTaskRepository implements TaskRepository {
     const connection = requireSqliteConnection(context);
     connection.prepare("DELETE FROM task_attachments WHERE comment_id = ?").run(commentId);
     connection.prepare("DELETE FROM task_comments WHERE id = ?").run(commentId);
+  }
+
+  deleteCommentReaction(
+    context: WriteContext,
+    commentId: string,
+    userId: string,
+    emoji: string,
+  ): void {
+    requireSqliteConnection(context)
+      .prepare(
+        "DELETE FROM task_comment_reactions WHERE comment_id = ? AND user_id = ? AND emoji = ?",
+      )
+      .run(commentId, userId, emoji);
   }
 
   findAttachmentById(context: ReadContext, attachmentId: string): TaskAttachment | undefined {
@@ -372,10 +412,32 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare<[string], CommentRow>(
         `SELECT id, organization_id, project_id, task_id, author_user_id,
                 body_markdown, created_at, updated_at, revision
-         FROM task_comments WHERE task_id = ? ORDER BY created_at ASC, id ASC`,
+         FROM task_comments WHERE task_id = ? ORDER BY created_at DESC, id DESC`,
       )
       .all(taskId)
       .map(mapComment);
+  }
+
+  listCommentReactions(context: ReadContext, taskId: string): readonly TaskCommentReaction[] {
+    return requireSqliteConnection(context)
+      .prepare<[string], CommentReactionRow>(
+        `SELECT reaction.comment_id, reaction.organization_id, reaction.user_id, reaction.emoji,
+                reaction.created_at
+         FROM task_comment_reactions reaction
+         INNER JOIN task_comments comment ON comment.id = reaction.comment_id
+         WHERE comment.task_id = ?
+         ORDER BY reaction.created_at ASC, reaction.comment_id ASC, reaction.user_id ASC`,
+      )
+      .all(taskId)
+      .map((row) =>
+        Object.freeze({
+          commentId: row.comment_id,
+          createdAt: row.created_at,
+          emoji: row.emoji,
+          organizationId: row.organization_id,
+          userId: row.user_id,
+        }),
+      );
   }
 
   listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[] {

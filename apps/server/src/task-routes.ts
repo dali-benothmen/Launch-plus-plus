@@ -5,11 +5,12 @@ import type {
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
-  DeleteTaskCommentInput,
   CursorPageQuery,
+  DeleteTaskCommentInput,
   MoveTaskInput,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
+  SetTaskCommentReactionInput,
   UpdateTaskCommentInput,
   UpdateTaskInput,
 } from "@launchpp/api-contracts";
@@ -161,6 +162,7 @@ function commentSummary(comment: TaskComment) {
     id: comment.id,
     projectId: comment.projectId,
     revision: comment.revision,
+    reactions: comment.reactions,
     taskId: comment.taskId,
     updatedAt: comment.updatedAt,
     organizationId: comment.organizationId,
@@ -464,6 +466,40 @@ export async function registerTaskRoutes(
             });
             return { body: commentSummary(comment), status: 201 };
           },
+        );
+      } catch (error) {
+        if (sendDomainError(error, request, reply)) return;
+        throw error;
+      }
+    },
+  );
+
+  app.put<{ Body: SetTaskCommentReactionInput; Params: CommentParams }>(
+    "/api/v1/organizations/:organizationId/projects/:projectId/tasks/:taskId/comments/:commentId/reactions",
+    {
+      schema: {
+        body: { $ref: "LaunchppSetTaskCommentReactionInputV1#" },
+        operationId: "setTaskCommentReaction",
+        params: { $ref: "LaunchppTaskCommentParamsV1#" },
+        response: { 200: { $ref: "LaunchppTaskDetailV1#" }, ...problemResponses },
+        summary: "Set a task comment reaction",
+        tags: ["Tasks"],
+      },
+    },
+    async (request, reply) => {
+      const context = await contextFor(request, reply);
+      if (!context) return;
+      try {
+        return taskDetailSummary(
+          await service.setCommentReaction({
+            ...context,
+            ...request.body,
+            commentId: request.params.commentId,
+            correlationId: request.id,
+            projectId: request.params.projectId,
+            taskId: request.params.taskId,
+            organizationId: request.params.organizationId,
+          }),
         );
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;

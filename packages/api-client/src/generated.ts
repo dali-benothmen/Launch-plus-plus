@@ -7,11 +7,13 @@ import type {
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
   CreateTaskInput,
-  DeleteTaskCommentInput,
   CursorPageQuery,
+  DeleteTaskCommentInput,
   LabelSummary,
   MoveTaskInput,
+  OrganizationContext,
   OrganizationMemberSummary,
+  OrganizationSummary,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
@@ -22,6 +24,7 @@ import type {
   ReplaceTaskLabelsInput,
   SearchQuery,
   SearchResponse,
+  SetTaskCommentReactionInput,
   TaskComment,
   TaskDetail,
   TaskPage,
@@ -31,8 +34,6 @@ import type {
   UpdateProjectInput,
   UpdateTaskCommentInput,
   UpdateTaskInput,
-  OrganizationContext,
-  OrganizationSummary,
 } from "@launchpp/api-contracts";
 
 export interface RequestOptions {
@@ -170,6 +171,13 @@ export interface CoreApiClient {
       taskId: string,
       commentId: string,
       input: DeleteTaskCommentInput,
+    ): Promise<TaskDetail>;
+    setCommentReaction(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      commentId: string,
+      input: SetTaskCommentReactionInput,
     ): Promise<TaskDetail>;
     updateComment(
       organizationId: string,
@@ -417,6 +425,18 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },
           method: "DELETE",
+        }),
+      setCommentReaction: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        commentId: string,
+        input: SetTaskCommentReactionInput,
+      ) =>
+        json<TaskDetail>(`${commentPath(organizationId, projectId, taskId, commentId)}/reactions`, {
+          body: JSON.stringify(input),
+          headers: { "content-type": "application/json" },
+          method: "PUT",
         }),
       updateComment: (
         organizationId: string,

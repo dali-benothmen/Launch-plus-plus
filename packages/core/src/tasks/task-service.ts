@@ -118,6 +118,13 @@ function normalizeComment(value: string) {
   return body;
 }
 
+function normalizeReaction(value: string) {
+  const emoji = value.trim();
+  if (emoji.length === 0) throw new TypeError("A reaction emoji is required.");
+  if (emoji.length > 32) throw new TypeError("Reaction emoji cannot exceed 32 characters.");
+  return emoji;
+}
+
 function normalizeDueDate(value: null | string | undefined): string | undefined {
   if (value === null || value === undefined || value.length === 0) return undefined;
   const match = datePattern.exec(value);
@@ -204,7 +211,7 @@ export class TaskService {
       this.requireActor(context, input.organizationId, input.userId);
       const project = this.requireProject(context, input.organizationId, input.projectId);
       const task = this.requireTask(context, input, input.taskId);
-      return this.toDetail(context, task, project);
+      return this.toDetail(context, task, project, input.userId);
     });
   }
 
@@ -270,7 +277,7 @@ export class TaskService {
         revision: updated.revision,
         size: attachment.size,
       });
-      return this.toDetail(context, updated, project);
+      return this.toDetail(context, updated, project, input.userId);
     });
   }
 
@@ -306,7 +313,7 @@ export class TaskService {
         name: attachment.name,
         revision: updated.revision,
       });
-      return this.toDetail(context, updated, project);
+      return this.toDetail(context, updated, project, input.userId);
     });
   }
 
@@ -364,6 +371,7 @@ export class TaskService {
         id: this.dependencies.generateId(),
         projectId: input.projectId,
         revision: 1,
+        reactions: [],
         taskId: task.id,
         updatedAt: now,
         organizationId: input.organizationId,
@@ -371,6 +379,47 @@ export class TaskService {
       this.dependencies.tasks.createComment(context, comment);
       this.record(context, input, "comment.created", task.id, { commentId: comment.id });
       return comment;
+    });
+  }
+
+  setCommentReaction(
+    input: CommandContext &
+      Readonly<{ active: boolean; commentId: string; emoji: string; taskId: string }>,
+  ): Promise<TaskDetail> {
+    validateContext(input);
+    const emoji = normalizeReaction(input.emoji);
+    return this.dependencies.transactions.write((context) => {
+      this.requireActor(context, input.organizationId, input.userId);
+      const project = this.requireProject(context, input.organizationId, input.projectId, true);
+      const task = this.requireTask(context, input, input.taskId);
+      const comment = this.dependencies.tasks.findCommentById(context, input.commentId);
+      if (
+        !comment ||
+        comment.organizationId !== input.organizationId ||
+        comment.projectId !== input.projectId ||
+        comment.taskId !== task.id
+      ) {
+        throw new TaskNotFoundError("The task comment does not exist.");
+      }
+      if (input.active) {
+        this.dependencies.tasks.createCommentReaction(context, {
+          commentId: comment.id,
+          createdAt: this.dependencies.clock(),
+          emoji,
+          organizationId: input.organizationId,
+          userId: input.userId,
+        });
+      } else {
+        this.dependencies.tasks.deleteCommentReaction(context, comment.id, input.userId, emoji);
+      }
+      this.record(
+        context,
+        input,
+        input.active ? "comment.reaction_added" : "comment.reaction_removed",
+        task.id,
+        { commentId: comment.id, emoji },
+      );
+      return this.toDetail(context, task, project, input.userId);
     });
   }
 
@@ -408,7 +457,7 @@ export class TaskService {
       });
       this.dependencies.tasks.saveComment(context, updated);
       this.record(context, input, "comment.updated", task.id, { commentId: comment.id });
-      return this.toDetail(context, task, project);
+      return this.toDetail(context, task, project, input.userId);
     });
   }
 
@@ -448,7 +497,7 @@ export class TaskService {
       });
       this.dependencies.tasks.saveTask(context, updated);
       this.record(context, input, "comment.deleted", task.id, { commentId: comment.id });
-      return this.toDetail(context, updated, project);
+      return this.toDetail(context, updated, project, input.userId);
     });
   }
 
@@ -964,11 +1013,40 @@ export class TaskService {
     });
   }
 
-  private toDetail(context: ReadContext, task: Task, project: Project): TaskDetail {
+  private toDetail(
+    context: ReadContext,
+    task: Task,
+    project: Project,
+    currentUserId: string,
+  ): TaskDetail {
     const subtasks = this.dependencies.tasks
       .listTasks(context, task.organizationId, task.projectId)
       .filter((item) => item.parentTaskId === task.id)
       .map((item) => this.toView(context, item, project));
+    const reactionGroups = new Map<
+      string,
+      Map<string, { count: number; reactedByCurrentUser: boolean }>
+    >();
+    for (const reaction of this.dependencies.tasks.listCommentReactions(context, task.id)) {
+      const commentReactions = reactionGroups.get(reaction.commentId) ?? new Map();
+      const summary = commentReactions.get(reaction.emoji) ?? {
+        count: 0,
+        reactedByCurrentUser: false,
+      };
+      commentReactions.set(reaction.emoji, {
+        count: summary.count + 1,
+        reactedByCurrentUser: summary.reactedByCurrentUser || reaction.userId === currentUserId,
+      });
+      reactionGroups.set(reaction.commentId, commentReactions);
+    }
+    const comments = this.dependencies.tasks.listComments(context, task.id).map((comment) =>
+      Object.freeze({
+        ...comment,
+        reactions: Array.from(reactionGroups.get(comment.id) ?? []).map(([emoji, summary]) =>
+          Object.freeze({ emoji, ...summary }),
+        ),
+      }),
+    );
     return Object.freeze({
       activity: this.dependencies.tasks.listTaskActivity(context, task.organizationId, task.id),
       attachments: this.dependencies.tasks.listAttachments(context, task.id),
@@ -977,7 +1055,7 @@ export class TaskService {
         task.organizationId,
         task.projectId,
       ),
-      comments: this.dependencies.tasks.listComments(context, task.id),
+      comments,
       subtasks,
       task: this.toView(context, task, project),
     });

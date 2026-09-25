@@ -1237,6 +1237,32 @@
   margin-top: 2px;
 }
 
+.task-detail-comment-reactions {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.task-detail-comment-reaction {
+  gap: 5px;
+  padding-inline: 8px;
+  color: var(--launch-color-text-secondary);
+  background: transparent;
+}
+
+.task-detail-comment-reaction.is-selected {
+  color: var(--launch-color-accent);
+  border-color: var(--launch-color-accent);
+  background: color-mix(in srgb, var(--launch-color-accent) 8%, transparent);
+}
+
+.task-detail-comment-reaction-add {
+  color: var(--launch-color-text-secondary);
+  background: transparent;
+}
+
 .global-search {
   display: grid;
   gap: 16px;

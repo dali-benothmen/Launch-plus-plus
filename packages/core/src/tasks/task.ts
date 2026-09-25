@@ -52,9 +52,24 @@ export interface TaskComment {
   readonly id: string;
   readonly projectId: string;
   readonly revision: number;
+  readonly reactions: readonly TaskCommentReactionSummary[];
   readonly taskId: string;
   readonly updatedAt: number;
   readonly organizationId: string;
+}
+
+export interface TaskCommentReaction {
+  readonly commentId: string;
+  readonly createdAt: number;
+  readonly emoji: string;
+  readonly organizationId: string;
+  readonly userId: string;
+}
+
+export interface TaskCommentReactionSummary {
+  readonly count: number;
+  readonly emoji: string;
+  readonly reactedByCurrentUser: boolean;
 }
 
 export interface TaskAttachmentSummary {
@@ -99,7 +114,14 @@ export interface TaskCatalog {
 export interface TaskRepository {
   createAttachment(context: WriteContext, attachment: TaskAttachment): void;
   createComment(context: WriteContext, comment: TaskComment): void;
+  createCommentReaction(context: WriteContext, reaction: TaskCommentReaction): void;
   deleteComment(context: WriteContext, commentId: string): void;
+  deleteCommentReaction(
+    context: WriteContext,
+    commentId: string,
+    userId: string,
+    emoji: string,
+  ): void;
   createLabel(context: WriteContext, label: Label): void;
   createTask(context: WriteContext, task: Task): void;
   deleteAttachment(context: WriteContext, attachmentId: string): void;
@@ -116,6 +138,7 @@ export interface TaskRepository {
   listAssigneeUserIds(context: ReadContext, taskId: string): readonly string[];
   listAttachments(context: ReadContext, taskId: string): readonly TaskAttachmentSummary[];
   listComments(context: ReadContext, taskId: string): readonly TaskComment[];
+  listCommentReactions(context: ReadContext, taskId: string): readonly TaskCommentReaction[];
   listLabels(context: ReadContext, organizationId: string, projectId: string): readonly Label[];
   listLabelsForTask(context: ReadContext, taskId: string): readonly Label[];
   listTaskActivity(
