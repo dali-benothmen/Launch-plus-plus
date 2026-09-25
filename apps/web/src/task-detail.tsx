@@ -24,6 +24,7 @@ import {
   Input,
   Mentions,
   type MentionsRef,
+  message,
   Modal,
   Popover,
   Progress,
@@ -46,6 +47,7 @@ import {
   EditOutlined,
   FileTextOutlined,
   FlagOutlined,
+  LinkOutlined,
   MoreOutlined,
   PaperClipOutlined,
   SendOutlined,
@@ -117,6 +119,7 @@ function writeCommentsSeenAt(key: string, value: number) {
 
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const taskDetailTagStyle = { fontSize: 14 } as const;
+const taskDetailHeaderIconStyle = { fontSize: 16 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
 const priorityPresentation: Record<
@@ -260,6 +263,7 @@ export function TaskDetailPanel({
 }: TaskDetailPanelProps) {
   const api = useApiClient();
   const narrow = useNarrowScreen();
+  const [messageApi, messageHolder] = message.useMessage();
   const [detail, setDetail] = useState<TaskDetail>();
   const [draft, setDraft] = useState<DetailDraft>();
   const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
@@ -539,6 +543,15 @@ export function TaskDetailPanel({
   const saveChanges = async () => {
     if (!draft) return;
     if (await save(draft)) setEditing(false);
+  };
+
+  const copyTaskUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      messageApi.success("Task link copied.");
+    } catch {
+      messageApi.error("Could not copy the task link.");
+    }
   };
 
   const cancelEditing = () => {
@@ -1694,6 +1707,7 @@ export function TaskDetailPanel({
 
   return (
     <>
+      {messageHolder}
       <Drawer
         afterOpenChange={(open) => {
           if (!open) onAfterClose();
@@ -1725,24 +1739,32 @@ export function TaskDetailPanel({
             </Space>
           ) : (
             <Space size={12}>
+              <Button
+                aria-label="Copy task URL"
+                className="task-detail-header-action"
+                icon={<LinkOutlined style={taskDetailHeaderIconStyle} />}
+                iconOnly
+                onClick={() => void copyTaskUrl()}
+                variant="text"
+              />
               {!archived ? (
                 <Button
                   aria-label="Edit task"
-                  icon={<EditOutlined />}
+                  className="task-detail-header-action"
+                  icon={<EditOutlined style={taskDetailHeaderIconStyle} />}
                   iconOnly
                   onClick={startEditing}
-                  style={taskDetailHeaderButtonStyle}
-                  variant="outlined"
+                  variant="text"
                 />
               ) : null}
               <Button
                 aria-label="Delete task"
+                className="task-detail-header-action"
                 danger
-                icon={<DeleteOutlined />}
+                icon={<DeleteOutlined style={taskDetailHeaderIconStyle} />}
                 iconOnly
                 onClick={() => setDeleteConfirmOpen(true)}
-                style={taskDetailHeaderButtonStyle}
-                variant="outlined"
+                variant="text"
               />
             </Space>
           )
