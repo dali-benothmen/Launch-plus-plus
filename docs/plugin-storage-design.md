@@ -23,7 +23,7 @@ Arbitrary transformation logic is logically a migration even when given another 
 - Feel familiar to React/TypeScript and vanilla TypeScript developers.
 - Provide autocomplete and generated types from one schema.
 - Require no SQL or database administration knowledge.
-- Preserve workspace and project isolation automatically.
+- Preserve organization and project isolation automatically.
 - Keep plugin packages portable between SQLite and future host storage adapters.
 - Make backup, export, disable, uninstall, and parent deletion consistent.
 - Prevent one plugin from reading or damaging another plugin or the core database.
@@ -200,7 +200,7 @@ const activeSprints = await launch.data.sprints.findMany({
 });
 ```
 
-Generated methods and operators depend on field type and declared indexes. Every query is scoped automatically to the invoking plugin, workspace, enabled project/parent context, actor permissions, and platform limits. The plugin cannot override injected scope fields.
+Generated methods and operators depend on field type and declared indexes. Every query is scoped automatically to the invoking plugin, organization, enabled project/parent context, actor permissions, and platform limits. The plugin cannot override injected scope fields.
 
 Records returned to plugin code include host metadata:
 
@@ -220,7 +220,7 @@ type SprintRecord = {
 };
 ```
 
-Workspace ID, plugin ID, owner, and authoritative parent relations are host metadata. They may be visible when useful but cannot be supplied or changed as ordinary plugin record fields.
+Organization ID, plugin ID, owner, and authoritative parent relations are host metadata. They may be visible when useful but cannot be supplied or changed as ordinary plugin record fields.
 
 ## Browser data access
 
@@ -250,7 +250,7 @@ Important mutations go through plugin actions/server handlers so invariants, ato
 | --- | --- | --- |
 | Extend an existing core task/project | Native custom field contribution | Story points |
 | Store plugin-owned shared records | Typed collection | Sprints, time entries |
-| Store user/project/workspace configuration | Typed plugin settings | Default sprint duration |
+| Store user/project/organization configuration | Typed plugin settings | Default sprint duration |
 | Store external credential | Secret reference | GitHub access token |
 | Store a file | Host asset reference | Invoice PDF |
 | Share data with another plugin | Public command/event | Add a task to a sprint |
@@ -261,7 +261,7 @@ Settings are not a substitute for collections. Secrets never appear in settings 
 
 Every collection declares one host-enforced access model:
 
-- `workspaceShared` — visible according to workspace permission.
+- `organizationShared` — visible according to organization permission.
 - `projectScoped` — linked to one project and unavailable where the plugin is disabled.
 - `parentScoped` — linked to a supported core entity such as a task.
 - `actorOwned` — owned by the current actor, optionally linked to a project/task.
@@ -283,7 +283,7 @@ export const timeEntries = collection(
 );
 ```
 
-The host assigns workspace, plugin, actor, and authoritative parent scope. A user ID supplied inside plugin data never changes ownership or impersonates another actor.
+The host assigns organization, plugin, actor, and authoritative parent scope. A user ID supplied inside plugin data never changes ownership or impersonates another actor.
 
 ## Physical host model
 
@@ -301,7 +301,7 @@ plugin_field_values
 
 ```text
 id
-workspace_id
+organization_id
 plugin_id
 collection_id
 project_id / parent_type / parent_id / owner_actor_id
@@ -318,7 +318,7 @@ Declared searchable/sortable values are normalized into host-owned typed index s
 
 ### Schema fingerprint
 
-The compiled schema has a canonical representation and content digest. Authors do not manually increment a data-schema version. Launch++ records the schema digest installed for each workspace/plugin version and compares it with the uploaded target.
+The compiled schema has a canonical representation and content digest. Authors do not manually increment a data-schema version. Launch++ records the schema digest installed for each organization/plugin version and compares it with the uploaded target.
 
 The schema format itself has a platform-owned `formatVersion`; the CLI chooses it according to the selected plugin API and developers do not manage it by hand.
 
@@ -435,7 +435,7 @@ flowchart TD
     Safe -->|Yes| Preview --> Lock --> Backup --> Apply --> Check --> Activate
 ```
 
-The schema lock covers plugin records, native field values, settings, jobs, and broker writes for the affected workspace/plugin. Network effects and executable plugin handlers do not run during evolution. Core work and unrelated plugins remain available.
+The schema lock covers plugin records, native field values, settings, jobs, and broker writes for the affected organization/plugin. Network effects and executable plugin handlers do not run during evolution. Core work and unrelated plugins remain available.
 
 If preparation or validation fails before activation, discard staged metadata/indexes and keep the previous package active. Because supported changes are non-destructive, the old package remains able to read its existing data. A failed post-activation health check pauses the plugin and exposes diagnostics; rollback is allowed only after compatibility is rechecked.
 
@@ -460,9 +460,9 @@ Unique indexes are host-enforced. Race-sensitive invariants such as one active t
 ## Relations and lifecycle
 
 - Relations to core entities use supported opaque references and host authorization.
-- Cross-workspace references are rejected.
+- Cross-organization references are rejected.
 - Plugin-to-plugin storage relations are prohibited; use public commands/events.
-- Task-owned records follow a task moving within its workspace according to declared policy.
+- Task-owned records follow a task moving within its organization according to declared policy.
 - Archive makes linked records read-only or hidden according to parent semantics.
 - Recoverable deletion hides linked records and restoring the parent restores them.
 - Permanent parent purge cascades host-linked records after retention.
@@ -471,7 +471,7 @@ Unique indexes are host-enforced. Race-sensitive invariants such as one active t
 
 ## Export and portability
 
-Workspace export contains:
+Organization export contains:
 
 - Compiled plugin schema and digest
 - Collection/field definitions
@@ -495,7 +495,7 @@ The platform publishes measured defaults and safe configurable ranges for:
 - Query page size, filters, sort keys, and execution time
 - Records scanned during compatibility analysis
 - Concurrent queries and mutations per invocation
-- Total storage per workspace/plugin according to host policy
+- Total storage per organization/plugin according to host policy
 - Index-build disk and time budget
 
 The CLI catches static limit violations. The server remains authoritative because package contents, installed data volume, and operator policy can differ from the author's environment.
@@ -532,7 +532,7 @@ This mode must disclose data leaving the installation, handle credentials throug
 - [ ] A React or vanilla TypeScript developer defines and queries a collection without SQL or database configuration.
 - [ ] The server installation artifact contains static schema JSON, not executable schema TypeScript.
 - [ ] Generated server clients, browser clients, and optional React hooks agree with the compiled schema.
-- [ ] Workspace, plugin, project/parent, and actor scope cannot be forged through record data.
+- [ ] Organization, plugin, project/parent, and actor scope cannot be forged through record data.
 - [ ] Adding an optional/defaulted field requires no record rewrite or author migration.
 - [ ] Display-label changes do not change storage identity.
 - [ ] Destructive or ambiguous changes are rejected before the installed package/data changes.

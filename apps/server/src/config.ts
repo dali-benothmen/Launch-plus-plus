@@ -15,6 +15,7 @@ interface LaunchEnvironment extends NodeJS.ProcessEnv {
   LAUNCHPP_RATE_LIMIT_WINDOW_MS?: string;
   LAUNCHPP_SHUTDOWN_GRACE_MS?: string;
   LAUNCHPP_TRUSTED_PROXIES?: string;
+  LAUNCHPP_WEB_ROOT?: string;
   NODE_ENV?: string;
 }
 
@@ -29,6 +30,7 @@ const launchEnvironmentKeys = new Set([
   "LAUNCHPP_RATE_LIMIT_WINDOW_MS",
   "LAUNCHPP_SHUTDOWN_GRACE_MS",
   "LAUNCHPP_TRUSTED_PROXIES",
+  "LAUNCHPP_WEB_ROOT",
 ]);
 
 export interface ServerConfig {
@@ -42,6 +44,7 @@ export interface ServerConfig {
   readonly rateLimit: Readonly<{ max: number; windowMs: number }>;
   readonly shutdownGraceMs: number;
   readonly trustedProxies: readonly string[];
+  readonly webRoot?: string;
 }
 
 export class ConfigurationError extends Error {
@@ -110,7 +113,9 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
   if (mode === "production" && !configuredBaseUrl) {
     throw new ConfigurationError("LAUNCHPP_BASE_URL is required in production");
   }
-  const baseUrl = parseBaseUrl(configuredBaseUrl || `http://${bindAddress}:${port}`);
+  const defaultBaseUrl =
+    mode === "development" ? "http://localhost:5173" : `http://${bindAddress}:${port}`;
+  const baseUrl = parseBaseUrl(configuredBaseUrl || defaultBaseUrl);
   if (mode === "production" && new URL(baseUrl).protocol !== "https:") {
     throw new ConfigurationError("LAUNCHPP_BASE_URL must use HTTPS in production");
   }
@@ -134,6 +139,8 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
       .map((proxy) => proxy.trim())
       .filter(Boolean),
   );
+
+  const webRoot = variables.LAUNCHPP_WEB_ROOT?.trim();
 
   return Object.freeze({
     authSecret,
@@ -164,5 +171,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
       120_000,
     ),
     trustedProxies,
+    ...(webRoot ? { webRoot } : {}),
   });
 }

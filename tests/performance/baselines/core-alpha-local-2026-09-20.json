@@ -1,0 +1,67 @@
+{
+  "formatVersion": 1,
+  "gates": {
+    "passed": true,
+    "results": [
+      { "maximum": 1000, "metric": "database.backup.p95Ms", "observed": 38.821, "passed": true },
+      {
+        "maximum": 1000,
+        "metric": "database.freshMigration.p95Ms",
+        "observed": 95.018,
+        "passed": true
+      },
+      { "maximum": 1000, "metric": "database.restore.p95Ms", "observed": 19.598, "passed": true },
+      { "maximum": 25, "metric": "database.taskPageRead.p95Ms", "observed": 0.141, "passed": true },
+      { "maximum": 500, "metric": "database.verify.p95Ms", "observed": 7.285, "passed": true },
+      {
+        "maximum": 320000,
+        "metric": "webDistribution.gzipBytes",
+        "observed": 243156,
+        "passed": true
+      }
+    ]
+  },
+  "measuredAt": "2026-09-20T03:00:12.654Z",
+  "metrics": {
+    "database": {
+      "backup": { "count": 5, "maxMs": 38.821, "meanMs": 17.394, "p50Ms": 12.125, "p95Ms": 38.821 },
+      "freshMigration": {
+        "count": 5,
+        "maxMs": 95.018,
+        "meanMs": 39.095,
+        "p50Ms": 26.241,
+        "p95Ms": 95.018
+      },
+      "restore": {
+        "count": 5,
+        "maxMs": 19.598,
+        "meanMs": 15.748,
+        "p50Ms": 14.761,
+        "p95Ms": 19.598
+      },
+      "taskPageRead": {
+        "count": 250,
+        "maxMs": 0.254,
+        "meanMs": 0.084,
+        "p50Ms": 0.075,
+        "p95Ms": 0.141
+      },
+      "verify": { "count": 20, "maxMs": 7.347, "meanMs": 5.699, "p50Ms": 5.637, "p95Ms": 7.285 }
+    },
+    "webDistribution": { "gzipBytes": 243156, "rawBytes": 773608 }
+  },
+  "runtime": {
+    "architecture": "x64",
+    "cpu": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+    "logicalCpuCount": 12,
+    "node": "v24.14.1",
+    "os": "linux 6.8.0-138-generic"
+  },
+  "workload": {
+    "backupRuns": 5,
+    "restoreRuns": 5,
+    "taskPageReads": 250,
+    "tasks": 250,
+    "verifyRuns": 20
+  }
+}

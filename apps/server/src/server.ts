@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { CORE_API_SCHEMAS } from "@launchpp/api-contracts";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import swagger from "@fastify/swagger";
 import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import type { ServerConfig } from "./config.js";
 import { registerHealthRoutes } from "./health-routes.js";
@@ -59,6 +61,17 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
     max: config.rateLimit.max,
     timeWindow: config.rateLimit.windowMs,
   });
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        description: "Versioned HTTP contract for Launch++ core resources.",
+        title: "Launch++ Core API",
+        version: "1.0.0",
+      },
+      openapi: "3.1.0",
+    },
+  });
+  for (const schema of CORE_API_SCHEMAS) app.addSchema(schema);
 
   app.addHook("onRequest", async (request, reply) => {
     reply.header("x-request-id", request.id);
@@ -131,5 +144,8 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
   });
 
   await registerHealthRoutes(app, readiness);
+  app.get("/api/v1/openapi.json", { schema: { hide: true } }, async (_request, reply) =>
+    reply.type("application/json").send(app.swagger()),
+  );
   return app;
 }

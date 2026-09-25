@@ -1,4 +1,4 @@
-export type ThemeMode = "dark" | "light";
+export type { ThemeAppearance as ThemeMode } from "@launchpp/theme-schema";
 
 export const themeAttribute = "data-launch-theme" as const;
 
@@ -16,5 +16,12 @@ export const semanticThemeValues = Object.freeze({
     elevated: "#141414",
     text: "rgb(255 255 255 / 85%)",
     textMuted: "rgb(255 255 255 / 65%)",
+  }),
+  "high-contrast": Object.freeze({
+    accent: "#69b1ff",
+    background: "#000000",
+    elevated: "#000000",
+    text: "#ffffff",
+    textMuted: "#ffffff",
   }),
 });

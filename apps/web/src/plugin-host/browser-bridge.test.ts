@@ -21,7 +21,7 @@ const context: PluginContext = {
     mode: "dark",
     tokens: { "--launch-color-surface": "#141414" },
   },
-  workspace: { id: "workspace_test" },
+  organization: { id: "organization_test" },
 };
 
 const targetOrigin = "https://plugins.launchpp.test";

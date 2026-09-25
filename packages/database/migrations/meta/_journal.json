@@ -15,6 +15,118 @@
       "when": 1789682477163,
       "tag": "0001_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789806658342,
+      "tag": "0002_daily_darkhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789808720672,
+      "tag": "0003_unique_workspace_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789813889519,
+      "tag": "0004_solid_supernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789815838903,
+      "tag": "0005_task_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789817969476,
+      "tag": "0006_smooth_stone_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789862557206,
+      "tag": "0007_busy_swordsman",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1789863205863,
+      "tag": "0008_perfect_iron_fist",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790160020010,
+      "tag": "0009_organization_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790168030030,
+      "tag": "0010_organization_teams",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790216504164,
+      "tag": "0011_secret_polaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790231170081,
+      "tag": "0012_shiny_vanisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790245396828,
+      "tag": "0013_smart_dark_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1790258451971,
+      "tag": "0014_strange_excalibur",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1790320600019,
+      "tag": "0015_yummy_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1790325535255,
+      "tag": "0016_pretty_tigra",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1790326630009,
+      "tag": "0017_bright_ezekiel_stane",
+      "breakpoints": true
     }
   ]
 }

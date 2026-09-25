@@ -459,7 +459,7 @@ Default outlined input:
 - Warning focus ring: `0 0 0 2px rgba(255, 215, 5, 0.10)`.
 - Border, background, and focus-ring changes use the shared one-second hover transition.
 
-Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump.
+Labels live above controls in most forms. Help and validation text sit below. Prefixes, suffixes, clear controls, and password toggles share the field's vertical alignment and must not make typed text jump. Multiline inputs and mention fields may expose a footer slot for compact actions; the slot sits at the bottom right inside the field while character counts remain aligned to the opposite edge.
 
 ### Select and combobox
 
@@ -705,6 +705,8 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 ## Theming model
 
 The Launch++ theme has three derived layers:
+
+The base runtime ships Light, Dark, and High Contrast as ordinary validated theme documents. It resolves them into the public semantic `--launch-color-*`, `--launch-radius-*`, `--launch-shadow-*`, and `--launch-font-*` variables; internal component tokens are derived from that stable contract. Theme selection must not change layout, density, or component behavior.
 
 1. **Seed tokens** express design intent, such as primary color, base radius, base font size, and control height.
 2. **Map tokens** are algorithmically derived scales and gradients.

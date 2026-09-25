@@ -25,7 +25,14 @@ export type MentionsPlacement = "bottom" | "top";
 export type MentionsSize = "large" | "medium" | "small";
 export type MentionsStatus = "error" | "success" | "validating" | "warning";
 export type MentionsVariant = "borderless" | "filled" | "outlined" | "underlined";
-export type MentionsSemanticName = "clear" | "mention" | "option" | "popup" | "root" | "textarea";
+export type MentionsSemanticName =
+  | "clear"
+  | "footer"
+  | "mention"
+  | "option"
+  | "popup"
+  | "root"
+  | "textarea";
 export type MentionsClassNames = Partial<Record<MentionsSemanticName, string>>;
 export type MentionsStyles = Partial<Record<MentionsSemanticName, CSSProperties>>;
 
@@ -72,12 +79,14 @@ export interface MentionsProps
     | ((info: { readonly props: MentionsProps }) => MentionsClassNames);
   readonly defaultValue?: string;
   readonly filterOption?: false | ((input: string, option: MentionsOption) => boolean);
+  readonly footer?: ReactNode;
   readonly loading?: boolean;
   readonly mentionColor?: string;
   readonly notFoundContent?: ReactNode;
   readonly onChange?: (value: string) => void;
   readonly onClear?: () => void;
   readonly onPopupScroll?: (event: UIEvent<HTMLDivElement>) => void;
+  readonly onPressEnter?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   readonly onResize?: (size: { readonly height: number; readonly width: number }) => void;
   readonly onSearch?: (text: string, prefix: string) => void;
   readonly onSelect?: (option: MentionsOption, prefix: string) => void;
@@ -134,8 +143,15 @@ function findActiveMention(
   return match;
 }
 
-function findMentions(value: string, prefixes: ReadonlyArray<string>) {
+function findMentions(
+  value: string,
+  prefixes: ReadonlyArray<string>,
+  knownValues: ReadonlyArray<string> = [],
+) {
   const mentions: MentionMatch[] = [];
+  const orderedKnownValues = [...new Set(knownValues.filter(Boolean))].sort(
+    (left, right) => right.length - left.length,
+  );
   let cursor = 0;
   while (cursor < value.length) {
     const prefix = prefixes.find((item) => value.startsWith(item, cursor));
@@ -146,6 +162,18 @@ function findMentions(value: string, prefixes: ReadonlyArray<string>) {
     }
 
     const valueStart = cursor + prefix.length;
+    const knownValue = orderedKnownValues.find((candidate) => {
+      if (!value.startsWith(candidate, valueStart)) return false;
+      const next = value[valueStart + candidate.length];
+      return next === undefined || /\s|[.,!?;:)\]}]/.test(next);
+    });
+    if (knownValue) {
+      const end = valueStart + knownValue.length;
+      mentions.push({ end, prefix, start: cursor, value: knownValue });
+      cursor = end;
+      continue;
+    }
+
     let tokenEnd = valueStart;
     while (tokenEnd < value.length && !/\s/.test(value[tokenEnd] ?? "")) tokenEnd += 1;
     let end = tokenEnd;
@@ -183,6 +211,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       defaultValue = "",
       disabled = false,
       filterOption,
+      footer,
       loading = false,
       mentionColor,
       notFoundContent = "No data",
@@ -194,6 +223,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
       onKeyDown,
       onKeyUp,
       onPopupScroll,
+      onPressEnter,
       onResize,
       onScroll,
       onSearch,
@@ -232,6 +262,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
     const resolvedStyles =
       typeof stylesProp === "function" ? stylesProp({ props: mentionsProps }) : (stylesProp ?? {});
     const clearConfig = typeof allowClear === "object" ? allowClear : undefined;
+    const hasFooter = footer !== undefined && footer !== null;
     const showClear =
       allowClear !== false &&
       clearConfig?.disabled !== true &&
@@ -251,8 +282,13 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
     }, [activeMention, filterOption, options]);
     const popupOpen = focused && !dismissed && activeMention !== null;
     const mentionMatches = useMemo(
-      () => findMentions(displayValue, prefixes),
-      [displayValue, prefixes],
+      () =>
+        findMentions(
+          displayValue,
+          prefixes,
+          options.map((option) => option.value),
+        ),
+      [displayValue, options, prefixes],
     );
     const decoratedContent = useMemo(() => {
       const content: ReactNode[] = [];
@@ -362,20 +398,26 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
       onKeyDown?.(event);
-      if (event.defaultPrevented || !popupOpen) return;
-      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-        event.preventDefault();
-        moveActiveOption(event.key === "ArrowDown" ? 1 : -1);
-      } else if (event.key === "Enter" || event.key === "Tab") {
-        const option = filteredOptions[activeIndex];
-        if (option && !option.disabled) {
+      if (event.defaultPrevented) return;
+      if (popupOpen) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
           event.preventDefault();
-          selectOption(option);
+          moveActiveOption(event.key === "ArrowDown" ? 1 : -1);
+        } else if (
+          (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) ||
+          event.key === "Tab"
+        ) {
+          const option = filteredOptions[activeIndex];
+          if (option && !option.disabled) {
+            event.preventDefault();
+            selectOption(option);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          setDismissed(true);
         }
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        setDismissed(true);
       }
+      if (!event.defaultPrevented && event.key === "Enter") onPressEnter?.(event);
     };
 
     const menu = (
@@ -426,6 +468,7 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
           disabled && "is-disabled",
           readOnly && "is-readonly",
           status && `is-${status}`,
+          hasFooter && "has-footer",
           resolvedClassNames.root,
           className,
         )}
@@ -509,6 +552,14 @@ const MentionsRoot = forwardRef<MentionsRef, MentionsProps>(
           >
             {clearConfig?.clearIcon ?? <CloseIcon />}
           </button>
+        ) : null}
+        {hasFooter ? (
+          <div
+            className={classes("launch-ui-mentions-footer", resolvedClassNames.footer)}
+            style={resolvedStyles.footer}
+          >
+            {footer}
+          </div>
         ) : null}
         {popupOpen ? (
           <div

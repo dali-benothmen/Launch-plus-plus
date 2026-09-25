@@ -1,0 +1,21 @@
+{
+  "name": "@launchpp/theme-runtime",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@launchpp/theme-schema": "workspace:*"
+  }
+}

@@ -287,9 +287,6 @@ export function Dropdown(dropdownProps: DropdownProps) {
     if (interaction === "click" && !triggerModes.has("click")) return;
     if (nextOpen) {
       setActiveTrigger("click");
-    } else if (activeTrigger === "contextMenu") {
-      setContextPoint(undefined);
-      setActiveTrigger(trigger[0] ?? "hover");
     }
     updateOpen(nextOpen, interaction === "menu" ? "menu" : "trigger");
   };
@@ -401,6 +398,8 @@ export function Dropdown(dropdownProps: DropdownProps) {
                   resolvedClassNames.root,
                 )}
                 collisionPadding={8}
+                data-launch-ui-popup="dropdown"
+                onClick={(event) => event.stopPropagation()}
                 onPointerEnter={clearCloseTimer}
                 onPointerLeave={closeFromHover}
                 sideOffset={4}
@@ -477,7 +476,20 @@ export function Dropdown(dropdownProps: DropdownProps) {
           align={resolvedPlacement.align}
           avoidCollisions={autoAdjustOverflow}
           className={classes("launch-ui-dropdown-content", resolvedClassNames.root)}
+          data-launch-ui-popup="dropdown"
+          onClick={(event) => event.stopPropagation()}
           collisionPadding={8}
+          onAnimationEnd={(event) => {
+            if (
+              event.currentTarget !== event.target ||
+              event.currentTarget.getAttribute("data-state") !== "closed" ||
+              activeTrigger !== "contextMenu"
+            ) {
+              return;
+            }
+            setContextPoint(undefined);
+            setActiveTrigger(trigger[0] ?? "hover");
+          }}
           onPointerEnter={clearCloseTimer}
           onPointerLeave={closeFromHover}
           onPointerDownOutside={(event) => {

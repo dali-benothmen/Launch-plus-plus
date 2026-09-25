@@ -17,7 +17,7 @@ The first deployment has one server process, one database file, one local data d
 - Preserve a genuinely small, useful project-management core.
 - Make React/TypeScript plugin development feel like ordinary application development while supporting a direct vanilla browser path.
 - Keep local use and VPS hosting operationally simple.
-- Make workspace data portable across installations.
+- Make organization data portable across installations.
 - Allow the product to evolve without making application internals a public API.
 - Contain optional plugin failure so core work remains available.
 - Provide predictable authorization and audit behavior across UI, API, jobs, and plugins.
@@ -58,7 +58,7 @@ flowchart LR
     App -. "signed package discovery and updates" .-> Registry
 ```
 
-Launch++ is the system of record for accounts, workspaces, projects, tasks, comments, extension configuration, and extension-owned data. External integrations are optional and reached only through explicit adapters or plugin network capabilities.
+Launch++ is the system of record for accounts, organizations, projects, tasks, comments, extension configuration, and extension-owned data. External integrations are optional and reached only through explicit adapters or plugin network capabilities.
 
 ## Architecture style
 
@@ -146,7 +146,7 @@ The dispatcher may run as a supervised loop in the server process initially. Its
 | Module | Responsibility | Publishes |
 | --- | --- | --- |
 | Identity | Launch++ user profile linked to authentication identity | Profile lifecycle facts |
-| Workspaces | Workspace lifecycle, ownership, membership, roles | Workspace and membership facts |
+| Organizations | Organization lifecycle, ownership, membership, roles | Organization and membership facts |
 | Projects | Project lifecycle, project policy, ordered statuses | Project/status facts |
 | Tasks | Tasks, subtasks, ordering, assignments, labels, due dates | Task facts |
 | Comments | Task discussion and edit/delete policy | Comment facts |
@@ -200,7 +200,7 @@ flowchart TD
 - The web client imports API contracts and generated clients, never repositories.
 - Database schemas stay in the persistence package and are not domain types.
 - Cross-module reads use services or explicit read-model ports, not another module's Drizzle table.
-- Circular workspace package dependencies fail CI.
+- Circular organization package dependencies fail CI.
 
 ## Technology stack
 
@@ -213,12 +213,12 @@ Versions are pinned during bootstrap. The major-version baseline reflects the se
 | Language | TypeScript, strict mode | One language across app, SDK, tooling, and plugins |
 | Runtime | Node.js 24 LTS | Production LTS and strongest compatibility for the selected server/runtime APIs |
 | Modules | Native ESM | Standard modern Node and browser package model |
-| Package manager | pnpm 12 workspaces | Strict dependencies, workspace protocol, one lockfile |
-| Task orchestration | pnpm workspace scripts initially | Avoid an extra build system until task graph/caching justifies one |
+| Package manager | pnpm 12 organizations | Strict dependencies, organization protocol, one lockfile |
+| Task orchestration | pnpm organization scripts initially | Avoid an extra build system until task graph/caching justifies one |
 | Formatting/linting | Biome plus `tsc --noEmit` | Fast consistent formatting/basic lint with compiler type checks |
 | Versioning | Changesets for publishable SDK packages | Explicit changelogs and independent public package releases |
 
-Node's own release guidance recommends production applications use LTS lines. pnpm provides native monorepo and `workspace:` dependency support. [Node.js releases](https://nodejs.org/en/about/previous-releases), [pnpm workspaces](https://pnpm.io/workspaces)
+Node's own release guidance recommends production applications use LTS lines. pnpm provides native monorepo and `organization:` dependency support. [Node.js releases](https://nodejs.org/en/about/previous-releases), [pnpm organizations](https://pnpm.io/organizations)
 
 ### Backend
 
@@ -228,7 +228,7 @@ Node's own release guidance recommends production applications use LTS lines. pn
 | Contract schemas | TypeBox + JSON Schema | Runtime validation and TypeScript inference from one application-owned schema |
 | API documentation | `@fastify/swagger` + OpenAPI 3.1 output | Human docs and generated clients |
 | Authentication | Better Auth behind `IdentityProvider` port | Self-hosted sessions, framework/database integration, future auth methods |
-| Authorization | Launch++ policy service | Workspace/project/plugin permissions are product rules, not delegated to auth library |
+| Authorization | Launch++ policy service | Organization/project/plugin permissions are product rules, not delegated to auth library |
 | Database | SQLite with WAL, foreign keys, busy timeout | Minimal local/VPS operations and transactional durability |
 | SQLite driver | `better-sqlite3` | Mature Node driver with transaction and worker support; package prebuilds in distribution |
 | ORM/query builder | Drizzle stable line | Typed schema/query layer with reviewable SQL and migration tooling |
@@ -291,7 +291,7 @@ A typical mutation has explicit dependencies and one transaction boundary:
 ```ts
 type MoveTask = (input: {
   actor: Actor;
-  workspaceId: WorkspaceId;
+  organizationId: OrganizationId;
   taskId: TaskId;
   statusId: StatusId;
   expectedRevision: number;
@@ -309,7 +309,7 @@ SQLite writes are serialized intentionally through short transactions and a conf
 
 ### Authentication and identity
 
-Better Auth owns credentials, verification, linked identity providers, and sessions. Launch++ owns profiles, workspace membership, roles, invitation state, and resource authorization. An adapter maps an authenticated Better Auth user ID to a Launch++ actor.
+Better Auth owns credentials, verification, linked identity providers, and sessions. Launch++ owns profiles, organization membership, roles, invitation state, and resource authorization. An adapter maps an authenticated Better Auth user ID to a Launch++ actor.
 
 The web app uses secure, HTTP-only, same-site cookies on the same origin as the API. API tokens and external identity providers are later auth adapters, not alternative authorization systems. The selected auth library has an official Fastify integration and database-backed session model. [Better Auth Fastify integration](https://better-auth.com/docs/integrations/fastify), [Better Auth database model](https://better-auth.com/docs/concepts/database)
 
@@ -319,13 +319,13 @@ Every use case evaluates:
 
 ```text
 installation policy
-  ∩ actor identity and workspace role
+  ∩ actor identity and organization role
   ∩ resource/project access
   ∩ operation-specific policy
   ∩ plugin grant and enabled scope, when applicable
 ```
 
-Authorization uses authoritative IDs loaded from storage. A project ID or workspace ID received from the browser or plugin is context, never proof of access. Query services apply visibility filters before pagination and counting so hidden rows cannot leak through totals or timing-sensitive follow-up queries.
+Authorization uses authoritative IDs loaded from storage. A project ID or organization ID received from the browser or plugin is context, never proof of access. Query services apply visibility filters before pagination and counting so hidden rows cannot leak through totals or timing-sensitive follow-up queries.
 
 ### Outbox, jobs, and event delivery
 
@@ -345,7 +345,7 @@ No module promises exactly-once external side effects. Integrations use provider
 
 ### SPA shell
 
-The authenticated product is a client-rendered SPA. Search-engine rendering has little value for private workspace screens, while one static build simplifies local hosting, plugin surface composition, and a future desktop wrapper. A separate marketing site can use a different rendering strategy later.
+The authenticated product is a client-rendered SPA. Search-engine rendering has little value for private organization screens, while one static build simplifies local hosting, plugin surface composition, and a future desktop wrapper. A separate marketing site can use a different rendering strategy later.
 
 The Fastify server serves fingerprinted static assets and the SPA fallback from the same origin. This avoids production CORS for the main client and simplifies secure cookie sessions.
 
@@ -359,14 +359,14 @@ The product-level page hierarchy and responsive behavior are defined in [UI info
 /sign-up
 /recover
 /invite/:token
-/w/:workspaceSlug/home
-/w/:workspaceSlug/members
-/w/:workspaceSlug/p/:projectKey/:viewId
-/w/:workspaceSlug/p/:projectKey/tasks/:taskId
-/w/:workspaceSlug/x/:pluginId/:pagePath
-/w/:workspaceSlug/p/:projectKey/x/:pluginId/:pagePath
-/w/:workspaceSlug/settings/:section
-/w/:workspaceSlug/p/:projectKey/settings/:section
+/w/:organizationSlug/home
+/w/:organizationSlug/members
+/w/:organizationSlug/p/:projectKey/:viewId
+/w/:organizationSlug/p/:projectKey/tasks/:taskId
+/w/:organizationSlug/x/:pluginId/:pagePath
+/w/:organizationSlug/p/:projectKey/x/:pluginId/:pagePath
+/w/:organizationSlug/settings/:section
+/w/:organizationSlug/p/:projectKey/settings/:section
 /account/:section
 /admin/:section
 ```
@@ -405,7 +405,7 @@ Comments, destructive actions, plugin commands with external effects, and ambigu
 The [plugin system design](./plugin-system-design.md) is the detailed runtime contract. [Plugin storage](./plugin-storage-design.md) defines typed data and automatic safe schema evolution, while the [plugin CLI](./plugin-cli-design.md) defines the author workflow. At the system level the host has seven cooperating parts:
 
 1. **Package manager** validates and stages immutable archives.
-2. **Extension registry** resolves enabled declarative contributions for the current workspace/project.
+2. **Extension registry** resolves enabled declarative contributions for the current organization/project.
 3. **UI bridge** initializes sandboxed surfaces and validates every message.
 4. **Capability broker** maps allowed SDK calls to ordinary application services.
 5. **Runtime supervisor** invokes server handlers with time, memory, call, and output budgets.
@@ -420,7 +420,7 @@ The browser confinement proof is accepted. The QuickJS/WASM spike passed its syn
 
 The [theme system design](./theme-system-design.md) is the detailed contract. Theme JSON is validated on import, normalized, stored immutably, resolved against a built-in base, and delivered as CSS variables. Built-in themes use the same resolver. Sandboxed plugin UI receives the resolved theme through initialization and change messages.
 
-Theme selection is a user preference with workspace defaults. Invalid or missing themes fall back to a built-in appearance. No theme value is concatenated into arbitrary raw CSS.
+Theme selection is a user preference with organization defaults. Invalid or missing themes fall back to a built-in appearance. No theme value is concatenated into arbitrary raw CSS.
 
 ## Core request flows
 
@@ -560,7 +560,7 @@ CI and runtime tests should continuously verify:
 
 - No dependency cycles or forbidden imports between modules.
 - Every HTTP route has request and response schemas.
-- Every workspace-owned query includes a workspace/visibility constraint.
+- Every organization-owned query includes an organization/visibility constraint.
 - Every mutation has explicit actor context and an authorization test.
 - Domain write and outbox append occur in one transaction.
 - External plugin fixtures cannot import app packages or access database/process APIs.
@@ -606,7 +606,7 @@ The architecture is ready to guide implementation, but these items require proto
 4. Better Auth + Fastify + Drizzle migration ownership and session revocation tests.
 5. Vite external plugin build reproducibility and browser dependency restrictions.
 6. Cross-frame theme propagation, keyboard focus, deep links, and error recovery.
-7. Workspace export/import with missing or incompatible plugins.
+7. Organization export/import with missing or incompatible plugins.
 8. Restore and failed-upgrade drills using the production package.
 
 Passing these spikes may change an adapter or limit. It should not change the central contracts: domain-owned invariants, versioned APIs, capability-brokered plugins, declarative themes, durable events, and a simple portable deployment.

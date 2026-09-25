@@ -185,7 +185,7 @@ Sprint Planner development host
 ✓ Data schema generated: 2 collections
 ✓ Browser entry built
 ✓ Server handlers built
-✓ Fixture workspace ready
+✓ Fixture organization ready
 
 Open: http://localhost:4173/dev/acme.sprint-planner
 Watching for changes…
@@ -194,10 +194,10 @@ Watching for changes…
 The host provides:
 
 - Framework HMR when supported, with safe iframe reload as the fallback
-- Seeded users, workspaces, projects, and tasks
+- Seeded users, organizations, projects, and tasks
 - Temporary isolated plugin collections
 - Light, dark, and high-contrast preview
-- Workspace role and permission simulation
+- Organization role and permission simulation
 - Registered contribution/slot inspector
 - Browser bridge and server invocation trace
 - Scoped structured logs
@@ -208,7 +208,7 @@ The host provides:
 
 Development uses the production protocol, capability checks, sandbox flags, and runtime limits. The dev host may improve source maps and diagnostics but must not grant filesystem/database access that disappears after packaging.
 
-By default, plugin data lives in an isolated disposable profile under the project's ignored `.launchpp/dev/` directory. `--fresh` resets it after an explicit scoped confirmation. A named profile lets authors retain fixtures across restarts without touching a real Launch++ workspace.
+By default, plugin data lives in an isolated disposable profile under the project's ignored `.launchpp/dev/` directory. `--fresh` resets it after an explicit scoped confirmation. A named profile lets authors retain fixtures across restarts without touching a real Launch++ organization.
 
 ### Connecting to an existing installation
 
@@ -218,9 +218,9 @@ An installation operator can enable **Settings → Developer → Developer Mode*
 pnpm dev --connect https://launch.example
 ```
 
-The CLI requests a short-lived one-time pairing code and opens the installation in a browser for confirmation. After the user confirms the plugin ID, requested permissions and development workspace, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
+The CLI requests a short-lived one-time pairing code and opens the installation in a browser for confirmation. After the user confirms the plugin ID, requested permissions and development organization, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
 
-The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, is scoped to a dedicated development workspace, expires automatically and may be revoked from either the CLI or Settings. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
+The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, is scoped to a dedicated development organization, expires automatically and may be revoked from either the CLI or Settings. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
 
 The connection uses the same sandbox, broker, permissions, data boundaries, runtime quotas and network allowlists as a packaged plugin. Initial grants require approval and a manifest permission change pauses the session for another review. Developer Mode is an unsigned, temporary delivery channel—not a trusted mode and not a security bypass.
 
@@ -378,7 +378,7 @@ The command verifies plugin identity, version and archive digest, extracts its c
 Runs ordinary Vitest tests plus platform fixtures selected by capabilities:
 
 - Package installs and registers outside the Launch++ monorepo.
-- Collection data is isolated by workspace/plugin/scope.
+- Collection data is isolated by organization/plugin/scope.
 - Disabled/revoked plugins cannot read or write.
 - Generated hooks and handlers agree with schema types.
 - Commands validate input/output and preserve idempotency.
@@ -564,7 +564,7 @@ Registry/marketplace commands naturally transmit packages and identity only afte
 - [ ] `pack` produces a deterministic archive containing static schemas and compiled bundles only.
 - [ ] `inspect` can explain an archive's identity, permissions, data, code surfaces, and integrity without executing it.
 - [ ] A packaged reference plugin passes installation tests outside the monorepo.
-- [ ] CLI diagnostics expose no credentials or real workspace content.
+- [ ] CLI diagnostics expose no credentials or real organization content.
 
 ## Decisions captured
 

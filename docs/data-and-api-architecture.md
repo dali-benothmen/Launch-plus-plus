@@ -5,7 +5,7 @@ Status: proposed logical model and public API conventions. Physical migrations a
 ## Design goals
 
 - Keep core records relational, explicit, and easy to export.
-- Enforce workspace ownership and authorization in every access path.
+- Enforce organization ownership and authorization in every access path.
 - Use one write model for board, list, search, activity, plugins, and future clients.
 - Make concurrent edits detectable rather than silently overwriting them.
 - Commit domain changes and durable follow-up work atomically.
@@ -86,55 +86,69 @@ Better Auth owns its user, session, linked account, and verification tables. Lau
 - `avatar_asset_id`, nullable
 - `locale`
 - `time_zone`
+- `current_organization_id`, nullable — the user's selected active organization
 - `created_at`, `updated_at`, `revision`
 
 Authentication schema changes are generated/reviewed alongside application migrations. An auth library migration is never run independently against production without backup and compatibility tests.
 
-### Workspaces and membership
+### Organizations and membership
 
-`workspaces`
+`organizations`
 
 - `id`, `slug`, `name`
 - `created_by_user_id`
 - `created_at`, `updated_at`, `archived_at`, `deleted_at`
 - `revision`
 
-`workspace_members`
+`organization_members`
 
-- `workspace_id`, `user_id` — composite primary key
+- `organization_id`, `user_id` — composite primary key
 - `role` — `owner`, `admin`, or `member`
 - `state` — `active` or `suspended`
 - `joined_at`, `updated_at`
 
-`workspace_invitations`
+`organization_invitations`
 
-- `id`, `workspace_id`, normalized `email`, intended `role`
+- `id`, `organization_id`, normalized `email`, intended `role`
 - `token_hash`, never the raw invitation token
 - `invited_by_user_id`, `expires_at`, `accepted_at`, `revoked_at`
 
 Invariants:
 
-- Every active workspace has at least one owner.
+- Every active organization has at least one owner.
 - The final owner cannot leave, be removed, or be demoted without an ownership transfer.
-- Workspace slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
+- Organization names are case-insensitively unique within an installation.
+- Organization slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
 - Membership changes invalidate relevant sessions/query scopes and produce audit activity.
 
 ### Projects and statuses
 
+`project_folders`
+
+- `id`, `organization_id`, `name`, `position`
+- `created_by_user_id`, `created_at`, `updated_at`, `revision`
+- one navigation level only; removing a folder moves its projects to the ungrouped scope
+
 `projects`
 
-- `id`, `workspace_id`
-- `key` — short uppercase human prefix unique in the workspace
+- `id`, `organization_id`
+- `key` — short uppercase human prefix unique in the organization
 - `slug`, `name`, `description`
-- `access` — `workspace` initially; `restricted` reserved for the later project-membership feature
+- `access` — `organization` initially; `restricted` reserved for the later project-membership feature
 - `next_task_number`
 - `created_by_user_id`
 - `created_at`, `updated_at`, `archived_at`, `deleted_at`
 - `revision`
 
+`project_preferences`
+
+- `user_id`, `project_id`
+- `favorite`, optional `last_opened_at`, `updated_at`
+- personal navigation state only; it does not alter shared project ordering
+
 `project_statuses`
 
-- `id`, `workspace_id`, `project_id`
+- `id`, `organization_id`, `project_id`
 - `name`, `color`, optional `icon`
 - `position`
 - `category` — `backlog`, `active`, or `done`
@@ -143,7 +157,9 @@ Invariants:
 
 Invariants:
 
-- A status and task always belong to the same workspace and project.
+- A status and task always belong to the same organization and project.
+- A folder and its projects always belong to the same organization.
+- Active folder, project, and status positions are unique within their ordering scope.
 - A project retains at least one active status while active tasks exist.
 - Removing a used status requires moving its tasks in the same transaction or archiving the status.
 - `next_task_number` is incremented in the task-creation transaction; numbers are never reused.
@@ -153,7 +169,7 @@ Invariants:
 
 `tasks`
 
-- `id`, `workspace_id`, `project_id`, `number`
+- `id`, `organization_id`, `project_id`, `number`
 - `parent_task_id`, nullable
 - `status_id`
 - `title`, `description_markdown`
@@ -165,26 +181,26 @@ Invariants:
 
 `task_assignees`
 
-- `workspace_id`, `task_id`, `user_id`
+- `organization_id`, `task_id`, `user_id`
 - `assigned_by_user_id`, `assigned_at`
 - unique on task/user
 
 `labels`
 
-- `id`, `workspace_id`, optional `project_id`
+- `id`, `organization_id`, optional `project_id`
 - `name`, normalized comparison key, `color`
 - `created_at`, `updated_at`, `archived_at`, `revision`
 
 `task_labels`
 
-- `workspace_id`, `task_id`, `label_id`, `applied_at`, `applied_by_user_id`
+- `organization_id`, `task_id`, `label_id`, `applied_at`, `applied_by_user_id`
 - unique on task/label
 
 Invariants:
 
-- Parent and child task are in the same workspace and project.
+- Parent and child task are in the same organization and project.
 - v1 supports one subtask level; a task with a parent cannot itself be a parent.
-- A task's assignees are active members of its workspace and allowed in the project.
+- A task's assignees are active members of its organization and allowed in the project.
 - Project-scoped labels cannot be attached outside their project.
 - A due date is a calendar date. Due-time reminders are a later capability or plugin.
 - Board and list reads query the same task rows; a move never copies a task between view-specific tables.
@@ -200,19 +216,19 @@ When rank space becomes too dense, a bounded maintenance operation rebalances on
 
 `comments`
 
-- `id`, `workspace_id`, `task_id`
+- `id`, `organization_id`, `task_id`
 - `author_user_id`
 - `body_markdown`
 - `created_at`, `updated_at`, `deleted_at`
 - `revision`
 
-Comment edits preserve authorship and generate activity. A recoverably deleted comment retains a tombstone visible according to policy; permanent deletion follows workspace retention. Mention parsing produces notification work after commit and cannot block saving the comment.
+Comment edits preserve authorship and generate activity. A recoverably deleted comment retains a tombstone visible according to policy; permanent deletion follows organization retention. Mention parsing produces notification work after commit and cannot block saving the comment.
 
 ### Activity and audit
 
 `activities`
 
-- `id`, `workspace_id`
+- `id`, `organization_id`
 - optional `project_id`, `task_id`
 - `actor_type`, `actor_id`
 - `action`, `subject_type`, `subject_id`
@@ -223,11 +239,13 @@ Activity is an append-oriented human history created from successful domain chan
 
 Security-relevant installation and permission changes additionally write a separate audit stream with stricter retention and operator visibility, described in the security document.
 
+The initial `audit_entries` table records installation/organization scope, actor, operation, target, outcome, bounded JSON metadata, occurrence time, and correlation ID. First-owner setup and organization creation write these audit facts in the same transaction as their domain state.
+
 ### Notifications
 
 `notifications`
 
-- `id`, `workspace_id`, `recipient_user_id`
+- `id`, `organization_id`, `recipient_user_id`
 - `type`, bounded `data`
 - `created_at`, `read_at`, optional `emailed_at`
 - `source_event_id`
@@ -240,7 +258,7 @@ Notifications are derived delivery records. Rebuilding or losing a non-critical 
 
 `outbox_events`
 
-- `id`, `workspace_id`, `type`, `version`
+- `id`, `organization_id`, `type`, `version`
 - `aggregate_type`, `aggregate_id`, `aggregate_revision`
 - `actor_type`, `actor_id`, `source_plugin_id`
 - `causation_id`, `correlation_id`
@@ -258,7 +276,7 @@ Notifications are derived delivery records. Rebuilding or losing a non-critical 
 
 `jobs`
 
-- `id`, `workspace_id`, owner type/ID
+- `id`, `organization_id`, owner type/ID
 - `type`, `version`, validated `payload`
 - `state`, `priority`, `available_at`
 - `attempts`, `max_attempts`
@@ -268,7 +286,7 @@ Notifications are derived delivery records. Rebuilding or losing a non-critical 
 
 `idempotency_records`
 
-- scope: installation/workspace/actor/plugin/command
+- scope: installation/organization/actor/plugin/command
 - `key`, validated input hash
 - state and stored response/status
 - `created_at`, `expires_at`
@@ -299,14 +317,14 @@ The plugin document defines lifecycle semantics. Logical records include:
 
 - `plugin_packages` — immutable manifest, version, digest, provenance, signature status, package location.
 - `installation_plugins` — operator allow/deny state and package availability.
-- `workspace_plugins` — selected version, grants, enablement, installed schema digest, health.
+- `organization_plugins` — selected version, grants, enablement, installed schema digest, health.
 - `project_plugins` — project activation and non-secret settings.
 - `plugin_field_definitions` and `plugin_field_values` — typed native extensions to core entities.
 - `plugin_collection_definitions` and `plugin_records` — namespaced private storage with declared indexes.
 - `plugin_secret_references` — metadata only; ciphertext belongs to the vault.
 - `plugin_invocations` — bounded diagnostic history, timings, result state, and redacted failure.
 
-Every plugin record is automatically scoped by workspace and plugin identity. Parent-scoped records use host-maintained relations so access, moves, archive, retention, and export do not depend on copied IDs supplied by plugin code.
+Every plugin record is automatically scoped by organization and plugin identity. Parent-scoped records use host-maintained relations so access, moves, archive, retention, and export do not depend on copied IDs supplied by plugin code.
 
 Plugin JSON schemas and data are bounded by depth, property count, string size, total record size, index count, and query limits. Arbitrary recursive or computationally expensive schemas are rejected during package validation. Plugin packages contain no SQL, database drivers, or author-maintained migration files.
 
@@ -314,7 +332,7 @@ Plugin JSON schemas and data are bounded by depth, property count, string size, 
 
 - `theme_sources` — immutable source JSON or installed package reference, identity, version, digest.
 - `installed_themes` — installation availability and provenance.
-- `workspace_theme_defaults` — workspace recommendations/default family.
+- `organization_theme_defaults` — organization recommendations/default family.
 - `user_theme_preferences` — explicit theme or follow-system selection.
 
 Resolved CSS is derived and cacheable; the source plus schema version remains canonical. A theme does not receive tables, secrets, or executable records.
@@ -323,12 +341,12 @@ Resolved CSS is derived and cacheable; the source plus schema version remains ca
 
 Initial indexes should cover actual access paths:
 
-- Membership by user and workspace.
-- Projects by workspace, archive state, and normalized name/key.
+- Membership by user and organization.
+- Projects by organization, archive state, and normalized name/key.
 - Statuses by project and ordered position.
 - Tasks by project/status/position, project/update time, assignee joins, label joins, parent, due date, and deletion state.
 - Comments by task and creation order.
-- Activity by workspace/project/task and reverse occurrence order.
+- Activity by organization/project/task and reverse occurrence order.
 - Notifications by recipient/read state and reverse creation order.
 - Outbox/deliveries/jobs by runnable state and `available_at`.
 - Plugin records by namespace, parent, collection, and declared bounded indexes.
@@ -347,7 +365,7 @@ The indexing pipeline is:
 2. The search consumer loads the current permission-relevant document.
 3. It upserts or deletes the corresponding FTS row.
 4. Search queries retrieve candidate IDs from FTS.
-5. A relational query joins those IDs to current workspace/project visibility before returning results.
+5. A relational query joins those IDs to current organization/project visibility before returning results.
 
 The client may briefly see eventual search lag after a mutation, while direct task views remain immediately consistent. An operator can rebuild the index entirely from core tables. Plugin fields become searchable only if their declaration permits it and their type has a supported tokenizer/normalizer.
 
@@ -364,20 +382,20 @@ The client may briefly see eventual search lag after a mutation, while direct ta
 - Generated internal TypeScript client consumed by the web app
 - Explicit deprecation headers and release notes for retiring behavior
 
-Authentication handlers may live under `/api/auth/*` according to the auth adapter. They do not define workspace authorization.
+Authentication handlers may live under `/api/auth/*` according to the auth adapter. They do not define organization authorization.
 
 ### Proposed resource families
 
 | Area | Representative endpoints |
 | --- | --- |
-| Session/profile | `GET /me`, `PATCH /me`, `GET /me/workspaces` |
-| Workspaces | `POST /workspaces`, `GET/PATCH /workspaces/:id`, archive/restore/export operations |
+| Session/profile | `GET /me`, `PATCH /me`, `GET /me/organizations` |
+| Organizations | `POST /organizations`, `GET/PATCH /organizations/:id`, archive/restore/export operations |
 | Membership | list, invite, accept, change role, suspend/remove |
 | Projects | list/create/get/patch/archive/restore |
 | Statuses | list/create/patch/reorder/archive |
 | Tasks | list/create/get/patch/archive/restore, assign, label, reorder/move |
 | Comments | list/create/patch/delete/restore |
-| Activity | workspace/project/task feeds |
+| Activity | organization/project/task feeds |
 | Search | scoped query with typed result families |
 | Notifications | list, unread count, mark read |
 | Plugins | upload/stage, inspect, approve, enable, configure, update, disable, export data, purge |
@@ -392,7 +410,7 @@ Endpoint names are provisional until route schemas are implemented. Dedicated ac
 ```json
 {
   "id": "01995cd8-7854-7b10-9ea8-a22f504c18b8",
-  "workspaceId": "01995cd6-b694-7e78-83d8-6454c38daa46",
+  "organizationId": "01995cd6-b694-7e78-83d8-6454c38daa46",
   "projectId": "01995cd7-421b-7cb1-899d-9a0136b9e271",
   "reference": "APP-42",
   "title": "Design plugin permission review",
@@ -449,11 +467,11 @@ Validation errors include field paths and stable reasons. Production responses d
 }
 ```
 
-A cursor binds to the sort fields, last record ID, workspace, and normalized filter shape. It is not trusted for authorization. Changing filters starts a new cursor. Default and maximum page sizes are route-specific and enforced server-side.
+A cursor binds to the sort fields, last record ID, organization, and normalized filter shape. It is not trusted for authorization. Changing filters starts a new cursor. Default and maximum page sizes are route-specific and enforced server-side.
 
 ### Idempotency
 
-Create endpoints, plugin commands, imports, and high-value batch operations accept `Idempotency-Key`. The server binds a key to actor, workspace, operation, and a hash of validated input. Reusing the key with different input is an error; replaying identical input returns the stored result during the documented retention window.
+Create endpoints, plugin commands, imports, and high-value batch operations accept `Idempotency-Key`. The server binds a key to actor, organization, operation, and a hash of validated input. Reusing the key with different input is an error; replaying identical input returns the stored result during the documented retention window.
 
 Simple patches also use revision preconditions. Idempotency prevents duplicate effects after retry; revision checks prevent lost concurrent updates. They solve different problems.
 
@@ -466,7 +484,7 @@ Batch endpoints have explicit maximum sizes and per-item results. Atomic batches
 The web client opens one authenticated SSE connection per active browser session:
 
 ```text
-GET /api/v1/events?workspaceId=<id>
+GET /api/v1/events?organizationId=<id>
 Accept: text/event-stream
 Last-Event-ID: <cursor>
 ```
@@ -478,7 +496,7 @@ The server emits small versioned envelopes:
   "id": "evt_01995ce1",
   "type": "task.updated",
   "version": "1",
-  "workspaceId": "01995cd6-b694-7e78-83d8-6454c38daa46",
+  "organizationId": "01995cd6-b694-7e78-83d8-6454c38daa46",
   "resource": {
     "type": "task",
     "id": "01995cd8-7854-7b10-9ea8-a22f504c18b8",
@@ -489,7 +507,7 @@ The server emits small versioned envelopes:
 
 The envelope normally tells the client what became stale; it does not stream a full task containing fields the current connection may no longer access. The server rechecks membership on connection, periodically, and on relevant membership events. Revocation closes the stream and ordinary refetches return authorization errors.
 
-Clients reconnect with exponential backoff and `Last-Event-ID`. If retained history cannot cover the cursor, the server sends a reset signal and the client invalidates workspace queries. SSE is an optimization for freshness, not a condition for correctness.
+Clients reconnect with exponential backoff and `Last-Event-ID`. If retained history cannot cover the cursor, the server sends a reset signal and the client invalidates organization queries. SSE is an optimization for freshness, not a condition for correctness.
 
 ## Internal and plugin contracts
 
@@ -505,7 +523,7 @@ Deletion is explicit:
 - **Recoverable delete** hides it from normal use for a configured retention period.
 - **Permanent purge** removes the core entity and cascades host-linked extension data after retention and authorization checks.
 
-The initial default recoverable retention can be 30 days, but it remains configurable installation policy and must be shown to operators. Workspace deletion requires ownership confirmation, a recovery window, and a final purge job. Legal-hold and enterprise retention are later policies.
+The initial default recoverable retention can be 30 days, but it remains configurable installation policy and must be shown to operators. Organization deletion requires ownership confirmation, a recovery window, and a final purge job. Legal-hold and enterprise retention are later policies.
 
 Plugins cannot preserve hidden copies of purged parent data through parent-scoped storage. External systems may already have received data through an approved integration; the uninstall/export UI must explain this boundary.
 
@@ -525,7 +543,7 @@ Plugins cannot preserve hidden copies of purged parent data through parent-scope
 
 Plugin data does not use author-written migrations. The host compares the installed canonical schema digest with the uploaded target and classifies every change.
 
-Safe additive changes—such as optional/defaulted fields, new collections, enum expansion and compatible indexes—are prepared automatically under a workspace/plugin lock. Defaults are resolved lazily when possible. Stable collection/field IDs and deprecation preserve old data.
+Safe additive changes—such as optional/defaulted fields, new collections, enum expansion and compatible indexes—are prepared automatically under an organization/plugin lock. Defaults are resolved lazily when possible. Stable collection/field IDs and deprecation preserve old data.
 
 Destructive or ambiguous changes—such as removing stored fields, changing a type in place, narrowing constraints over incompatible data, changing ownership/scope or adding uniqueness over duplicates—are rejected before activation. A small host-owned catalog may later perform explicit previewed conversions, but uploaded plugins never execute arbitrary transformation code or SQL against storage.
 
@@ -546,11 +564,11 @@ A full backup contains:
 
 Copying only the main SQLite file while WAL writes are active is not a supported backup procedure.
 
-### Portable workspace export
+### Portable organization export
 
-A workspace export contains versioned, portable records:
+An organization export contains versioned, portable records:
 
-- Workspace, project, task, comment, label, membership reference, and settings data
+- Organization, project, task, comment, label, membership reference, and settings data
 - Plugin enablement, manifest identity, compiled schema digests, fields, and plugin records
 - Theme selection metadata
 - Optional eligible assets
@@ -559,7 +577,7 @@ A workspace export contains versioned, portable records:
 
 It omits password/session data, raw invitation tokens, server configuration, and secrets. Imported integrations require reconnection. Plugin archives may be included only according to package license and trust policy; importing data never executes them automatically.
 
-Import validates the complete archive into a staging area, resolves identity/member mapping, reports conflicts, writes under one coordinated import operation, and activates only after integrity checks. A failed import leaves the target workspace absent or clearly staged, never half-usable.
+Import validates the complete archive into a staging area, resolves identity/member mapping, reports conflicts, writes under one coordinated import operation, and activates only after integrity checks. A failed import leaves the target organization absent or clearly staged, never half-usable.
 
 ## PostgreSQL evolution criteria
 
@@ -574,8 +592,8 @@ The migration requires a real adapter, dual-dialect migration strategy, behavior
 
 ## Data architecture acceptance criteria
 
-- [ ] Every core row is traceable to an owning workspace or installation scope.
-- [ ] Cross-workspace foreign references are rejected by service and database constraints where practical.
+- [ ] Every core row is traceable to an owning organization or installation scope.
+- [ ] Cross-organization foreign references are rejected by service and database constraints where practical.
 - [ ] Board and list show the same task state after every supported mutation.
 - [ ] Concurrent task edits produce a structured conflict, not silent data loss.
 - [ ] Task mutation and outbox fact survive or roll back together.
@@ -584,6 +602,6 @@ The migration requires a real adapter, dual-dialect migration strategy, behavior
 - [ ] Plugin storage cannot query another plugin namespace or forge parent access.
 - [ ] Plugin authors add/evolve collections without SQL or migration files; unsafe schema changes are rejected before data changes.
 - [ ] A live backup restores into an integrity-checked usable installation.
-- [ ] Workspace export/import preserves IDs, relations, dormant plugin data, and version metadata.
+- [ ] Organization export/import preserves IDs, relations, dormant plugin data, and version metadata.
 - [ ] Permanent parent deletion removes host-linked plugin data according to retention policy.
 - [ ] All list endpoints enforce bounded cursor pagination and indexed access paths.

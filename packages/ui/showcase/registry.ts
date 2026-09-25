@@ -14,6 +14,7 @@ import { drawerShowcase } from "./components/drawer.showcase.js";
 import { dropdownShowcase } from "./components/dropdown.showcase.js";
 import { dropdownMenuShowcase } from "./components/dropdown-menu.showcase.js";
 import { emptyShowcase } from "./components/empty.showcase.js";
+import { emojiPickerShowcase } from "./components/emoji-picker.showcase.js";
 import { flexShowcase } from "./components/flex.showcase.js";
 import { floatButtonShowcase } from "./components/float-button.showcase.js";
 import { formShowcase } from "./components/form.showcase.js";
@@ -75,6 +76,7 @@ export const componentRegistry = defineShowcases([
   autoCompleteShowcase,
   checkboxShowcase,
   datePickerShowcase,
+  emojiPickerShowcase,
   formShowcase,
   inputShowcase,
   inputNumberShowcase,

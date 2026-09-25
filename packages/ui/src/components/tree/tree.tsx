@@ -574,8 +574,11 @@ function TreeInner(treeProps: TreeProps, forwardedRef: ForwardedRef<TreeRef>) {
         const halfChecked = checkState.halfChecked.has(node.key);
         const loading = loadingKeys.has(node.key);
         const hasChildren = node.children.length > 0;
-        const expandable = hasChildren || (loadData !== undefined && node.data.isLeaf !== true);
-        const isLeaf = node.data.isLeaf === true || !expandable;
+        const expandable =
+          node.data.isLeaf === false ||
+          hasChildren ||
+          (loadData !== undefined && node.data.isLeaf !== true);
+        const isLeaf = node.data.isLeaf ?? !expandable;
         const renderProps: TreeNodeRenderProps = {
           checked,
           data: node.data,
@@ -762,23 +765,34 @@ function TreeInner(treeProps: TreeProps, forwardedRef: ForwardedRef<TreeRef>) {
                 </span>
               ) : null}
               {showIcon || showLine ? (
-                <span aria-hidden="true" className="launch-ui-tree-icon">
+                <span
+                  aria-hidden="true"
+                  className={classes(
+                    "launch-ui-tree-icon",
+                    expandAction === "click" && expandable && "is-expandable",
+                  )}
+                  onClick={
+                    expandAction === "click" && expandable
+                      ? (event) => {
+                          event.stopPropagation();
+                          void toggleExpanded(node);
+                        }
+                      : undefined
+                  }
+                >
                   {displayedIcon}
                 </span>
               ) : null}
-              <button
+              <span
                 className={classes("launch-ui-tree-title", resolvedClassNames.itemTitle)}
-                disabled={nodeDisabled}
                 onClick={(event) => {
                   selectNode(node, event);
                   if (expandAction === "click" && expandable) void toggleExpanded(node);
                 }}
                 style={resolvedStyles.itemTitle}
-                tabIndex={-1}
-                type="button"
               >
                 {title}
-              </button>
+              </span>
             </div>
             {hasChildren ? (
               <div

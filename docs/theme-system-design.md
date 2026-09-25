@@ -1,12 +1,12 @@
 # Launch++ theme system
 
-Status: architecture proposal for review. No theme runtime, schema, or authoring tools have been implemented.
+Status: base theme contract and runtime implemented. JSON import, server persistence, preview tooling, and the authoring CLI remain later delivery work.
 
 This subsystem design is part of the [Launch++ architecture documentation](./README.md). The [system architecture](./system-architecture.md) defines the application host; this document owns theme authoring, validation, resolution, and distribution.
 
 Launch++ themes should be easy to create, inspect, share, and remove. A basic theme is one JSON file containing metadata and semantic design tokens. Launch++ validates that file, resolves any missing optional values from the base theme, and exposes the result as CSS custom properties to the application and plugin UI.
 
-Themes change presentation, not application behavior. They cannot execute JavaScript, register features, read workspace data, alter permissions, or inject unrestricted CSS.
+Themes change presentation, not application behavior. They cannot execute JavaScript, register features, read organization data, alter permissions, or inject unrestricted CSS.
 
 ## Product principles
 
@@ -15,7 +15,7 @@ Themes change presentation, not application behavior. They cannot execute JavaSc
 3. **Safe by construction.** Theme values are validated and converted to a fixed set of CSS variables. Themes cannot target arbitrary selectors or alter the DOM.
 4. **Core and plugins look coherent.** Ant Design-backed `@launchpp/ui` components and browser-standard `@launchpp/ui-tokens` consume the same resolved theme as the application. Every custom plugin browser surface receives the resolved variables automatically.
 5. **Accessibility is visible.** The editor and installer report contrast and legibility problems before activation.
-6. **Appearance is personal by default.** A workspace may recommend or provide themes, but each user chooses their active appearance unless an administrator explicitly enforces one.
+6. **Appearance is personal by default.** An organization may recommend or provide themes, but each user chooses their active appearance unless an administrator explicitly enforces one.
 7. **The format can evolve.** Theme schema versions are separate from Launch++ application versions and plugin package versions.
 
 ## Authoring model
@@ -249,11 +249,11 @@ The active selection is a user preference synchronized with that user's account.
 
 - A specific installed theme
 - Follow system, using matching light and dark variants when available
-- Workspace default, while still allowing a personal override
+- Organization default, while still allowing a personal override
 
-A workspace administrator may install themes and select a workspace default. Enforced workspace branding can be considered later, but should not remove the high-contrast escape hatch or override individual accessibility needs.
+An organization administrator may install themes and select an organization default. Enforced organization branding can be considered later, but should not remove the high-contrast escape hatch or override individual accessibility needs.
 
-If an active custom theme is removed, incompatible, or unavailable, Launch++ immediately falls back to the corresponding built-in theme and informs the user. Removing a theme never deletes unrelated workspace or plugin data.
+If an active custom theme is removed, incompatible, or unavailable, Launch++ immediately falls back to the corresponding built-in theme and informs the user. Removing a theme never deletes unrelated organization or plugin data.
 
 ## Validation and accessibility
 
@@ -380,7 +380,7 @@ Using the same public contract for built-in and external themes is an architectu
 - Direct JSON upload is the primary installation experience.
 - Advanced distribution reuses the signed `.launch-plugin` container with `type: "theme"`.
 - Light, dark, and high-contrast variants are explicit rather than algorithmically generated.
-- User preference wins by default; workspace themes provide availability and defaults.
+- User preference wins by default; organization themes provide availability and defaults.
 - Core React components, Ant Design-backed `@launchpp/ui`, `@launchpp/ui-tokens`, and custom plugin surfaces share one stable CSS-variable contract.
 - Theme v1 controls visual identity, not layout, spacing, component structure, or behavior.
 

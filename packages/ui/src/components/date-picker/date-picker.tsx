@@ -724,6 +724,7 @@ const DatePickerRoot = forwardRef<DatePickerRef, DatePickerProps>(
           presets.length > 0 && "has-presets",
           resolvedClassNames.popup,
         )}
+        data-launch-ui-popup="date-picker"
         ref={popup.popupRef}
         role="dialog"
         style={{ ...popup.popupStyle, ...resolvedStyles.popup }}
@@ -1044,6 +1045,7 @@ const RangePicker = forwardRef<DatePickerRef, RangePickerProps>(
           presets.length > 0 && "has-presets",
           resolvedClassNames.popup,
         )}
+        data-launch-ui-popup="date-picker"
         ref={popup.popupRef}
         role="dialog"
         style={{ ...popup.popupStyle, ...resolvedStyles.popup }}
