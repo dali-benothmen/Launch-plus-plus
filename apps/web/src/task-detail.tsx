@@ -42,11 +42,13 @@ import {
   CalendarOutlined,
   CommentOutlined,
   DeleteOutlined,
+  DownOutlined,
   EditOutlined,
   FileTextOutlined,
   FlagOutlined,
   MoreOutlined,
   PaperClipOutlined,
+  RightOutlined,
   SendOutlined,
   SmileOutlined,
   TeamOutlined,
@@ -280,6 +282,11 @@ export function TaskDetailPanel({
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<TaskComment>();
   const [deletingComment, setDeletingComment] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
+  const [subtaskComposerDivisionId, setSubtaskComposerDivisionId] = useState<string>();
+  const [divisionName, setDivisionName] = useState("");
+  const [addingDivision, setAddingDivision] = useState(false);
+  const [creatingDivision, setCreatingDivision] = useState(false);
+  const [collapsedDivisionIds, setCollapsedDivisionIds] = useState<readonly string[]>([]);
   const [postingComment, setPostingComment] = useState(false);
   const [creatingSubtask, setCreatingSubtask] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -331,6 +338,11 @@ export function TaskDetailPanel({
     setEditingCommentBody("");
     setCommentDeleteTarget(undefined);
     setSubtaskTitle("");
+    setSubtaskComposerDivisionId(undefined);
+    setDivisionName("");
+    setAddingDivision(false);
+    setCreatingDivision(false);
+    setCollapsedDivisionIds([]);
     setDeleteConfirmOpen(false);
     setPreviewImage(undefined);
     void load();
@@ -542,17 +554,37 @@ export function TaskDetailPanel({
     setEditing(true);
   };
 
+  const createDivision = async () => {
+    if (!detail || creatingDivision || divisionName.trim().length === 0) return;
+    setCreatingDivision(true);
+    setSaveError(undefined);
+    try {
+      const next = await api.tasks.createDivision(organizationId, projectId, detail.task.id, {
+        name: divisionName,
+      });
+      setDivisionName("");
+      setAddingDivision(false);
+      applyDetail(next);
+    } catch (reason) {
+      setSaveError(reason);
+    } finally {
+      setCreatingDivision(false);
+    }
+  };
+
   const createSubtask = async () => {
     if (!detail || creatingSubtask || subtaskTitle.trim().length === 0) return;
     setCreatingSubtask(true);
     setSaveError(undefined);
     try {
       await api.tasks.create(organizationId, projectId, {
+        ...(subtaskComposerDivisionId ? { divisionId: subtaskComposerDivisionId } : {}),
         parentTaskId: detail.task.id,
         statusId: detail.task.statusId,
         title: subtaskTitle,
       });
       setSubtaskTitle("");
+      setSubtaskComposerDivisionId(undefined);
       await load();
     } catch (reason) {
       setSaveError(reason);
@@ -798,6 +830,71 @@ export function TaskDetailPanel({
   const subtaskProgress = detail?.subtasks.length
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
+  const ungroupedSubtasks = detail?.subtasks.filter((subtask) => !subtask.divisionId) ?? [];
+
+  const renderSubtaskRow = (subtask: TaskView) => {
+    const complete = subtask.statusId === completedStatus?.id;
+    return (
+      <div className="task-detail-subtask" key={subtask.id}>
+        <Checkbox
+          checked={complete}
+          disabled={archived}
+          onChange={(event) => void toggleSubtask(subtask, event.target.checked)}
+        >
+          <Typography.Text delete={complete}>{subtask.title}</Typography.Text>
+        </Checkbox>
+        {subtask.assigneeUserIds.includes(currentUserId) ? (
+          <Avatar size={20}>{currentUserName.slice(0, 1).toUpperCase()}</Avatar>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderSubtaskComposer = (divisionId: string) =>
+    subtaskComposerDivisionId === divisionId ? (
+      <div className="task-detail-subtask-composer">
+        <Input
+          autoFocus
+          maxLength={500}
+          onChange={(event) => setSubtaskTitle(event.target.value)}
+          onPressEnter={() => void createSubtask()}
+          placeholder="Task name"
+          value={subtaskTitle}
+        />
+        <Button
+          disabled={subtaskTitle.trim().length === 0}
+          loading={creatingSubtask}
+          onClick={() => void createSubtask()}
+          size="small"
+        >
+          Add
+        </Button>
+        <Button
+          disabled={creatingSubtask}
+          onClick={() => {
+            setSubtaskComposerDivisionId(undefined);
+            setSubtaskTitle("");
+          }}
+          size="small"
+          variant="text"
+        >
+          Cancel
+        </Button>
+      </div>
+    ) : (
+      <Button
+        className="task-detail-add-subtask"
+        disabled={archived}
+        icon={<AddIcon />}
+        onClick={() => {
+          setSubtaskTitle("");
+          setSubtaskComposerDivisionId(divisionId);
+        }}
+        variant="text"
+      >
+        Add task
+      </Button>
+    );
   const selectedStatus = detail
     ? statuses.find((status) => status.id === detail.task.statusId)
     : undefined;
@@ -1128,47 +1225,91 @@ export function TaskDetailPanel({
                     </Typography.Text>
                   </div>
                 </div>
-                {detail.subtasks.length > 0 ? (
-                  <div className="task-detail-subtask-list">
-                    {detail.subtasks.map((subtask) => {
-                      const complete = subtask.statusId === completedStatus?.id;
-                      return (
-                        <div className="task-detail-subtask" key={subtask.id}>
-                          <Checkbox
-                            checked={complete}
-                            disabled={archived}
-                            onChange={(event) => void toggleSubtask(subtask, event.target.checked)}
+
+                <div className="task-detail-subtask-list">
+                  {ungroupedSubtasks.map(renderSubtaskRow)}
+                  {!archived ? renderSubtaskComposer("") : null}
+
+                  {detail.divisions.map((division) => {
+                    const divisionSubtasks = detail.subtasks.filter(
+                      (subtask) => subtask.divisionId === division.id,
+                    );
+                    const collapsed = collapsedDivisionIds.includes(division.id);
+                    return (
+                      <div className="task-detail-division" key={division.id}>
+                        <div className="task-detail-division-header">
+                          <Button
+                            aria-expanded={!collapsed}
+                            className="task-detail-division-toggle"
+                            icon={collapsed ? <RightOutlined /> : <DownOutlined />}
+                            onClick={() =>
+                              setCollapsedDivisionIds((current) =>
+                                current.includes(division.id)
+                                  ? current.filter((id) => id !== division.id)
+                                  : [...current, division.id],
+                              )
+                            }
+                            variant="text"
                           >
-                            <Typography.Text delete={complete}>{subtask.title}</Typography.Text>
-                          </Checkbox>
-                          {subtask.assigneeUserIds.includes(currentUserId) ? (
-                            <Avatar size={20}>{currentUserName.slice(0, 1).toUpperCase()}</Avatar>
-                          ) : null}
+                            <Typography.Text strong>{division.name}</Typography.Text>
+                            <Typography.Text type="secondary">
+                              {divisionSubtasks.length}
+                            </Typography.Text>
+                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <Empty description="No subtasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                )}
-                {!archived ? (
-                  <div className="task-detail-compose-row">
-                    <Input
-                      maxLength={500}
-                      onChange={(event) => setSubtaskTitle(event.target.value)}
-                      onPressEnter={() => void createSubtask()}
-                      placeholder="Add a subtask"
-                      value={subtaskTitle}
-                    />
-                    <Button
-                      disabled={subtaskTitle.trim().length === 0}
-                      loading={creatingSubtask}
-                      onClick={() => void createSubtask()}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                ) : null}
+                        {!collapsed ? (
+                          <div className="task-detail-division-content">
+                            {divisionSubtasks.map(renderSubtaskRow)}
+                            {!archived ? renderSubtaskComposer(division.id) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+
+                  {!archived ? (
+                    addingDivision ? (
+                      <div className="task-detail-division-composer">
+                        <Input
+                          autoFocus
+                          maxLength={80}
+                          onChange={(event) => setDivisionName(event.target.value)}
+                          onPressEnter={() => void createDivision()}
+                          placeholder="Division name"
+                          value={divisionName}
+                        />
+                        <Button
+                          disabled={divisionName.trim().length === 0}
+                          loading={creatingDivision}
+                          onClick={() => void createDivision()}
+                          size="small"
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          disabled={creatingDivision}
+                          onClick={() => {
+                            setAddingDivision(false);
+                            setDivisionName("");
+                          }}
+                          size="small"
+                          variant="text"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        className="task-detail-add-division"
+                        icon={<AddIcon />}
+                        onClick={() => setAddingDivision(true)}
+                        size="small"
+                      >
+                        Add division
+                      </Button>
+                    )
+                  ) : null}
+                </div>
               </section>
             ),
           },

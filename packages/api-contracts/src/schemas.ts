@@ -284,6 +284,20 @@ export const TaskPrioritySchema = Type.Union([
 ]);
 export type TaskPriority = Type.Static<typeof TaskPrioritySchema>;
 
+export const TaskDivisionSummarySchema = StrictObject(
+  {
+    createdAt: TimestampSchema,
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 80, minLength: 1 }),
+    position: Type.Integer({ minimum: 0 }),
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+    organizationId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskDivisionSummaryV1" },
+);
+export type TaskDivisionSummary = Type.Static<typeof TaskDivisionSummarySchema>;
+
 export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
@@ -293,6 +307,7 @@ export const TaskViewSchema = StrictObject(
     createdAt: TimestampSchema,
     createdByUserId: IdentifierSchema,
     description: Type.String({ maxLength: 100_000 }),
+    divisionId: Type.Optional(IdentifierSchema),
     dueDate: Type.Optional(DateSchema),
     id: IdentifierSchema,
     labels: Type.Array(
@@ -405,6 +420,12 @@ export const TaskDetailSchema = StrictObject(
       Type.Unsafe<Type.Static<typeof LabelSummarySchema>>(Type.Ref("LaunchppLabelSummaryV1")),
       { maxItems: 100 },
     ),
+    divisions: Type.Array(
+      Type.Unsafe<Type.Static<typeof TaskDivisionSummarySchema>>(
+        Type.Ref("LaunchppTaskDivisionSummaryV1"),
+      ),
+      { maxItems: 100 },
+    ),
     comments: Type.Array(
       Type.Unsafe<Type.Static<typeof TaskCommentSchema>>(Type.Ref("LaunchppTaskCommentV1")),
       { maxItems: 1_000 },
@@ -441,6 +462,7 @@ export const CreateTaskInputSchema = StrictObject(
       Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true }),
     ),
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
+    divisionId: Type.Optional(IdentifierSchema),
     dueDate: Type.Optional(DateSchema),
     labelIds: Type.Optional(Type.Array(IdentifierSchema, { maxItems: 100, uniqueItems: true })),
     parentTaskId: Type.Optional(IdentifierSchema),
@@ -452,6 +474,12 @@ export const CreateTaskInputSchema = StrictObject(
   { $id: "LaunchppCreateTaskInputV1" },
 );
 export type CreateTaskInput = Type.Static<typeof CreateTaskInputSchema>;
+
+export const CreateTaskDivisionInputSchema = StrictObject(
+  { name: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }) },
+  { $id: "LaunchppCreateTaskDivisionInputV1" },
+);
+export type CreateTaskDivisionInput = Type.Static<typeof CreateTaskDivisionInputSchema>;
 
 export const CreateTaskCommentInputSchema = StrictObject(
   { body: Type.String({ maxLength: 20_000, minLength: 1, pattern: "\\S" }) },
@@ -663,6 +691,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   CreateProjectInputSchema,
   UpdateProjectInputSchema,
   LabelSummarySchema,
+  TaskDivisionSummarySchema,
   TaskViewSchema,
   TaskCommentReactionSummarySchema,
   TaskCommentSchema,
@@ -672,6 +701,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskDetailSchema,
   TaskPageSchema,
   CreateTaskInputSchema,
+  CreateTaskDivisionInputSchema,
   CreateTaskCommentInputSchema,
   SetTaskCommentReactionInputSchema,
   UpdateTaskCommentInputSchema,

@@ -1118,7 +1118,53 @@
 
 .task-detail-subtask-list {
   display: grid;
-  gap: 10px;
+  gap: 0;
+}
+
+.task-detail-division {
+  display: grid;
+  margin-top: 16px;
+}
+
+.task-detail-division-header {
+  border-bottom: 1px solid var(--launch-color-border-secondary);
+}
+
+.task-detail-division-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  padding-inline: 0;
+}
+
+.task-detail-division-content {
+  display: grid;
+}
+
+.task-detail-add-subtask {
+  width: fit-content;
+  justify-content: flex-start;
+  margin-top: 4px;
+  padding-inline: 4px;
+  color: var(--launch-color-text-secondary);
+}
+
+.task-detail-add-division {
+  width: fit-content;
+  margin-top: 16px;
+}
+
+.task-detail-subtask-composer,
+.task-detail-division-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.task-detail-subtask-composer > :first-child,
+.task-detail-division-composer > :first-child {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .task-detail-comment-heading {
@@ -1138,18 +1184,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 12px;
-  border: 1px solid var(--launch-color-border-secondary);
-  border-radius: var(--launch-radius-lg);
-}
-
-.task-detail-compose-row {
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.task-detail-compose-row > :first-child {
-  flex: 1 1 auto;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--launch-color-border-secondary);
 }
 
 .task-detail-comment {

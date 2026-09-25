@@ -23,6 +23,7 @@ export type {
   TaskAttachmentSummary,
   TaskComment,
   TaskDetail,
+  TaskDivisionSummary,
   TaskPage,
   TaskPriority,
   TaskView,

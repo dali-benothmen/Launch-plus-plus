@@ -54,6 +54,7 @@ export {
   taskAttachments,
   taskCommentReactions,
   taskComments,
+  taskDivisions,
   taskLabels,
   tasks,
   teams,

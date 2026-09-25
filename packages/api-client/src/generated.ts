@@ -6,6 +6,7 @@ import type {
   CreateProjectInput,
   CreateTaskAttachmentInput,
   CreateTaskCommentInput,
+  CreateTaskDivisionInput,
   CreateTaskInput,
   CursorPageQuery,
   DeleteTaskCommentInput,
@@ -152,6 +153,13 @@ export interface CoreApiClient {
       input: CreateTaskInput,
       options?: RequestOptions,
     ): Promise<TaskView>;
+    createDivision(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      input: CreateTaskDivisionInput,
+      options?: RequestOptions,
+    ): Promise<TaskDetail>;
     createAttachment(
       organizationId: string,
       projectId: string,
@@ -387,6 +395,18 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
         options?: RequestOptions,
       ) =>
         json<TaskView>(taskPath(organizationId, projectId), {
+          body: JSON.stringify(input),
+          headers: idempotencyHeaders(options),
+          method: "POST",
+        }),
+      createDivision: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        input: CreateTaskDivisionInput,
+        options?: RequestOptions,
+      ) =>
+        json<TaskDetail>(`${taskPath(organizationId, projectId, taskId)}/divisions`, {
           body: JSON.stringify(input),
           headers: idempotencyHeaders(options),
           method: "POST",

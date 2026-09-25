@@ -415,6 +415,9 @@ export const tasks = sqliteTable(
     teamId: text("team_id"),
     title: text("title").notNull(),
     description: text("description_markdown").notNull().default(""),
+    divisionId: text("division_id").references((): AnySQLiteColumn => taskDivisions.id, {
+      onDelete: "set null",
+    }),
     attachmentCount: integer("attachment_count").notNull().default(0),
     dueDate: text("due_date"),
     priority: text("priority", { enum: ["low", "medium", "high"] })
@@ -447,6 +450,7 @@ export const tasks = sqliteTable(
     ),
     index("tasks_project_updated_idx").on(table.projectId, table.updatedAt),
     index("tasks_parent_idx").on(table.parentTaskId, table.archivedAt),
+    index("tasks_division_idx").on(table.divisionId, table.position),
     index("tasks_due_date_idx").on(table.organizationId, table.dueDate),
     foreignKey({
       columns: [table.organizationId, table.projectId],
@@ -484,6 +488,33 @@ export const tasks = sqliteTable(
       "tasks_parent_not_self",
       sql`${table.parentTaskId} is null or ${table.parentTaskId} <> ${table.id}`,
     ),
+  ],
+);
+
+export const taskDivisions = sqliteTable(
+  "task_divisions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    projectId: text("project_id").notNull(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    comparisonKey: text("comparison_key").notNull(),
+    position: integer("position").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("task_divisions_task_name_unique").on(table.taskId, table.comparisonKey),
+    uniqueIndex("task_divisions_task_position_unique").on(table.taskId, table.position),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "task_divisions_organization_project_fk",
+    }).onDelete("cascade"),
+    check("task_divisions_name_not_blank", sql`length(trim(${table.name})) > 0`),
+    check("task_divisions_position_valid", sql`${table.position} >= 0`),
   ],
 );
 
@@ -758,6 +789,7 @@ export const databaseSchema = {
   taskAssignees,
   taskCommentReactions,
   taskComments,
+  taskDivisions,
   taskLabels,
   tasks,
   teams,
