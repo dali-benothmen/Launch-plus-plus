@@ -476,7 +476,6 @@ export function ProjectOverviewPage() {
   const [catalog, setCatalog] = useState<ProjectCatalog>();
   const [memberId, setMemberId] = useState("");
   const [memberName, setMemberName] = useState("");
-  const [organizationName, setOrganizationName] = useState("Organization");
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [error, setError] = useState<unknown>();
   const [taskActionsContainer, setTaskActionsContainer] = useState<HTMLDivElement | null>(null);
@@ -485,18 +484,12 @@ export function ProjectOverviewPage() {
   const loadProject = useCallback(() => {
     if (!organizationId) return;
     setError(undefined);
-    void Promise.all([
-      api.projects.list(organizationId),
-      api.auth.session(),
-      api.organizations.list({ limit: 100 }),
-    ])
-      .then(([nextCatalog, session, context]) => {
+    void Promise.all([api.projects.list(organizationId), api.auth.session()])
+      .then(([nextCatalog, session]) => {
         if (!session) throw new ApiError(401, "Your session has expired.");
         setCatalog(nextCatalog);
         setMemberId(session.identity.id);
         setMemberName(session.identity.name);
-        const organization = context.organizations.find((item) => item.id === organizationId);
-        if (organization) setOrganizationName(organization.name);
       })
       .catch(setError);
   }, [api, organizationId]);
@@ -610,7 +603,7 @@ export function ProjectOverviewPage() {
               level={1}
               style={{ fontSize: 17, lineHeight: "24px", margin: 0 }}
             >
-              {organizationName} - {project.name}
+              {project.name}
             </Typography.Title>
           </div>
           <Typography.Text className="project-description">
@@ -683,6 +676,19 @@ export function MembersPage() {
       </Typography.Title>
       <Typography.Text type="secondary">
         Organization membership will be available with the collaboration slice.
+      </Typography.Text>
+    </section>
+  );
+}
+
+export function OrganizationSettingsPage() {
+  return (
+    <section aria-labelledby="organization-settings-title" className="page-stack">
+      <Typography.Title id="organization-settings-title" level={1}>
+        Organization settings
+      </Typography.Title>
+      <Typography.Text type="secondary">
+        Organization settings will be available with the collaboration slice.
       </Typography.Text>
     </section>
   );

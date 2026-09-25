@@ -26,6 +26,7 @@ import {
   InboxPage,
   MembersPage,
   MyWorkPage,
+  OrganizationSettingsPage,
   PluginsPage,
   ProjectCreationEntryPage,
   ProjectOverviewPage,
@@ -113,6 +114,11 @@ export const appRoutes: RouteObject[] = [
         errorElement: <RouteFailurePage />,
       },
       { path: "members", element: <MembersPage />, errorElement: <RouteFailurePage /> },
+      {
+        path: "organization-settings",
+        element: <OrganizationSettingsPage />,
+        errorElement: <RouteFailurePage />,
+      },
       { path: "settings", element: <SettingsPage />, errorElement: <RouteFailurePage /> },
       ...(import.meta.env.VITE_ENABLE_PLUGIN_PROOF === "true"
         ? [

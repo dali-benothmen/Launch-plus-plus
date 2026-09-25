@@ -75,9 +75,13 @@
 
 .app-shell {
   display: grid;
-  grid-template-columns: 48px 216px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--launch-color-bg-elevated);
+}
+
+.app-shell.has-organization-sidebar {
+  grid-template-columns: 48px 216px minmax(0, 1fr);
 }
 
 .skip-link {
@@ -1574,7 +1578,8 @@
 }
 
 @media (max-width: 980px) {
-  .app-shell {
+  .app-shell,
+  .app-shell.has-organization-sidebar {
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
@@ -1595,7 +1600,8 @@
   .auth-presentation {
     display: none;
   }
-  .app-shell {
+  .app-shell,
+  .app-shell.has-organization-sidebar {
     grid-template-columns: 48px minmax(0, 1fr);
   }
 

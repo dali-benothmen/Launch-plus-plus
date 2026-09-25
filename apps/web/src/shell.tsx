@@ -37,7 +37,12 @@ const globalLinks = [
 const organizationLinks = [
   { icon: <InboxIcon aria-hidden />, label: "Inbox", to: "/app/inbox" },
   { icon: <TasksIcon aria-hidden />, label: "My tasks", to: "/app/my-tasks" },
-  { icon: <MembersIcon aria-hidden />, label: "Team settings", to: "/app/members" },
+  { icon: <MembersIcon aria-hidden />, label: "Members", to: "/app/members" },
+  {
+    icon: <SettingsIcon aria-hidden />,
+    label: "Organization settings",
+    to: "/app/organization-settings",
+  },
 ] as const;
 
 function initials(name: string) {
@@ -49,12 +54,24 @@ function initials(name: string) {
     .join("");
 }
 
+function isOrganizationRoute(pathname: string) {
+  return (
+    pathname.startsWith("/app/projects") ||
+    pathname === "/app/inbox" ||
+    pathname === "/app/my-tasks" ||
+    pathname === "/app/members" ||
+    pathname === "/app/organization-settings" ||
+    pathname.startsWith("/app/organizations/")
+  );
+}
+
 function headerTitle(pathname: string) {
   if (pathname.includes("/projects/") && pathname.includes("/organizations/")) return "Tasks";
-  if (pathname === "/app/projects") return "Organization";
+  if (pathname.startsWith("/app/projects")) return "Organization";
   if (pathname === "/app/my-tasks") return "My tasks";
   if (pathname === "/app/inbox") return "Inbox";
-  if (pathname === "/app/members") return "Team settings";
+  if (pathname === "/app/members") return "Members";
+  if (pathname === "/app/organization-settings") return "Organization settings";
   if (pathname === "/app/plugins") return "Plugins";
   if (pathname === "/app/settings") return "Settings";
   return "Home";
@@ -62,9 +79,7 @@ function headerTitle(pathname: string) {
 
 function globalLinkIsActive(label: (typeof globalLinks)[number]["label"], pathname: string) {
   if (label === "Home") return pathname === "/app";
-  if (label === "Organization") {
-    return pathname === "/app/projects" || pathname.startsWith("/app/organizations/");
-  }
+  if (label === "Organization") return isOrganizationRoute(pathname);
   return pathname === "/app/plugins";
 }
 
@@ -159,6 +174,7 @@ export function AppShell() {
   const organizationTarget = recentProject
     ? `/app/organizations/${recentProject.organizationId}/projects/${recentProject.id}/board`
     : "/app/projects";
+  const organizationSidebarVisible = isOrganizationRoute(location.pathname);
   const notificationItems: readonly DropdownMenuItem[] = [
     { disabled: true, key: "empty", label: "You have no new notifications" },
   ];
@@ -218,7 +234,9 @@ export function AppShell() {
   };
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell${organizationSidebarVisible ? " has-organization-sidebar" : ""}`}
+    >
       {messageHolder}
       <InvalidationListener />
       <a className="skip-link" href="#main-content">
@@ -272,85 +290,87 @@ export function AppShell() {
         </div>
       </aside>
 
-      <aside aria-label="Organization navigation" className="organization-sidebar">
-        <div className="organization-identity">
-          <Typography.Text strong>{organizationName}</Typography.Text>
-        </div>
+      {organizationSidebarVisible ? (
+        <aside aria-label="Organization navigation" className="organization-sidebar">
+          <div className="organization-identity">
+            <Typography.Text strong>{organizationName}</Typography.Text>
+          </div>
 
-        <nav className="organization-menu" aria-label="Organization menu">
-          <Typography.Text className="sidebar-section-label" type="secondary">
-            Main menu
-          </Typography.Text>
-          {organizationLinks.map((item) => (
-            <NavLink
-              className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
-              key={item.to}
-              to={item.to}
-            >
-              <span aria-hidden className="sidebar-icon">
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-section">
-          <Typography.Text className="sidebar-section-label" type="secondary">
-            Projects
-          </Typography.Text>
-          <nav className="sidebar-projects" aria-label="Projects">
-            {projects.map((project, index) => (
+          <nav className="organization-menu" aria-label="Organization menu">
+            <Typography.Text className="sidebar-section-label" type="secondary">
+              Main menu
+            </Typography.Text>
+            {organizationLinks.map((item) => (
               <NavLink
                 className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
-                key={project.id}
-                onClick={(event) => {
-                  event.preventDefault();
-                  openProject(project);
-                }}
-                to={`/app/organizations/${project.organizationId}/projects/${project.id}`}
+                key={item.to}
+                to={item.to}
               >
-                <span aria-hidden className={`project-nav-icon is-color-${(index % 3) + 1}`}>
-                  {project.name.slice(0, 1).toUpperCase()}
+                <span aria-hidden className="sidebar-icon">
+                  {item.icon}
                 </span>
-                <span>{project.name}</span>
+                <span>{item.label}</span>
               </NavLink>
             ))}
-            <Button
-              className="sidebar-create-button"
-              disabled={!organizationId}
-              onClick={() => setProjectModalOpen(true)}
-              size="small"
-              variant="dashed"
-            >
-              + New project
-            </Button>
           </nav>
-        </div>
 
-        <div className="sidebar-section">
-          <Typography.Text className="sidebar-section-label" type="secondary">
-            Teams
-          </Typography.Text>
-          <div className="sidebar-projects">
-            {teams.map((team, index) => (
-              <div className="sidebar-link sidebar-team" key={team.id}>
-                <span aria-hidden className={`team-nav-icon is-color-${(index % 6) + 1}`} />
-                <span>{team.name}</span>
-              </div>
-            ))}
-            <Button
-              className="sidebar-create-button"
-              disabled={!organizationId}
-              onClick={() => setTeamModalOpen(true)}
-              size="small"
-              variant="dashed"
-            >
-              + New team
-            </Button>
+          <div className="sidebar-section">
+            <Typography.Text className="sidebar-section-label" type="secondary">
+              Projects
+            </Typography.Text>
+            <nav className="sidebar-projects" aria-label="Projects">
+              {projects.map((project, index) => (
+                <NavLink
+                  className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
+                  key={project.id}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    openProject(project);
+                  }}
+                  to={`/app/organizations/${project.organizationId}/projects/${project.id}`}
+                >
+                  <span aria-hidden className={`project-nav-icon is-color-${(index % 3) + 1}`}>
+                    {project.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span>{project.name}</span>
+                </NavLink>
+              ))}
+              <Button
+                className="sidebar-create-button"
+                disabled={!organizationId}
+                onClick={() => setProjectModalOpen(true)}
+                size="small"
+                variant="dashed"
+              >
+                + New project
+              </Button>
+            </nav>
           </div>
-        </div>
-      </aside>
+
+          <div className="sidebar-section">
+            <Typography.Text className="sidebar-section-label" type="secondary">
+              Teams
+            </Typography.Text>
+            <div className="sidebar-projects">
+              {teams.map((team, index) => (
+                <div className="sidebar-link sidebar-team" key={team.id}>
+                  <span aria-hidden className={`team-nav-icon is-color-${(index % 6) + 1}`} />
+                  <span>{team.name}</span>
+                </div>
+              ))}
+              <Button
+                className="sidebar-create-button"
+                disabled={!organizationId}
+                onClick={() => setTeamModalOpen(true)}
+                size="small"
+                variant="dashed"
+              >
+                + New team
+              </Button>
+            </div>
+          </div>
+        </aside>
+      ) : null}
 
       <div className="app-workspace">
         <header className="app-header">
