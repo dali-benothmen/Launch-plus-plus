@@ -93,6 +93,27 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
 });
+function commentsSeenStorageKey(organizationId: string, taskId: string, userId: string) {
+  return `launchpp:comments-seen:${organizationId}:${taskId}:${userId}`;
+}
+
+function readCommentsSeenAt(key: string) {
+  try {
+    const value = Number(window.localStorage.getItem(key));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeCommentsSeenAt(key: string, value: number) {
+  try {
+    window.localStorage.setItem(key, String(value));
+  } catch {
+    return;
+  }
+}
+
 const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
 const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
@@ -244,6 +265,8 @@ export function TaskDetailPanel({
   const [loadError, setLoadError] = useState<unknown>();
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
+  const [activeDetailTab, setActiveDetailTab] = useState("subtasks");
+  const [commentsSeenAt, setCommentsSeenAt] = useState(0);
   const [comment, setComment] = useState("");
   const [commentComposerRevision, setCommentComposerRevision] = useState(0);
   const commentInputRef = useRef<MentionsRef>(null);
@@ -293,6 +316,10 @@ export function TaskDetailPanel({
     setAttachmentFiles([]);
     setEditing(false);
     setSaveError(undefined);
+    setActiveDetailTab("subtasks");
+    setCommentsSeenAt(
+      readCommentsSeenAt(commentsSeenStorageKey(organizationId, taskId, currentUserId)),
+    );
     setComment("");
     setCommentComposerRevision(0);
     commentSelectionRef.current = { end: 0, start: 0 };
@@ -307,7 +334,7 @@ export function TaskDetailPanel({
     setDeleteConfirmOpen(false);
     setPreviewImage(undefined);
     void load();
-  }, [load, taskId]);
+  }, [currentUserId, load, organizationId, taskId]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -327,6 +354,28 @@ export function TaskDetailPanel({
   }, [load, projectId, taskId]);
 
   useEffect(() => () => previewImage && URL.revokeObjectURL(previewImage.url), [previewImage]);
+
+  const unreadCommentCount =
+    detail?.comments.filter(
+      (item) => item.authorUserId !== currentUserId && item.createdAt > commentsSeenAt,
+    ).length ?? 0;
+
+  const markCommentsSeen = useCallback(() => {
+    if (!taskId) return;
+    const latestCommentAt = Math.max(
+      Date.now(),
+      ...(detail?.comments.map((item) => item.createdAt) ?? []),
+    );
+    setCommentsSeenAt(latestCommentAt);
+    writeCommentsSeenAt(
+      commentsSeenStorageKey(organizationId, taskId, currentUserId),
+      latestCommentAt,
+    );
+  }, [currentUserId, detail?.comments, organizationId, taskId]);
+
+  useEffect(() => {
+    if (activeDetailTab === "comments") markCommentsSeen();
+  }, [activeDetailTab, markCommentsSeen]);
 
   const statusOptions = useMemo(
     () =>
@@ -1035,7 +1084,11 @@ export function TaskDetailPanel({
             onDownload={(file) => void downloadAttachment(file)}
             onPreview={(file) => void previewAttachment(file)}
             onRemove={removeAttachment}
-            styles={{ root: { width: "100%" } }}
+            styles={{
+              list: { order: 1 },
+              root: { display: "flex", flexDirection: "column", width: "100%" },
+              trigger: { alignSelf: "start", marginTop: 8, order: 2 },
+            }}
             showUploadList={{
               extra: (file) => (file.size === undefined ? null : formatFileSize(file.size)),
               showDownloadIcon: (file) =>
@@ -1053,8 +1106,12 @@ export function TaskDetailPanel({
       </div>
 
       <Tabs
+        activeKey={activeDetailTab}
         className="task-detail-tabs"
-        defaultActiveKey="subtasks"
+        onChange={(key) => {
+          setActiveDetailTab(key);
+          if (key === "comments") markCommentsSeen();
+        }}
         styles={{ body: { padding: "20px 28px 28px" }, header: { padding: "0 28px" } }}
         items={[
           {
@@ -1119,7 +1176,12 @@ export function TaskDetailPanel({
             key: "comments",
             label: (
               <span className="task-detail-tab-label">
-                Comments <span className="task-detail-tab-count">{detail.comments.length}</span>
+                Comments
+                {unreadCommentCount > 0 ? (
+                  <Tag color="red" variant="solid">
+                    {unreadCommentCount}
+                  </Tag>
+                ) : null}
               </span>
             ),
             children: (

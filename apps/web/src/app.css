@@ -1112,18 +1112,6 @@
   gap: 6px;
 }
 
-.task-detail-tab-count {
-  min-width: 17px;
-  height: 17px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--launch-color-bg-subtle);
-  color: var(--launch-color-text-secondary);
-  font-size: 11px;
-  line-height: 17px;
-  text-align: center;
-}
-
 .task-detail-subtask-progress {
   margin-inline-start: auto;
 }
