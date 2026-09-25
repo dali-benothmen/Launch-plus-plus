@@ -475,7 +475,7 @@ export class SqliteTaskRepository implements TaskRepository {
       .prepare<[string, string], ActivityRow>(
         `SELECT id, actor_user_id AS actor_id, operation, metadata_json, occurred_at
          FROM activity_entries
-         WHERE organization_id = ? AND task_id = ?
+         WHERE organization_id = ? AND task_id = ? AND operation NOT LIKE 'comment.%'
          ORDER BY occurred_at DESC, id DESC
          LIMIT 100`,
       )

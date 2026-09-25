@@ -239,16 +239,31 @@ function renderCommentBody(body: string, memberNames: readonly string[]) {
   return content;
 }
 
-function activityText(operation: string) {
+function activityText(
+  operation: string,
+  metadata: Readonly<Record<string, unknown>>,
+  statuses: readonly ProjectStatusSummary[],
+) {
+  if (operation === "task.moved") {
+    const fromStatusId =
+      typeof metadata["fromStatusId"] === "string" ? metadata["fromStatusId"] : undefined;
+    const toStatusId = typeof metadata["toStatusId"] === "string" ? metadata["toStatusId"] : undefined;
+    if (fromStatusId === toStatusId) return "reordered the task";
+    const recordedStatusName =
+      typeof metadata["toStatusName"] === "string" ? metadata["toStatusName"] : undefined;
+    const currentStatusName = statuses.find((status) => status.id === toStatusId)?.name;
+    const statusName = recordedStatusName ?? currentStatusName;
+    return statusName
+      ? `changed the task status to ${statusName}`
+      : "changed the task status";
+  }
   const labels: Readonly<Record<string, string>> = {
-    "comment.created": "added a comment",
     "task.archived": "deleted the task",
     "task.attachment_added": "added an attachment",
     "task.attachment_deleted": "deleted an attachment",
     "task.assignees_changed": "changed the assignees",
     "task.created": "created the task",
     "task.labels_changed": "changed the labels",
-    "task.moved": "changed the task status",
     "task.restored": "restored the task",
     "task.updated": "updated the task",
   };
@@ -297,6 +312,7 @@ export function TaskDetailPanel({
   const [saving, setSaving] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState("subtasks");
   const [commentsSeenAt, setCommentsSeenAt] = useState(0);
+  const [visibleCommentCount, setVisibleCommentCount] = useState(10);
   const [comment, setComment] = useState("");
   const [commentComposerRevision, setCommentComposerRevision] = useState(0);
   const commentInputRef = useRef<MentionsRef>(null);
@@ -367,6 +383,7 @@ export function TaskDetailPanel({
       ),
     );
     setComment("");
+    setVisibleCommentCount(10);
     setCommentComposerRevision(0);
     commentSelectionRef.current = { end: 0, start: 0 };
     setEmojiOpen(false);
@@ -969,6 +986,9 @@ export function TaskDetailPanel({
   const subtaskProgress = detail?.subtasks.length
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
+  const visibleComments = detail?.comments.slice(0, visibleCommentCount) ?? [];
+  const visibleActivity =
+    detail?.activity.filter((item) => !item.operation.startsWith("comment.")) ?? [];
   const renderSubtaskRow = (subtask: TaskView) => {
     const complete = subtask.statusId === completedStatus?.id;
     const isEditing = editingSubtaskId === subtask.id;
@@ -1679,7 +1699,7 @@ export function TaskDetailPanel({
                 ) : null}
                 {detail.comments.length > 0 ? (
                   <div className="task-detail-comment-list">
-                    {detail.comments.map((item) => {
+                    {visibleComments.map((item) => {
                       const authorName = memberName(item.authorUserId);
                       const ownsComment = item.authorUserId === currentUserId;
                       const commentAttachmentFiles = detail.attachments
@@ -1892,6 +1912,17 @@ export function TaskDetailPanel({
                         </article>
                       );
                     })}
+                    {visibleCommentCount < detail.comments.length ? (
+                      <div className="task-load-more">
+                        <Button
+                          onClick={() =>
+                            setVisibleCommentCount((current) => current + 10)
+                          }
+                        >
+                          Load more comments
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <Empty
@@ -1910,10 +1941,10 @@ export function TaskDetailPanel({
                 className="task-detail-tab-panel"
                 aria-label="Activities"
               >
-                {detail.activity.length > 0 ? (
+                {visibleActivity.length > 0 ? (
                   <Timeline
-                    items={detail.activity.map((item) => ({
-                      content: `${item.actorUserId === currentUserId ? currentUserName : "An organization member"} ${activityText(item.operation)}.`,
+                    items={visibleActivity.map((item) => ({
+                      content: `${item.actorUserId === currentUserId ? currentUserName : "An organization member"} ${activityText(item.operation, item.metadata, statuses)}.`,
                       key: item.id,
                       title: detailDateTime.format(new Date(item.occurredAt)),
                     }))}

@@ -737,6 +737,7 @@ export class TaskService {
         fromStatusId: task.statusId,
         revision: updated.revision,
         toStatusId: updated.statusId,
+        toStatusName: status.name,
       });
       return this.toView(context, updated, project);
     });
