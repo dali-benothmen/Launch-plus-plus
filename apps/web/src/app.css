@@ -1075,7 +1075,7 @@
 .task-detail-title-row {
   display: flex;
   min-width: 0;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 8px;
 }
 
