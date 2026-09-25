@@ -96,7 +96,11 @@ const detailDateTime = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
 });
-function commentsSeenStorageKey(organizationId: string, taskId: string, userId: string) {
+function commentsSeenStorageKey(
+  organizationId: string,
+  taskId: string,
+  userId: string,
+) {
   return `launchpp:comments-seen:${organizationId}:${taskId}:${userId}`;
 }
 
@@ -121,7 +125,14 @@ const taskDetailFieldStyle = { maxWidth: "100%", width: 220 } as const;
 const taskDetailTagStyle = { fontSize: 14 } as const;
 const taskDetailHeaderIconStyle = { fontSize: 16 } as const;
 const taskDetailHeaderButtonStyle = { background: "transparent" } as const;
-const teamTagColors = ["blue", "cyan", "green", "orange", "purple", "magenta"] as const;
+const teamTagColors = [
+  "blue",
+  "cyan",
+  "green",
+  "orange",
+  "purple",
+  "magenta",
+] as const;
 const priorityPresentation: Record<
   TaskPriority,
   Readonly<{ color: "green" | "orange" | "red"; label: string }>
@@ -132,7 +143,10 @@ const priorityPresentation: Record<
 };
 
 function isImageAttachment(file: UploadFile<TaskDetail>) {
-  return file.type?.startsWith("image/") || /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(file.name);
+  return (
+    file.type?.startsWith("image/") ||
+    /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(file.name)
+  );
 }
 
 function dateFromKey(value?: string) {
@@ -157,7 +171,9 @@ function initialDraft(detail: TaskDetail): DetailDraft {
   };
 }
 
-function attachmentUploadFile(attachment: TaskAttachmentSummary): UploadFile<TaskDetail> {
+function attachmentUploadFile(
+  attachment: TaskAttachmentSummary,
+): UploadFile<TaskDetail> {
   return {
     name: attachment.name,
     size: attachment.size,
@@ -174,7 +190,9 @@ function sameIds(left: readonly string[], right: readonly string[]) {
 }
 
 function renderCommentBody(body: string, memberNames: readonly string[]) {
-  const names = [...new Set(memberNames.map((name) => name.trim().replace(/\s+/g, " ")))]
+  const names = [
+    ...new Set(memberNames.map((name) => name.trim().replace(/\s+/g, " "))),
+  ]
     .filter(Boolean)
     .sort((left, right) => right.length - left.length);
   const content = [];
@@ -188,7 +206,8 @@ function renderCommentBody(body: string, memberNames: readonly string[]) {
       while (start >= 0) {
         const previous = body[start - 1];
         const next = body[start + token.length];
-        const validStart = start === 0 || previous === undefined || /\s|[([{]/.test(previous);
+        const validStart =
+          start === 0 || previous === undefined || /\s|[([{]/.test(previous);
         const validEnd = next === undefined || /\s|[.,!?;:)\]}]/.test(next);
         if (validStart && validEnd) break;
         start = body.indexOf(token, start + token.length);
@@ -207,7 +226,8 @@ function renderCommentBody(body: string, memberNames: readonly string[]) {
       content.push(body.slice(cursor));
       break;
     }
-    if (nextMatch.start > cursor) content.push(body.slice(cursor, nextMatch.start));
+    if (nextMatch.start > cursor)
+      content.push(body.slice(cursor, nextMatch.start));
     content.push(
       <Tag color="blue" key={`mention-${mentionIndex}-${nextMatch.start}`}>
         {nextMatch.name}
@@ -232,7 +252,9 @@ function activityText(operation: string) {
     "task.restored": "restored the task",
     "task.updated": "updated the task",
   };
-  return labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ");
+  return (
+    labels[operation] ?? operation.replaceAll("_", " ").replaceAll(".", " ")
+  );
 }
 
 function useNarrowScreen() {
@@ -267,7 +289,9 @@ export function TaskDetailPanel({
   const [detail, setDetail] = useState<TaskDetail>();
   const [draft, setDraft] = useState<DetailDraft>();
   const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
-  const [members, setMembers] = useState<readonly OrganizationMemberSummary[]>([]);
+  const [members, setMembers] = useState<readonly OrganizationMemberSummary[]>(
+    [],
+  );
   const [loadError, setLoadError] = useState<unknown>();
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
@@ -278,9 +302,12 @@ export function TaskDetailPanel({
   const commentInputRef = useRef<MentionsRef>(null);
   const commentSelectionRef = useRef({ end: 0, start: 0 });
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string>();
+  const [reactionPickerCommentId, setReactionPickerCommentId] =
+    useState<string>();
   const [pendingReaction, setPendingReaction] = useState<string>();
-  const [commentFiles, setCommentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
+  const [commentFiles, setCommentFiles] = useState<
+    readonly UploadFile<TaskDetail>[]
+  >([]);
   const [editingCommentId, setEditingCommentId] = useState<string>();
   const [editingCommentBody, setEditingCommentBody] = useState("");
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<TaskComment>();
@@ -297,8 +324,11 @@ export function TaskDetailPanel({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [attachmentFiles, setAttachmentFiles] = useState<readonly UploadFile<TaskDetail>[]>([]);
-  const [previewImage, setPreviewImage] = useState<Readonly<{ name: string; url: string }>>();
+  const [attachmentFiles, setAttachmentFiles] = useState<
+    readonly UploadFile<TaskDetail>[]
+  >([]);
+  const [previewImage, setPreviewImage] =
+    useState<Readonly<{ name: string; url: string }>>();
 
   const load = useCallback(async () => {
     if (!taskId) return;
@@ -312,7 +342,9 @@ export function TaskDetailPanel({
       setDetail(next);
       setDraft(initialDraft(next));
       setAttachmentFiles(
-        next.attachments.filter((attachment) => !attachment.commentId).map(attachmentUploadFile),
+        next.attachments
+          .filter((attachment) => !attachment.commentId)
+          .map(attachmentUploadFile),
       );
       setTeams(nextTeams);
       setMembers(nextMembers);
@@ -330,7 +362,9 @@ export function TaskDetailPanel({
     setSaveError(undefined);
     setActiveDetailTab("subtasks");
     setCommentsSeenAt(
-      readCommentsSeenAt(commentsSeenStorageKey(organizationId, taskId, currentUserId)),
+      readCommentsSeenAt(
+        commentsSeenStorageKey(organizationId, taskId, currentUserId),
+      ),
     );
     setComment("");
     setCommentComposerRevision(0);
@@ -356,7 +390,11 @@ export function TaskDetailPanel({
     if (!taskId) return;
     const reload = (event: Event) => {
       const next = (
-        event as CustomEvent<{ projectId?: string; resourceId: string; resourceType: string }>
+        event as CustomEvent<{
+          projectId?: string;
+          resourceId: string;
+          resourceType: string;
+        }>
       ).detail;
       if (
         next.projectId === projectId &&
@@ -369,11 +407,15 @@ export function TaskDetailPanel({
     return () => window.removeEventListener(invalidationEventName, reload);
   }, [load, projectId, taskId]);
 
-  useEffect(() => () => previewImage && URL.revokeObjectURL(previewImage.url), [previewImage]);
+  useEffect(
+    () => () => previewImage && URL.revokeObjectURL(previewImage.url),
+    [previewImage],
+  );
 
   const unreadCommentCount =
     detail?.comments.filter(
-      (item) => item.authorUserId !== currentUserId && item.createdAt > commentsSeenAt,
+      (item) =>
+        item.authorUserId !== currentUserId && item.createdAt > commentsSeenAt,
     ).length ?? 0;
 
   const markCommentsSeen = useCallback(() => {
@@ -425,7 +467,11 @@ export function TaskDetailPanel({
   const teamOptions = useMemo(
     () =>
       teams.map((team, index) => ({
-        label: <Tag color={teamTagColors[index % teamTagColors.length] ?? "blue"}>{team.name}</Tag>,
+        label: (
+          <Tag color={teamTagColors[index % teamTagColors.length] ?? "blue"}>
+            {team.name}
+          </Tag>
+        ),
         value: team.id,
       })),
     [teams],
@@ -479,7 +525,10 @@ export function TaskDetailPanel({
     setEmojiOpen(false);
     requestAnimationFrame(() => {
       commentInputRef.current?.focus();
-      commentInputRef.current?.nativeElement?.setSelectionRange(nextCursor, nextCursor);
+      commentInputRef.current?.nativeElement?.setSelectionRange(
+        nextCursor,
+        nextCursor,
+      );
     });
   };
 
@@ -501,7 +550,9 @@ export function TaskDetailPanel({
       }
       const nextTitle = nextDraft.title.trim().replace(/\s+/g, " ");
       const nextDescription = nextDraft.description.trim();
-      const nextDueDate = nextDraft.dueDate ? dateKey(nextDraft.dueDate) : undefined;
+      const nextDueDate = nextDraft.dueDate
+        ? dateKey(nextDraft.dueDate)
+        : undefined;
       const teamChanged = (nextDraft.teamId ?? null) !== (task.teamId ?? null);
       if (
         nextTitle !== task.title ||
@@ -512,21 +563,30 @@ export function TaskDetailPanel({
       ) {
         task = await api.tasks.update(organizationId, projectId, task.id, {
           ...(nextTitle === task.title ? {} : { title: nextTitle }),
-          ...(nextDescription === task.description ? {} : { description: nextDescription }),
+          ...(nextDescription === task.description
+            ? {}
+            : { description: nextDescription }),
           ...(nextDueDate === task.dueDate
             ? {}
             : { dueDate: nextDueDate === undefined ? null : nextDueDate }),
-          ...(nextDraft.priority === task.priority ? {} : { priority: nextDraft.priority }),
+          ...(nextDraft.priority === task.priority
+            ? {}
+            : { priority: nextDraft.priority }),
           ...(teamChanged ? { teamId: nextDraft.teamId ?? null } : {}),
           expectedRevision: task.revision,
         });
       }
       const assigneeUserIds = nextDraft.assigneeUserIds;
       if (!sameIds(assigneeUserIds, task.assigneeUserIds)) {
-        task = await api.tasks.replaceAssignees(organizationId, projectId, task.id, {
-          expectedRevision: task.revision,
-          userIds: [...assigneeUserIds],
-        });
+        task = await api.tasks.replaceAssignees(
+          organizationId,
+          projectId,
+          task.id,
+          {
+            expectedRevision: task.revision,
+            userIds: [...assigneeUserIds],
+          },
+        );
       }
       onTaskChanged(task);
       await load();
@@ -589,10 +649,12 @@ export function TaskDetailPanel({
 
   const toggleSubtask = async (subtask: TaskView, complete: boolean) => {
     const completedStatus =
-      statuses.find((status) => /^(done|complete|completed)$/i.test(status.name)) ??
-      statuses.at(-1);
+      statuses.find((status) =>
+        /^(done|complete|completed)$/i.test(status.name),
+      ) ?? statuses.at(-1);
     const activeStatus =
-      statuses.find((status) => status.id === detail?.task.statusId) ?? statuses[0];
+      statuses.find((status) => status.id === detail?.task.statusId) ??
+      statuses[0];
     const targetStatus = complete ? completedStatus : activeStatus;
     if (!targetStatus || targetStatus.id === subtask.statusId) return;
     setSaveError(undefined);
@@ -632,9 +694,14 @@ export function TaskDetailPanel({
     setDeletingSubtask(true);
     setSaveError(undefined);
     try {
-      await api.tasks.archive(organizationId, projectId, subtaskDeleteTarget.id, {
-        expectedRevision: subtaskDeleteTarget.revision,
-      });
+      await api.tasks.archive(
+        organizationId,
+        projectId,
+        subtaskDeleteTarget.id,
+        {
+          expectedRevision: subtaskDeleteTarget.revision,
+        },
+      );
       setSubtaskDeleteTarget(undefined);
       await load();
     } catch (reason) {
@@ -650,19 +717,29 @@ export function TaskDetailPanel({
     setPostingComment(true);
     setSaveError(undefined);
     try {
-      const created = await api.tasks.createComment(organizationId, projectId, detail.task.id, {
-        body: comment,
-      });
+      const created = await api.tasks.createComment(
+        organizationId,
+        projectId,
+        detail.task.id,
+        {
+          body: comment,
+        },
+      );
       let nextDetail: TaskDetail | undefined;
       for (const entry of commentFiles) {
         const file = entry.originFileObj;
         if (!file) continue;
-        nextDetail = await api.tasks.createAttachment(organizationId, projectId, detail.task.id, {
-          commentId: created.id,
-          contentBase64: await fileToBase64(file),
-          contentType: file.type || "application/octet-stream",
-          name: file.name,
-        });
+        nextDetail = await api.tasks.createAttachment(
+          organizationId,
+          projectId,
+          detail.task.id,
+          {
+            commentId: created.id,
+            contentBase64: await fileToBase64(file),
+            contentType: file.type || "application/octet-stream",
+            name: file.name,
+          },
+        );
       }
       setComment("");
       setCommentComposerRevision((revision) => revision + 1);
@@ -708,7 +785,11 @@ export function TaskDetailPanel({
     }
   };
 
-  const setCommentReaction = async (item: TaskComment, emoji: string, active: boolean) => {
+  const setCommentReaction = async (
+    item: TaskComment,
+    emoji: string,
+    active: boolean,
+  ) => {
     if (!detail) return;
     const pendingKey = `${item.id}:${emoji}`;
     setPendingReaction(pendingKey);
@@ -757,9 +838,14 @@ export function TaskDetailPanel({
     setDeleting(true);
     setSaveError(undefined);
     try {
-      const deleted = await api.tasks.archive(organizationId, projectId, detail.task.id, {
-        expectedRevision: detail.task.revision,
-      });
+      const deleted = await api.tasks.archive(
+        organizationId,
+        projectId,
+        detail.task.id,
+        {
+          expectedRevision: detail.task.revision,
+        },
+      );
       setDeleteConfirmOpen(false);
       onTaskDeleted(deleted);
       onClose();
@@ -774,36 +860,53 @@ export function TaskDetailPanel({
     setDetail(next);
     setDraft((current) => (editing && current ? current : initialDraft(next)));
     setAttachmentFiles(
-      next.attachments.filter((attachment) => !attachment.commentId).map(attachmentUploadFile),
+      next.attachments
+        .filter((attachment) => !attachment.commentId)
+        .map(attachmentUploadFile),
     );
     onTaskChanged(next.task);
   };
 
-  const uploadAttachment = ({ file, onError, onSuccess }: UploadRequestOptions<TaskDetail>) => {
+  const uploadAttachment = ({
+    file,
+    onError,
+    onSuccess,
+  }: UploadRequestOptions<TaskDetail>) => {
     void (async () => {
       if (!detail) {
         onError(new Error("Task details are not available."));
         return;
       }
       try {
-        const next = await api.tasks.createAttachment(organizationId, projectId, detail.task.id, {
-          contentBase64: await fileToBase64(file),
-          contentType: file.type || "application/octet-stream",
-          name: file.name,
-        });
+        const next = await api.tasks.createAttachment(
+          organizationId,
+          projectId,
+          detail.task.id,
+          {
+            contentBase64: await fileToBase64(file),
+            contentType: file.type || "application/octet-stream",
+            name: file.name,
+          },
+        );
         onSuccess(next);
         applyDetail(next);
       } catch (reason) {
-        const error = reason instanceof Error ? reason : new Error("Could not upload attachment.");
+        const error =
+          reason instanceof Error
+            ? reason
+            : new Error("Could not upload attachment.");
         setSaveError(error);
         onError(error);
       }
     })();
   };
 
-  const removeAttachment = async (file: UploadFile<TaskDetail>): Promise<boolean> => {
+  const removeAttachment = async (
+    file: UploadFile<TaskDetail>,
+  ): Promise<boolean> => {
     if (!detail) return false;
-    if (!detail.attachments.some((attachment) => attachment.id === file.uid)) return true;
+    if (!detail.attachments.some((attachment) => attachment.id === file.uid))
+      return true;
     setSaveError(undefined);
     try {
       const next = await api.tasks.deleteAttachment(
@@ -856,9 +959,13 @@ export function TaskDetailPanel({
   };
 
   const completedStatus =
-    statuses.find((status) => /^(done|complete|completed)$/i.test(status.name)) ?? statuses.at(-1);
+    statuses.find((status) =>
+      /^(done|complete|completed)$/i.test(status.name),
+    ) ?? statuses.at(-1);
   const completedSubtasks =
-    detail?.subtasks.filter((subtask) => subtask.statusId === completedStatus?.id).length ?? 0;
+    detail?.subtasks.filter(
+      (subtask) => subtask.statusId === completedStatus?.id,
+    ).length ?? 0;
   const subtaskProgress = detail?.subtasks.length
     ? Math.round((completedSubtasks / detail.subtasks.length) * 100)
     : 0;
@@ -903,13 +1010,19 @@ export function TaskDetailPanel({
             <Checkbox
               checked={complete}
               disabled={archived}
-              onChange={(event) => void toggleSubtask(subtask, event.target.checked)}
+              onChange={(event) =>
+                void toggleSubtask(subtask, event.target.checked)
+              }
             >
-              <Typography.Text delete={complete}>{subtask.title}</Typography.Text>
+              <Typography.Text delete={complete}>
+                {subtask.title}
+              </Typography.Text>
             </Checkbox>
             <div className="task-detail-subtask-actions">
               {subtask.assigneeUserIds.includes(currentUserId) ? (
-                <Avatar size={20}>{currentUserName.slice(0, 1).toUpperCase()}</Avatar>
+                <Avatar size={20}>
+                  {currentUserName.slice(0, 1).toUpperCase()}
+                </Avatar>
               ) : null}
               <Button
                 aria-label={`Edit ${subtask.title}`}
@@ -1002,7 +1115,11 @@ export function TaskDetailPanel({
       <Alert
         action={<Button onClick={() => void load()}>Retry</Button>}
         showIcon
-        title={loadError instanceof Error ? loadError.message : "Could not load the task."}
+        title={
+          loadError instanceof Error
+            ? loadError.message
+            : "Could not load the task."
+        }
         type="error"
       />
     </div>
@@ -1016,7 +1133,11 @@ export function TaskDetailPanel({
         {saveError ? (
           <Alert
             showIcon
-            title={saveError instanceof Error ? saveError.message : "Could not save the task."}
+            title={
+              saveError instanceof Error
+                ? saveError.message
+                : "Could not save the task."
+            }
             type="error"
           />
         ) : null}
@@ -1037,7 +1158,9 @@ export function TaskDetailPanel({
                 }}
                 disabled={saving}
                 maxLength={500}
-                onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+                onChange={(event) =>
+                  setDraft({ ...draft, title: event.target.value })
+                }
                 value={draft.title}
               />
             ) : (
@@ -1049,7 +1172,10 @@ export function TaskDetailPanel({
 
           <div className="task-detail-meta">
             <div className="task-detail-meta-label">
-              <span aria-hidden className="task-detail-meta-icon task-detail-status-icon" />
+              <span
+                aria-hidden
+                className="task-detail-meta-icon task-detail-status-icon"
+              />
               Status
             </div>
             {editing ? (
@@ -1058,7 +1184,8 @@ export function TaskDetailPanel({
                 className="task-detail-field"
                 disabled={saving}
                 onChange={(value) => {
-                  if (typeof value === "string") setDraft({ ...draft, statusId: value });
+                  if (typeof value === "string")
+                    setDraft({ ...draft, statusId: value });
                 }}
                 options={statusOptions}
                 style={taskDetailFieldStyle}
@@ -1092,7 +1219,10 @@ export function TaskDetailPanel({
                 className="task-detail-field"
                 disabled={saving}
                 onChange={(value) =>
-                  setDraft({ ...draft, dueDate: value instanceof Date ? value : null })
+                  setDraft({
+                    ...draft,
+                    dueDate: value instanceof Date ? value : null,
+                  })
                 }
                 placeholder="No due date"
                 style={taskDetailFieldStyle}
@@ -1137,7 +1267,10 @@ export function TaskDetailPanel({
                 notFoundContent="No members"
                 onChange={(value) => {
                   const assigneeUserIds = Array.isArray(value)
-                    ? value.filter((userId): userId is string => typeof userId === "string")
+                    ? value.filter(
+                        (userId): userId is string =>
+                          typeof userId === "string",
+                      )
                     : [];
                   setDraft({ ...draft, assigneeUserIds });
                 }}
@@ -1151,14 +1284,18 @@ export function TaskDetailPanel({
                 <Avatar.Group max={{ count: 4 }} size="small">
                   {detail.task.assigneeUserIds.map((userId) => (
                     <Avatar key={userId}>
-                      {userId === currentUserId ? currentUserName.slice(0, 1).toUpperCase() : "M"}
+                      {userId === currentUserId
+                        ? currentUserName.slice(0, 1).toUpperCase()
+                        : "M"}
                     </Avatar>
                   ))}
                 </Avatar.Group>
                 <Typography.Text>
                   {detail.task.assigneeUserIds
                     .map((userId) =>
-                      userId === currentUserId ? currentUserName : "Organization member",
+                      userId === currentUserId
+                        ? currentUserName
+                        : "Organization member",
                     )
                     .join(", ")}
                 </Typography.Text>
@@ -1179,7 +1316,10 @@ export function TaskDetailPanel({
                 disabled={saving}
                 notFoundContent="No teams"
                 onChange={(value) =>
-                  setDraft({ ...draft, teamId: typeof value === "string" ? value : undefined })
+                  setDraft({
+                    ...draft,
+                    teamId: typeof value === "string" ? value : undefined,
+                  })
                 }
                 options={teamOptions}
                 placeholder="No team"
@@ -1189,7 +1329,10 @@ export function TaskDetailPanel({
             ) : selectedTeam ? (
               <div className="task-detail-meta-value task-detail-tag-value">
                 <Tag
-                  color={teamTagColors[selectedTeamIndex % teamTagColors.length] ?? "blue"}
+                  color={
+                    teamTagColors[selectedTeamIndex % teamTagColors.length] ??
+                    "blue"
+                  }
                   style={taskDetailTagStyle}
                 >
                   {selectedTeam.name}
@@ -1209,7 +1352,11 @@ export function TaskDetailPanel({
                 className="task-detail-field"
                 disabled={saving}
                 onChange={(value) => {
-                  if (value === "low" || value === "medium" || value === "high") {
+                  if (
+                    value === "low" ||
+                    value === "medium" ||
+                    value === "high"
+                  ) {
                     setDraft({ ...draft, priority: value });
                   }
                 }}
@@ -1234,7 +1381,10 @@ export function TaskDetailPanel({
           className="task-detail-description"
           aria-labelledby="task-detail-description-label"
         >
-          <div className="task-detail-section-label" id="task-detail-description-label">
+          <div
+            className="task-detail-section-label"
+            id="task-detail-description-label"
+          >
             <FileTextOutlined />
             Description
           </div>
@@ -1243,7 +1393,9 @@ export function TaskDetailPanel({
               autoSize={{ maxRows: 12, minRows: 3 }}
               disabled={saving}
               maxLength={100_000}
-              onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+              onChange={(event) =>
+                setDraft({ ...draft, description: event.target.value })
+              }
               placeholder="Add a description"
               value={draft.description}
             />
@@ -1261,14 +1413,23 @@ export function TaskDetailPanel({
           className="task-detail-attachments"
           aria-labelledby="task-detail-attachments-label"
         >
-          <div className="task-detail-section-label" id="task-detail-attachments-label">
+          <div
+            className="task-detail-section-label"
+            id="task-detail-attachments-label"
+          >
             <PaperClipOutlined /> Attachments (
-            {detail.attachments.filter((attachment) => !attachment.commentId).length})
+            {
+              detail.attachments.filter((attachment) => !attachment.commentId)
+                .length
+            }
+            )
           </div>
           <Upload<TaskDetail>
             beforeUpload={(file) => {
               if (file.size <= maximumAttachmentBytes) return true;
-              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+              setSaveError(
+                new TypeError("Attachments must be 5 MB or smaller."),
+              );
               return Upload.LIST_IGNORE;
             }}
             customRequest={uploadAttachment}
@@ -1286,11 +1447,15 @@ export function TaskDetailPanel({
               trigger: { alignSelf: "start", marginTop: 8, order: 2 },
             }}
             showUploadList={{
-              extra: (file) => (file.size === undefined ? null : formatFileSize(file.size)),
+              extra: (file) =>
+                file.size === undefined ? null : formatFileSize(file.size),
               showDownloadIcon: (file) =>
                 file.status === "done" &&
-                detail.attachments.some((attachment) => attachment.id === file.uid),
-              showPreviewIcon: (file) => file.status === "done" && isImageAttachment(file),
+                detail.attachments.some(
+                  (attachment) => attachment.id === file.uid,
+                ),
+              showPreviewIcon: (file) =>
+                file.status === "done" && isImageAttachment(file),
               showRemoveIcon: !archived,
             }}
           >
@@ -1300,6 +1465,7 @@ export function TaskDetailPanel({
               icon={<AddIcon />}
               size="small"
               variant="dashed"
+              style={{ borderColor: "rgba(0, 0, 0, 0.3)" }}
             >
               Add attachment
             </Button>
@@ -1314,7 +1480,10 @@ export function TaskDetailPanel({
           setActiveDetailTab(key);
           if (key === "comments") markCommentsSeen();
         }}
-        styles={{ body: { padding: "20px 28px 28px" }, header: { padding: "0 28px" } }}
+        styles={{
+          body: { padding: "20px 28px 28px" },
+          header: { padding: "0 28px" },
+        }}
         items={[
           {
             key: "subtasks",
@@ -1326,7 +1495,12 @@ export function TaskDetailPanel({
                     <CheckSquareOutlined /> Subtasks
                   </span>
                   <div className="task-detail-subtask-progress">
-                    <Progress percent={subtaskProgress} showInfo={false} size={18} type="circle" />
+                    <Progress
+                      percent={subtaskProgress}
+                      showInfo={false}
+                      size={18}
+                      type="circle"
+                    />
                     <Typography.Text type="secondary">
                       {completedSubtasks}/{detail.subtasks.length}
                     </Typography.Text>
@@ -1370,7 +1544,9 @@ export function TaskDetailPanel({
                         onChange={({ fileList }) => setCommentFiles(fileList)}
                         showUploadList={{
                           extra: (file) =>
-                            file.size === undefined ? null : formatFileSize(file.size),
+                            file.size === undefined
+                              ? null
+                              : formatFileSize(file.size),
                           showDownloadIcon: false,
                           showPreviewIcon: false,
                           showRemoveIcon: true,
@@ -1378,7 +1554,8 @@ export function TaskDetailPanel({
                         styles={{
                           item: {
                             background: "var(--launch-color-bg-subtle)",
-                            border: "1px solid var(--launch-color-border-secondary)",
+                            border:
+                              "1px solid var(--launch-color-border-secondary)",
                             maxWidth: 240,
                             padding: "3px 7px",
                           },
@@ -1419,7 +1596,8 @@ export function TaskDetailPanel({
                               icon={<SmileOutlined />}
                               iconOnly
                               onPointerDown={() => {
-                                const input = commentInputRef.current?.nativeElement;
+                                const input =
+                                  commentInputRef.current?.nativeElement;
                                 if (!input) return;
                                 commentSelectionRef.current = {
                                   end: input.selectionEnd,
@@ -1432,15 +1610,22 @@ export function TaskDetailPanel({
                           </Popover>
                           <Upload<TaskDetail>
                             beforeUpload={(file) => {
-                              if (file.size <= maximumAttachmentBytes) return false;
-                              setSaveError(new TypeError("Attachments must be 5 MB or smaller."));
+                              if (file.size <= maximumAttachmentBytes)
+                                return false;
+                              setSaveError(
+                                new TypeError(
+                                  "Attachments must be 5 MB or smaller.",
+                                ),
+                              );
                               return Upload.LIST_IGNORE;
                             }}
                             className="task-detail-comment-attach"
                             fileList={commentFiles}
                             maxCount={20}
                             multiple
-                            onChange={({ fileList }) => setCommentFiles(fileList)}
+                            onChange={({ fileList }) =>
+                              setCommentFiles(fileList)
+                            }
                             showUploadList={false}
                           >
                             <Button
@@ -1475,14 +1660,17 @@ export function TaskDetailPanel({
                       }}
                       onChange={setComment}
                       onPressEnter={(event) => {
-                        if (event.shiftKey || event.nativeEvent.isComposing) return;
+                        if (event.shiftKey || event.nativeEvent.isComposing)
+                          return;
                         event.preventDefault();
                         if (comment.trim().length > 0) void createComment();
                       }}
                       options={mentionOptions}
                       placeholder="Type comment"
                       ref={commentInputRef}
-                      styles={{ root: { borderColor: "transparent", boxShadow: "none" } }}
+                      styles={{
+                        root: { borderColor: "transparent", boxShadow: "none" },
+                      }}
                       value={comment}
                       variant="borderless"
                     />
@@ -1494,7 +1682,9 @@ export function TaskDetailPanel({
                       const authorName = memberName(item.authorUserId);
                       const ownsComment = item.authorUserId === currentUserId;
                       const commentAttachmentFiles = detail.attachments
-                        .filter((attachment) => attachment.commentId === item.id)
+                        .filter(
+                          (attachment) => attachment.commentId === item.id,
+                        )
                         .map(attachmentUploadFile);
                       const menuItems: readonly DropdownMenuItem[] = [
                         {
@@ -1515,15 +1705,22 @@ export function TaskDetailPanel({
                         <article className="task-detail-comment" key={item.id}>
                           <div className="task-detail-comment-header">
                             <div className="task-detail-comment-meta">
-                              <Avatar size={20}>{authorName.slice(0, 1).toUpperCase()}</Avatar>
-                              <Typography.Text strong>{authorName}</Typography.Text>
+                              <Avatar size={20}>
+                                {authorName.slice(0, 1).toUpperCase()}
+                              </Avatar>
+                              <Typography.Text strong>
+                                {authorName}
+                              </Typography.Text>
                               <Typography.Text
                                 className="task-detail-comment-date"
                                 style={{
-                                  color: "var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45))",
+                                  color:
+                                    "var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45))",
                                 }}
                               >
-                                {detailDateTime.format(new Date(item.createdAt))}
+                                {detailDateTime.format(
+                                  new Date(item.createdAt),
+                                )}
                               </Typography.Text>
                             </div>
                             <Dropdown
@@ -1532,7 +1729,8 @@ export function TaskDetailPanel({
                                 items: menuItems,
                                 onClick: ({ key }) => {
                                   if (key === "edit") startEditingComment(item);
-                                  if (key === "delete") setCommentDeleteTarget(item);
+                                  if (key === "delete")
+                                    setCommentDeleteTarget(item);
                                 },
                               }}
                               placement="bottomRight"
@@ -1553,19 +1751,25 @@ export function TaskDetailPanel({
                               disabled
                               fileList={commentAttachmentFiles}
                               maxCount={0}
-                              onDownload={(file) => void downloadAttachment(file)}
+                              onDownload={(file) =>
+                                void downloadAttachment(file)
+                              }
                               onPreview={(file) => void previewAttachment(file)}
                               showUploadList={{
                                 extra: (file) =>
-                                  file.size === undefined ? null : formatFileSize(file.size),
+                                  file.size === undefined
+                                    ? null
+                                    : formatFileSize(file.size),
                                 showDownloadIcon: true,
-                                showPreviewIcon: (file) => isImageAttachment(file),
+                                showPreviewIcon: (file) =>
+                                  isImageAttachment(file),
                                 showRemoveIcon: false,
                               }}
                               styles={{
                                 item: {
                                   background: "var(--launch-color-bg-subtle)",
-                                  border: "1px solid var(--launch-color-border-secondary)",
+                                  border:
+                                    "1px solid var(--launch-color-border-secondary)",
                                   maxWidth: 240,
                                   padding: "3px 7px",
                                 },
@@ -1602,7 +1806,9 @@ export function TaskDetailPanel({
                                 </Button>
                                 <Button
                                   color="primary"
-                                  disabled={editingCommentBody.trim().length === 0}
+                                  disabled={
+                                    editingCommentBody.trim().length === 0
+                                  }
                                   loading={postingComment}
                                   onClick={() => void saveEditedComment(item)}
                                   size="small"
@@ -1654,13 +1860,17 @@ export function TaskDetailPanel({
                                 <EmojiPicker
                                   allowExpandReactions
                                   mode="reactions"
-                                  onSelect={(emoji) => void setCommentReaction(item, emoji, true)}
+                                  onSelect={(emoji) =>
+                                    void setCommentReaction(item, emoji, true)
+                                  }
                                   previewConfig={{ showPreview: false }}
                                   width={300}
                                 />
                               }
                               onOpenChange={(open) =>
-                                setReactionPickerCommentId(open ? item.id : undefined)
+                                setReactionPickerCommentId(
+                                  open ? item.id : undefined,
+                                )
                               }
                               open={reactionPickerCommentId === item.id}
                               placement="topLeft"
@@ -1682,7 +1892,10 @@ export function TaskDetailPanel({
                     })}
                   </div>
                 ) : (
-                  <Empty description="No comments yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty
+                    description="No comments yet"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
                 )}
               </section>
             ),
@@ -1691,7 +1904,10 @@ export function TaskDetailPanel({
             key: "activity",
             label: "Activities",
             children: (
-              <section className="task-detail-tab-panel" aria-label="Activities">
+              <section
+                className="task-detail-tab-panel"
+                aria-label="Activities"
+              >
                 {detail.activity.length > 0 ? (
                   <Timeline
                     items={detail.activity.map((item) => ({
@@ -1702,7 +1918,10 @@ export function TaskDetailPanel({
                     titleSpan={140}
                   />
                 ) : (
-                  <Empty description="No activity yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty
+                    description="No activity yet"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
                 )}
               </section>
             ),
@@ -1825,7 +2044,8 @@ export function TaskDetailPanel({
         title="Delete comment?"
       >
         <Typography.Paragraph>
-          Delete this comment and its attached files? This action cannot be undone.
+          Delete this comment and its attached files? This action cannot be
+          undone.
         </Typography.Paragraph>
       </Modal>
 
@@ -1842,7 +2062,8 @@ export function TaskDetailPanel({
         title="Delete subtask?"
       >
         <Typography.Paragraph>
-          Delete {subtaskDeleteTarget?.title ?? "this subtask"}? This action cannot be undone.
+          Delete {subtaskDeleteTarget?.title ?? "this subtask"}? This action
+          cannot be undone.
         </Typography.Paragraph>
       </Modal>
 
@@ -1859,7 +2080,8 @@ export function TaskDetailPanel({
         title="Delete task?"
       >
         <Typography.Paragraph>
-          Delete {detail?.task.title ?? "this task"}? Its history will remain archived.
+          Delete {detail?.task.title ?? "this task"}? Its history will remain
+          archived.
         </Typography.Paragraph>
       </Modal>
     </>
