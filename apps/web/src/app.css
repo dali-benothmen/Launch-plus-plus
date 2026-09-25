@@ -965,9 +965,15 @@
   gap: 8px;
 }
 
-.task-detail-title-row > :first-child {
+.task-detail-title-row > :last-child {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.task-detail-reference {
+  flex: 0 0 auto;
+  color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
+  font-size: 14px;
 }
 
 .task-detail-title-input {

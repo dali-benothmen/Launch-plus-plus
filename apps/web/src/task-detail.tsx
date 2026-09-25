@@ -1311,6 +1311,9 @@ export function TaskDetailPanel({
 
         <div className="task-detail-summary">
           <div className="task-detail-title-row">
+            <span className="task-detail-reference">
+              #{detail.task.reference}
+            </span>
             {editing ? (
               <Input
                 autoFocus
