@@ -663,7 +663,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   align-items: stretch;
-  grid-auto-columns: minmax(180px, 1fr);
+  grid-auto-columns: minmax(270px, 1fr);
   grid-auto-flow: column;
   gap: 10px;
   padding-bottom: 8px;
