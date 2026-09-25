@@ -43,7 +43,7 @@ ALTER TABLE `__new_tasks` RENAME TO `tasks`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
 CREATE UNIQUE INDEX `tasks_project_number_unique` ON `tasks` (`project_id`,`number`);--> statement-breakpoint
 CREATE UNIQUE INDEX `tasks_organization_id_unique` ON `tasks` (`organization_id`,`id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `tasks_project_scope_position_unique` ON `tasks` (`project_id`,`status_id`,`coalesce("parent_task_id"`,` '')`,`position`) WHERE "tasks"."archived_at" is null and "tasks"."deleted_at" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX `tasks_project_scope_position_unique` ON `tasks` (`project_id`,`status_id`,coalesce("parent_task_id", ''),`position`) WHERE "tasks"."archived_at" is null and "tasks"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX `tasks_project_status_position_idx` ON `tasks` (`project_id`,`status_id`,`parent_task_id`,`position`);--> statement-breakpoint
 CREATE INDEX `tasks_project_updated_idx` ON `tasks` (`project_id`,`updated_at`);--> statement-breakpoint
 CREATE INDEX `tasks_parent_idx` ON `tasks` (`parent_task_id`,`archived_at`);--> statement-breakpoint
