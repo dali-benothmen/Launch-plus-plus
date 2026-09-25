@@ -45,6 +45,7 @@ import {
   CommentOutlined,
   DeleteOutlined,
   EditOutlined,
+  EnterOutlined,
   FileTextOutlined,
   FlagOutlined,
   LinkOutlined,
@@ -1293,7 +1294,7 @@ export function TaskDetailPanel({
               showRemoveIcon: !archived,
             }}
           >
-            <Button disabled={archived} icon={<AddIcon />}>
+            <Button disabled={archived} icon={<AddIcon />} size="small" variant="dashed">
               Add attachment
             </Button>
           </Upload>
@@ -1447,10 +1448,12 @@ export function TaskDetailPanel({
                           <Button
                             color="primary"
                             disabled={comment.trim().length === 0}
+                            icon={<EnterOutlined />}
+                            iconPlacement="end"
                             loading={postingComment}
                             onClick={() => void createComment()}
                             size="small"
-                            variant="filled"
+                            variant="primary"
                           >
                             Comment
                           </Button>
