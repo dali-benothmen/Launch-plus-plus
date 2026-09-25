@@ -147,6 +147,52 @@ function sameIds(left: readonly string[], right: readonly string[]) {
   return right.every((value) => values.has(value));
 }
 
+function renderCommentBody(body: string, memberNames: readonly string[]) {
+  const names = [...new Set(memberNames.map((name) => name.trim().replace(/\s+/g, " ")))]
+    .filter(Boolean)
+    .sort((left, right) => right.length - left.length);
+  const content = [];
+  let cursor = 0;
+  let mentionIndex = 0;
+  while (cursor < body.length) {
+    let nextMatch: { end: number; name: string; start: number } | undefined;
+    for (const name of names) {
+      const token = `@${name}`;
+      let start = body.indexOf(token, cursor);
+      while (start >= 0) {
+        const previous = body[start - 1];
+        const next = body[start + token.length];
+        const validStart = start === 0 || previous === undefined || /\s|[([{]/.test(previous);
+        const validEnd = next === undefined || /\s|[.,!?;:)\]}]/.test(next);
+        if (validStart && validEnd) break;
+        start = body.indexOf(token, start + token.length);
+      }
+      if (start < 0) continue;
+      const candidate = { end: start + token.length, name, start };
+      if (
+        !nextMatch ||
+        candidate.start < nextMatch.start ||
+        (candidate.start === nextMatch.start && candidate.end > nextMatch.end)
+      ) {
+        nextMatch = candidate;
+      }
+    }
+    if (!nextMatch) {
+      content.push(body.slice(cursor));
+      break;
+    }
+    if (nextMatch.start > cursor) content.push(body.slice(cursor, nextMatch.start));
+    content.push(
+      <Tag color="blue" key={`mention-${mentionIndex}-${nextMatch.start}`}>
+        {nextMatch.name}
+      </Tag>,
+    );
+    mentionIndex += 1;
+    cursor = nextMatch.end;
+  }
+  return content;
+}
+
 function activityText(operation: string) {
   const labels: Readonly<Record<string, string>> = {
     "comment.created": "added a comment",
@@ -1269,6 +1315,38 @@ export function TaskDetailPanel({
                               />
                             </Dropdown>
                           </div>
+                          {commentAttachmentFiles.length > 0 ? (
+                            <Upload<TaskDetail>
+                              className="task-detail-comment-files"
+                              disabled
+                              fileList={commentAttachmentFiles}
+                              maxCount={0}
+                              onDownload={(file) => void downloadAttachment(file)}
+                              onPreview={(file) => void previewAttachment(file)}
+                              showUploadList={{
+                                extra: (file) =>
+                                  file.size === undefined ? null : formatFileSize(file.size),
+                                showDownloadIcon: true,
+                                showPreviewIcon: (file) => isImageAttachment(file),
+                                showRemoveIcon: false,
+                              }}
+                              styles={{
+                                item: {
+                                  background: "var(--launch-color-bg-subtle)",
+                                  border: "1px solid var(--launch-color-border-secondary)",
+                                  maxWidth: 240,
+                                  padding: "3px 7px",
+                                },
+                                list: {
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 6,
+                                  margin: 0,
+                                },
+                                root: { width: "100%" },
+                              }}
+                            />
+                          ) : null}
                           {editingCommentId === item.id ? (
                             <div className="task-detail-comment-editor">
                               <Mentions
@@ -1302,7 +1380,12 @@ export function TaskDetailPanel({
                               </Space>
                             </div>
                           ) : (
-                            <Typography.Paragraph>{item.body}</Typography.Paragraph>
+                            <Typography.Paragraph>
+                              {renderCommentBody(
+                                item.body,
+                                mentionOptions.map((option) => option.value),
+                              )}
+                            </Typography.Paragraph>
                           )}
                           <div className="task-detail-comment-reactions">
                             {item.reactions.map((reaction) => {
@@ -1362,38 +1445,6 @@ export function TaskDetailPanel({
                               />
                             </Popover>
                           </div>
-                          {commentAttachmentFiles.length > 0 ? (
-                            <Upload<TaskDetail>
-                              className="task-detail-comment-files"
-                              disabled
-                              fileList={commentAttachmentFiles}
-                              maxCount={0}
-                              onDownload={(file) => void downloadAttachment(file)}
-                              onPreview={(file) => void previewAttachment(file)}
-                              showUploadList={{
-                                extra: (file) =>
-                                  file.size === undefined ? null : formatFileSize(file.size),
-                                showDownloadIcon: true,
-                                showPreviewIcon: (file) => isImageAttachment(file),
-                                showRemoveIcon: false,
-                              }}
-                              styles={{
-                                item: {
-                                  background: "var(--launch-color-bg-subtle)",
-                                  border: "1px solid var(--launch-color-border-secondary)",
-                                  maxWidth: 240,
-                                  padding: "3px 7px",
-                                },
-                                list: {
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 6,
-                                  margin: 0,
-                                },
-                                root: { width: "100%" },
-                              }}
-                            />
-                          ) : null}
                         </article>
                       );
                     })}
