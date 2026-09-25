@@ -337,7 +337,7 @@ export function TaskDetailPanel({
       members.map((member) => ({
         key: member.userId,
         label: member.displayName,
-        value: member.displayName,
+        value: member.displayName.trim().replace(/\s+/g, " "),
       })),
     [members],
   );
@@ -1103,6 +1103,7 @@ export function TaskDetailPanel({
                         loading={postingComment}
                         onClick={() => void createComment()}
                         size="small"
+                        variant="filled"
                       />
                     </div>
                   </div>

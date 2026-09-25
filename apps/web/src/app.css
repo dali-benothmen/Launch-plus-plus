@@ -1204,7 +1204,7 @@
   gap: 4px;
   padding: 8px;
   margin-bottom: 8px;
-  border: 1px solid var(--launch-color-border-secondary);
+  border: 1px solid var(--launch-color-border);
   border-radius: var(--launch-radius-lg);
   background: var(--launch-color-bg-elevated);
   transition:
