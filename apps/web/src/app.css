@@ -965,7 +965,7 @@
   gap: 8px;
 }
 
-.task-detail-title-row > :last-child {
+.task-detail-title-row > :first-child {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -973,7 +973,8 @@
 .task-detail-reference {
   flex: 0 0 auto;
   color: var(--launch-color-text-tertiary, rgba(0, 0, 0, 0.45));
-  font-size: 14px;
+  font-size: 25px;
+  line-height: 1.3;
 }
 
 .task-detail-title-input {
