@@ -1576,6 +1576,7 @@ export function TaskDetailPanel({
                         <>
                           <Popover
                             arrow={false}
+                            destroyOnHidden
                             content={
                               <EmojiPicker
                                 height={350}
@@ -1856,6 +1857,7 @@ export function TaskDetailPanel({
                             })}
                             <Popover
                               arrow={false}
+                              destroyOnHidden
                               content={
                                 <EmojiPicker
                                   allowExpandReactions
