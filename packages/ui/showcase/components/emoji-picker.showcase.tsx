@@ -17,6 +17,16 @@ function BasicEmojiPicker() {
   );
 }
 
+function ReactionsEmojiPicker() {
+  const [selected, setSelected] = useState("Choose a reaction");
+  return (
+    <Space size="medium" vertical>
+      <EmojiPicker mode="reactions" onSelect={(emoji) => setSelected(`Reacted with ${emoji}`)} />
+      <Typography.Text type="secondary">{selected}</Typography.Text>
+    </Space>
+  );
+}
+
 export const emojiPickerShowcase = defineShowcase({
   id: "emoji-picker",
   name: "Emoji Picker",
@@ -41,17 +51,44 @@ export const emojiPickerShowcase = defineShowcase({
   onSelect={(emoji, detail) => console.log(emoji, detail)}
 />`,
     },
+    {
+      id: "emoji-picker-reactions",
+      name: "Reactions mode",
+      description: "Offer a compact reaction row that can optionally expand into the full picker.",
+      preview: ReactionsEmojiPicker,
+      code: `<EmojiPicker
+  mode="reactions"
+  onSelect={(emoji) => addReaction(emoji)}
+/>`,
+    },
   ],
   api: [
+    {
+      name: "mode",
+      type: '"picker" | "reactions"',
+      defaultValue: '"picker"',
+      description: "Shows the full picker or a compact single-row reactions picker.",
+    },
     {
       name: "onSelect",
       type: "(emoji: string, detail: EmojiPickerData) => void",
       description: "Runs after an emoji is selected with its Unicode value and complete metadata.",
     },
     {
-      name: "onEmojiClick",
-      type: "PickerProps['onEmojiClick']",
-      description: "Exposes the underlying picker callback when the native event is also needed.",
+      name: "onEmojiClick / onReactionClick",
+      type: "PickerProps callbacks",
+      description: "Expose the underlying callbacks when the native event is also needed.",
+    },
+    {
+      name: "reactions",
+      type: "string[]",
+      description: "Provides the unified emoji IDs shown in reactions mode.",
+    },
+    {
+      name: "allowExpandReactions",
+      type: "boolean",
+      defaultValue: "true",
+      description: "Shows an action that expands reactions mode into the full picker.",
     },
     {
       name: "emojiStyle",

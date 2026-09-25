@@ -1,6 +1,7 @@
 export {
   EmojiPicker,
   type EmojiPickerData,
+  type EmojiPickerMode,
   type EmojiPickerProps,
   EmojiPickerStyle,
   EmojiPickerTheme,
