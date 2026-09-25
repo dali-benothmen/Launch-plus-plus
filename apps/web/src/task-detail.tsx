@@ -1507,6 +1507,7 @@ export function TaskDetailPanel({
                               </Typography.Text>
                             </div>
                             <Dropdown
+                              destroyOnHidden
                               menu={{
                                 items: menuItems,
                                 onClick: ({ key }) => {
