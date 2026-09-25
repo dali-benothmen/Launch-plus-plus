@@ -50,7 +50,6 @@ import {
   LinkOutlined,
   MoreOutlined,
   PaperClipOutlined,
-  SendOutlined,
   SmileOutlined,
   TeamOutlined,
   UserAddOutlined,
@@ -1446,16 +1445,15 @@ export function TaskDetailPanel({
                             />
                           </Upload>
                           <Button
-                            aria-label="Send comment"
                             color="primary"
                             disabled={comment.trim().length === 0}
-                            icon={<SendOutlined />}
-                            iconOnly
                             loading={postingComment}
                             onClick={() => void createComment()}
                             size="small"
                             variant="filled"
-                          />
+                          >
+                            Comment
+                          </Button>
                         </>
                       }
                       key={commentComposerRevision}
@@ -1760,7 +1758,7 @@ export function TaskDetailPanel({
               <Button
                 aria-label="Delete task"
                 className="task-detail-header-action"
-                danger
+                color="danger"
                 icon={<DeleteOutlined style={taskDetailHeaderIconStyle} />}
                 iconOnly
                 onClick={() => setDeleteConfirmOpen(true)}
