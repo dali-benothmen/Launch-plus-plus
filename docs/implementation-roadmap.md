@@ -137,6 +137,30 @@ All Phase 0 exit conditions pass on a clean machine.
 - [x] Backup and restore reproduce the organization on a clean installation.
 - [x] The product remains fully usable with the plugin platform disabled.
 
+## Pre-Phase 2 gate - organization-first entry and registration
+
+Complete and manually approve the [organization-first entry and registration plan](./organization-first-entry-plan.md) before starting the plugin author preview.
+
+### Objective
+
+Replace generic account signup with organization discovery, deliberate organization-and-owner creation, contextual sign-in and recovery, and compatibility routing.
+
+### Delivery phases
+
+- [ ] **Organization identity foundation.** Establish slug rules, allow duplicate display names, migrate persistence, and publish the public resolver.
+- [ ] **Organization and owner creation.** Add idempotent owner provisioning, the registration contract, locator, not-found confirmation, and creation UI.
+- [ ] **Contextual authentication and cutover.** Scope sign-in and recovery to the organization and preserve existing setup, session, and application routes.
+- [ ] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.
+
+### Exit gate
+
+- [ ] Organization identity is the public entry point.
+- [ ] New organization creation produces one owner and a usable initial Board.
+- [ ] Existing organization access remains membership-controlled and invitation-only.
+- [ ] Recovery cannot create duplicate ownership.
+- [ ] The generic signup dead end is removed.
+- [ ] The user approves the journey before Phase 2 begins.
+
 ## Phase 2 — plugin author preview
 
 ### Objective

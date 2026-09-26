@@ -1,22 +1,10 @@
----
-title: Organization-first entry and registration
-brief: Replace generic account signup with an organization-first journey that separates creating a new organization, signing in to an existing organization, joining by invitation, and recovering owner access.
-status: review
-kind: plan
-localOnly: true
----
-
 # Organization-first entry and registration
 
 Launch++ should stop presenting identity as a generic global **Sign up / Sign in** choice. The public journey begins with an organization slug. An existing slug leads to that organization's sign-in experience; a missing slug offers an explicit, typo-safe path to create a new organization and its first owner.
 
 This is a pre–Phase 2 product gate. It changes the entry experience and identity orchestration without pulling the full collaboration system, mail delivery, or member administration forward.
 
-<Callout id="organization-entry-core-decision" tone="decision">
-
 **Create an organization** and **join an organization** are different operations. Public registration may create a new organization and its owner. It must never add a person to an existing organization; that always requires an invitation. Account recovery remains a separate path and never creates a replacement owner.
-
-</Callout>
 
 ## Outcome
 
@@ -41,11 +29,12 @@ An authenticated user can still create an additional organization through the ap
 | Lost account | Recover access | Use organization-scoped recovery | Existing identity is recovered; ownership is not duplicated |
 | Existing signed-in user | Create another organization | Use the authenticated create-organization command | Existing identity becomes owner of the new organization |
 
-<Mermaid
-  id="organization-entry-flow"
-  source={"flowchart TD\n  Start[Open Launch++] --> Locator[Enter organization slug]\n  Locator --> Resolve{Slug exists?}\n  Resolve -->|Yes| SignIn[Organization sign in]\n  SignIn --> Auth{Credentials valid?}\n  Auth -->|Yes| App[Open organization]\n  Auth -->|No| SignIn\n  SignIn --> Recover[Recover existing account]\n  Resolve -->|No| Missing[Organization not found]\n  Missing --> Locator\n  Missing --> Confirm[Create this organization]\n  Confirm --> Create[Organization + owner form]\n  Create --> Provision{Provisioning succeeds?}\n  Provision -->|Yes| App\n  Provision -->|No| Create\n  Invite[Invitation link] -. collaboration phase .-> Join[Join organization]"}
-  caption="The missing-slug state requires an explicit create action so a typo never creates an organization."
-/>
+```text
+Open Launch++
+  -> Enter organization slug
+     -> Existing: organization sign-in -> membership check -> application
+     -> Missing: not-found confirmation -> create organization -> owner form -> initial Board
+```
 
 ## Decisions
 
@@ -231,11 +220,7 @@ Introduce an application-level `RegisterOrganizationOwnerService` with an identi
 
 No password, raw session token, or invitation token is stored in Launch++ domain tables. The same idempotency key must return the completed result or a retryable state without creating a second organization, owner, or project.
 
-<Callout id="registration-consistency-risk" tone="warning">
-
 Do not call the public Better Auth sign-up endpoint directly from the browser. It would create an installation identity without guaranteeing an organization membership. Keep generic `/api/auth/sign-up/*` blocked; only the bounded organization-registration service may provision the first owner.
-
-</Callout>
 
 ## Data changes
 
@@ -273,50 +258,44 @@ No invitation table is added in this slice. The existing architecture definition
 - `/setup` is unchanged for uninitialized installations.
 - The API client gains a `directory`/`registration` public surface; existing authenticated organization methods remain intact.
 
-## Implementation slices
+## Delivery phases and tasks
 
-Each slice is one coherent commit. After each commit, stop and hand the user a focused manual test list; do not continue until the user confirms it.
+Each task is one implementation checkpoint and one commit. Stop after every task so the user can test and approve it.
 
-<Checklist
-  id="organization-entry-implementation-slices"
-  items={[
-    {
-      id: "slug-policy-and-migration",
-      label: "Define slug policy and migrate organization name uniqueness",
-      note: "Add explicit slug normalization/reservation, allow duplicate display names, preserve unique slugs, and update architecture documentation.",
-    },
-    {
-      id: "public-directory-contract",
-      label: "Publish the public organization directory contract",
-      note: "Add schemas, server lookup, problem details, rate limiting, OpenAPI output, and generated API-client methods without exposing private organization data.",
-    },
-    {
-      id: "registration-orchestration",
-      label: "Implement organization-owner registration orchestration",
-      note: "Add the bounded identity adapter operation, idempotent service, rollback behavior, policy configuration, initial project provisioning, session creation, audit, and outbox facts.",
-    },
-    {
-      id: "organization-locator-ui",
-      label: "Build organization locator and not-found confirmation",
-      note: "Use the shared auth shell and UI components; resolve only on submit and require explicit confirmation before creation.",
-    },
-    {
-      id: "organization-creation-ui",
-      label: "Build create-organization-and-owner journey",
-      note: "Collect organization/slug/owner credentials, show field-level errors, submit once, and enter the initial Board on success.",
-    },
-    {
-      id: "contextual-auth-ui",
-      label: "Make sign-in and recovery organization-scoped",
-      note: "Show organization identity, enforce membership after sign-in, remove the dead generic signup action, and preserve operator recovery behavior.",
-    },
-    {
-      id: "route-and-documentation-cutover",
-      label: "Cut over entry routes and synchronize documentation",
-      note: "Add compatibility redirects, update the roadmap and UI/data architecture documents, and document hosted versus self-hosted creation policy.",
-    },
-  ]}
-/>
+### Phase A - Organization identity foundation
+
+- [ ] **Define the slug policy.** Add normalization, validation, reserved slugs, editable suggestions, and stable slug rules.
+- [ ] **Correct organization-name persistence.** Allow duplicate display names, retain unique slugs, support exact requested slugs, and add a reversible migration.
+- [ ] **Publish the public organization resolver.** Add the rate-limited public lookup contract, OpenAPI schema, and API-client method without exposing private organization data.
+
+Completion condition: duplicate names work, duplicate or reserved slugs do not, and slug lookup exposes only public organization identity.
+
+### Phase B - Organization and owner creation
+
+- [ ] **Add bounded registration orchestration.** Create the identity, profile, organization, owner membership, current selection, default project, audit, outbox, and session through an idempotent application service with rollback for partial failure.
+- [ ] **Publish the registration endpoint.** Add the policy-controlled public command, strict origin checks, rate limits, typed conflicts, and safe navigation response.
+- [ ] **Build the organization locator.** Resolve a submitted slug using the shared authentication shell and send authenticated users to their current organization.
+- [ ] **Build the typo-safe not-found state.** Preserve the attempted slug and require explicit confirmation before creation.
+- [ ] **Build create organization and owner.** Collect organization and owner details, use field-level validation, prevent duplicate submission, and enter the initial Board after success.
+
+Completion condition: an allowed visitor can deliberately create a complete owner organization and land on a usable Board without partial data.
+
+### Phase C - Contextual authentication and cutover
+
+- [ ] **Make sign-in organization-scoped.** Show organization identity, remove generic signup, verify membership after authentication, and return members to their organization.
+- [ ] **Make recovery organization-scoped.** Preserve organization context and restore the existing identity without changing ownership.
+- [ ] **Add compatibility routing.** Preserve setup, sessions, existing application URLs, and temporary legacy entry routes while moving anonymous entry to the locator.
+- [ ] **Synchronize documentation and operations.** Update UI architecture, data/API architecture, environment configuration, privacy limits, and signup terminology.
+
+Completion condition: organization identity is the anonymous entry context and the generic account-registration dead end no longer exists.
+
+### Phase D - Manual qualification and approval
+
+- [ ] **Qualify organization discovery.** Verify known, unknown, invalid, reserved, duplicate-name, and duplicate-slug behavior.
+- [ ] **Qualify owner creation.** Verify policy enforcement, exactly-once provisioning, default Board entry, session persistence, retry safety, and failure rollback.
+- [ ] **Qualify authentication boundaries.** Verify membership denial, additional organization creation, contextual recovery, fresh installation setup, existing sessions, and compatibility routes.
+
+Completion condition: the user manually approves the complete journey. Only then can the plugin author preview begin.
 
 ## Primary files and ownership
 
