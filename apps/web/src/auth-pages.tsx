@@ -1,6 +1,13 @@
 import { Alert, Button, Checkbox, GoogleIcon, Input, Spin, Typography } from "@launchpp/ui";
-import { type FormEvent, type PropsWithChildren, type ReactNode, useEffect, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+  type FormEvent,
+  type PropsWithChildren,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
 type AuthPresentation = "board" | "plugins";
@@ -181,19 +188,159 @@ export function InstallationBoundary({
   return children;
 }
 
-export function EntryRedirect() {
+const ORGANIZATION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function normalizeLocatorSlug(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function organizationSlugError(slug: string) {
+  if (!slug) return "Enter your organization URL.";
+  if (slug.length < 3 || slug.length > 48 || !ORGANIZATION_SLUG_PATTERN.test(slug)) {
+    return "Use 3 to 48 lowercase letters, numbers, or single hyphens.";
+  }
+  return "";
+}
+
+export function OrganizationLocatorPage() {
+  const navigate = useNavigate();
+  const organizationInput = useRef<HTMLInputElement>(null);
+  const [slug, setSlug] = useState("");
+  const [fieldError, setFieldError] = useState("");
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedSlug = normalizeLocatorSlug(slug);
+    const nextError = organizationSlugError(normalizedSlug);
+    setSlug(normalizedSlug);
+    setFieldError(nextError);
+    if (nextError) {
+      organizationInput.current?.focus();
+      return;
+    }
+    navigate(`/o/${encodeURIComponent(normalizedSlug)}`);
+  };
+
+  return (
+    <AuthLayout title="Open your organization">
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        Enter the organization URL used by your team.
+      </Typography.Paragraph>
+      <form className="auth-form" noValidate onSubmit={submit}>
+        <Field htmlFor="organization-slug" label="Organization">
+          <Input
+            aria-invalid={Boolean(fieldError)}
+            autoCapitalize="none"
+            autoFocus
+            autoComplete="organization"
+            autoCorrect="off"
+            id="organization-slug"
+            maxLength={48}
+            name="organizationSlug"
+            onChange={(event) => {
+              setSlug(normalizeLocatorSlug(event.currentTarget.value));
+              setFieldError("");
+            }}
+            placeholder="acme"
+            ref={organizationInput}
+            size="large"
+            spellCheck={false}
+            suffix={<span className="auth-organization-suffix">.launchpp.app</span>}
+            value={slug}
+            {...(fieldError ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldError} />
+        </Field>
+        <Button block className="auth-submit" size="large" type="submit" variant="primary">
+          Continue
+        </Button>
+        <Button type="submit" variant="link">
+          Create a new organization
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export function OrganizationEntryPage() {
   const api = useApiClient();
-  const [destination, setDestination] = useState<string>();
+  const navigate = useNavigate();
+  const { organizationSlug = "" } = useParams();
+  const normalizedSlug = normalizeLocatorSlug(organizationSlug);
+  const [missing, setMissing] = useState(false);
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
     let active = true;
-    void api.setup
-      .status()
-      .then(async (setup) => {
-        if (setup.requiresSetup) return "/setup";
-        return (await api.auth.session()) ? "/app" : "/sign-in";
+    setMissing(false);
+    setError(undefined);
+    void api.organizationDirectory
+      .resolve(normalizedSlug)
+      .then((organization) => {
+        if (!active) return;
+        if (!organization.exists) {
+          setMissing(true);
+          return;
+        }
+        navigate(`/o/${organization.slug}/sign-in`, {
+          replace: true,
+          state: { organization },
+        });
       })
+      .catch((reason: unknown) => {
+        if (active) setError(reason);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, navigate, normalizedSlug]);
+
+  if (error) {
+    return (
+      <AuthLayout title="Unable to open your organization">
+        <ErrorMessage error={error} />
+        <div className="auth-locator-back">
+          <Button onClick={() => navigate("/")} type="button">
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (missing) {
+    return (
+      <AuthLayout title={`We couldn't find “${normalizedSlug}”`}>
+        <Typography.Paragraph type="secondary">
+          Check the organization address and try again.
+        </Typography.Paragraph>
+        <div className="auth-locator-back">
+          <Button onClick={() => navigate("/")} type="button">
+            Back
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return <Spin fullscreen description="Opening organization" />;
+}
+
+export function EntryRedirect() {
+  const api = useApiClient();
+  const [destination, setDestination] = useState<null | string>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const setup = await api.setup.status();
+      if (setup.requiresSetup) return "/setup";
+      const session = await api.auth.session();
+      if (!session) return null;
+      const organizations = await api.organizations.list();
+      return organizations.currentOrganizationId ? "/app" : "/organization-setup";
+    })()
       .then((nextDestination) => {
         if (active) setDestination(nextDestination);
       })
@@ -212,11 +359,9 @@ export function EntryRedirect() {
       </AuthLayout>
     );
   }
-  return destination ? (
-    <Navigate replace to={destination} />
-  ) : (
-    <Spin fullscreen description="Opening Launch++" />
-  );
+  if (destination === undefined) return <Spin fullscreen description="Opening Launch++" />;
+  if (destination === null) return <OrganizationLocatorPage />;
+  return <Navigate replace to={destination} />;
 }
 
 export function AuthenticatedRoute({ children }: PropsWithChildren) {

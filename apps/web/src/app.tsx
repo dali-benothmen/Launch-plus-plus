@@ -15,6 +15,7 @@ import {
   AuthenticatedRoute,
   EntryRedirect,
   InstallationBoundary,
+  OrganizationEntryPage,
   OrganizationRequiredRoute,
   OrganizationSetupPage,
   RecoveryPage,
@@ -46,6 +47,22 @@ export const appRoutes: RouteObject[] = [
     element: (
       <InstallationBoundary requiresSetup>
         <SetupPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
+    path: "/o/:organizationSlug",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <OrganizationEntryPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
+    path: "/o/:organizationSlug/sign-in",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <SignInPage />
       </InstallationBoundary>
     ),
   },

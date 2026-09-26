@@ -18,6 +18,14 @@ const apiClient: ApiClient = {
     signIn: vi.fn(async () => undefined),
     signOut: vi.fn(async () => undefined),
   },
+  organizationDirectory: {
+    resolve: vi.fn(async (slug) => ({ exists: true, name: "My Organization", slug })),
+  },
+  organizationRegistrations: {
+    create: vi.fn(async () => {
+      throw new Error("Organization registration is not used by this shell fixture.");
+    }),
+  },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
   search: vi.fn(async () => ({ items: [] })),
   projects: {
