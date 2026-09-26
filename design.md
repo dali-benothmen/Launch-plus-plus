@@ -1,7 +1,7 @@
 ---
 name: Launch++ Design System
 version: 0.1.0
-updatedAt: 2026-09-19
+updatedAt: 2026-09-26
 scope: Default light theme and component behavior
 purpose: Source of truth for implementing the Launch++ visual language with Radix primitives and CSS
 referenceRuntime:
@@ -49,6 +49,9 @@ brand:
   colorPrimaryBorder: "#94cbff"
   colorPrimaryBorderHover: "#67abf5"
   colorBlack: "#000000"
+  shellRailBackground: "#2563EB"
+  shellRailForeground: "#FFFFFF"
+  shellRailSelectedBackground: "rgba(255, 255, 255, 0.2)"
   borderRadius: 6px
 componentTokens:
   button:
@@ -225,6 +228,8 @@ The system uses an `AlibabaSans`-first component font stack with native system f
 Context matters when applying shadows. The `drawerDownDark` token uses very low-opacity white layers and belongs only on dark or inverse surfaces. Light surfaces use black-alpha elevation tokens.
 
 Launch++ uses `#1668dc` as its primary color. Black remains available as an independent palette token for text, high-contrast surfaces, and future product needs; it is not the primary interaction color.
+
+The narrow global navigation rail uses `#2563EB` with white icons. Hovered and selected rail items use a 20% white background so the organization context remains clear without introducing a black selection surface.
 
 The page-level font aliases are:
 
