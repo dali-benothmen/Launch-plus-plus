@@ -13,6 +13,8 @@ import type {
   MoveTaskInput,
   OrganizationContext,
   OrganizationMemberSummary,
+  OrganizationRegistrationInput,
+  OrganizationRegistrationResult,
   OrganizationSummary,
   PublicOrganizationResolution,
   ProjectCatalog,
@@ -94,6 +96,12 @@ function commentPath(
 export interface CoreApiClient {
   readonly organizationDirectory: {
     resolve(slug: string): Promise<PublicOrganizationResolution>;
+  };
+  readonly organizationRegistrations: {
+    create(
+      input: OrganizationRegistrationInput,
+      options?: RequestOptions,
+    ): Promise<OrganizationRegistrationResult>;
   };
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
@@ -255,6 +263,14 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
         json<PublicOrganizationResolution>(
           `/api/v1/public/organizations/${encodeURIComponent(slug)}`,
         ),
+    }),
+    organizationRegistrations: Object.freeze({
+      create: (input: OrganizationRegistrationInput, options?: RequestOptions) =>
+        json<OrganizationRegistrationResult>("/api/v1/public/organization-registrations", {
+          body: JSON.stringify(input),
+          headers: idempotencyHeaders(options),
+          method: "POST",
+        }),
     }),
     search: (query: SearchQuery) => {
       const parameters = new URLSearchParams({ q: query.q });

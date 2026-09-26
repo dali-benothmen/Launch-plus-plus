@@ -1,8 +1,10 @@
 const environmentNames = ["development", "test", "production"] as const;
 const logLevels = ["fatal", "error", "warn", "info", "debug", "trace", "silent"] as const;
+const organizationRegistrationPolicies = ["authenticated", "disabled", "open"] as const;
 
 type EnvironmentName = (typeof environmentNames)[number];
 type LogLevel = (typeof logLevels)[number];
+export type OrganizationRegistrationPolicy = (typeof organizationRegistrationPolicies)[number];
 
 interface LaunchEnvironment extends NodeJS.ProcessEnv {
   LAUNCHPP_AUTH_SECRET?: string;
@@ -10,6 +12,7 @@ interface LaunchEnvironment extends NodeJS.ProcessEnv {
   LAUNCHPP_BIND_ADDRESS?: string;
   LAUNCHPP_DATABASE_PATH?: string;
   LAUNCHPP_LOG_LEVEL?: string;
+  LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY?: string;
   LAUNCHPP_PORT?: string;
   LAUNCHPP_RATE_LIMIT_MAX?: string;
   LAUNCHPP_RATE_LIMIT_WINDOW_MS?: string;
@@ -25,6 +28,7 @@ const launchEnvironmentKeys = new Set([
   "LAUNCHPP_BIND_ADDRESS",
   "LAUNCHPP_DATABASE_PATH",
   "LAUNCHPP_LOG_LEVEL",
+  "LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY",
   "LAUNCHPP_PORT",
   "LAUNCHPP_RATE_LIMIT_MAX",
   "LAUNCHPP_RATE_LIMIT_WINDOW_MS",
@@ -40,6 +44,7 @@ export interface ServerConfig {
   readonly databasePath: string;
   readonly environment: EnvironmentName;
   readonly logLevel: LogLevel;
+  readonly organizationRegistrationPolicy: OrganizationRegistrationPolicy;
   readonly port: number;
   readonly rateLimit: Readonly<{ max: number; windowMs: number }>;
   readonly shutdownGraceMs: number;
@@ -149,6 +154,11 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     databasePath,
     environment: mode,
     logLevel: parseEnum("LAUNCHPP_LOG_LEVEL", variables.LAUNCHPP_LOG_LEVEL ?? "info", logLevels),
+    organizationRegistrationPolicy: parseEnum(
+      "LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY",
+      variables.LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY ?? "authenticated",
+      organizationRegistrationPolicies,
+    ),
     port,
     rateLimit: Object.freeze({
       max: parseInteger(

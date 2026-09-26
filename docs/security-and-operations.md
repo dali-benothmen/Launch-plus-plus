@@ -331,6 +331,7 @@ Representative settings:
 | `LAUNCHPP_MASTER_KEY_FILE` | Mounted encryption-key path |
 | `LAUNCHPP_TRUSTED_PROXIES` | Exact proxy addresses/ranges |
 | `LAUNCHPP_LOG_LEVEL` | Structured log severity |
+| `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` | Public organization creation policy: `open`, `authenticated`, or `disabled` |
 | `LAUNCHPP_SMTP_*` | Optional mail adapter configuration |
 | `LAUNCHPP_BACKUP_DIR` | Backup destination when local backup is enabled |
 | `LAUNCHPP_PLUGIN_POLICY` | Disable, trusted-only, or approved packages according to supported modes |

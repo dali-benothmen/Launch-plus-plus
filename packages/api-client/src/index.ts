@@ -8,6 +8,8 @@ export type {
   LabelSummary,
   OrganizationContext,
   OrganizationMemberSummary,
+  OrganizationRegistrationInput,
+  OrganizationRegistrationResult,
   OrganizationSummary,
   PublicOrganizationResolution,
   ProblemDetails,
@@ -192,6 +194,8 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         await json("/api/auth/sign-out", { method: "POST" });
       },
     }),
+    organizationDirectory: core.organizationDirectory,
+    organizationRegistrations: core.organizationRegistrations,
     health: Object.freeze({
       async readiness(signal?: AbortSignal): Promise<HealthReadiness> {
         const response = await request(`${baseUrl}/health/ready`, {
