@@ -1,5 +1,5 @@
-import { ApiError } from "@launchpp/api-client";
-import { Alert, Button, Checkbox, GoogleIcon, Input, Spin, Typography } from "@launchpp/ui";
+import { ApiError, type PublicOrganizationResolution } from "@launchpp/api-client";
+import { Alert, Button, Checkbox, Input, Spin, Typography } from "@launchpp/ui";
 import {
   type FormEvent,
   type PropsWithChildren,
@@ -210,6 +210,7 @@ const RESERVED_ORGANIZATION_SLUGS = new Set([
 ]);
 
 type OrganizationNavigationState = {
+  readonly organization?: PublicOrganizationResolution;
   readonly organizationSlug?: string;
 };
 
@@ -1088,12 +1089,70 @@ export function SignInPage() {
   const api = useApiClient();
   const navigate = useNavigate();
   const location = useLocation();
+  const { organizationSlug: routeOrganizationSlug = "" } = useParams();
+  const normalizedOrganizationSlug = normalizeLocatorSlug(routeOrganizationSlug);
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const initialOrganization =
+    navigationOrganization?.exists && navigationOrganization.slug === normalizedOrganizationSlug
+      ? navigationOrganization
+      : undefined;
+  const isOrganizationScoped = normalizedOrganizationSlug.length > 0;
+  const submitting = useRef(false);
+  const [organization, setOrganization] = useState<PublicOrganizationResolution | undefined>(
+    initialOrganization,
+  );
+  const [organizationResolutionError, setOrganizationResolutionError] = useState<unknown>();
   const [error, setError] = useState<unknown>();
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isOrganizationScoped || organization) return;
+
+    let active = true;
+    void api.organizationDirectory
+      .resolve(normalizedOrganizationSlug)
+      .then((resolvedOrganization) => {
+        if (!active) return;
+        if (!resolvedOrganization.exists) {
+          navigate(`/o/${resolvedOrganization.slug}`, { replace: true });
+          return;
+        }
+        if (routeOrganizationSlug !== resolvedOrganization.slug) {
+          navigate(`/o/${resolvedOrganization.slug}/sign-in`, {
+            replace: true,
+            state: { organization: resolvedOrganization },
+          });
+          return;
+        }
+        setOrganization(resolvedOrganization);
+      })
+      .catch((reason: unknown) => {
+        if (active) setOrganizationResolutionError(reason);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    api,
+    isOrganizationScoped,
+    navigate,
+    normalizedOrganizationSlug,
+    organization,
+    routeOrganizationSlug,
+  ]);
+
+  const clearFieldError = (field: "email" | "password") => {
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError(undefined);
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting.current) return;
+
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
@@ -1111,30 +1170,92 @@ export function SignInPage() {
     setFieldErrors(nextFieldErrors);
     if (Object.values(nextFieldErrors).some(Boolean)) return;
 
+    submitting.current = true;
     setLoading(true);
+    let credentialsAccepted = false;
     try {
       await api.auth.signIn({
         email,
         password,
         rememberMe: data.get("rememberMe") === "on",
       });
+      credentialsAccepted = true;
+
+      if (isOrganizationScoped && organization) {
+        const context = await api.organizations.list();
+        const accessibleOrganization = context.organizations.find(
+          (candidate) => candidate.slug === organization.slug,
+        );
+        if (!accessibleOrganization) {
+          await api.auth.signOut();
+          setError(
+            new Error(
+              "The email or password is incorrect, or this account cannot access this organization.",
+            ),
+          );
+          return;
+        }
+        if (context.currentOrganizationId !== accessibleOrganization.id) {
+          await api.organizations.select(accessibleOrganization.id);
+        }
+        navigate("/app", { replace: true });
+        return;
+      }
+
       const from = (location.state as { from?: string } | null)?.from ?? "/app";
       navigate(from, { replace: true });
     } catch (reason) {
-      setError(reason);
+      if (
+        isOrganizationScoped &&
+        !credentialsAccepted &&
+        reason instanceof ApiError &&
+        reason.status >= 400 &&
+        reason.status < 500
+      ) {
+        setError(
+          new Error(
+            "The email or password is incorrect, or this account cannot access this organization.",
+          ),
+        );
+      } else {
+        setError(reason);
+      }
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
 
+  if (organizationResolutionError) {
+    return (
+      <AuthLayout title="Unable to open your organization">
+        <ErrorMessage error={organizationResolutionError} />
+        <div className="auth-locator-back">
+          <Button onClick={() => navigate("/")} type="button">
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (isOrganizationScoped && !organization) {
+    return <Spin fullscreen description="Loading organization" />;
+  }
+
+  const organizationName = organization?.name ?? organization?.slug;
+  const recoveryDestination = organization
+    ? `/recover?organization=${encodeURIComponent(organization.slug)}`
+    : "/recover";
+
   return (
-    <AuthLayout title="Welcome back">
+    <AuthLayout title={organizationName ? `Welcome back to ${organizationName}` : "Welcome back"}>
       <Typography.Paragraph
         className="auth-subtitle"
         style={{ color: "#667085", fontSize: 14, margin: "8px 0 36px" }}
         type="secondary"
       >
-        Pick up where your work left off.
+        {organization ? `${organization.slug}.launchpp.app` : "Pick up where your work left off."}
       </Typography.Paragraph>
       <form className="auth-form" noValidate onSubmit={submit}>
         <ErrorMessage error={error} />
@@ -1142,9 +1263,10 @@ export function SignInPage() {
           <Input
             aria-invalid={Boolean(fieldErrors.email)}
             autoComplete="email"
+            disabled={loading}
             id="sign-in-email"
             name="email"
-            onChange={() => setFieldErrors((current) => ({ ...current, email: "" }))}
+            onChange={() => clearFieldError("email")}
             placeholder="Enter your email"
             required
             size="large"
@@ -1156,10 +1278,10 @@ export function SignInPage() {
         <Field
           action={
             <Typography.Link
-              href="/recover"
+              href={recoveryDestination}
               onClick={(event) => {
                 event.preventDefault();
-                navigate("/recover");
+                navigate(recoveryDestination);
               }}
             >
               Forgot?
@@ -1171,9 +1293,10 @@ export function SignInPage() {
           <Input.Password
             aria-invalid={Boolean(fieldErrors.password)}
             autoComplete="current-password"
+            disabled={loading}
             id="sign-in-password"
             name="password"
-            onChange={() => setFieldErrors((current) => ({ ...current, password: "" }))}
+            onChange={() => clearFieldError("password")}
             placeholder="Enter your password"
             required
             size="large"
@@ -1181,7 +1304,7 @@ export function SignInPage() {
           />
           <FieldError message={fieldErrors.password} />
         </Field>
-        <Checkbox className="auth-remember" defaultChecked name="rememberMe">
+        <Checkbox className="auth-remember" defaultChecked disabled={loading} name="rememberMe">
           Keep me signed in
         </Checkbox>
         <Button
@@ -1194,33 +1317,29 @@ export function SignInPage() {
         >
           Sign in
         </Button>
-        <div className="auth-divider">
-          <span>or</span>
-        </div>
-        <Button
-          block
-          className="auth-provider-action"
-          icon={<GoogleIcon />}
-          onClick={() =>
-            setError(new Error("Google sign-in is not configured for this installation."))
-          }
-          size="large"
-          type="button"
-        >
-          Continue with Google
-        </Button>
-        <p className="auth-account-prompt">
-          New here?{" "}
-          <button
-            className="auth-inline-action"
-            onClick={() =>
-              setError(new Error("New accounts can only be created through an invitation."))
-            }
-            type="button"
-          >
-            Create an account
-          </button>
-        </p>
+        {organization ? (
+          <>
+            <p className="auth-account-prompt">
+              Don't have access? Ask your organization admin for an invitation.
+            </p>
+            <Button onClick={() => navigate("/")} type="button" variant="link">
+              Use another organization
+            </Button>
+          </>
+        ) : (
+          <p className="auth-account-prompt">
+            Looking for a different organization?{" "}
+            <Typography.Link
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/");
+              }}
+            >
+              Find your organization
+            </Typography.Link>
+          </p>
+        )}
       </form>
     </AuthLayout>
   );
