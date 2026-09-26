@@ -39,17 +39,24 @@ function failureContent(error: unknown): FailureContent {
   }
   return {
     status: 500,
-    subTitle: error instanceof Error ? error.message : "Launch++ could not complete this request.",
+    subTitle: "Launch++ could not complete this request. Please try again.",
     title: "Something went wrong",
   };
 }
 
 export interface ResourceFailureProps {
   readonly error: unknown;
+  readonly homeLabel?: string;
+  readonly homePath?: string;
   readonly onRetry?: () => void;
 }
 
-export function ResourceFailure({ error, onRetry }: ResourceFailureProps) {
+export function ResourceFailure({
+  error,
+  homeLabel = "Go to My Work",
+  homePath = "/app",
+  onRetry,
+}: ResourceFailureProps) {
   const navigate = useNavigate();
   const content = failureContent(error);
 
@@ -59,8 +66,8 @@ export function ResourceFailure({ error, onRetry }: ResourceFailureProps) {
         extra={
           <Space wrap>
             {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
-            <Button onClick={() => navigate("/app")} variant="primary">
-              Go to My Work
+            <Button onClick={() => navigate(homePath)} variant="primary">
+              {homeLabel}
             </Button>
           </Space>
         }
@@ -69,6 +76,17 @@ export function ResourceFailure({ error, onRetry }: ResourceFailureProps) {
         title={content.title}
       />
     </section>
+  );
+}
+
+export function PublicRouteFailurePage() {
+  return (
+    <ResourceFailure
+      error={useRouteError()}
+      homeLabel="Find your organization"
+      homePath="/"
+      onRetry={() => window.location.reload()}
+    />
   );
 }
 

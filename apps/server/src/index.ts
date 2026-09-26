@@ -6,6 +6,7 @@ export {
 export {
   ConfigurationError,
   loadServerConfig,
+  type OrganizationRegistrationPolicy,
   type ServerConfig,
 } from "./config.js";
 export { registerHealthRoutes } from "./health-routes.js";

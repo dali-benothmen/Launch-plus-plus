@@ -118,10 +118,11 @@ Project-level restricted membership and a guest role are deferred until the basi
 ### First local run
 
 1. Start Launch++ through the supported local package or container.
-2. Open the provided local URL.
-3. Complete the light first-owner path: create the owner account, name the organization, and name the first project.
-4. Launch++ supplies a minimal default status workflow.
-5. Enter the project Board and add tasks without completing a product questionnaire.
+2. Open the provided local URL and complete secure installation-operator setup.
+3. Create the first organization through the authenticated compatibility flow.
+4. Enter the application without completing a product questionnaire.
+
+Ordinary public onboarding is separate: an unknown organization slug may lead to deliberate organization-and-owner creation when policy is `open`, and that bounded command provisions the default project and status workflow before entering its Board. Returning members sign in through an existing organization; joining one remains invitation-only.
 
 ### Daily project work
 

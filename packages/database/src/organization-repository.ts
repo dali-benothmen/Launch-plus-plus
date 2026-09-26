@@ -77,16 +77,6 @@ export class SqliteOrganizationRepository implements OrganizationRepository {
     return row ? mapOrganization(row) : undefined;
   }
 
-  findByName(context: ReadContext, installationId: string, name: string): Organization | undefined {
-    const row = requireSqliteConnection(context)
-      .prepare<[string, string], OrganizationRow>(
-        `${selection}
-         WHERE organizations.installation_id = ? AND lower(organizations.name) = lower(?)`,
-      )
-      .get(installationId, name);
-    return row ? mapOrganization(row) : undefined;
-  }
-
   findBySlug(context: ReadContext, installationId: string, slug: string): Organization | undefined {
     const row = requireSqliteConnection(context)
       .prepare<[string, string], OrganizationRow>(

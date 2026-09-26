@@ -98,7 +98,11 @@ export async function buildApplicationServer(
         "first-owner setup link generated",
       );
     }
-    await registerOrganizationRoutes(app, { database, identity: identity.adapter });
+    await registerOrganizationRoutes(app, {
+      config: options.config,
+      database,
+      identity: identity.adapter,
+    });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
     await registerTeamRoutes(app, { database, identity: identity.adapter });

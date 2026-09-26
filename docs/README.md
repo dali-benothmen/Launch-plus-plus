@@ -22,6 +22,7 @@ Launch++ is a minimal, open-source project manager that grows through plugins an
 | [Development and delivery](./development-and-delivery.md) | Proposed monorepo, dependency rules, developer workflow, testing, CI, releases, and implementation phases |
 | [Package boundaries](./package-boundaries.md) | Active workspace ownership, visibility, and allowed dependency directions |
 | [Implementation roadmap](./implementation-roadmap.md) | Ordered phases, task IDs, dependencies, release boundaries, verification, and exit gates |
+| [Organization-first entry](./organization-first-entry-plan.md) | Implemented anonymous locator, contextual authentication, bounded owner registration, compatibility, and manual qualification gate |
 
 ## Architecture baseline
 

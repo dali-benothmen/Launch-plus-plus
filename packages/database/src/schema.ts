@@ -168,10 +168,6 @@ export const organizations = sqliteTable(
     revision: integer("revision").notNull().default(1),
   },
   (table) => [
-    uniqueIndex("organizations_installation_name_unique").on(
-      table.installationId,
-      sql`lower(${table.name})`,
-    ),
     uniqueIndex("organizations_installation_slug_unique").on(table.installationId, table.slug),
     index("organizations_installation_updated_idx").on(table.installationId, table.updatedAt),
     check("organizations_name_not_blank", sql`length(trim(${table.name})) > 0`),
@@ -677,6 +673,35 @@ export const taskLabels = sqliteTable(
       foreignColumns: [labels.organizationId, labels.id],
       name: "task_labels_organization_label_fk",
     }).onDelete("cascade"),
+  ],
+);
+
+export const organizationRegistrationCommands = sqliteTable(
+  "organization_registration_commands",
+  {
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => installations.id, { onDelete: "restrict" }),
+    key: text("idempotency_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    state: text("state", { enum: ["pending", "completed"] }).notNull(),
+    resultJson: text("result_json"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.installationId, table.key] }),
+    index("organization_registration_commands_expiry_idx").on(table.expiresAt),
+    check(
+      "organization_registration_commands_state_valid",
+      sql`${table.state} in ('pending', 'completed')`,
+    ),
+    check(
+      "organization_registration_commands_result_complete",
+      sql`(${table.state} = 'pending' and ${table.resultJson} is null)
+          or (${table.state} = 'completed' and ${table.resultJson} is not null)`,
+    ),
   ],
 );
 

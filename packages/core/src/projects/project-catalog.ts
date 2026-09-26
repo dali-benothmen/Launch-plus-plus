@@ -1,12 +1,8 @@
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { TransactionManager, WriteContext } from "../shared/transactions.js";
 import type { AuditWriter } from "../organizations/organization.js";
-import {
-  availableProjectKey,
-  availableProjectSlug,
-  normalizeFolderName,
-  normalizeProjectName,
-} from "./project-naming.js";
+import { normalizeFolderName, normalizeProjectName } from "./project-naming.js";
+import { createOwnedProject } from "./create-owned-project.js";
 import type {
   Project,
   ProjectCatalog,
@@ -40,18 +36,6 @@ interface CommandContext {
   readonly userId: string;
   readonly organizationId: string;
 }
-
-interface DefaultStatus {
-  readonly category: ProjectStatusCategory;
-  readonly color: string;
-  readonly name: string;
-}
-
-const defaultStatuses: readonly DefaultStatus[] = [
-  { category: "backlog", color: "#faad14", name: "To do" },
-  { category: "active", color: "#1668dc", name: "In progress" },
-  { category: "done", color: "#52c41a", name: "Done" },
-];
 
 const generatedStatusColors = [
   "#1677ff",
@@ -187,54 +171,12 @@ export class ProjectCatalogService {
     input: CommandContext & Readonly<{ description?: string; folderId?: string; name: string }>,
   ): Promise<Project> {
     validateContext(input);
-    const name = normalizeProjectName(input.name);
-    const description = input.description?.trim() ?? "";
-    if (description.length > 20_000) {
-      return Promise.reject(new TypeError("Project description cannot exceed 20,000 characters."));
-    }
     return this.dependencies.transactions.write((context) => {
       if (input.folderId) this.requireFolder(context, input.organizationId, input.folderId);
-      const now = this.dependencies.clock();
-      const project: Project = Object.freeze({
-        access: "organization",
-        createdAt: now,
-        createdByUserId: input.userId,
-        description,
-        ...(input.folderId ? { folderId: input.folderId } : {}),
-        id: this.dependencies.generateId(),
-        key: availableProjectKey(context, this.dependencies.projects, input.organizationId, name),
-        name,
-        nextTaskNumber: 1,
-        position: this.dependencies.projects.nextProjectPosition(
-          context,
-          input.organizationId,
-          input.folderId,
-        ),
-        revision: 1,
-        slug: availableProjectSlug(context, this.dependencies.projects, input.organizationId, name),
-        updatedAt: now,
-        organizationId: input.organizationId,
+      return createOwnedProject(context, this.dependencies, {
+        ...input,
+        now: this.dependencies.clock(),
       });
-      this.dependencies.projects.createProject(context, project);
-      defaultStatuses.forEach((status, position) => {
-        const projectStatus: ProjectStatus = Object.freeze({
-          ...status,
-          createdAt: now,
-          id: this.dependencies.generateId(),
-          position,
-          projectId: project.id,
-          revision: 1,
-          updatedAt: now,
-          organizationId: input.organizationId,
-        });
-        this.dependencies.projects.createStatus(context, projectStatus);
-      });
-      this.record(context, input, "project.created", project.id, {
-        folderId: input.folderId ?? null,
-        key: project.key,
-        name,
-      });
-      return project;
     });
   }
 

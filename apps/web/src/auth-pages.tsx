@@ -1,6 +1,21 @@
-import { Alert, Button, Checkbox, GoogleIcon, Input, Spin, Typography } from "@launchpp/ui";
-import { type FormEvent, type PropsWithChildren, type ReactNode, useEffect, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { ApiError, type PublicOrganizationResolution } from "@launchpp/api-client";
+import { Alert, Button, Checkbox, Input, message, Spin, Typography } from "@launchpp/ui";
+import {
+  type FormEvent,
+  type PropsWithChildren,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
 type AuthPresentation = "board" | "plugins";
@@ -181,19 +196,664 @@ export function InstallationBoundary({
   return children;
 }
 
-export function EntryRedirect() {
+const ORGANIZATION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const RESERVED_ORGANIZATION_SLUGS = new Set([
+  "admin",
+  "api",
+  "app",
+  "auth",
+  "plugins",
+  "settings",
+  "setup",
+  "support",
+  "www",
+]);
+
+type OrganizationNavigationState = {
+  readonly from?: string;
+  readonly organization?: PublicOrganizationResolution;
+  readonly organizationSlug?: string;
+};
+
+function normalizeLocatorSlug(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function applicationReturnPath(state: unknown) {
+  const from = (state as OrganizationNavigationState | null)?.from;
+  return typeof from === "string" && (from === "/app" || from.startsWith("/app/"))
+    ? from
+    : undefined;
+}
+
+function organizationSlugError(slug: string) {
+  if (!slug) return "Enter your organization URL.";
+  if (slug.length < 3 || slug.length > 48 || !ORGANIZATION_SLUG_PATTERN.test(slug)) {
+    return "Use 3 to 48 lowercase letters, numbers, or single hyphens.";
+  }
+  if (RESERVED_ORGANIZATION_SLUGS.has(slug)) {
+    return `The organization URL “${slug}” is reserved. Choose another address.`;
+  }
+  return "";
+}
+
+export function LegacySignInRoute() {
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const organizationSlug = normalizeLocatorSlug(searchParameters.get("organization") ?? "");
+  const from = applicationReturnPath(location.state);
+  const state: OrganizationNavigationState = {
+    ...(from ? { from } : {}),
+    ...(organizationSlug ? { organizationSlug } : {}),
+  };
+
+  if (!organizationSlug || organizationSlugError(organizationSlug)) {
+    return <Navigate replace state={state} to="/" />;
+  }
+  return <Navigate replace state={state} to={`/o/${encodeURIComponent(organizationSlug)}`} />;
+}
+
+export function LegacyRecoveryRoute() {
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const organizationSlug = normalizeLocatorSlug(searchParameters.get("organization") ?? "");
+  const from = applicationReturnPath(location.state);
+  const state: OrganizationNavigationState = {
+    ...(from ? { from } : {}),
+    ...(organizationSlug ? { organizationSlug } : {}),
+  };
+
+  if (!organizationSlug || organizationSlugError(organizationSlug)) {
+    return <Navigate replace state={state} to="/" />;
+  }
+  return (
+    <Navigate replace state={state} to={`/o/${encodeURIComponent(organizationSlug)}/recover`} />
+  );
+}
+
+type RegistrationFieldErrors = {
+  email: string;
+  organizationName: string;
+  organizationSlug: string;
+  ownerName: string;
+  password: string;
+};
+
+function emptyRegistrationFieldErrors(): RegistrationFieldErrors {
+  return {
+    email: "",
+    organizationName: "",
+    organizationSlug: "",
+    ownerName: "",
+    password: "",
+  };
+}
+
+function organizationNameFromSlug(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function OrganizationLocatorPage() {
   const api = useApiClient();
-  const [destination, setDestination] = useState<string>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const organizationInput = useRef<HTMLInputElement>(null);
+  const resolving = useRef(false);
+  const returnPath = applicationReturnPath(location.state);
+  const attemptedSlug = normalizeLocatorSlug(
+    (location.state as OrganizationNavigationState | null)?.organizationSlug ?? "",
+  );
+  const [slug, setSlug] = useState(attemptedSlug);
+  const [fieldError, setFieldError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (resolving.current) return;
+    const normalizedSlug = normalizeLocatorSlug(slug);
+    const nextError = organizationSlugError(normalizedSlug);
+    setSlug(normalizedSlug);
+    setFieldError(nextError);
+    if (nextError) {
+      message.error({ content: nextError, key: "organization-locator-error" });
+      organizationInput.current?.focus();
+      return;
+    }
+    resolving.current = true;
+    setLoading(true);
+    try {
+      const organization = await api.organizationDirectory.resolve(normalizedSlug);
+      const state: OrganizationNavigationState = {
+        ...(returnPath ? { from: returnPath } : {}),
+        organization,
+      };
+      navigate(
+        organization.exists ? "/o/" + organization.slug + "/sign-in" : "/o/" + organization.slug,
+        { state },
+      );
+    } catch {
+      message.error({
+        content: "We couldn't check this organization. Please try again.",
+        key: "organization-resolution-error",
+      });
+    } finally {
+      resolving.current = false;
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout title="Open your organization">
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        Enter the organization URL used by your team.
+      </Typography.Paragraph>
+      <form className="auth-form" noValidate onSubmit={submit}>
+        <Field htmlFor="organization-slug" label="Organization">
+          <Input
+            aria-invalid={Boolean(fieldError)}
+            autoCapitalize="none"
+            disabled={loading}
+            autoFocus
+            autoComplete="organization"
+            autoCorrect="off"
+            id="organization-slug"
+            maxLength={48}
+            name="organizationSlug"
+            onChange={(event) => {
+              setSlug(normalizeLocatorSlug(event.currentTarget.value));
+              setFieldError("");
+            }}
+            placeholder="acme"
+            ref={organizationInput}
+            size="large"
+            spellCheck={false}
+            suffix={<span className="auth-organization-suffix">.launchpp.app</span>}
+            value={slug}
+            {...(fieldError ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldError} />
+        </Field>
+        <Button
+          block
+          className="auth-submit"
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
+          Continue
+        </Button>
+        <Button
+          disabled={loading}
+          onClick={() => navigate("/organizations/new")}
+          type="button"
+          variant="link"
+        >
+          Create a new organization
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export function OrganizationEntryPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { organizationSlug = "" } = useParams();
+  const returnPath = applicationReturnPath(location.state);
+  const normalizedSlug = normalizeLocatorSlug(organizationSlug);
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const resolvedNavigationOrganization =
+    navigationOrganization?.slug === normalizedSlug ? navigationOrganization : undefined;
+  const [missing, setMissing] = useState(resolvedNavigationOrganization?.exists === false);
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
     let active = true;
-    void api.setup
-      .status()
-      .then(async (setup) => {
-        if (setup.requiresSetup) return "/setup";
-        return (await api.auth.session()) ? "/app" : "/sign-in";
+    setMissing(false);
+    setError(undefined);
+    if (resolvedNavigationOrganization) {
+      if (!resolvedNavigationOrganization.exists) {
+        message.error({
+          content: "We couldn't find " + resolvedNavigationOrganization.slug + ".launchpp.app.",
+          key: "organization-not-found",
+        });
+        setMissing(true);
+        return () => {
+          active = false;
+        };
+      }
+      navigate("/o/" + resolvedNavigationOrganization.slug + "/sign-in", {
+        replace: true,
+        state: {
+          ...(returnPath ? { from: returnPath } : {}),
+          organization: resolvedNavigationOrganization,
+        },
+      });
+      return () => {
+        active = false;
+      };
+    }
+    void api.organizationDirectory
+      .resolve(normalizedSlug)
+      .then((organization) => {
+        if (!active) return;
+        if (!organization.exists) {
+          message.error({
+            content: "We couldn't find " + organization.slug + ".launchpp.app.",
+            key: "organization-not-found",
+          });
+          setMissing(true);
+          return;
+        }
+        navigate(`/o/${organization.slug}/sign-in`, {
+          replace: true,
+          state: {
+            ...(returnPath ? { from: returnPath } : {}),
+            organization,
+          },
+        });
       })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        message.error({
+          content: "We couldn't check this organization. Please try again.",
+          key: "organization-resolution-error",
+        });
+        setError(reason);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, navigate, normalizedSlug, resolvedNavigationOrganization, returnPath]);
+
+  if (error) {
+    return (
+      <AuthLayout title="Unable to open your organization">
+        <ErrorMessage error={error} />
+        <div className="auth-locator-back">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (missing) {
+    const organizationState: OrganizationNavigationState = {
+      ...(returnPath ? { from: returnPath } : {}),
+      organizationSlug: normalizedSlug,
+    };
+
+    return (
+      <AuthLayout title={`We couldn't find “${normalizedSlug}”`}>
+        <Typography.Paragraph className="auth-not-found-copy" type="secondary">
+          Check the organization address, or deliberately create a new organization using this
+          address.
+        </Typography.Paragraph>
+        <div className="auth-not-found-actions">
+          <Button onClick={() => navigate("/", { state: organizationState })} type="button">
+            Back
+          </Button>
+          <Button
+            onClick={() =>
+              navigate(`/organizations/new?slug=${encodeURIComponent(normalizedSlug)}`, {
+                state: organizationState,
+              })
+            }
+            type="button"
+            variant="primary"
+          >
+            Create “{normalizedSlug}”
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return <Spin fullscreen description="Opening organization" />;
+}
+
+export function OrganizationRegistrationPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const navigationSlug = (location.state as OrganizationNavigationState | null)?.organizationSlug;
+  const initialSlug = normalizeLocatorSlug(navigationSlug ?? searchParameters.get("slug") ?? "");
+  const slugInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const submitting = useRef(false);
+  const registrationKey = useRef<string | undefined>(undefined);
+  const [slug, setSlug] = useState(initialSlug);
+  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>(
+    emptyRegistrationFieldErrors,
+  );
+  const [error, setError] = useState<unknown>();
+  const [signInNotice, setSignInNotice] = useState<
+    { description: string; title: string } | undefined
+  >();
+  const [loading, setLoading] = useState(false);
+
+  const clearFieldError = (field: keyof RegistrationFieldErrors) => {
+    registrationKey.current = globalThis.crypto.randomUUID();
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError(undefined);
+    setSignInNotice(undefined);
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting.current) return;
+
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const organizationName = String(data.get("organizationName") ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const organizationSlug = normalizeLocatorSlug(slug);
+    const ownerName = String(data.get("ownerName") ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const email = String(data.get("email") ?? "")
+      .trim()
+      .toLowerCase();
+    const passwordValue = String(data.get("password") ?? "");
+    const nextFieldErrors: RegistrationFieldErrors = {
+      email:
+        email.length === 0
+          ? "Work email is required."
+          : email.length > 320 || !isValidEmail(email)
+            ? "Enter a valid email address."
+            : "",
+      organizationName:
+        organizationName.length === 0
+          ? "Organization name is required."
+          : organizationName.length > 80
+            ? "Organization name cannot exceed 80 characters."
+            : "",
+      organizationSlug: organizationSlugError(organizationSlug),
+      ownerName:
+        ownerName.length === 0
+          ? "Your name is required."
+          : ownerName.length > 100
+            ? "Your name cannot exceed 100 characters."
+            : "",
+      password:
+        passwordValue.length === 0
+          ? "Password is required."
+          : passwordValue.length < 12 || passwordValue.length > 128
+            ? "Password must contain between 12 and 128 characters."
+            : "",
+    };
+
+    setSlug(organizationSlug);
+    setFieldErrors(nextFieldErrors);
+    setError(undefined);
+    setSignInNotice(undefined);
+
+    const firstInvalidField = (
+      ["organizationName", "organizationSlug", "ownerName", "email", "password"] as const
+    ).find((field) => nextFieldErrors[field]);
+    if (firstInvalidField) {
+      (form.elements.namedItem(firstInvalidField) as HTMLElement | null)?.focus();
+      return;
+    }
+
+    const input = {
+      email,
+      organizationName,
+      organizationSlug,
+      ownerName,
+      password: passwordValue,
+    };
+    const idempotencyKey = registrationKey.current ?? globalThis.crypto.randomUUID();
+    registrationKey.current = idempotencyKey;
+
+    submitting.current = true;
+    setLoading(true);
+    try {
+      const result = await api.organizationRegistrations.create(input, {
+        idempotencyKey,
+      });
+      navigate(result.destination, { replace: true });
+    } catch (reason) {
+      if (reason instanceof ApiError) {
+        if (
+          reason.code === "organization_slug_invalid" ||
+          reason.code === "organization_slug_unavailable"
+        ) {
+          setFieldErrors((current) => ({
+            ...current,
+            organizationSlug: reason.message,
+          }));
+          slugInput.current?.focus();
+          return;
+        }
+        if (reason.code === "account_already_exists") {
+          setFieldErrors((current) => ({
+            ...current,
+            email: reason.message,
+          }));
+          setSignInNotice({
+            description: "Use the existing account, or register with a different work email.",
+            title: "This email already has an account",
+          });
+          emailInput.current?.focus();
+          return;
+        }
+        if (
+          reason.code === "organization_registration_disabled" ||
+          reason.code === "organization_access_denied"
+        ) {
+          setSignInNotice({
+            description: reason.message,
+            title: "Sign in to continue",
+          });
+          return;
+        }
+        if (reason.code === "registration_failed" && reason.correlationId) {
+          setError(new Error(`${reason.message} Reference: ${reason.correlationId}.`));
+          return;
+        }
+      }
+      setError(reason);
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
+
+  const passwordStrength = [
+    password.length >= 8,
+    password.length >= 12,
+    /[A-Z]/.test(password) && /[a-z]/.test(password),
+    /[^A-Za-z0-9]/.test(password) || /[0-9]/.test(password),
+  ].filter(Boolean).length;
+
+  return (
+    <AuthLayout presentation="plugins" title="Create your organization">
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        Create the organization and owner account you will use to enter Launch++.
+      </Typography.Paragraph>
+      <form className="auth-form" noValidate onSubmit={submit}>
+        <ErrorMessage error={error} />
+        {signInNotice ? (
+          <Alert
+            action={
+              <Button onClick={() => navigate("/sign-in")} type="button" variant="link">
+                Sign in
+              </Button>
+            }
+            description={signInNotice.description}
+            showIcon
+            title={signInNotice.title}
+            type="info"
+          />
+        ) : null}
+        <Field htmlFor="registration-organization-name" label="Organization name">
+          <Input
+            aria-invalid={Boolean(fieldErrors.organizationName)}
+            autoComplete="organization"
+            defaultValue={organizationNameFromSlug(initialSlug)}
+            disabled={loading}
+            id="registration-organization-name"
+            maxLength={80}
+            name="organizationName"
+            onChange={() => clearFieldError("organizationName")}
+            placeholder="Acme Inc."
+            size="large"
+            {...(fieldErrors.organizationName ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.organizationName} />
+        </Field>
+        <Field htmlFor="registration-organization-slug" label="Organization URL">
+          <Input
+            aria-invalid={Boolean(fieldErrors.organizationSlug)}
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            disabled={loading}
+            id="registration-organization-slug"
+            maxLength={48}
+            name="organizationSlug"
+            onChange={(event) => {
+              setSlug(normalizeLocatorSlug(event.currentTarget.value));
+              clearFieldError("organizationSlug");
+            }}
+            placeholder="acme"
+            ref={slugInput}
+            size="large"
+            spellCheck={false}
+            suffix={<span className="auth-organization-suffix">.launchpp.app</span>}
+            value={slug}
+            {...(fieldErrors.organizationSlug ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.organizationSlug} />
+        </Field>
+        <Field htmlFor="registration-owner-name" label="Your name">
+          <Input
+            aria-invalid={Boolean(fieldErrors.ownerName)}
+            autoComplete="name"
+            disabled={loading}
+            id="registration-owner-name"
+            maxLength={100}
+            name="ownerName"
+            onChange={() => clearFieldError("ownerName")}
+            placeholder="Maya Okafor"
+            size="large"
+            {...(fieldErrors.ownerName ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.ownerName} />
+        </Field>
+        <Field htmlFor="registration-email" label="Work email">
+          <Input
+            aria-invalid={Boolean(fieldErrors.email)}
+            autoComplete="email"
+            disabled={loading}
+            id="registration-email"
+            maxLength={320}
+            name="email"
+            onChange={() => clearFieldError("email")}
+            placeholder="maya@acme.example"
+            ref={emailInput}
+            size="large"
+            type="email"
+            {...(fieldErrors.email ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.email} />
+        </Field>
+        <Field htmlFor="registration-password" label="Password">
+          <Input.Password
+            aria-invalid={Boolean(fieldErrors.password)}
+            autoComplete="new-password"
+            disabled={loading}
+            id="registration-password"
+            maxLength={128}
+            minLength={12}
+            name="password"
+            onChange={(event) => {
+              setPassword(event.currentTarget.value);
+              clearFieldError("password");
+            }}
+            placeholder="Create a password"
+            size="large"
+            {...(fieldErrors.password ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.password} />
+          <div className="auth-password-strength" aria-hidden="true">
+            {[1, 2, 3, 4].map((step) => (
+              <i className={step <= passwordStrength ? "is-active" : undefined} key={step} />
+            ))}
+          </div>
+          <span className="auth-password-help">
+            {password.length === 0
+              ? "Use at least 12 characters"
+              : password.length < 12
+                ? password.length + " of 12 characters"
+                : passwordStrength >= 4
+                  ? "Strong password"
+                  : "12 characters - add a mix of letters, numbers, or symbols"}
+          </span>
+        </Field>
+        <Button
+          block
+          className="auth-submit"
+          disabled={loading}
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
+          Create organization
+        </Button>
+        <p className="auth-account-prompt">
+          Already have an organization?{" "}
+          <Typography.Link
+            href="/"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate("/");
+            }}
+          >
+            Find it
+          </Typography.Link>
+        </p>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export function EntryRedirect() {
+  const api = useApiClient();
+  const [destination, setDestination] = useState<null | string>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const setup = await api.setup.status();
+      if (setup.requiresSetup) return "/setup";
+      const session = await api.auth.session();
+      if (!session) return null;
+      const organizations = await api.organizations.list();
+      return organizations.currentOrganizationId ? "/app" : "/organization-setup";
+    })()
       .then((nextDestination) => {
         if (active) setDestination(nextDestination);
       })
@@ -212,11 +872,9 @@ export function EntryRedirect() {
       </AuthLayout>
     );
   }
-  return destination ? (
-    <Navigate replace to={destination} />
-  ) : (
-    <Spin fullscreen description="Opening Launch++" />
-  );
+  if (destination === undefined) return <Spin fullscreen description="Opening Launch++" />;
+  if (destination === null) return <OrganizationLocatorPage />;
+  return <Navigate replace to={destination} />;
 }
 
 export function AuthenticatedRoute({ children }: PropsWithChildren) {
@@ -256,7 +914,13 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
   if (access === "loading") return <Spin fullscreen description="Loading session" />;
   if (access === "setup") return <Navigate replace to="/setup" />;
   if (access === "anonymous") {
-    return <Navigate replace state={{ from: location.pathname }} to="/sign-in" />;
+    return (
+      <Navigate
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+        to="/sign-in"
+      />
+    );
   }
   return children;
 }
@@ -560,12 +1224,78 @@ export function SignInPage() {
   const api = useApiClient();
   const navigate = useNavigate();
   const location = useLocation();
+  const { organizationSlug: routeOrganizationSlug = "" } = useParams();
+  const normalizedOrganizationSlug = normalizeLocatorSlug(routeOrganizationSlug);
+  const returnPath = applicationReturnPath(location.state);
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const initialOrganization =
+    navigationOrganization?.exists && navigationOrganization.slug === normalizedOrganizationSlug
+      ? navigationOrganization
+      : undefined;
+  const isOrganizationScoped = normalizedOrganizationSlug.length > 0;
+  const submitting = useRef(false);
+  const [organization, setOrganization] = useState<PublicOrganizationResolution | undefined>(
+    initialOrganization,
+  );
+  const [organizationResolutionError, setOrganizationResolutionError] = useState<unknown>();
   const [error, setError] = useState<unknown>();
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isOrganizationScoped || organization) return;
+
+    let active = true;
+    void api.organizationDirectory
+      .resolve(normalizedOrganizationSlug)
+      .then((resolvedOrganization) => {
+        if (!active) return;
+        if (!resolvedOrganization.exists) {
+          navigate(`/o/${resolvedOrganization.slug}`, {
+            replace: true,
+            state: returnPath ? { from: returnPath } : undefined,
+          });
+          return;
+        }
+        if (routeOrganizationSlug !== resolvedOrganization.slug) {
+          navigate(`/o/${resolvedOrganization.slug}/sign-in`, {
+            replace: true,
+            state: {
+              ...(returnPath ? { from: returnPath } : {}),
+              organization: resolvedOrganization,
+            },
+          });
+          return;
+        }
+        setOrganization(resolvedOrganization);
+      })
+      .catch((reason: unknown) => {
+        if (active) setOrganizationResolutionError(reason);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    api,
+    isOrganizationScoped,
+    navigate,
+    normalizedOrganizationSlug,
+    organization,
+    returnPath,
+    routeOrganizationSlug,
+  ]);
+
+  const clearFieldError = (field: "email" | "password") => {
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError(undefined);
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting.current) return;
+
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
@@ -583,30 +1313,98 @@ export function SignInPage() {
     setFieldErrors(nextFieldErrors);
     if (Object.values(nextFieldErrors).some(Boolean)) return;
 
+    submitting.current = true;
     setLoading(true);
+    let credentialsAccepted = false;
     try {
       await api.auth.signIn({
         email,
         password,
         rememberMe: data.get("rememberMe") === "on",
       });
-      const from = (location.state as { from?: string } | null)?.from ?? "/app";
-      navigate(from, { replace: true });
+      credentialsAccepted = true;
+
+      if (isOrganizationScoped && organization) {
+        const context = await api.organizations.list();
+        const accessibleOrganization = context.organizations.find(
+          (candidate) => candidate.slug === organization.slug,
+        );
+        if (!accessibleOrganization) {
+          await api.auth.signOut();
+          setError(
+            new Error(
+              "The email or password is incorrect, or this account cannot access this organization.",
+            ),
+          );
+          return;
+        }
+        if (context.currentOrganizationId !== accessibleOrganization.id) {
+          await api.organizations.select(accessibleOrganization.id);
+        }
+        navigate(returnPath ?? "/app", { replace: true });
+        return;
+      }
+
+      navigate(returnPath ?? "/app", { replace: true });
     } catch (reason) {
-      setError(reason);
+      if (
+        isOrganizationScoped &&
+        !credentialsAccepted &&
+        reason instanceof ApiError &&
+        reason.status >= 400 &&
+        reason.status < 500
+      ) {
+        setError(
+          new Error(
+            "The email or password is incorrect, or this account cannot access this organization.",
+          ),
+        );
+      } else {
+        setError(reason);
+      }
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
 
+  if (organizationResolutionError) {
+    return (
+      <AuthLayout title="Unable to open your organization">
+        <ErrorMessage error={organizationResolutionError} />
+        <div className="auth-locator-back">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (isOrganizationScoped && !organization) {
+    return <Spin fullscreen description="Loading organization" />;
+  }
+
+  const organizationName = organization?.name ?? organization?.slug;
+  const recoveryDestination = organization
+    ? `/o/${encodeURIComponent(organization.slug)}/recover`
+    : "/recover";
+
   return (
-    <AuthLayout title="Welcome back">
+    <AuthLayout title={organizationName ? `Welcome back to ${organizationName}` : "Welcome back"}>
       <Typography.Paragraph
         className="auth-subtitle"
         style={{ color: "#667085", fontSize: 14, margin: "8px 0 36px" }}
         type="secondary"
       >
-        Pick up where your work left off.
+        {organization ? `${organization.slug}.launchpp.app` : "Pick up where your work left off."}
       </Typography.Paragraph>
       <form className="auth-form" noValidate onSubmit={submit}>
         <ErrorMessage error={error} />
@@ -614,9 +1412,10 @@ export function SignInPage() {
           <Input
             aria-invalid={Boolean(fieldErrors.email)}
             autoComplete="email"
+            disabled={loading}
             id="sign-in-email"
             name="email"
-            onChange={() => setFieldErrors((current) => ({ ...current, email: "" }))}
+            onChange={() => clearFieldError("email")}
             placeholder="Enter your email"
             required
             size="large"
@@ -628,10 +1427,19 @@ export function SignInPage() {
         <Field
           action={
             <Typography.Link
-              href="/recover"
+              href={recoveryDestination}
               onClick={(event) => {
                 event.preventDefault();
-                navigate("/recover");
+                navigate(recoveryDestination, {
+                  state: organization
+                    ? {
+                        ...(returnPath ? { from: returnPath } : {}),
+                        organization,
+                      }
+                    : returnPath
+                      ? { from: returnPath }
+                      : undefined,
+                });
               }}
             >
               Forgot?
@@ -643,9 +1451,10 @@ export function SignInPage() {
           <Input.Password
             aria-invalid={Boolean(fieldErrors.password)}
             autoComplete="current-password"
+            disabled={loading}
             id="sign-in-password"
             name="password"
-            onChange={() => setFieldErrors((current) => ({ ...current, password: "" }))}
+            onChange={() => clearFieldError("password")}
             placeholder="Enter your password"
             required
             size="large"
@@ -653,7 +1462,7 @@ export function SignInPage() {
           />
           <FieldError message={fieldErrors.password} />
         </Field>
-        <Checkbox className="auth-remember" defaultChecked name="rememberMe">
+        <Checkbox className="auth-remember" defaultChecked disabled={loading} name="rememberMe">
           Keep me signed in
         </Checkbox>
         <Button
@@ -666,33 +1475,37 @@ export function SignInPage() {
         >
           Sign in
         </Button>
-        <div className="auth-divider">
-          <span>or</span>
-        </div>
-        <Button
-          block
-          className="auth-provider-action"
-          icon={<GoogleIcon />}
-          onClick={() =>
-            setError(new Error("Google sign-in is not configured for this installation."))
-          }
-          size="large"
-          type="button"
-        >
-          Continue with Google
-        </Button>
-        <p className="auth-account-prompt">
-          New here?{" "}
-          <button
-            className="auth-inline-action"
-            onClick={() =>
-              setError(new Error("New accounts can only be created through an invitation."))
-            }
-            type="button"
-          >
-            Create an account
-          </button>
-        </p>
+        {organization ? (
+          <>
+            <p className="auth-account-prompt">
+              Don't have access? Ask your organization admin for an invitation.
+            </p>
+            <Button
+              onClick={() =>
+                navigate("/", {
+                  state: returnPath ? { from: returnPath } : undefined,
+                })
+              }
+              type="button"
+              variant="link"
+            >
+              Use another organization
+            </Button>
+          </>
+        ) : (
+          <p className="auth-account-prompt">
+            Looking for a different organization?{" "}
+            <Typography.Link
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/");
+              }}
+            >
+              Find your organization
+            </Typography.Link>
+          </p>
+        )}
       </form>
     </AuthLayout>
   );
@@ -700,11 +1513,77 @@ export function SignInPage() {
 
 export function RecoveryPage() {
   const api = useApiClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { organizationSlug: routeOrganizationSlug = "" } = useParams();
+  const [searchParameters] = useSearchParams();
+  const requestedOrganizationSlug = normalizeLocatorSlug(
+    routeOrganizationSlug || searchParameters.get("organization") || "",
+  );
+  const returnPath = applicationReturnPath(location.state);
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const initialOrganization =
+    navigationOrganization?.exists && navigationOrganization.slug === requestedOrganizationSlug
+      ? navigationOrganization
+      : undefined;
+  const [organization, setOrganization] = useState<PublicOrganizationResolution | undefined>(
+    initialOrganization,
+  );
+  const [organizationResolutionError, setOrganizationResolutionError] = useState<unknown>();
   const [capabilities, setCapabilities] = useState<{
     readonly email: boolean;
     readonly operatorRecovery: boolean;
   }>();
-  const [error, setError] = useState<unknown>();
+  const [recoveryError, setRecoveryError] = useState<unknown>();
+
+  useEffect(() => {
+    if (!requestedOrganizationSlug) return;
+    if (organization) {
+      if (routeOrganizationSlug !== organization.slug) {
+        navigate(`/o/${organization.slug}/recover`, {
+          replace: true,
+          state: {
+            ...(returnPath ? { from: returnPath } : {}),
+            organization,
+          },
+        });
+      }
+      return;
+    }
+
+    let active = true;
+    void api.organizationDirectory
+      .resolve(requestedOrganizationSlug)
+      .then((resolvedOrganization) => {
+        if (!active) return;
+        if (!resolvedOrganization.exists) {
+          navigate(`/o/${resolvedOrganization.slug}`, {
+            replace: true,
+            state: returnPath ? { from: returnPath } : undefined,
+          });
+          return;
+        }
+        if (routeOrganizationSlug !== resolvedOrganization.slug) {
+          navigate(`/o/${resolvedOrganization.slug}/recover`, {
+            replace: true,
+            state: {
+              ...(returnPath ? { from: returnPath } : {}),
+              organization: resolvedOrganization,
+            },
+          });
+          return;
+        }
+        setOrganization(resolvedOrganization);
+      })
+      .catch((reason: unknown) => {
+        if (active) setOrganizationResolutionError(reason);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api, navigate, organization, requestedOrganizationSlug, returnPath, routeOrganizationSlug]);
 
   useEffect(() => {
     let active = true;
@@ -714,27 +1593,106 @@ export function RecoveryPage() {
         if (active) setCapabilities(result);
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason);
+        if (active) setRecoveryError(reason);
       });
     return () => {
       active = false;
     };
   }, [api]);
 
+  if (organizationResolutionError) {
+    return (
+      <AuthLayout title="Unable to open account recovery">
+        <ErrorMessage error={organizationResolutionError} />
+        <div className="auth-locator-back">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (requestedOrganizationSlug && !organization) {
+    return <Spin fullscreen description="Loading organization recovery" />;
+  }
+
+  const organizationName = organization?.name ?? organization?.slug;
+  const signInDestination = organization ? `/o/${organization.slug}/sign-in` : "/sign-in";
+
   return (
-    <AuthLayout title="Recover access">
-      <ErrorMessage error={error} />
-      {!error && !capabilities ? <Spin description="Checking recovery options" /> : null}
+    <AuthLayout
+      title={organizationName ? `Recover access to ${organizationName}` : "Recover access"}
+    >
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        {organization ? `${organization.slug}.launchpp.app · ` : ""}
+        Recovery restores your existing account. It never creates a replacement owner or
+        organization.
+      </Typography.Paragraph>
+      <ErrorMessage error={recoveryError} />
+      {!recoveryError && !capabilities ? <Spin description="Checking recovery options" /> : null}
       {capabilities && !capabilities.email && capabilities.operatorRecovery ? (
         <Alert
-          description="Email recovery is not configured yet. Ask the installation operator to restore access locally."
+          description="Email recovery is not configured. Ask the installation operator to restore your existing account locally."
           showIcon
           title="Operator recovery required"
           type="info"
         />
       ) : null}
-      <div className="auth-recovery-action">
-        <Link to="/sign-in">Return to sign in</Link>
+      {capabilities?.email ? (
+        <Alert
+          description="Ask the installation operator to send recovery instructions for your existing account."
+          showIcon
+          title="Email recovery is available"
+          type="info"
+        />
+      ) : null}
+      {capabilities && !capabilities.email && !capabilities.operatorRecovery ? (
+        <Alert
+          description="This installation does not currently expose an account recovery method."
+          showIcon
+          title="Recovery is unavailable"
+          type="warning"
+        />
+      ) : null}
+      <div className="auth-not-found-actions">
+        {organization ? (
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
+            Use another organization
+          </Button>
+        ) : null}
+        <Button
+          onClick={() =>
+            navigate(signInDestination, {
+              state: organization
+                ? {
+                    ...(returnPath ? { from: returnPath } : {}),
+                    organization,
+                  }
+                : returnPath
+                  ? { from: returnPath }
+                  : undefined,
+            })
+          }
+          type="button"
+          variant="primary"
+        >
+          Return to sign in
+        </Button>
       </div>
     </AuthLayout>
   );

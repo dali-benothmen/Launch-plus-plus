@@ -86,43 +86,53 @@ The right side should reinforce the product rather than contain unrelated decora
 
 | Page | Responsibility | Required content |
 | --- | --- | --- |
-| Sign in | Authenticate an existing account | Email, password, configured provider options, recovery link, validation, loading and failure states |
-| Sign up / create account | Create an account when installation policy permits it | Identity and credential fields, policy message, terms where applicable, invitation awareness |
-| Account recovery | Restore access | Recovery request, token completion, expiry, success and invalid-token states |
-| Accept invitation | Join the intended organization | Organization/inviter identity, sign-in or account creation, accept/decline result |
-| First installation setup | Create the first owner securely | Setup-token validation and owner account |
-| Organization setup | Establish the first working context | Organization name and completion state |
+| Organization locator | Start anonymous entry without exposing private organization data | Organization slug, validation, create-organization action, loading and failure states |
+| Organization sign in | Authenticate an existing member in a resolved organization context | Organization name and slug, email, password, recovery link, membership-neutral failure state |
+| Create organization and owner | Deliberately create a new organization when policy permits it | Organization name and editable slug, owner identity and credentials, field errors, policy state |
+| Organization recovery | Restore an existing identity in the same organization context | Organization identity, available recovery method, return to contextual sign-in |
+| Accept invitation | Join the intended organization | Organization/inviter identity, sign-in or account creation, accept/decline result; deferred to the collaboration phase |
+| First installation setup | Create the installation operator identity securely | Automatic local authorization or one-time remote setup link, owner credentials, completion state |
+| Legacy organization setup | Give an authenticated identity with no memberships its first organization | Organization name and completion state; temporary compatibility route |
 
-The sign-up surface supports open registration, invitation-required registration, and registration-disabled policies. An invite link should never send an authenticated user through unrelated organization creation.
+There is no generic public account-signup page. Public creation means **create an organization and its first owner**; joining an existing organization remains invitation-only. The `open`, `authenticated`, and `disabled` registration policies control organization creation, not self-service membership in an existing organization. An invitation must never send an authenticated user through unrelated organization creation.
 
 ## Light onboarding
 
 Onboarding is a short path to useful work, not a product questionnaire.
 
-### First installation owner
+### Public organization owner
 
-1. Create the owner account.
-2. Name the first organization.
-3. Name the first project and accept a small default status workflow.
-4. Enter the project Board.
+1. Enter an organization slug and explicitly confirm creation when it is not found.
+2. Provide the organization name, final slug, owner identity, email, and password.
+3. Let one bounded command create the identity, owner membership, default project, statuses, session, audit, and outbox facts.
+4. Enter the initial project Board.
+
+### First installation operator
+
+1. Authorize the setup browser automatically on loopback or through the one-time remote setup link.
+2. Create the operator account.
+3. Use the temporary organization-setup route when the identity has no membership.
+4. Enter the authenticated application.
 
 ### Invited member
 
-1. Create or confirm the account.
-2. Accept the organization invitation.
-3. Enter the invited organization or project.
+1. Open an organization-specific invitation.
+2. Create or confirm the account.
+3. Accept the invitation and enter the intended organization or project.
+
+This invitation journey is reserved for the collaboration phase; public organization registration never substitutes for it.
 
 ### User creating an additional organization
 
-1. Name the organization.
-2. Create the first project.
-3. Enter the project.
+1. Use the authenticated create-organization action.
+2. Reuse the existing identity as the new organization's owner.
+3. Enter the new organization without creating another account.
 
 Company size, industry, job title, feature interests, integrations, and plugin recommendations are excluded from initial onboarding. Optional education appears contextually on the page where an action is performed.
 
 ## First-run Home
 
-After organization setup, Home asks the owner to create the first project. Creating it opens the Board immediately. The ordinary Home replaces that first-run prompt with recent and organizational content; it does not become a configurable analytics dashboard.
+Public organization-and-owner creation provisions a default project and opens its Board immediately. The temporary installation setup journey may still reach Home after creating its first organization. Ordinary Home contains recent and organizational content; it does not become a configurable analytics dashboard.
 
 ## Project page
 
@@ -334,12 +344,14 @@ All primary operations work without drag and drop. URLs identify organization, p
 
 ### Public and account entry
 
+- Organization locator.
+- Organization resolver and typo-safe not-found confirmation.
+- Organization-scoped sign in.
+- Create organization and first owner when policy permits it.
+- Organization-scoped account recovery.
 - First installation setup.
-- Sign in.
-- Sign up/create account when allowed.
-- Account recovery.
-- Invitation acceptance.
-- Light onboarding.
+- Invitation acceptance when collaboration invitations are implemented.
+- Temporary organization setup for authenticated identities with no memberships.
 
 ### Authenticated core
 

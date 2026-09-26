@@ -1,6 +1,6 @@
 # Launch++ data and API architecture
 
-Status: proposed logical model and public API conventions. Physical migrations and generated schemas do not exist yet.
+Status: architecture source of truth. Core-alpha persistence, generated contracts, and the organization-first public entry endpoints are implemented; later collaboration and plugin records remain target design.
 
 ## Design goals
 
@@ -50,25 +50,25 @@ IDs are never parsed for authorization or business meaning. UUIDv7 provides usef
 ```mermaid
 erDiagram
     AUTH_USER ||--|| USER_PROFILE : has
-    AUTH_USER ||--o{ WORKSPACE_MEMBER : joins
-    WORKSPACE ||--o{ WORKSPACE_MEMBER : contains
-    WORKSPACE ||--o{ INVITATION : issues
-    WORKSPACE ||--o{ PROJECT : owns
+    AUTH_USER ||--o{ ORGANIZATION_MEMBER : joins
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBER : contains
+    ORGANIZATION ||--o{ INVITATION : issues
+    ORGANIZATION ||--o{ PROJECT : owns
     PROJECT ||--o{ STATUS : defines
     PROJECT ||--o{ TASK : contains
     TASK o|--o{ TASK : parent_of
     TASK ||--o{ TASK_ASSIGNEE : assigned
     AUTH_USER ||--o{ TASK_ASSIGNEE : receives
-    WORKSPACE ||--o{ LABEL : owns
+    ORGANIZATION ||--o{ LABEL : owns
     LABEL ||--o{ TASK_LABEL : applied
     TASK ||--o{ TASK_LABEL : has
     TASK ||--o{ COMMENT : discusses
     AUTH_USER ||--o{ COMMENT : authors
-    WORKSPACE ||--o{ ACTIVITY : records
-    WORKSPACE ||--o{ NOTIFICATION : produces
+    ORGANIZATION ||--o{ ACTIVITY : records
+    ORGANIZATION ||--o{ NOTIFICATION : produces
     AUTH_USER ||--o{ NOTIFICATION : receives
-    WORKSPACE ||--o{ OUTBOX_EVENT : commits
-    WORKSPACE ||--o{ JOB : schedules
+    ORGANIZATION ||--o{ OUTBOX_EVENT : commits
+    ORGANIZATION ||--o{ JOB : schedules
 ```
 
 This is a logical ownership diagram, not generated migration syntax. Authentication tables are owned by Better Auth; all authorization and project-management tables are owned by Launch++.
@@ -117,9 +117,17 @@ Invariants:
 
 - Every active organization has at least one owner.
 - The final owner cannot leave, be removed, or be demoted without an ownership transfer.
-- Organization names are case-insensitively unique within an installation.
+- Organization display names may repeat and are never used as identifiers.
 - Organization slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
 - Membership changes invalidate relevant sessions/query scopes and produce audit activity.
+
+`organization_registration_commands`
+
+- `installation_id`, `idempotency_key` — composite primary key
+- HMAC request fingerprint, `pending` or `completed` state, and expiry timestamps
+- bounded completed navigation result containing organization/project identifiers and destination
+
+This installation-scoped record makes public owner registration retry-safe. It never stores the password, raw session token, registration request body, or invitation data. Reusing a key with different validated input is rejected; replaying a completed request returns the same safe result without creating another identity, organization, membership, or project.
 
 ### Projects and statuses
 
@@ -384,11 +392,13 @@ The client may briefly see eventual search lag after a mutation, while direct ta
 
 Authentication handlers may live under `/api/auth/*` according to the auth adapter. They do not define organization authorization.
 
-### Proposed resource families
+### Resource families
 
 | Area | Representative endpoints |
 | --- | --- |
 | Session/profile | `GET /me`, `PATCH /me`, `GET /me/organizations` |
+| Public organization directory | `GET /api/v1/public/organizations/:slug` returns only existence, normalized slug, and public display name |
+| Public organization registration | `POST /api/v1/public/organization-registrations` deliberately creates the first owner, organization, membership, default project, session, audit, and outbox facts when policy is `open` |
 | Organizations | `POST /organizations`, `GET/PATCH /organizations/:id`, archive/restore/export operations |
 | Membership | list, invite, accept, change role, suspend/remove |
 | Projects | list/create/get/patch/archive/restore |
@@ -403,7 +413,9 @@ Authentication handlers may live under `/api/auth/*` according to the auth adapt
 | Events | authenticated SSE stream |
 | Administration | health details, diagnostics, backup/restore coordination under operator policy |
 
-Endpoint names are provisional until route schemas are implemented. Dedicated action endpoints are preferable when an operation has meaningful invariants—such as moving a task between projects, transferring ownership, or enabling a plugin—rather than hiding the operation in a generic patch.
+The public organization resolver is intentionally unauthenticated and limited to 30 requests per client per minute. It exposes no immutable IDs, owners, members, email addresses, projects, or activity; archived and deleted organizations resolve as unavailable. The public registration command is separately limited to 5 requests per client per minute, requires an `Idempotency-Key`, and is available only when `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY=open`. Its request never accepts an organization ID or role, and its response contains only the created organization/project summaries and safe application destination. Generic Better Auth sign-up remains blocked because it cannot guarantee an owner membership and initial project.
+
+Endpoint names remain provisional where route schemas are not yet implemented. Dedicated action endpoints are preferable when an operation has meaningful invariants—such as moving a task between projects, transferring ownership, or enabling a plugin—rather than hiding the operation in a generic patch.
 
 ### Example task response
 
@@ -471,7 +483,7 @@ A cursor binds to the sort fields, last record ID, organization, and normalized 
 
 ### Idempotency
 
-Create endpoints, plugin commands, imports, and high-value batch operations accept `Idempotency-Key`. The server binds a key to actor, organization, operation, and a hash of validated input. Reusing the key with different input is an error; replaying identical input returns the stored result during the documented retention window.
+Create endpoints, plugin commands, imports, and high-value batch operations accept `Idempotency-Key`. Authenticated commands bind a key to actor, organization, operation, and a hash of validated input. Public organization registration instead binds the key to the installation and an HMAC request fingerprint, stores only bounded completion data, and expires the record. Reusing a key with different input is an error; replaying identical completed input returns the stored result during the documented retention window.
 
 Simple patches also use revision preconditions. Idempotency prevents duplicate effects after retry; revision checks prevent lost concurrent updates. They solve different problems.
 

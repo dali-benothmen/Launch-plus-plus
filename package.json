@@ -27,7 +27,7 @@
     "ui:showcase": "pnpm --filter @launchpp/ui showcase",
     "ui:showcase:build": "pnpm --filter @launchpp/ui showcase:build",
     "dev:server": "pnpm exec tsc -b apps/server --pretty false && concurrently --kill-others-on-fail --names compiler,server --prefix-colors cyan,green \"pnpm exec tsc -b apps/server --watch --preserveWatchOutput --pretty false\" \"pnpm --filter @launchpp-internal/server dev\"",
-    "dev:web": "pnpm --filter @launchpp-internal/web dev",
+    "dev:web": "pnpm exec tsc -b apps/web --pretty false && concurrently --kill-others-on-fail --names compiler,vite --prefix-colors cyan,blue \"pnpm exec tsc -b apps/web --watch --preserveWatchOutput --pretty false\" \"pnpm --filter @launchpp-internal/web dev\"",
     "start:server": "pnpm --filter @launchpp-internal/server start",
     "typecheck": "tsc -b --pretty false",
     "test": "pnpm test:unit",

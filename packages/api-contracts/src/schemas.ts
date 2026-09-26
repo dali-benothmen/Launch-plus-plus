@@ -61,6 +61,63 @@ export const OrganizationSummarySchema = StrictObject(
 
 export type OrganizationSummary = Type.Static<typeof OrganizationSummarySchema>;
 
+export const PublicOrganizationParamsSchema = StrictObject(
+  { slug: Type.String({ maxLength: 200, minLength: 1 }) },
+  { $id: "LaunchppPublicOrganizationParamsV1" },
+);
+export type PublicOrganizationParams = Type.Static<typeof PublicOrganizationParamsSchema>;
+
+export const PublicOrganizationResolutionSchema = StrictObject(
+  {
+    exists: Type.Boolean(),
+    name: Type.Optional(Type.String({ maxLength: 80, minLength: 1 })),
+    slug: Type.String({ maxLength: 48, minLength: 3 }),
+  },
+  { $id: "LaunchppPublicOrganizationResolutionV1" },
+);
+export type PublicOrganizationResolution = Type.Static<typeof PublicOrganizationResolutionSchema>;
+
+export const OrganizationRegistrationHeadersSchema = Type.Object(
+  {
+    "idempotency-key": Type.String({ maxLength: 200, minLength: 8 }),
+  },
+  { $id: "LaunchppOrganizationRegistrationHeadersV1", additionalProperties: true },
+);
+export type OrganizationRegistrationHeaders = Type.Static<
+  typeof OrganizationRegistrationHeadersSchema
+>;
+
+export const OrganizationRegistrationInputSchema = StrictObject(
+  {
+    email: Type.String({ format: "email", maxLength: 320 }),
+    organizationName: Type.String({ maxLength: 80, minLength: 1, pattern: "\\S" }),
+    organizationSlug: Type.String({ maxLength: 48, minLength: 3 }),
+    ownerName: Type.String({ maxLength: 100, minLength: 1, pattern: "\\S" }),
+    password: Type.String({ maxLength: 128, minLength: 12 }),
+  },
+  { $id: "LaunchppOrganizationRegistrationInputV1" },
+);
+export type OrganizationRegistrationInput = Type.Static<typeof OrganizationRegistrationInputSchema>;
+
+export const OrganizationRegistrationResultSchema = StrictObject(
+  {
+    destination: Type.String({ maxLength: 500, minLength: 1 }),
+    organization: StrictObject({
+      id: IdentifierSchema,
+      name: Type.String({ maxLength: 80, minLength: 1 }),
+      slug: Type.String({ maxLength: 48, minLength: 3 }),
+    }),
+    project: StrictObject({
+      id: IdentifierSchema,
+      slug: Type.String({ maxLength: 160, minLength: 1 }),
+    }),
+  },
+  { $id: "LaunchppOrganizationRegistrationResultV1" },
+);
+export type OrganizationRegistrationResult = Type.Static<
+  typeof OrganizationRegistrationResultSchema
+>;
+
 export const OrganizationContextSchema = StrictObject(
   {
     currentOrganizationId: Type.Optional(IdentifierSchema),
@@ -643,6 +700,11 @@ export const CORE_API_SCHEMAS = Object.freeze([
   CursorPageQuerySchema,
   IdempotencyHeadersSchema,
   OrganizationSummarySchema,
+  PublicOrganizationParamsSchema,
+  PublicOrganizationResolutionSchema,
+  OrganizationRegistrationHeadersSchema,
+  OrganizationRegistrationInputSchema,
+  OrganizationRegistrationResultSchema,
   OrganizationContextSchema,
   OrganizationMemberSummarySchema,
   TeamSummarySchema,

@@ -120,6 +120,37 @@
   font: inherit;
 }
 
+.auth-locator-subtitle {
+  margin: 8px 0 32px;
+  color: #667085;
+  font-size: 14px;
+}
+
+.auth-locator-subtitle + .auth-form {
+  margin-top: 0;
+}
+
+.auth-organization-suffix {
+  color: #667085;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.auth-locator-back {
+  margin-top: 24px;
+}
+
+.auth-not-found-copy {
+  margin: 12px 0 0;
+  max-width: 380px;
+}
+
+.auth-not-found-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
 .auth-password-strength {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1672,7 +1703,7 @@
 
 .task-detail-comment-form:focus-within {
   border-color: var(--launch-color-accent);
-  box-shadow: 0 0 0 2px\n    color-mix(in srgb, var(--launch-color-accent) 10%, transparent);
+  box-shadow: 0 0 0 2px\n color-mix(in srgb, var(--launch-color-accent) 10%, transparent);
 }
 
 .task-detail-comment-input {

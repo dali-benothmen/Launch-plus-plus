@@ -1,14 +1,18 @@
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { WriteContext } from "../shared/transactions.js";
-import { availableOrganizationSlug, normalizeOrganizationName } from "./organization-naming.js";
-import type {
-  AuditWriter,
-  UserProfileRepository,
-  Organization,
-  OrganizationMembershipRepository,
-  OrganizationRepository,
+import {
+  availableOrganizationSlug,
+  normalizeOrganizationName,
+  normalizeOrganizationSlug,
+} from "./organization-naming.js";
+import {
+  type AuditWriter,
+  type UserProfileRepository,
+  type Organization,
+  type OrganizationMembershipRepository,
+  type OrganizationRepository,
+  OrganizationSlugAlreadyExistsError,
 } from "./organization.js";
-import { OrganizationNameAlreadyExistsError } from "./organization.js";
 
 export interface OwnedOrganizationDependencies {
   readonly audit: AuditWriter;
@@ -25,6 +29,7 @@ export interface CreateOwnedOrganizationInput {
   readonly installationId: string;
   readonly name: string;
   readonly now: number;
+  readonly slug?: string;
   readonly userId: string;
 }
 
@@ -34,8 +39,19 @@ export function createOwnedOrganization(
   input: CreateOwnedOrganizationInput,
 ): Organization {
   const name = normalizeOrganizationName(input.name);
-  if (dependencies.organizations.findByName(context, input.installationId, name)) {
-    throw new OrganizationNameAlreadyExistsError("An organization with this name already exists.");
+  const slug =
+    input.slug === undefined
+      ? availableOrganizationSlug(
+          context,
+          dependencies.organizations,
+          input.installationId,
+          name,
+        )
+      : normalizeOrganizationSlug(input.slug);
+  if (dependencies.organizations.findBySlug(context, input.installationId, slug)) {
+    throw new OrganizationSlugAlreadyExistsError(
+      `An organization with the slug "${slug}" already exists.`,
+    );
   }
   const organization: Organization = Object.freeze({
     createdAt: input.now,
@@ -44,12 +60,7 @@ export function createOwnedOrganization(
     installationId: input.installationId,
     name,
     revision: 1,
-    slug: availableOrganizationSlug(
-      context,
-      dependencies.organizations,
-      input.installationId,
-      name,
-    ),
+    slug,
     updatedAt: input.now,
   });
   dependencies.organizations.create(context, organization);

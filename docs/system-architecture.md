@@ -351,27 +351,22 @@ The Fastify server serves fingerprinted static assets and the SPA fallback from 
 
 ### Route model
 
-The product-level page hierarchy and responsive behavior are defined in [UI information architecture](./ui-information-architecture.md). Proposed stable URL shapes are:
+The product-level page hierarchy and responsive behavior are defined in [UI information architecture](./ui-information-architecture.md). The implemented organization-first entry and compatibility routes are:
 
 ```text
-/setup
-/sign-in
-/sign-up
-/recover
-/invite/:token
-/w/:organizationSlug/home
-/w/:organizationSlug/members
-/w/:organizationSlug/p/:projectKey/:viewId
-/w/:organizationSlug/p/:projectKey/tasks/:taskId
-/w/:organizationSlug/x/:pluginId/:pagePath
-/w/:organizationSlug/p/:projectKey/x/:pluginId/:pagePath
-/w/:organizationSlug/settings/:section
-/w/:organizationSlug/p/:projectKey/settings/:section
-/account/:section
-/admin/:section
+/                                      organization locator or authenticated application redirect
+/setup                                 secure first-installation setup
+/organizations/new                     deliberate organization-and-owner creation
+/o/:organizationSlug                   public organization resolver
+/o/:organizationSlug/sign-in           organization-scoped sign in
+/o/:organizationSlug/recover           organization-scoped recovery
+/sign-in                               temporary compatibility entry; optional ?organization=<slug>
+/recover                               temporary compatibility recovery entry; optional ?organization=<slug>
+/organization-setup                    temporary authenticated no-membership flow
+/app/...                                existing authenticated application routes
 ```
 
-The `viewId` resolves permanent core views such as Board/List or a registered host-owned plugin view. Slugs and keys are navigation conveniences. APIs use opaque immutable IDs resolved and authorized by the server. Plugin route suffixes are declared and host-owned so a disabled plugin produces a controlled unavailable state rather than a broken router import. A task route may render as a panel over its originating project route on wide screens while remaining independently deep-linkable.
+Organization slugs are public navigation identifiers; APIs and authenticated application routes continue to use opaque immutable IDs for authorization. The path-based resolver is the MVP boundary for a future hosted subdomain such as `acme.launchpp.app`; wildcard DNS, shared cookie domains, and subdomain routing are not required now. Legacy sign-in and recovery routes preserve bookmarked application destinations while moving anonymous entry through the locator. Invitation routes remain reserved for the collaboration phase. A task route may render as a panel over its originating project route on wide screens while remaining independently deep-linkable.
 
 ### State ownership
 

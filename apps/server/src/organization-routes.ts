@@ -1,8 +1,13 @@
-import { randomUUID } from "node:crypto";
-import { IdempotencyHeadersSchema } from "@launchpp/api-contracts";
+import { createHmac, randomUUID } from "node:crypto";
+import {
+  IdempotencyHeadersSchema,
+  OrganizationRegistrationHeadersSchema,
+} from "@launchpp/api-contracts";
 import type {
   CreateOrganizationInput,
   CursorPageQuery,
+  OrganizationRegistrationHeaders,
+  OrganizationRegistrationInput,
   RenameOrganizationInput,
   SelectOrganizationInput,
 } from "@launchpp/api-contracts";
@@ -14,25 +19,37 @@ import {
 } from "@launchpp/authorization";
 import {
   CreateOrganizationService,
+  IdentityAccountAlreadyExistsError,
+  IdentityProvisioningError,
+  normalizeOrganizationSlug,
+  RegisterOrganizationOwnerService,
   RenameOrganizationService,
   SelectCurrentOrganizationService,
   type Organization,
-  OrganizationNameAlreadyExistsError,
   OrganizationNotFoundError,
   OrganizationQueryService,
+  OrganizationRegistrationDisabledError,
+  OrganizationRegistrationInProgressError,
+  OrganizationRegistrationKeyConflictError,
+  OrganizationSlugAlreadyExistsError,
+  OrganizationSlugInvalidError,
+  OrganizationSlugReservedError,
 } from "@launchpp/core";
 import {
   type SqliteDatabase,
   SqliteAuditWriter,
   SqliteInstallationRepository,
   SqliteIdempotencyRepository,
-  SqliteOutboxRepository,
-  SqliteUserProfileRepository,
   SqliteOrganizationMembershipRepository,
+  SqliteOrganizationRegistrationRepository,
   SqliteOrganizationRepository,
+  SqliteOutboxRepository,
+  SqliteProjectRepository,
+  SqliteUserProfileRepository,
 } from "@launchpp/database";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
+import type { ServerConfig } from "./config.js";
 import { cursorPage, executeIdempotent } from "./http-contract.js";
 import { sendProblem } from "./problem-details.js";
 
@@ -42,6 +59,8 @@ const problemResponses = {
   403: { $ref: "LaunchppProblemDetailsV1#" },
   404: { $ref: "LaunchppProblemDetailsV1#" },
   409: { $ref: "LaunchppProblemDetailsV1#" },
+  429: { $ref: "LaunchppProblemDetailsV1#" },
+  500: { $ref: "LaunchppProblemDetailsV1#" },
   503: { $ref: "LaunchppProblemDetailsV1#" },
 } as const;
 
@@ -66,7 +85,11 @@ function organizationSummary(organization: Organization) {
 
 export async function registerOrganizationRoutes(
   app: FastifyInstance,
-  input: Readonly<{ database: SqliteDatabase; identity: BetterAuthIdentityAdapter }>,
+  input: Readonly<{
+    config: ServerConfig;
+    database: SqliteDatabase;
+    identity: BetterAuthIdentityAdapter;
+  }>,
 ): Promise<void> {
   const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
@@ -74,6 +97,8 @@ export async function registerOrganizationRoutes(
   const memberships = new SqliteOrganizationMembershipRepository();
   const outbox = new SqliteOutboxRepository();
   const profiles = new SqliteUserProfileRepository();
+  const projects = new SqliteProjectRepository();
+  const registrations = new SqliteOrganizationRegistrationRepository(input.database);
   const organizations = new SqliteOrganizationRepository();
   const shared = {
     audit,
@@ -86,6 +111,13 @@ export async function registerOrganizationRoutes(
     organizations,
   };
   const createOrganization = new CreateOrganizationService(shared);
+  const registerOrganizationOwner = new RegisterOrganizationOwnerService({
+    ...shared,
+    identity: input.identity,
+    policy: input.config.organizationRegistrationPolicy,
+    projects,
+    registrations,
+  });
   const renameOrganization = new RenameOrganizationService(shared);
   const selectOrganization = new SelectCurrentOrganizationService({
     clock: Date.now,
@@ -102,6 +134,240 @@ export async function registerOrganizationRoutes(
   const sessionFor = (request: FastifyRequest) =>
     input.identity.resolveSession(webHeaders(request.headers));
   const installation = () => input.database.read((context) => installations.findFirst(context));
+
+  app.get<{ Params: { readonly slug: string } }>(
+    "/api/v1/public/organizations/:slug",
+    {
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      schema: {
+        operationId: "resolvePublicOrganization",
+        params: { $ref: "LaunchppPublicOrganizationParamsV1#" },
+        response: {
+          200: { $ref: "LaunchppPublicOrganizationResolutionV1#" },
+          ...problemResponses,
+        },
+        summary: "Resolve a public organization slug",
+        tags: ["Organizations"],
+      },
+    },
+    async (request, reply) => {
+      let slug: string;
+      try {
+        slug = normalizeOrganizationSlug(request.params.slug);
+      } catch (error) {
+        if (error instanceof OrganizationSlugReservedError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "organization_slug_reserved",
+            "Reserved organization slug",
+            error.message,
+          );
+        }
+        if (error instanceof OrganizationSlugInvalidError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "organization_slug_invalid",
+            "Invalid organization slug",
+            error.message,
+          );
+        }
+        throw error;
+      }
+
+      const currentInstallation = installation();
+      if (!currentInstallation) {
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
+      }
+      const organization = input.database.read((context) =>
+        organizations.findBySlug(context, currentInstallation.id, slug),
+      );
+      if (
+        !organization ||
+        organization.archivedAt !== undefined ||
+        organization.deletedAt !== undefined
+      ) {
+        return { exists: false, slug };
+      }
+      return { exists: true, name: organization.name, slug: organization.slug };
+    },
+  );
+
+  app.post<{
+    Body: OrganizationRegistrationInput;
+    Headers: OrganizationRegistrationHeaders;
+  }>(
+    "/api/v1/public/organization-registrations",
+    {
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+      schema: {
+        body: { $ref: "LaunchppOrganizationRegistrationInputV1#" },
+        headers: OrganizationRegistrationHeadersSchema,
+        operationId: "registerOrganizationOwner",
+        response: {
+          201: { $ref: "LaunchppOrganizationRegistrationResultV1#" },
+          ...problemResponses,
+        },
+        summary: "Create an organization and its first owner",
+        tags: ["Organizations"],
+      },
+    },
+    async (request, reply) => {
+      const currentInstallation = installation();
+      if (!currentInstallation) {
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
+      }
+
+      const key = request.headers["idempotency-key"];
+      if (typeof key !== "string") {
+        return sendProblem(
+          reply,
+          request,
+          400,
+          "invalid_idempotency_key",
+          "Invalid idempotency key",
+          "Idempotency-Key must contain between 8 and 200 characters.",
+        );
+      }
+      const requestHash = createHmac("sha256", input.config.authSecret)
+        .update(
+          JSON.stringify([
+            request.body.organizationName,
+            request.body.organizationSlug,
+            request.body.ownerName,
+            request.body.email,
+            request.body.password,
+          ]),
+        )
+        .digest("hex");
+
+      try {
+        const result = await registerOrganizationOwner.execute({
+          correlationId: request.id,
+          email: request.body.email,
+          installationId: currentInstallation.id,
+          key,
+          organizationName: request.body.organizationName,
+          organizationSlug: request.body.organizationSlug,
+          ownerName: request.body.ownerName,
+          password: request.body.password,
+          requestHash,
+        });
+        const destination =
+          `/app/organizations/${encodeURIComponent(result.organization.id)}` +
+          `/projects/${encodeURIComponent(result.project.id)}/board`;
+        reply.header("set-cookie", result.setCookieHeaders);
+        return reply.status(201).send({
+          destination,
+          organization: result.organization,
+          project: result.project,
+        });
+      } catch (error) {
+        if (
+          error instanceof OrganizationSlugAlreadyExistsError ||
+          error instanceof OrganizationSlugReservedError
+        ) {
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "organization_slug_unavailable",
+            "Organization address unavailable",
+            "Choose a different organization address.",
+          );
+        }
+        if (error instanceof OrganizationSlugInvalidError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "organization_slug_invalid",
+            "Invalid organization address",
+            error.message,
+          );
+        }
+        if (error instanceof IdentityAccountAlreadyExistsError) {
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "account_already_exists",
+            "Account already exists",
+            "Sign in with this email address or use a different address.",
+          );
+        }
+        if (error instanceof OrganizationRegistrationDisabledError) {
+          return sendProblem(
+            reply,
+            request,
+            403,
+            "organization_registration_disabled",
+            "Organization registration disabled",
+            error.message,
+          );
+        }
+        if (error instanceof OrganizationRegistrationInProgressError) {
+          reply.header("retry-after", "1");
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "registration_in_progress",
+            "Registration in progress",
+            error.message,
+          );
+        }
+        if (error instanceof OrganizationRegistrationKeyConflictError) {
+          return sendProblem(
+            reply,
+            request,
+            409,
+            "idempotency_key_reused",
+            "Idempotency key conflict",
+            error.message,
+          );
+        }
+        if (error instanceof TypeError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "invalid_request",
+            "Invalid registration",
+            error.message,
+          );
+        }
+        request.log.error({ err: error }, "organization registration failed");
+        return sendProblem(
+          reply,
+          request,
+          500,
+          "registration_failed",
+          "Registration failed",
+          error instanceof IdentityProvisioningError
+            ? "The account or session could not be provisioned."
+            : "Organization registration did not complete.",
+        );
+      }
+    },
+  );
 
   app.get<{ Querystring: CursorPageQuery }>(
     "/api/v1/organizations",
@@ -258,41 +524,27 @@ export async function registerOrganizationRoutes(
           "Setup is incomplete.",
         );
       }
-      try {
-        return await executeIdempotent(
-          request,
-          reply,
-          idempotency,
-          {
-            actorUserId: session.identity.id,
-            operation: "organization.create",
-            payload: request.body,
-            scopeKey: `installation:${currentInstallation.id}`,
-          },
-          async () => {
-            const organization = await createOrganization.execute({
-              correlationId: request.id,
-              displayName: session.identity.name,
-              installationId: currentInstallation.id,
-              name: request.body.name,
-              userId: session.identity.id,
-            });
-            return { body: organizationSummary(organization), status: 201 };
-          },
-        );
-      } catch (error) {
-        if (error instanceof OrganizationNameAlreadyExistsError) {
-          return sendProblem(
-            reply,
-            request,
-            409,
-            "organization_name_conflict",
-            "Organization name conflict",
-            error.message,
-          );
-        }
-        throw error;
-      }
+      return executeIdempotent(
+        request,
+        reply,
+        idempotency,
+        {
+          actorUserId: session.identity.id,
+          operation: "organization.create",
+          payload: request.body,
+          scopeKey: `installation:${currentInstallation.id}`,
+        },
+        async () => {
+          const organization = await createOrganization.execute({
+            correlationId: request.id,
+            displayName: session.identity.name,
+            installationId: currentInstallation.id,
+            name: request.body.name,
+            userId: session.identity.id,
+          });
+          return { body: organizationSummary(organization), status: 201 };
+        },
+      );
     },
   );
 
@@ -392,16 +644,6 @@ export async function registerOrganizationRoutes(
         });
         return organizationSummary(organization);
       } catch (error) {
-        if (error instanceof OrganizationNameAlreadyExistsError) {
-          return sendProblem(
-            reply,
-            request,
-            409,
-            "organization_name_conflict",
-            "Organization name conflict",
-            error.message,
-          );
-        }
         if (error instanceof OrganizationNotFoundError) {
           return sendProblem(
             reply,

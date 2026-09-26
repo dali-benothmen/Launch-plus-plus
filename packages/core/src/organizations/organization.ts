@@ -64,7 +64,6 @@ export interface UserProfileRepository {
 export interface OrganizationRepository {
   create(context: WriteContext, organization: Organization): void;
   findById(context: ReadContext, organizationId: string): Organization | undefined;
-  findByName(context: ReadContext, installationId: string, name: string): Organization | undefined;
   findBySlug(context: ReadContext, installationId: string, slug: string): Organization | undefined;
   listForUser(context: ReadContext, userId: string): readonly Organization[];
   updateName(
@@ -100,8 +99,16 @@ export class UserProfileMissingError extends Error {
   override readonly name = "UserProfileMissingError";
 }
 
-export class OrganizationNameAlreadyExistsError extends Error {
-  override readonly name = "OrganizationNameAlreadyExistsError";
+export class OrganizationSlugAlreadyExistsError extends Error {
+  override readonly name = "OrganizationSlugAlreadyExistsError";
+}
+
+export class OrganizationSlugInvalidError extends Error {
+  override readonly name = "OrganizationSlugInvalidError";
+}
+
+export class OrganizationSlugReservedError extends Error {
+  override readonly name = "OrganizationSlugReservedError";
 }
 
 export class OrganizationNotFoundError extends Error {
