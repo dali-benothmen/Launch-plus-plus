@@ -210,12 +210,20 @@ const RESERVED_ORGANIZATION_SLUGS = new Set([
 ]);
 
 type OrganizationNavigationState = {
+  readonly from?: string;
   readonly organization?: PublicOrganizationResolution;
   readonly organizationSlug?: string;
 };
 
 function normalizeLocatorSlug(value: string) {
   return value.trim().toLowerCase();
+}
+
+function applicationReturnPath(state: unknown) {
+  const from = (state as OrganizationNavigationState | null)?.from;
+  return typeof from === "string" && (from === "/app" || from.startsWith("/app/"))
+    ? from
+    : undefined;
 }
 
 function organizationSlugError(slug: string) {
@@ -227,6 +235,40 @@ function organizationSlugError(slug: string) {
     return `The organization URL “${slug}” is reserved. Choose another address.`;
   }
   return "";
+}
+
+export function LegacySignInRoute() {
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const organizationSlug = normalizeLocatorSlug(searchParameters.get("organization") ?? "");
+  const from = applicationReturnPath(location.state);
+  const state: OrganizationNavigationState = {
+    ...(from ? { from } : {}),
+    ...(organizationSlug ? { organizationSlug } : {}),
+  };
+
+  if (!organizationSlug || organizationSlugError(organizationSlug)) {
+    return <Navigate replace state={state} to="/" />;
+  }
+  return <Navigate replace state={state} to={`/o/${encodeURIComponent(organizationSlug)}`} />;
+}
+
+export function LegacyRecoveryRoute() {
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const organizationSlug = normalizeLocatorSlug(searchParameters.get("organization") ?? "");
+  const from = applicationReturnPath(location.state);
+  const state: OrganizationNavigationState = {
+    ...(from ? { from } : {}),
+    ...(organizationSlug ? { organizationSlug } : {}),
+  };
+
+  if (!organizationSlug || organizationSlugError(organizationSlug)) {
+    return <Navigate replace state={state} to="/" />;
+  }
+  return (
+    <Navigate replace state={state} to={`/o/${encodeURIComponent(organizationSlug)}/recover`} />
+  );
 }
 
 type RegistrationFieldErrors = {
@@ -259,6 +301,7 @@ export function OrganizationLocatorPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const organizationInput = useRef<HTMLInputElement>(null);
+  const returnPath = applicationReturnPath(location.state);
   const attemptedSlug = normalizeLocatorSlug(
     (location.state as OrganizationNavigationState | null)?.organizationSlug ?? "",
   );
@@ -275,7 +318,9 @@ export function OrganizationLocatorPage() {
       organizationInput.current?.focus();
       return;
     }
-    navigate(`/o/${encodeURIComponent(normalizedSlug)}`);
+    navigate(`/o/${encodeURIComponent(normalizedSlug)}`, {
+      state: returnPath ? { from: returnPath } : undefined,
+    });
   };
 
   return (
@@ -322,7 +367,9 @@ export function OrganizationLocatorPage() {
 export function OrganizationEntryPage() {
   const api = useApiClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const { organizationSlug = "" } = useParams();
+  const returnPath = applicationReturnPath(location.state);
   const normalizedSlug = normalizeLocatorSlug(organizationSlug);
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -341,7 +388,10 @@ export function OrganizationEntryPage() {
         }
         navigate(`/o/${organization.slug}/sign-in`, {
           replace: true,
-          state: { organization },
+          state: {
+            ...(returnPath ? { from: returnPath } : {}),
+            organization,
+          },
         });
       })
       .catch((reason: unknown) => {
@@ -350,14 +400,21 @@ export function OrganizationEntryPage() {
     return () => {
       active = false;
     };
-  }, [api, navigate, normalizedSlug]);
+  }, [api, navigate, normalizedSlug, returnPath]);
 
   if (error) {
     return (
       <AuthLayout title="Unable to open your organization">
         <ErrorMessage error={error} />
         <div className="auth-locator-back">
-          <Button onClick={() => navigate("/")} type="button">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
             Try another organization
           </Button>
         </div>
@@ -367,6 +424,7 @@ export function OrganizationEntryPage() {
 
   if (missing) {
     const organizationState: OrganizationNavigationState = {
+      ...(returnPath ? { from: returnPath } : {}),
       organizationSlug: normalizedSlug,
     };
 
@@ -785,7 +843,13 @@ export function AuthenticatedRoute({ children }: PropsWithChildren) {
   if (access === "loading") return <Spin fullscreen description="Loading session" />;
   if (access === "setup") return <Navigate replace to="/setup" />;
   if (access === "anonymous") {
-    return <Navigate replace state={{ from: location.pathname }} to="/sign-in" />;
+    return (
+      <Navigate
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+        to="/sign-in"
+      />
+    );
   }
   return children;
 }
@@ -1091,6 +1155,7 @@ export function SignInPage() {
   const location = useLocation();
   const { organizationSlug: routeOrganizationSlug = "" } = useParams();
   const normalizedOrganizationSlug = normalizeLocatorSlug(routeOrganizationSlug);
+  const returnPath = applicationReturnPath(location.state);
   const navigationOrganization = (location.state as OrganizationNavigationState | null)
     ?.organization;
   const initialOrganization =
@@ -1116,13 +1181,19 @@ export function SignInPage() {
       .then((resolvedOrganization) => {
         if (!active) return;
         if (!resolvedOrganization.exists) {
-          navigate(`/o/${resolvedOrganization.slug}`, { replace: true });
+          navigate(`/o/${resolvedOrganization.slug}`, {
+            replace: true,
+            state: returnPath ? { from: returnPath } : undefined,
+          });
           return;
         }
         if (routeOrganizationSlug !== resolvedOrganization.slug) {
           navigate(`/o/${resolvedOrganization.slug}/sign-in`, {
             replace: true,
-            state: { organization: resolvedOrganization },
+            state: {
+              ...(returnPath ? { from: returnPath } : {}),
+              organization: resolvedOrganization,
+            },
           });
           return;
         }
@@ -1141,6 +1212,7 @@ export function SignInPage() {
     navigate,
     normalizedOrganizationSlug,
     organization,
+    returnPath,
     routeOrganizationSlug,
   ]);
 
@@ -1198,12 +1270,11 @@ export function SignInPage() {
         if (context.currentOrganizationId !== accessibleOrganization.id) {
           await api.organizations.select(accessibleOrganization.id);
         }
-        navigate("/app", { replace: true });
+        navigate(returnPath ?? "/app", { replace: true });
         return;
       }
 
-      const from = (location.state as { from?: string } | null)?.from ?? "/app";
-      navigate(from, { replace: true });
+      navigate(returnPath ?? "/app", { replace: true });
     } catch (reason) {
       if (
         isOrganizationScoped &&
@@ -1231,7 +1302,14 @@ export function SignInPage() {
       <AuthLayout title="Unable to open your organization">
         <ErrorMessage error={organizationResolutionError} />
         <div className="auth-locator-back">
-          <Button onClick={() => navigate("/")} type="button">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
             Try another organization
           </Button>
         </div>
@@ -1282,7 +1360,14 @@ export function SignInPage() {
               onClick={(event) => {
                 event.preventDefault();
                 navigate(recoveryDestination, {
-                  state: organization ? { organization } : undefined,
+                  state: organization
+                    ? {
+                        ...(returnPath ? { from: returnPath } : {}),
+                        organization,
+                      }
+                    : returnPath
+                      ? { from: returnPath }
+                      : undefined,
                 });
               }}
             >
@@ -1324,7 +1409,15 @@ export function SignInPage() {
             <p className="auth-account-prompt">
               Don't have access? Ask your organization admin for an invitation.
             </p>
-            <Button onClick={() => navigate("/")} type="button" variant="link">
+            <Button
+              onClick={() =>
+                navigate("/", {
+                  state: returnPath ? { from: returnPath } : undefined,
+                })
+              }
+              type="button"
+              variant="link"
+            >
               Use another organization
             </Button>
           </>
@@ -1356,6 +1449,7 @@ export function RecoveryPage() {
   const requestedOrganizationSlug = normalizeLocatorSlug(
     routeOrganizationSlug || searchParameters.get("organization") || "",
   );
+  const returnPath = applicationReturnPath(location.state);
   const navigationOrganization = (location.state as OrganizationNavigationState | null)
     ?.organization;
   const initialOrganization =
@@ -1378,7 +1472,10 @@ export function RecoveryPage() {
       if (routeOrganizationSlug !== organization.slug) {
         navigate(`/o/${organization.slug}/recover`, {
           replace: true,
-          state: { organization },
+          state: {
+            ...(returnPath ? { from: returnPath } : {}),
+            organization,
+          },
         });
       }
       return;
@@ -1390,13 +1487,19 @@ export function RecoveryPage() {
       .then((resolvedOrganization) => {
         if (!active) return;
         if (!resolvedOrganization.exists) {
-          navigate(`/o/${resolvedOrganization.slug}`, { replace: true });
+          navigate(`/o/${resolvedOrganization.slug}`, {
+            replace: true,
+            state: returnPath ? { from: returnPath } : undefined,
+          });
           return;
         }
         if (routeOrganizationSlug !== resolvedOrganization.slug) {
           navigate(`/o/${resolvedOrganization.slug}/recover`, {
             replace: true,
-            state: { organization: resolvedOrganization },
+            state: {
+              ...(returnPath ? { from: returnPath } : {}),
+              organization: resolvedOrganization,
+            },
           });
           return;
         }
@@ -1409,7 +1512,7 @@ export function RecoveryPage() {
     return () => {
       active = false;
     };
-  }, [api, navigate, organization, requestedOrganizationSlug, routeOrganizationSlug]);
+  }, [api, navigate, organization, requestedOrganizationSlug, returnPath, routeOrganizationSlug]);
 
   useEffect(() => {
     let active = true;
@@ -1431,7 +1534,14 @@ export function RecoveryPage() {
       <AuthLayout title="Unable to open account recovery">
         <ErrorMessage error={organizationResolutionError} />
         <div className="auth-locator-back">
-          <Button onClick={() => navigate("/")} type="button">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
             Try another organization
           </Button>
         </div>
@@ -1483,14 +1593,28 @@ export function RecoveryPage() {
       ) : null}
       <div className="auth-not-found-actions">
         {organization ? (
-          <Button onClick={() => navigate("/")} type="button">
+          <Button
+            onClick={() =>
+              navigate("/", {
+                state: returnPath ? { from: returnPath } : undefined,
+              })
+            }
+            type="button"
+          >
             Use another organization
           </Button>
         ) : null}
         <Button
           onClick={() =>
             navigate(signInDestination, {
-              state: organization ? { organization } : undefined,
+              state: organization
+                ? {
+                    ...(returnPath ? { from: returnPath } : {}),
+                    organization,
+                  }
+                : returnPath
+                  ? { from: returnPath }
+                  : undefined,
             })
           }
           type="button"

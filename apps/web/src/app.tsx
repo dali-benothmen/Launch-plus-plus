@@ -15,6 +15,8 @@ import {
   AuthenticatedRoute,
   EntryRedirect,
   InstallationBoundary,
+  LegacyRecoveryRoute,
+  LegacySignInRoute,
   OrganizationEntryPage,
   OrganizationRegistrationPage,
   OrganizationRequiredRoute,
@@ -87,7 +89,7 @@ export const appRoutes: RouteObject[] = [
     path: "/sign-in",
     element: (
       <InstallationBoundary requiresSetup={false}>
-        <SignInPage />
+        <LegacySignInRoute />
       </InstallationBoundary>
     ),
   },
@@ -95,7 +97,7 @@ export const appRoutes: RouteObject[] = [
     path: "/recover",
     element: (
       <InstallationBoundary requiresSetup={false}>
-        <RecoveryPage />
+        <LegacyRecoveryRoute />
       </InstallationBoundary>
     ),
   },
