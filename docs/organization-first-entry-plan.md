@@ -291,9 +291,9 @@ Completion condition: organization identity is the anonymous entry context and t
 
 ### Phase D - Manual qualification and approval
 
-- [ ] **Qualify organization discovery.** Verify known, unknown, invalid, reserved, duplicate-name, and duplicate-slug behavior.
-- [ ] **Qualify owner creation.** Verify policy enforcement, exactly-once provisioning, default Board entry, session persistence, retry safety, and failure rollback.
-- [ ] **Qualify authentication boundaries.** Verify membership denial, additional organization creation, contextual recovery, fresh installation setup, existing sessions, and compatibility routes.
+- [x] **Qualify organization discovery.** Verify known, unknown, invalid, reserved, duplicate-name, and duplicate-slug behavior.
+- [x] **Qualify owner creation.** Verify policy enforcement, exactly-once provisioning, default Board entry, session persistence, retry safety, and failure rollback.
+- [x] **Qualify authentication boundaries.** Verify membership denial, additional organization creation, contextual recovery, fresh installation setup, existing sessions, and compatibility routes.
 
 Completion condition: the user manually approves the complete journey. Only then can the plugin author preview begin.
 

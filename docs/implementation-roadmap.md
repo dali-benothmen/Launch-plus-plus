@@ -150,16 +150,16 @@ Replace generic account signup with organization discovery, deliberate organizat
 - [x] **Organization identity foundation.** Establish slug rules, allow duplicate display names, migrate persistence, and publish the public resolver.
 - [x] **Organization and owner creation.** Add idempotent owner provisioning, the registration contract, locator, not-found confirmation, and creation UI.
 - [x] **Contextual authentication and cutover.** Scope sign-in and recovery to the organization and preserve existing setup, session, and application routes.
-- [ ] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.
+- [x] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.
 
 ### Exit gate
 
-- [ ] Organization identity is the public entry point.
-- [ ] New organization creation produces one owner and a usable initial Board.
-- [ ] Existing organization access remains membership-controlled and invitation-only.
-- [ ] Recovery cannot create duplicate ownership.
-- [ ] The generic signup dead end is removed.
-- [ ] The user approves the journey before Phase 2 begins.
+- [x] Organization identity is the public entry point.
+- [x] New organization creation produces one owner and a usable initial Board.
+- [x] Existing organization access remains membership-controlled and invitation-only.
+- [x] Recovery cannot create duplicate ownership.
+- [x] The generic signup dead end is removed.
+- [x] The user approves the journey before Phase 2 begins.
 
 ## Phase 2 — plugin author preview
 
