@@ -9,6 +9,7 @@ export {
   BgColorsOutlined as ThemeIcon,
   CheckSquareOutlined as TasksIcon,
   FolderOutlined as FolderIcon,
+  GoogleOutlined as GoogleIcon,
   HomeOutlined as HomeIcon,
   InboxOutlined as InboxIcon,
   LogoutOutlined as LogoutIcon,

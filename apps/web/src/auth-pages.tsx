@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Input, Spin, Typography } from "@launchpp/ui";
+import { Alert, Button, Checkbox, GoogleIcon, Input, Spin, Typography } from "@launchpp/ui";
 import { type FormEvent, type PropsWithChildren, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
@@ -380,6 +380,7 @@ export function SetupPage() {
             name="email"
             required
             size="large"
+            placeholder="Enter your email"
             type="email"
           />
         </Field>
@@ -390,6 +391,7 @@ export function SetupPage() {
             minLength={12}
             name="password"
             onChange={(event) => setPassword(event.currentTarget.value)}
+            placeholder="Enter your password"
             required
             size="large"
           />
@@ -534,13 +536,24 @@ export function SignInPage() {
             autoComplete="email"
             id="sign-in-email"
             name="email"
+            placeholder="Enter your email"
             required
             size="large"
             type="email"
           />
         </Field>
         <Field
-          action={<Link to="/recover">Forgot?</Link>}
+          action={
+            <Typography.Link
+              href="/recover"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/recover");
+              }}
+            >
+              Forgot?
+            </Typography.Link>
+          }
           htmlFor="sign-in-password"
           label="Password"
         >
@@ -548,6 +561,7 @@ export function SignInPage() {
             autoComplete="current-password"
             id="sign-in-password"
             name="password"
+            placeholder="Enter your password"
             required
             size="large"
           />
@@ -571,7 +585,7 @@ export function SignInPage() {
         <Button
           block
           className="auth-provider-action"
-          icon={<span className="auth-provider-mark">+</span>}
+          icon={<GoogleIcon />}
           onClick={() =>
             setError(new Error("Google sign-in is not configured for this installation."))
           }

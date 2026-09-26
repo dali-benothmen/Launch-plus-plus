@@ -55,7 +55,7 @@
 .auth-subtitle {
   margin: 8px 0 32px;
   color: #667085;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .auth-form {
@@ -109,18 +109,6 @@
   flex: 1;
   background: #e8eaef;
   content: "";
-}
-
-.auth-provider-mark {
-  display: inline-grid;
-  width: 15px;
-  height: 15px;
-  border: 1px solid #98a2b3;
-  border-radius: 50%;
-  color: #667085;
-  font-size: 12px;
-  line-height: 1;
-  place-items: center;
 }
 
 .auth-account-prompt {
