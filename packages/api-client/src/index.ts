@@ -93,7 +93,11 @@ export interface ApiClient extends Omit<CoreApiClient, "tasks"> {
       readonly operatorRecovery: boolean;
     }>;
     session(): Promise<SessionState | null>;
-    signIn(input: { readonly email: string; readonly password: string }): Promise<void>;
+    signIn(input: {
+      readonly email: string;
+      readonly password: string;
+      readonly rememberMe?: boolean;
+    }): Promise<void>;
     signOut(): Promise<void>;
   };
   readonly health: {
@@ -172,7 +176,11 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
           throw error;
         }
       },
-      async signIn(input: { readonly email: string; readonly password: string }): Promise<void> {
+      async signIn(input: {
+        readonly email: string;
+        readonly password: string;
+        readonly rememberMe?: boolean;
+      }): Promise<void> {
         await json("/api/auth/sign-in/email", {
           body: JSON.stringify(input),
           headers: { "content-type": "application/json" },

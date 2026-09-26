@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Spin, Typography } from "@launchpp/ui";
+import { Alert, Button, Checkbox, Input, Spin, Typography } from "@launchpp/ui";
 import { type FormEvent, type PropsWithChildren, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
@@ -511,6 +511,7 @@ export function SignInPage() {
       await api.auth.signIn({
         email: String(data.get("email") ?? ""),
         password: String(data.get("password") ?? ""),
+        rememberMe: data.get("rememberMe") === "on",
       });
       const from = (location.state as { from?: string } | null)?.from ?? "/app";
       navigate(from, { replace: true });
@@ -551,6 +552,9 @@ export function SignInPage() {
             size="large"
           />
         </Field>
+        <Checkbox className="auth-remember" defaultChecked name="rememberMe">
+          Keep me signed in
+        </Checkbox>
         <Button
           block
           className="auth-submit"
@@ -561,6 +565,33 @@ export function SignInPage() {
         >
           Sign in
         </Button>
+        <div className="auth-divider">
+          <span>or</span>
+        </div>
+        <Button
+          block
+          className="auth-provider-action"
+          icon={<span className="auth-provider-mark">+</span>}
+          onClick={() =>
+            setError(new Error("Google sign-in is not configured for this installation."))
+          }
+          size="large"
+          type="button"
+        >
+          Continue with Google
+        </Button>
+        <p className="auth-account-prompt">
+          New here?{" "}
+          <button
+            className="auth-inline-action"
+            onClick={() =>
+              setError(new Error("New accounts can only be created through an invitation."))
+            }
+            type="button"
+          >
+            Create an account
+          </button>
+        </p>
       </form>
     </AuthLayout>
   );
