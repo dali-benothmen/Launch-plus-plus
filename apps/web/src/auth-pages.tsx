@@ -1,5 +1,5 @@
 import { ApiError, type PublicOrganizationResolution } from "@launchpp/api-client";
-import { Alert, Button, Checkbox, Input, Spin, Typography } from "@launchpp/ui";
+import { Alert, Button, Checkbox, Input, message, Spin, Typography } from "@launchpp/ui";
 import {
   type FormEvent,
   type PropsWithChildren,
@@ -315,6 +315,7 @@ export function OrganizationLocatorPage() {
     setSlug(normalizedSlug);
     setFieldError(nextError);
     if (nextError) {
+      message.error({ content: nextError, key: "organization-locator-error" });
       organizationInput.current?.focus();
       return;
     }
@@ -383,6 +384,10 @@ export function OrganizationEntryPage() {
       .then((organization) => {
         if (!active) return;
         if (!organization.exists) {
+          message.error({
+            content: "We couldn't find " + organization.slug + ".launchpp.app.",
+            key: "organization-not-found",
+          });
           setMissing(true);
           return;
         }
@@ -395,7 +400,12 @@ export function OrganizationEntryPage() {
         });
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason);
+        if (!active) return;
+        message.error({
+          content: "We couldn't check this organization. Please try again.",
+          key: "organization-resolution-error",
+        });
+        setError(reason);
       });
     return () => {
       active = false;
