@@ -14,7 +14,7 @@ pnpm local:start
 
 Open `http://127.0.0.1:3000`. Stop the process with `Ctrl+C`. Launch++ first marks readiness unavailable, stops outbox work, asks SSE clients to reconnect, drains requests within the configured grace period, closes database connections, and releases the installation lock.
 
-Development remains `pnpm dev`; `local:start` is the packaged-like single-process path.
+Development remains `pnpm dev`; `local:start` is the packaged-like single-process path. On an uninitialized installation, `/setup` performs secure operator bootstrap. After initialization, `/` is the organization locator for anonymous visitors and the application redirect for authenticated users.
 
 ## Operations CLI
 
@@ -31,7 +31,7 @@ pnpm ops restore --from data/backups/launchpp-backup-<timestamp>.sqlite --confir
 
 Stop Launch++ before `migrate` or `restore`. Those operations acquire the same database lock as the server and fail with a direct message if another Launch++ process owns it. Restore requires `--confirm`, verifies the source before changing anything, migrates and verifies a temporary copy, and creates a timestamped `before-restore` recovery backup of the current database before atomically replacing it.
 
-Keep each `.sqlite` backup together with its `.sqlite.json` manifest. Store copies outside the Launch++ host. Backups do not contain `LAUNCHPP_AUTH_SECRET` or reverse-proxy configuration; preserve those separately in the operator's secret/configuration backup.
+Keep each `.sqlite` backup together with its `.sqlite.json` manifest. Store copies outside the Launch++ host. Backups do not contain `LAUNCHPP_AUTH_SECRET`, `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY`, or reverse-proxy configuration; preserve those separately in the operator's secret/configuration backup.
 
 ## Container distribution
 
@@ -42,10 +42,11 @@ Production requires an HTTPS public origin and an authentication secret of at le
 ```bash
 export LAUNCHPP_BASE_URL=https://launch.example.com
 export LAUNCHPP_AUTH_SECRET='replace-with-a-long-random-secret'
+export LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY=authenticated
 docker compose up --build -d
 ```
 
-Terminate TLS with a reverse proxy and forward to port 3000. The example publishes only on `127.0.0.1` by default. If a reverse proxy is used, set `LAUNCHPP_TRUSTED_PROXIES` to its exact address or supported CIDR.
+Terminate TLS with a reverse proxy and forward to port 3000. The example publishes only on `127.0.0.1` by default. If a reverse proxy is used, set `LAUNCHPP_TRUSTED_PROXIES` to its exact address or supported CIDR. Registration policy defaults to `authenticated`; set it explicitly to `open` only when anonymous visitors should be allowed to create an organization and its first owner, or to `disabled` for operator-controlled creation. Restart Launch++ after changing the policy. Compose passes the value into the container.
 
 Container backup:
 

@@ -77,11 +77,14 @@ Better Auth handles credential verification, sessions, verification tokens, and 
 
 ### Initial authentication methods
 
-- First owner created through a one-time setup flow.
-- Email and password for ordinary accounts.
-- Invitation-based organization onboarding.
-- Password reset only when mail is configured; otherwise an explicit operator recovery command.
+- Installation operator identity created through the one-time setup flow.
+- Email and password for ordinary sign-in within a resolved organization context.
+- Public creation of an organization and its first owner only when installation policy is `open`.
+- Invitation-based onboarding for joining an existing organization; public registration never grants membership in an existing organization.
+- Organization-scoped recovery restores the existing identity and never creates a replacement owner. Email recovery depends on a configured mail provider; a supported operator recovery command remains future operational work.
 - Social login, passkeys, two-factor authentication, and enterprise SSO follow after the core flow is secure and usable.
+
+Direct browser use of Better Auth `/api/auth/sign-up/*` is blocked. Only secure installation setup and the bounded organization-registration orchestrator may create identities.
 
 ### Password and token policy
 
@@ -90,7 +93,7 @@ Better Auth handles credential verification, sessions, verification tokens, and 
 - Store one-time token hashes, not recoverable raw tokens.
 - Tokens have purpose, issuer, audience/scope, expiry, and one-time consumption where applicable.
 - Authentication responses avoid revealing whether an account exists.
-- Rate-limit sign-in, reset, invitation acceptance, and setup attempts by appropriate actor/IP keys.
+- Rate-limit sign-in, reset, invitation acceptance, setup, public organization resolution, and public organization registration by appropriate actor/IP keys. The implemented resolver limit is 30 requests per client per minute and registration is 5 per client per minute.
 
 ### Sessions
 
@@ -105,7 +108,7 @@ The server validates trusted proxy configuration before deriving secure origin, 
 
 ## First-run setup
 
-An uninitialized installation exposes only health and setup endpoints. Startup creates a short-lived, high-entropy setup token printed once to the local/operator console or read from a protected file. The first owner must present it before creating the installation identity and organization.
+An uninitialized installation exposes only health and setup endpoints. Local loopback access authorizes the setup browser automatically with a short-lived `HttpOnly` cookie. Remote operators use the one-time setup URL printed by the server; its fragment is exchanged for the same cookie and removed from browser history. Both methods expire after 30 minutes. Setup creates the installation operator identity, then the temporary authenticated `/organization-setup` route creates an organization when that identity has no membership.
 
 After successful setup:
 
@@ -126,7 +129,7 @@ Authorization is an application service, not a collection of ad hoc route checks
 - Installation operator acting through an explicit operator endpoint/CLI
 - Plugin service identity for background work
 - System worker for narrowly defined internal projections
-- Anonymous actor for login/setup/health endpoints only
+- Anonymous actor for health, setup authorization, sign-in, recovery capability, public organization resolution, and policy-controlled organization registration endpoints only
 
 ### Rules
 
@@ -298,6 +301,8 @@ Key rotation rewraps data keys in bounded batches and retains prior key versions
 - Crash reporting, if configured, is an explicit operator choice with documented fields and destination.
 - Portable exports list included categories and exclude credentials/session data.
 - Account/organization deletion follows published retention behavior and includes extension-owned linked data.
+- Public organization resolution returns only existence, normalized slug, and public display name. It never returns IDs, owners, members, email addresses, projects, activity, archived organizations, or deleted organizations.
+- Registration logs and audit metadata exclude passwords, session tokens, request bodies, and email addresses. The idempotency store keeps an HMAC request fingerprint and bounded navigation result, not raw credentials.
 
 ## Audit records
 
@@ -305,6 +310,7 @@ Security audit entries cover:
 
 - Sign-in security events and session revocation
 - First-owner setup and operator recovery
+- Successful organization-and-owner registration and registration-policy denial, without credentials or email addresses
 - Membership, role, and ownership changes
 - Project access policy changes
 - Plugin upload, provenance decision, permission approval, enable/disable/update/purge
@@ -316,28 +322,27 @@ Audit entries include actor, operation, target, time, request/correlation ID, so
 
 ## Configuration model
 
-Configuration is parsed once at startup into a typed immutable object. Unknown variables produce a warning or error according to strictness; malformed or unsafe values fail before readiness.
+Configuration is parsed once at startup into a typed immutable object. Unknown `LAUNCHPP_*` variables and malformed or unsafe values fail before readiness.
 
-Representative settings:
+Implemented server settings:
 
-| Variable | Purpose |
-| --- | --- |
-| `LAUNCHPP_AUTH_SECRET` | Better Auth signing secret; explicit and at least 32 characters in production |
-| `LAUNCHPP_BASE_URL` | Canonical external origin |
-| `LAUNCHPP_BIND_ADDRESS` | Listen address; defaults safely for local mode |
-| `LAUNCHPP_PORT` | HTTP port |
-| `LAUNCHPP_DATA_DIR` | Explicit persistent data directory |
-| `LAUNCHPP_DATABASE_PATH` | SQLite path inside data directory |
-| `LAUNCHPP_MASTER_KEY_FILE` | Mounted encryption-key path |
-| `LAUNCHPP_TRUSTED_PROXIES` | Exact proxy addresses/ranges |
-| `LAUNCHPP_LOG_LEVEL` | Structured log severity |
-| `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` | Public organization creation policy: `open`, `authenticated`, or `disabled` |
-| `LAUNCHPP_SMTP_*` | Optional mail adapter configuration |
-| `LAUNCHPP_BACKUP_DIR` | Backup destination when local backup is enabled |
-| `LAUNCHPP_PLUGIN_POLICY` | Disable, trusted-only, or approved packages according to supported modes |
-| `LAUNCHPP_TELEMETRY_ENDPOINT` | Optional OpenTelemetry export destination |
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NODE_ENV` | `development` | Runtime mode: `development`, `test`, or `production` |
+| `LAUNCHPP_AUTH_SECRET` | Development-only value | Better Auth signing secret; explicit and at least 32 characters in production |
+| `LAUNCHPP_BASE_URL` | `http://localhost:5173` in development | Canonical external origin; required and HTTPS in production |
+| `LAUNCHPP_BIND_ADDRESS` | `127.0.0.1` | Server listen address |
+| `LAUNCHPP_DATABASE_PATH` | `data/launchpp.sqlite` | File-backed SQLite path |
+| `LAUNCHPP_LOG_LEVEL` | `info` | Structured log severity |
+| `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` | `authenticated` | `open` permits anonymous organization-and-owner creation; `authenticated` reserves creation for signed-in identities; `disabled` rejects creation |
+| `LAUNCHPP_PORT` | `3000` | HTTP port |
+| `LAUNCHPP_RATE_LIMIT_MAX` | `300` | General requests allowed per client in the configured window; public organization routes use stricter route limits |
+| `LAUNCHPP_RATE_LIMIT_WINDOW_MS` | `60000` | General rate-limit window in milliseconds |
+| `LAUNCHPP_SHUTDOWN_GRACE_MS` | `10000` | Graceful shutdown deadline in milliseconds |
+| `LAUNCHPP_TRUSTED_PROXIES` | Empty | Comma-separated exact proxy addresses or supported CIDR ranges |
+| `LAUNCHPP_WEB_ROOT` | Unset | Optional compiled web root served by Fastify |
 
-Names remain provisional until implementation. Secrets prefer `_FILE` inputs. The application never uses unresolved shell variables to construct destructive filesystem targets.
+Future mail, vault, plugin-policy, telemetry, and backup settings are added only with their owning features. Secrets should prefer mounted files or a secret provider when those inputs are implemented. The application never uses unresolved shell variables to construct destructive filesystem targets.
 
 ## Data directory
 
