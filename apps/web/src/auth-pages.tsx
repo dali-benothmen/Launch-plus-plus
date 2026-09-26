@@ -1,43 +1,132 @@
 import { Alert, Button, Input, Spin, Typography } from "@launchpp/ui";
-import { type FormEvent, type PropsWithChildren, useEffect, useState } from "react";
+import { type FormEvent, type PropsWithChildren, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
-function AuthLayout({ children, title }: PropsWithChildren<{ readonly title: string }>) {
+type AuthPresentation = "board" | "plugins";
+
+function BoardPresentation() {
   return (
-    <main className="auth-layout">
+    <>
+      <span className="auth-presentation-kicker">The Launch++ philosophy</span>
+      <div className="auth-board-preview">
+        <div className="auth-board-column">
+          <span>To do</span>
+          <i className="is-card is-bright" />
+          <i className="is-card is-muted" />
+          <i className="is-card is-faint" />
+        </div>
+        <div className="auth-board-column is-lower">
+          <span>In progress</span>
+          <i className="is-card is-orange" />
+          <i className="is-card is-muted" />
+        </div>
+        <div className="auth-board-column is-offset">
+          <span>Completed</span>
+          <i className="is-card is-green" />
+          <i className="is-card is-muted" />
+        </div>
+        <div className="auth-board-add">+</div>
+      </div>
+      <div className="auth-presentation-message">
+        <p>
+          Most tools ask your team to change. Launch++ changes instead &mdash; columns, fields and
+          plugins bend to how you already work.
+        </p>
+        <div className="auth-presentation-points">
+          <span>Kanban or list</span>
+          <span>Custom columns</span>
+          <span>Plugin system</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PluginPresentation() {
+  return (
+    <>
+      <span className="auth-presentation-kicker">Built to be reshaped</span>
+      <div className="auth-plugin-preview">
+        <div className="auth-plugin-row">
+          <i className="auth-plugin-icon is-blue" />
+          <div>
+            <strong>Time tracking</strong>
+            <span>Plugin &middot; installed</span>
+          </div>
+          <i className="auth-plugin-toggle" />
+        </div>
+        <div className="auth-plugin-row">
+          <i className="auth-plugin-icon is-violet" />
+          <div>
+            <strong>Client updates</strong>
+            <span>Plugin &middot; installed</span>
+          </div>
+          <i className="auth-plugin-toggle" />
+        </div>
+        <div className="auth-plugin-row is-placeholder">
+          <i className="auth-plugin-add">+</i>
+          <span>Upload your own</span>
+        </div>
+      </div>
+      <div className="auth-presentation-message">
+        <p>
+          A task tool is only simple when it holds exactly what you need &mdash; and nothing a
+          plugin could have added later.
+        </p>
+        <span className="auth-presentation-attribution">Built for focused, adaptable work.</span>
+      </div>
+    </>
+  );
+}
+
+function AuthLayout({
+  children,
+  presentation = "board",
+  title,
+}: PropsWithChildren<{
+  readonly presentation?: AuthPresentation;
+  readonly title: string;
+}>) {
+  return (
+    <main className={"auth-layout is-" + presentation}>
       <section className="auth-form-panel">
         <div className="auth-form-content">
           <Link className="auth-brand" to="/">
-            <span>L+</span>
+            <span>L</span>
             Launch++
           </Link>
-          <Typography.Title level={1}>{title}</Typography.Title>
+          <div className="auth-heading">
+            <Typography.Title level={1}>{title}</Typography.Title>
+          </div>
           {children}
         </div>
       </section>
       <aside className="auth-presentation" aria-hidden="true">
-        <div className="auth-principle">
-          <Typography.Title level={2}>Plan clearly. Extend freely.</Typography.Title>
-          <Typography.Text>
-            A calm project organization with a plugin platform designed to grow with your team.
-          </Typography.Text>
-        </div>
+        {presentation === "plugins" ? <PluginPresentation /> : <BoardPresentation />}
       </aside>
     </main>
   );
 }
 
 function Field({
+  action,
   children,
   htmlFor,
   label,
-}: PropsWithChildren<{ readonly htmlFor: string; readonly label: string }>) {
+}: PropsWithChildren<{
+  readonly action?: ReactNode;
+  readonly htmlFor: string;
+  readonly label: string;
+}>) {
   return (
-    <label className="auth-field" htmlFor={htmlFor}>
-      <Typography.Text>{label}</Typography.Text>
+    <div className="auth-field">
+      <div className="auth-field-heading">
+        <label htmlFor={htmlFor}>{label}</label>
+        {action}
+      </div>
       {children}
-    </label>
+    </div>
   );
 }
 
@@ -198,6 +287,7 @@ export function SetupPage() {
   const [authorized, setAuthorized] = useState<boolean>();
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -266,18 +356,32 @@ export function SetupPage() {
     );
   }
 
+  const passwordStrength = [
+    password.length >= 8,
+    password.length >= 12,
+    /[A-Z]/.test(password) && /[a-z]/.test(password),
+    /[^A-Za-z0-9]/.test(password) || /[0-9]/.test(password),
+  ].filter(Boolean).length;
+
   return (
-    <AuthLayout title="Set up Launch++">
-      <Typography.Paragraph type="secondary">
-        Create the first owner account for this installation.
+    <AuthLayout presentation="plugins" title="Create your account">
+      <Typography.Paragraph className="auth-subtitle" type="secondary">
+        Start with your account. Your organization comes next.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
         <ErrorMessage error={error} />
-        <Field htmlFor="setup-name" label="Your name">
-          <Input autoComplete="name" id="setup-name" name="name" required />
+        <Field htmlFor="setup-name" label="Full name">
+          <Input autoComplete="name" id="setup-name" name="name" required size="large" />
         </Field>
-        <Field htmlFor="setup-email" label="Email">
-          <Input autoComplete="email" id="setup-email" name="email" required type="email" />
+        <Field htmlFor="setup-email" label="Work email">
+          <Input
+            autoComplete="email"
+            id="setup-email"
+            name="email"
+            required
+            size="large"
+            type="email"
+          />
         </Field>
         <Field htmlFor="setup-password" label="Password">
           <Input.Password
@@ -285,11 +389,34 @@ export function SetupPage() {
             id="setup-password"
             minLength={12}
             name="password"
+            onChange={(event) => setPassword(event.currentTarget.value)}
             required
+            size="large"
           />
+          <div className="auth-password-strength" aria-hidden="true">
+            {[1, 2, 3, 4].map((step) => (
+              <i className={step <= passwordStrength ? "is-active" : undefined} key={step} />
+            ))}
+          </div>
+          <span className="auth-password-help">
+            {password.length === 0
+              ? "Use at least 12 characters"
+              : password.length < 12
+                ? password.length + " of 12 characters"
+                : passwordStrength >= 4
+                  ? "Strong password"
+                  : "12 characters - add a mix of letters, numbers, or symbols"}
+          </span>
         </Field>
-        <Button block loading={loading} type="submit" variant="primary">
-          Create owner account
+        <Button
+          block
+          className="auth-submit"
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
+          Create account
         </Button>
       </form>
     </AuthLayout>
@@ -396,26 +523,42 @@ export function SignInPage() {
 
   return (
     <AuthLayout title="Welcome back">
-      <Typography.Paragraph type="secondary">
-        Sign in to continue to your organization.
+      <Typography.Paragraph className="auth-subtitle" type="secondary">
+        Pick up where your work left off.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
         <ErrorMessage error={error} />
         <Field htmlFor="sign-in-email" label="Email">
-          <Input autoComplete="email" id="sign-in-email" name="email" required type="email" />
+          <Input
+            autoComplete="email"
+            id="sign-in-email"
+            name="email"
+            required
+            size="large"
+            type="email"
+          />
         </Field>
-        <Field htmlFor="sign-in-password" label="Password">
+        <Field
+          action={<Link to="/recover">Forgot?</Link>}
+          htmlFor="sign-in-password"
+          label="Password"
+        >
           <Input.Password
             autoComplete="current-password"
             id="sign-in-password"
             name="password"
             required
+            size="large"
           />
         </Field>
-        <div className="auth-form-meta">
-          <Link to="/recover">Forgot password?</Link>
-        </div>
-        <Button block loading={loading} type="submit" variant="primary">
+        <Button
+          block
+          className="auth-submit"
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
           Sign in
         </Button>
       </form>

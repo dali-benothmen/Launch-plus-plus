@@ -232,6 +232,8 @@ Launch++ uses `#1668dc` as its primary color. Black remains available as an inde
 
 The narrow global navigation rail uses `#2563EB` with white icons. Hovered and selected rail items use a 20% white background so the organization context remains clear without introducing a black selection surface. The expanded organization sidebar uses `#EFF6FF` to provide a quiet visual relationship with the blue rail while keeping navigation content easy to scan.
 
+Authentication screens use a split layout: a focused 400px form column on white and a product-story panel on the right. Sign-in uses the brand-blue board preview; first-account setup uses the dark plugin preview. The presentation panel is decorative, never contains required actions, and is removed on narrow screens.
+
 The page-level font aliases are:
 
 ```css
