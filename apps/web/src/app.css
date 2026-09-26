@@ -199,7 +199,7 @@
   overflow-y: auto;
   height: 100vh;
   border-right: 1px solid var(--launch-color-border-secondary);
-  background: #eff6ff;
+  background: #f6f6f6;
 }
 
 .organization-identity {
@@ -488,7 +488,6 @@
   min-width: 0;
   flex: 1 1 auto;
 }
-
 
 .project-tabs .launch-ui-tabs-list {
   border-bottom: 0;
