@@ -1,0 +1,16 @@
+export {
+  type EnabledExtensionPackage,
+  type ExtensionRegistryDiagnostic,
+  type ExtensionRegistryPackage,
+  type ExtensionRegistryScope,
+  type ResolvedActionContribution,
+  type ResolvedExtensionRegistry,
+  type ResolvedFieldContribution,
+  type ResolvedNavigationContribution,
+  type ResolvedPageContribution,
+  type ResolvedPanelContribution,
+  type ResolvedRouteContribution,
+  type ResolvedSettingsContribution,
+  resolveExtensionRegistry,
+  stableContributionId,
+} from "./registry.js";

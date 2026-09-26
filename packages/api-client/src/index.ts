@@ -4,6 +4,9 @@ import { type CoreApiClient, createCoreApiClient } from "./generated.js";
 
 export type {
   CursorPageQuery,
+  ExtensionRegistry,
+  ExtensionRegistryDiagnostic,
+  ExtensionRegistryPackage,
   InvalidationEvent,
   LabelSummary,
   OrganizationContext,
@@ -13,13 +16,13 @@ export type {
   OrganizationSummary,
   PluginContributionPreview,
   PluginPackageSummary,
-  PublicOrganizationResolution,
   ProblemDetails,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusOrderInput,
   ProjectStatusSummary,
   ProjectSummary,
+  PublicOrganizationResolution,
   SearchQuery,
   SearchResponse,
   SearchResult,
@@ -196,6 +199,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         await json("/api/auth/sign-out", { method: "POST" });
       },
     }),
+    extensionRegistry: core.extensionRegistry,
     organizationDirectory: core.organizationDirectory,
     organizationRegistrations: core.organizationRegistrations,
     health: Object.freeze({

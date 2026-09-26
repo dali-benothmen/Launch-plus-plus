@@ -56,6 +56,9 @@ importers:
       '@launchpp/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@launchpp/plugin-platform':
+        specifier: workspace:*
+        version: link:../../packages/plugin-platform
       '@launchpp/plugin-protocol':
         specifier: workspace:*
         version: link:../../packages/plugin-protocol
@@ -190,6 +193,12 @@ importers:
       drizzle-kit:
         specifier: 0.31.10
         version: 0.31.10
+
+  packages/plugin-platform:
+    dependencies:
+      '@launchpp/plugin-protocol':
+        specifier: workspace:*
+        version: link:../plugin-protocol
 
   packages/plugin-protocol:
     dependencies:

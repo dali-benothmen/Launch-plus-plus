@@ -27,6 +27,7 @@
         "@launchpp/authorization",
         "@launchpp/core",
         "@launchpp/database",
+        "@launchpp/plugin-platform",
         "@launchpp/plugin-protocol",
         "@launchpp/plugin-runtime"
       ]
@@ -107,6 +108,13 @@
       "owner": "plugin-platform",
       "visibility": "public",
       "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/plugin-platform",
+      "path": "packages/plugin-platform",
+      "owner": "plugin-platform",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
     },
     {
       "name": "@launchpp/plugin-runtime",

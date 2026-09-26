@@ -797,6 +797,36 @@ export const organizationPlugins = sqliteTable(
   ],
 );
 
+export const projectPlugins = sqliteTable(
+  "project_plugins",
+  {
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    projectId: text("project_id").notNull(),
+    pluginId: text("plugin_id").notNull(),
+    pluginPackageId: text("plugin_package_id")
+      .notNull()
+      .references(() => pluginPackages.id, { onDelete: "restrict" }),
+    enabledByUserId: text("enabled_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    enabledAt: integer("enabled_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.pluginId] }),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "project_plugins_organization_project_fk",
+    }).onDelete("cascade"),
+    index("project_plugins_organization_project_idx").on(table.organizationId, table.projectId),
+    index("project_plugins_package_idx").on(table.pluginPackageId),
+    check("project_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+  ],
+);
+
 export const auditEntries = sqliteTable(
   "audit_entries",
   {
@@ -840,6 +870,7 @@ export const databaseSchema = {
   labels,
   outboxMessages,
   projectFolders,
+  projectPlugins,
   projectPreferences,
   projectStatuses,
   projects,

@@ -9,6 +9,7 @@ import type {
   CreateTaskInput,
   CursorPageQuery,
   DeleteTaskCommentInput,
+  ExtensionRegistry,
   LabelSummary,
   MoveTaskInput,
   OrganizationContext,
@@ -17,13 +18,13 @@ import type {
   OrganizationRegistrationResult,
   OrganizationSummary,
   PluginPackageSummary,
-  PublicOrganizationResolution,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
   ProjectStatusOrderInput,
   ProjectStatusSummary,
   ProjectSummary,
+  PublicOrganizationResolution,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
   SearchQuery,
@@ -95,6 +96,16 @@ function commentPath(
 }
 
 export interface CoreApiClient {
+  readonly extensionRegistry: {
+    disableProject(organizationId: string, projectId: string, packageId: string): Promise<void>;
+    enableProject(
+      organizationId: string,
+      projectId: string,
+      packageId: string,
+    ): Promise<ExtensionRegistry>;
+    getOrganization(organizationId: string): Promise<ExtensionRegistry>;
+    getProject(organizationId: string, projectId: string): Promise<ExtensionRegistry>;
+  };
   readonly organizationDirectory: {
     resolve(slug: string): Promise<PublicOrganizationResolution>;
   };
@@ -264,6 +275,25 @@ export interface CoreApiClient {
 
 export function createCoreApiClient(json: RequestJson): CoreApiClient {
   return Object.freeze({
+    extensionRegistry: Object.freeze({
+      async disableProject(organizationId: string, projectId: string, packageId: string) {
+        await json(
+          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "DELETE" },
+        );
+      },
+      enableProject: (organizationId: string, projectId: string, packageId: string) =>
+        json<ExtensionRegistry>(
+          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "POST" },
+        ),
+      getOrganization: (organizationId: string) =>
+        json<ExtensionRegistry>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/extensions/registry`,
+        ),
+      getProject: (organizationId: string, projectId: string) =>
+        json<ExtensionRegistry>(`${projectPath(organizationId, projectId)}/extensions/registry`),
+    }),
     organizationDirectory: Object.freeze({
       resolve: (slug: string) =>
         json<PublicOrganizationResolution>(

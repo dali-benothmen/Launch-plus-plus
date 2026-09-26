@@ -13,6 +13,7 @@
     "@launchpp/authorization": "workspace:*",
     "@launchpp/core": "workspace:*",
     "@launchpp/database": "workspace:*",
+    "@launchpp/plugin-platform": "workspace:*",
     "@launchpp/plugin-protocol": "workspace:*",
     "@launchpp/plugin-runtime": "workspace:*",
     "@fastify/helmet": "13.1.1",

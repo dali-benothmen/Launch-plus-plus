@@ -31,6 +31,21 @@ export interface OrganizationPluginPackageRecord extends PluginPackageRecord {
   readonly enabledAt?: number;
 }
 
+export interface EnabledOrganizationPluginPackageRecord extends PluginPackageRecord {
+  readonly acceptedPermissionsJson: string;
+  readonly enabledAt: number;
+}
+
+export interface ProjectPluginRecord {
+  readonly enabledAt: number;
+  readonly enabledByUserId: string;
+  readonly organizationId: string;
+  readonly pluginId: string;
+  readonly pluginPackageId: string;
+  readonly projectId: string;
+  readonly updatedAt: number;
+}
+
 interface PluginPackageRow {
   readonly archive_size_bytes: number;
   readonly enabled_at?: number | null;
@@ -148,6 +163,133 @@ export class SqlitePluginPackageRepository {
       )
       .all(organizationId, installationId)
       .map(mapPackage);
+  }
+
+  findEnabledByPackageId(
+    context: ReadContext,
+    organizationId: string,
+    packageId: string,
+  ): OrganizationPluginRecord | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<
+        [string, string],
+        {
+          readonly accepted_permissions_json: string;
+          readonly enabled_at: number;
+          readonly enabled_by_user_id: string;
+          readonly organization_id: string;
+          readonly plugin_id: string;
+          readonly plugin_package_id: string;
+          readonly updated_at: number;
+        }
+      >(
+        `SELECT organization_id, plugin_id, plugin_package_id, accepted_permissions_json,
+                enabled_by_user_id, enabled_at, updated_at
+         FROM organization_plugins
+         WHERE organization_id = ? AND plugin_package_id = ?`,
+      )
+      .get(organizationId, packageId);
+    return row
+      ? Object.freeze({
+          acceptedPermissionsJson: row.accepted_permissions_json,
+          enabledAt: row.enabled_at,
+          enabledByUserId: row.enabled_by_user_id,
+          organizationId: row.organization_id,
+          pluginId: row.plugin_id,
+          pluginPackageId: row.plugin_package_id,
+          updatedAt: row.updated_at,
+        })
+      : undefined;
+  }
+
+  listEnabledForOrganization(
+    context: ReadContext,
+    installationId: string,
+    organizationId: string,
+  ): readonly EnabledOrganizationPluginPackageRecord[] {
+    return requireSqliteConnection(context)
+      .prepare<
+        [string, string],
+        PluginPackageRow & {
+          readonly accepted_permissions_json: string;
+          readonly enabled_at: number;
+        }
+      >(
+        `SELECT package.id, package.installation_id, package.plugin_id, package.version,
+                package.package_hash, package.manifest_json, package.integrity_json,
+                package.provenance_kind, package.source_file_name, package.archive_size_bytes,
+                package.uploaded_by_user_id, package.uploaded_at,
+                enabled.accepted_permissions_json, enabled.enabled_at
+         FROM organization_plugins enabled
+         INNER JOIN plugin_packages package ON package.id = enabled.plugin_package_id
+         WHERE enabled.organization_id = ? AND package.installation_id = ?
+         ORDER BY package.plugin_id ASC`,
+      )
+      .all(organizationId, installationId)
+      .map((row) =>
+        Object.freeze({
+          ...mapPackage(row),
+          acceptedPermissionsJson: row.accepted_permissions_json,
+          enabledAt: row.enabled_at,
+        }),
+      );
+  }
+
+  listProjectEnabledPackageIds(
+    context: ReadContext,
+    organizationId: string,
+    projectId: string,
+  ): readonly string[] {
+    return requireSqliteConnection(context)
+      .prepare<[string, string], { readonly plugin_package_id: string }>(
+        `SELECT plugin_package_id
+         FROM project_plugins
+         WHERE organization_id = ? AND project_id = ?
+         ORDER BY plugin_id ASC`,
+      )
+      .all(organizationId, projectId)
+      .map((row) => row.plugin_package_id);
+  }
+
+  enableForProject(context: WriteContext, record: ProjectPluginRecord): void {
+    requireSqliteConnection(context)
+      .prepare(
+        `INSERT INTO project_plugins (
+          organization_id, project_id, plugin_id, plugin_package_id,
+          enabled_by_user_id, enabled_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (project_id, plugin_id) DO UPDATE SET
+          organization_id = excluded.organization_id,
+          plugin_package_id = excluded.plugin_package_id,
+          enabled_by_user_id = excluded.enabled_by_user_id,
+          enabled_at = excluded.enabled_at,
+          updated_at = excluded.updated_at`,
+      )
+      .run(
+        record.organizationId,
+        record.projectId,
+        record.pluginId,
+        record.pluginPackageId,
+        record.enabledByUserId,
+        record.enabledAt,
+        record.updatedAt,
+      );
+  }
+
+  disableForProject(
+    context: WriteContext,
+    organizationId: string,
+    projectId: string,
+    pluginId: string,
+  ): boolean {
+    return (
+      requireSqliteConnection(context)
+        .prepare(
+          `DELETE FROM project_plugins
+           WHERE organization_id = ? AND project_id = ? AND plugin_id = ?`,
+        )
+        .run(organizationId, projectId, pluginId).changes > 0
+    );
   }
 
   enable(context: WriteContext, record: OrganizationPluginRecord): void {

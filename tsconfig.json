@@ -16,6 +16,7 @@
     { "path": "./packages/theme-schema" },
     { "path": "./packages/theme-runtime" },
     { "path": "./packages/plugin-protocol" },
+    { "path": "./packages/plugin-platform" },
     { "path": "./packages/plugin-runtime" },
     { "path": "./packages/plugin-testkit" }
   ]

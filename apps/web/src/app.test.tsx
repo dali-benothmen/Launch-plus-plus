@@ -18,6 +18,18 @@ const apiClient: ApiClient = {
     signIn: vi.fn(async () => undefined),
     signOut: vi.fn(async () => undefined),
   },
+  extensionRegistry: {
+    disableProject: vi.fn(async () => undefined),
+    enableProject: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+    getOrganization: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+    getProject: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+  },
   organizationDirectory: {
     resolve: vi.fn(async (slug) => ({ exists: true, name: "My Organization", slug })),
   },

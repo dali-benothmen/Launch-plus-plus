@@ -11,7 +11,9 @@ import {
 import type { FastifyInstance } from "fastify";
 
 import { registerEventRoutes } from "./event-routes.js";
+import { registerExtensionRegistryRoutes } from "./extension-registry-routes.js";
 import { InvalidationHub } from "./invalidation-hub.js";
+import { registerOrganizationRoutes } from "./organization-routes.js";
 import { createOutboxDispatcher } from "./outbox-dispatcher.js";
 import { registerPluginPackageRoutes } from "./plugin-package-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
@@ -21,7 +23,6 @@ import { createSetupCoordinator } from "./setup-routes.js";
 import { registerStaticWeb } from "./static-web.js";
 import { registerTaskRoutes } from "./task-routes.js";
 import { registerTeamRoutes } from "./team-routes.js";
-import { registerOrganizationRoutes } from "./organization-routes.js";
 
 export interface ApplicationResources {
   readonly database: SqliteDatabase;
@@ -109,6 +110,7 @@ export async function buildApplicationServer(
       databasePath: options.config.databasePath,
       identity: identity.adapter,
     });
+    await registerExtensionRegistryRoutes(app, { database, identity: identity.adapter });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
     await registerTeamRoutes(app, { database, identity: identity.adapter });
