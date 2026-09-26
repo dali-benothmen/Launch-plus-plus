@@ -276,7 +276,7 @@ Completion condition: duplicate names work, duplicate or reserved slugs do not, 
 - [x] **Publish the registration endpoint.** Add the policy-controlled public command, strict origin checks, rate limits, typed conflicts, and safe navigation response.
 - [x] **Build the organization locator.** Resolve a submitted slug using the shared authentication shell and send authenticated users to their current organization.
 - [x] **Build the typo-safe not-found state.** Preserve the attempted slug and require explicit confirmation before creation.
-- [ ] **Build create organization and owner.** Collect organization and owner details, use field-level validation, prevent duplicate submission, and enter the initial Board after success.
+- [x] **Build create organization and owner.** Collect organization and owner details, use field-level validation, prevent duplicate submission, and enter the initial Board after success.
 
 Completion condition: an allowed visitor can deliberately create a complete owner organization and land on a usable Board without partial data.
 

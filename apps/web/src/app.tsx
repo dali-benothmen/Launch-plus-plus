@@ -16,6 +16,7 @@ import {
   EntryRedirect,
   InstallationBoundary,
   OrganizationEntryPage,
+  OrganizationRegistrationPage,
   OrganizationRequiredRoute,
   OrganizationSetupPage,
   RecoveryPage,
@@ -47,6 +48,14 @@ export const appRoutes: RouteObject[] = [
     element: (
       <InstallationBoundary requiresSetup>
         <SetupPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
+    path: "/organizations/new",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <OrganizationRegistrationPage />
       </InstallationBoundary>
     ),
   },

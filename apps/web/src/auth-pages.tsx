@@ -1,3 +1,4 @@
+import { ApiError } from "@launchpp/api-client";
 import { Alert, Button, Checkbox, GoogleIcon, Input, Spin, Typography } from "@launchpp/ui";
 import {
   type FormEvent,
@@ -7,7 +8,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 
 type AuthPresentation = "board" | "plugins";
@@ -220,6 +228,32 @@ function organizationSlugError(slug: string) {
   return "";
 }
 
+type RegistrationFieldErrors = {
+  email: string;
+  organizationName: string;
+  organizationSlug: string;
+  ownerName: string;
+  password: string;
+};
+
+function emptyRegistrationFieldErrors(): RegistrationFieldErrors {
+  return {
+    email: "",
+    organizationName: "",
+    organizationSlug: "",
+    ownerName: "",
+    password: "",
+  };
+}
+
+function organizationNameFromSlug(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function OrganizationLocatorPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -362,6 +396,317 @@ export function OrganizationEntryPage() {
   }
 
   return <Spin fullscreen description="Opening organization" />;
+}
+
+export function OrganizationRegistrationPage() {
+  const api = useApiClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParameters] = useSearchParams();
+  const navigationSlug = (location.state as OrganizationNavigationState | null)?.organizationSlug;
+  const initialSlug = normalizeLocatorSlug(navigationSlug ?? searchParameters.get("slug") ?? "");
+  const slugInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const submitting = useRef(false);
+  const registrationKey = useRef<string | undefined>(undefined);
+  const [slug, setSlug] = useState(initialSlug);
+  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>(
+    emptyRegistrationFieldErrors,
+  );
+  const [error, setError] = useState<unknown>();
+  const [signInNotice, setSignInNotice] = useState<
+    { description: string; title: string } | undefined
+  >();
+  const [loading, setLoading] = useState(false);
+
+  const clearFieldError = (field: keyof RegistrationFieldErrors) => {
+    registrationKey.current = globalThis.crypto.randomUUID();
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError(undefined);
+    setSignInNotice(undefined);
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting.current) return;
+
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const organizationName = String(data.get("organizationName") ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const organizationSlug = normalizeLocatorSlug(slug);
+    const ownerName = String(data.get("ownerName") ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const email = String(data.get("email") ?? "")
+      .trim()
+      .toLowerCase();
+    const passwordValue = String(data.get("password") ?? "");
+    const nextFieldErrors: RegistrationFieldErrors = {
+      email:
+        email.length === 0
+          ? "Work email is required."
+          : email.length > 320 || !isValidEmail(email)
+            ? "Enter a valid email address."
+            : "",
+      organizationName:
+        organizationName.length === 0
+          ? "Organization name is required."
+          : organizationName.length > 80
+            ? "Organization name cannot exceed 80 characters."
+            : "",
+      organizationSlug: organizationSlugError(organizationSlug),
+      ownerName:
+        ownerName.length === 0
+          ? "Your name is required."
+          : ownerName.length > 100
+            ? "Your name cannot exceed 100 characters."
+            : "",
+      password:
+        passwordValue.length === 0
+          ? "Password is required."
+          : passwordValue.length < 12 || passwordValue.length > 128
+            ? "Password must contain between 12 and 128 characters."
+            : "",
+    };
+
+    setSlug(organizationSlug);
+    setFieldErrors(nextFieldErrors);
+    setError(undefined);
+    setSignInNotice(undefined);
+
+    const firstInvalidField = (
+      ["organizationName", "organizationSlug", "ownerName", "email", "password"] as const
+    ).find((field) => nextFieldErrors[field]);
+    if (firstInvalidField) {
+      (form.elements.namedItem(firstInvalidField) as HTMLElement | null)?.focus();
+      return;
+    }
+
+    const input = {
+      email,
+      organizationName,
+      organizationSlug,
+      ownerName,
+      password: passwordValue,
+    };
+    const idempotencyKey = registrationKey.current ?? globalThis.crypto.randomUUID();
+    registrationKey.current = idempotencyKey;
+
+    submitting.current = true;
+    setLoading(true);
+    try {
+      const result = await api.organizationRegistrations.create(input, {
+        idempotencyKey,
+      });
+      navigate(result.destination, { replace: true });
+    } catch (reason) {
+      if (reason instanceof ApiError) {
+        if (
+          reason.code === "organization_slug_invalid" ||
+          reason.code === "organization_slug_unavailable"
+        ) {
+          setFieldErrors((current) => ({
+            ...current,
+            organizationSlug: reason.message,
+          }));
+          slugInput.current?.focus();
+          return;
+        }
+        if (reason.code === "account_already_exists") {
+          setFieldErrors((current) => ({
+            ...current,
+            email: reason.message,
+          }));
+          setSignInNotice({
+            description: "Use the existing account, or register with a different work email.",
+            title: "This email already has an account",
+          });
+          emailInput.current?.focus();
+          return;
+        }
+        if (
+          reason.code === "organization_registration_disabled" ||
+          reason.code === "organization_access_denied"
+        ) {
+          setSignInNotice({
+            description: reason.message,
+            title: "Sign in to continue",
+          });
+          return;
+        }
+        if (reason.code === "registration_failed" && reason.correlationId) {
+          setError(new Error(`${reason.message} Reference: ${reason.correlationId}.`));
+          return;
+        }
+      }
+      setError(reason);
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
+
+  const passwordStrength = [
+    password.length >= 8,
+    password.length >= 12,
+    /[A-Z]/.test(password) && /[a-z]/.test(password),
+    /[^A-Za-z0-9]/.test(password) || /[0-9]/.test(password),
+  ].filter(Boolean).length;
+
+  return (
+    <AuthLayout presentation="plugins" title="Create your organization">
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        Create the organization and owner account you will use to enter Launch++.
+      </Typography.Paragraph>
+      <form className="auth-form" noValidate onSubmit={submit}>
+        <ErrorMessage error={error} />
+        {signInNotice ? (
+          <Alert
+            action={
+              <Button onClick={() => navigate("/sign-in")} type="button" variant="link">
+                Sign in
+              </Button>
+            }
+            description={signInNotice.description}
+            showIcon
+            title={signInNotice.title}
+            type="info"
+          />
+        ) : null}
+        <Field htmlFor="registration-organization-name" label="Organization name">
+          <Input
+            aria-invalid={Boolean(fieldErrors.organizationName)}
+            autoComplete="organization"
+            defaultValue={organizationNameFromSlug(initialSlug)}
+            disabled={loading}
+            id="registration-organization-name"
+            maxLength={80}
+            name="organizationName"
+            onChange={() => clearFieldError("organizationName")}
+            placeholder="Acme Inc."
+            size="large"
+            {...(fieldErrors.organizationName ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.organizationName} />
+        </Field>
+        <Field htmlFor="registration-organization-slug" label="Organization URL">
+          <Input
+            aria-invalid={Boolean(fieldErrors.organizationSlug)}
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            disabled={loading}
+            id="registration-organization-slug"
+            maxLength={48}
+            name="organizationSlug"
+            onChange={(event) => {
+              setSlug(normalizeLocatorSlug(event.currentTarget.value));
+              clearFieldError("organizationSlug");
+            }}
+            placeholder="acme"
+            ref={slugInput}
+            size="large"
+            spellCheck={false}
+            suffix={<span className="auth-organization-suffix">.launchpp.app</span>}
+            value={slug}
+            {...(fieldErrors.organizationSlug ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.organizationSlug} />
+        </Field>
+        <Field htmlFor="registration-owner-name" label="Your name">
+          <Input
+            aria-invalid={Boolean(fieldErrors.ownerName)}
+            autoComplete="name"
+            disabled={loading}
+            id="registration-owner-name"
+            maxLength={100}
+            name="ownerName"
+            onChange={() => clearFieldError("ownerName")}
+            placeholder="Maya Okafor"
+            size="large"
+            {...(fieldErrors.ownerName ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.ownerName} />
+        </Field>
+        <Field htmlFor="registration-email" label="Work email">
+          <Input
+            aria-invalid={Boolean(fieldErrors.email)}
+            autoComplete="email"
+            disabled={loading}
+            id="registration-email"
+            maxLength={320}
+            name="email"
+            onChange={() => clearFieldError("email")}
+            placeholder="maya@acme.example"
+            ref={emailInput}
+            size="large"
+            type="email"
+            {...(fieldErrors.email ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.email} />
+        </Field>
+        <Field htmlFor="registration-password" label="Password">
+          <Input.Password
+            aria-invalid={Boolean(fieldErrors.password)}
+            autoComplete="new-password"
+            disabled={loading}
+            id="registration-password"
+            maxLength={128}
+            minLength={12}
+            name="password"
+            onChange={(event) => {
+              setPassword(event.currentTarget.value);
+              clearFieldError("password");
+            }}
+            placeholder="Create a password"
+            size="large"
+            {...(fieldErrors.password ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.password} />
+          <div className="auth-password-strength" aria-hidden="true">
+            {[1, 2, 3, 4].map((step) => (
+              <i className={step <= passwordStrength ? "is-active" : undefined} key={step} />
+            ))}
+          </div>
+          <span className="auth-password-help">
+            {password.length === 0
+              ? "Use at least 12 characters"
+              : password.length < 12
+                ? password.length + " of 12 characters"
+                : passwordStrength >= 4
+                  ? "Strong password"
+                  : "12 characters - add a mix of letters, numbers, or symbols"}
+          </span>
+        </Field>
+        <Button
+          block
+          className="auth-submit"
+          disabled={loading}
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
+          Create organization
+        </Button>
+        <p className="auth-account-prompt">
+          Already have an organization?{" "}
+          <Typography.Link
+            href="/"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate("/");
+            }}
+          >
+            Find it
+          </Typography.Link>
+        </p>
+      </form>
+    </AuthLayout>
+  );
 }
 
 export function EntryRedirect() {
