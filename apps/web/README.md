@@ -10,7 +10,7 @@ Use the repository development launcher and keep Backend and Web selected:
 pnpm dev
 ```
 
-Vite proxies `/health` and `/api` to `http://127.0.0.1:3000`. Development defaults the server's canonical browser origin to `http://localhost:5173` so authentication and other mutations pass the origin guard. `LAUNCHPP_BASE_URL` can override it when Vite is exposed through another origin. A production client build is included in the root `pnpm build` command.
+Vite proxies `/health` and `/api` to `http://127.0.0.1:3000`. Development defaults the server's canonical browser origin to `http://localhost:5173` so authentication and other mutations pass the origin guard. `LAUNCHPP_BASE_URL` can override it when Vite is exposed through another origin. `pnpm dev:web` builds and watches the web project references before starting Vite so workspace package runtime output cannot remain stale. A production client build is included in the root `pnpm build` command.
 
 ## UI boundaries
 

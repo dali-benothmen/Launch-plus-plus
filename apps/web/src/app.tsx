@@ -36,17 +36,19 @@ import {
   ProjectOverviewPage,
   SettingsPage,
 } from "./pages.js";
-import { RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
+import { PublicRouteFailurePage, RouteFailurePage, RouteNotFoundPage } from "./route-boundaries.js";
 import { AppShell } from "./shell.js";
 import { ThemeControllerProvider } from "./theme-context.js";
 
 export const appRoutes: RouteObject[] = [
   {
     path: "/",
+    errorElement: <PublicRouteFailurePage />,
     element: <EntryRedirect />,
   },
   {
     path: "/setup",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup>
         <SetupPage />
@@ -55,6 +57,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/organizations/new",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <OrganizationRegistrationPage />
@@ -63,6 +66,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/o/:organizationSlug",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <OrganizationEntryPage />
@@ -71,6 +75,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/o/:organizationSlug/sign-in",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <SignInPage />
@@ -79,6 +84,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/o/:organizationSlug/recover",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <RecoveryPage />
@@ -87,6 +93,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/sign-in",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <LegacySignInRoute />
@@ -95,6 +102,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/recover",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <InstallationBoundary requiresSetup={false}>
         <LegacyRecoveryRoute />
@@ -103,6 +111,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: "/organization-setup",
+    errorElement: <PublicRouteFailurePage />,
     element: (
       <AuthenticatedRoute>
         <OrganizationSetupPage />
