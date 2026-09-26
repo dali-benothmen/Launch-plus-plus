@@ -104,6 +104,14 @@ export class OrganizationNameAlreadyExistsError extends Error {
   override readonly name = "OrganizationNameAlreadyExistsError";
 }
 
+export class OrganizationSlugInvalidError extends Error {
+  override readonly name = "OrganizationSlugInvalidError";
+}
+
+export class OrganizationSlugReservedError extends Error {
+  override readonly name = "OrganizationSlugReservedError";
+}
+
 export class OrganizationNotFoundError extends Error {
   override readonly name = "OrganizationNotFoundError";
 }

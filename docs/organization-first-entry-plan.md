@@ -264,7 +264,7 @@ Each task is one implementation checkpoint and one commit. Stop after every task
 
 ### Phase A - Organization identity foundation
 
-- [ ] **Define the slug policy.** Add normalization, validation, reserved slugs, editable suggestions, and stable slug rules.
+- [x] **Define the slug policy.** Add normalization, validation, reserved slugs, editable suggestions, and stable slug rules.
 - [ ] **Correct organization-name persistence.** Allow duplicate display names, retain unique slugs, support exact requested slugs, and add a reversible migration.
 - [ ] **Publish the public organization resolver.** Add the rate-limited public lookup contract, OpenAPI schema, and API-client method without exposing private organization data.
 

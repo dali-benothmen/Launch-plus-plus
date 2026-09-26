@@ -38,8 +38,19 @@ export {
   OrganizationMembershipRequiredError,
   OrganizationNameAlreadyExistsError,
   OrganizationNotFoundError,
+  OrganizationSlugInvalidError,
+  OrganizationSlugReservedError,
   UserProfileMissingError,
 } from "./organizations/organization.js";
+export {
+  availableOrganizationSlug,
+  isOrganizationSlugReserved,
+  normalizeOrganizationName,
+  normalizeOrganizationSlug,
+  ORGANIZATION_SLUG_MAX_LENGTH,
+  ORGANIZATION_SLUG_MIN_LENGTH,
+  suggestOrganizationSlug,
+} from "./organizations/organization-naming.js";
 export {
   type OrganizationContext,
   OrganizationQueryService,
