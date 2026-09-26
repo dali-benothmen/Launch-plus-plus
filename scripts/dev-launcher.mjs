@@ -6,6 +6,10 @@ import concurrently from "concurrently";
 const services = [
   {
     command: "pnpm dev:server",
+    env: {
+      LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY:
+        process.env.LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY ?? "open",
+    },
     hint: "Fastify with automatic rebuilds and restarts",
     label: "Backend server",
     name: "SERVER",
@@ -57,8 +61,9 @@ async function main() {
   outro(`Starting ${selectedServices.map(({ label }) => label).join(", ")}...`);
 
   const { result } = concurrently(
-    selectedServices.map(({ command, name, prefixColor }) => ({
+    selectedServices.map(({ command, env, name, prefixColor }) => ({
       command,
+      ...(env ? { env } : {}),
       name,
       prefixColor,
     })),

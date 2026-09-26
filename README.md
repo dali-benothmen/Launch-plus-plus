@@ -69,6 +69,8 @@ pnpm ops --help
 
 `pnpm dev` opens the interactive Launch++ development launcher. Backend and Web are selected by default, while the UI component showcase can be selected when needed. Each running service keeps its own colored log prefix and all selected services stop together with `Ctrl+C`.
 
+The launcher enables public organization-and-owner registration for local development unless `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` is already set. Packaged and production startup retain their safer operator-controlled defaults.
+
 Use `pnpm dev:server` while changing backend code. It incrementally rebuilds the server and its workspace dependencies, then restarts Fastify automatically after each successful emit.
 
 The root checks cover formatting, linting, TypeScript project references, unit and contract tests, migrations, and workspace architecture boundaries. Browser isolation tests are available through `pnpm test:browser`; the focused abuse suite uses `pnpm test:adversarial`, and the reproducible foundation budgets use `pnpm measure:foundation -- --check`.
