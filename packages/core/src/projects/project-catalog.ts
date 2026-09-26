@@ -1,7 +1,7 @@
 import type { OutboxWriter } from "../shared/outbox.js";
 import type { TransactionManager, WriteContext } from "../shared/transactions.js";
 import type { AuditWriter } from "../organizations/organization.js";
-import { normalizeFolderName } from "./project-naming.js";
+import { normalizeFolderName, normalizeProjectName } from "./project-naming.js";
 import { createOwnedProject } from "./create-owned-project.js";
 import type {
   Project,
