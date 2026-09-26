@@ -676,6 +676,35 @@ export const taskLabels = sqliteTable(
   ],
 );
 
+export const organizationRegistrationCommands = sqliteTable(
+  "organization_registration_commands",
+  {
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => installations.id, { onDelete: "restrict" }),
+    key: text("idempotency_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    state: text("state", { enum: ["pending", "completed"] }).notNull(),
+    resultJson: text("result_json"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.installationId, table.key] }),
+    index("organization_registration_commands_expiry_idx").on(table.expiresAt),
+    check(
+      "organization_registration_commands_state_valid",
+      sql`${table.state} in ('pending', 'completed')`,
+    ),
+    check(
+      "organization_registration_commands_result_complete",
+      sql`(${table.state} = 'pending' and ${table.resultJson} is null)
+          or (${table.state} = 'completed' and ${table.resultJson} is not null)`,
+    ),
+  ],
+);
+
 export const idempotencyRecords = sqliteTable(
   "idempotency_records",
   {

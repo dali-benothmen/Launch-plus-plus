@@ -25,6 +25,7 @@ export {
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
 export { SqliteOrganizationRepository } from "./organization-repository.js";
+export { SqliteOrganizationRegistrationRepository } from "./organization-registration-repository.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
 export {
@@ -45,6 +46,7 @@ export {
   labels,
   organizationMembers,
   organizations,
+  organizationRegistrationCommands,
   outboxMessages,
   projectFolders,
   projectPreferences,

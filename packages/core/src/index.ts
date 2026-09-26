@@ -1,7 +1,15 @@
 export type {
   AuthenticatedIdentity,
+  CreateProvisionalOwnerInput,
   IdentityProvider,
   IdentitySession,
+  IssuedOwnerSession,
+  IssueOwnerSessionInput,
+  OwnerIdentityProvisioner,
+} from "./identity/identity-provider.js";
+export {
+  IdentityAccountAlreadyExistsError,
+  IdentityProvisioningError,
 } from "./identity/identity-provider.js";
 export {
   type CreateInstallationDependencies,
@@ -55,6 +63,20 @@ export {
   type OrganizationContext,
   OrganizationQueryService,
 } from "./organizations/organization-query.js";
+export {
+  type OrganizationRegistrationCompletion,
+  OrganizationRegistrationDisabledError,
+  OrganizationRegistrationInProgressError,
+  OrganizationRegistrationKeyConflictError,
+  type OrganizationRegistrationPolicy,
+  type OrganizationRegistrationRepository,
+  type OrganizationRegistrationReservation,
+  type OrganizationRegistrationScope,
+  type RegisterOrganizationOwnerDependencies,
+  type RegisterOrganizationOwnerInput,
+  type RegisterOrganizationOwnerResult,
+  RegisterOrganizationOwnerService,
+} from "./organizations/register-organization-owner.js";
 export {
   type RenameOrganizationDependencies,
   type RenameOrganizationInput,

@@ -272,7 +272,7 @@ Completion condition: duplicate names work, duplicate or reserved slugs do not, 
 
 ### Phase B - Organization and owner creation
 
-- [ ] **Add bounded registration orchestration.** Create the identity, profile, organization, owner membership, current selection, default project, audit, outbox, and session through an idempotent application service with rollback for partial failure.
+- [x] **Add bounded registration orchestration.** Create the identity, profile, organization, owner membership, current selection, default project, audit, outbox, and session through an idempotent application service with rollback for partial failure.
 - [ ] **Publish the registration endpoint.** Add the policy-controlled public command, strict origin checks, rate limits, typed conflicts, and safe navigation response.
 - [ ] **Build the organization locator.** Resolve a submitted slug using the shared authentication shell and send authenticated users to their current organization.
 - [ ] **Build the typo-safe not-found state.** Preserve the attempted slug and require explicit confirmation before creation.
