@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../schemas/plugin-source-v1-preview.json",
+  "manifestVersion": "1-preview",
+  "id": "acme.sprint-planner",
+  "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
+  "version": "1.0.0",
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
+  },
+  "permissions": ["projects:read", "tasks:read"],
+  "authoring": {
+    "adapter": "react-vite"
+  },
+  "browser": {
+    "surfaces": {
+      "sprints": {
+        "entry": "./src/pages/SprintsPage.tsx"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "entry": "./src/actions/addToSprint.ts",
+        "export": "addToSprint"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "sprints",
+        "scope": "project",
+        "path": "sprints",
+        "title": "Sprints",
+        "surface": "missing",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ]
+  }
+}

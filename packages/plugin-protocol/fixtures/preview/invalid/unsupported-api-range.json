@@ -1,0 +1,63 @@
+{
+  "$schema": "../../../schemas/plugin-source-v1-preview.json",
+  "manifestVersion": "1-preview",
+  "id": "acme.sprint-planner",
+  "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
+  "version": "1.0.0",
+  "apiVersion": {
+    "minimum": "2",
+    "maximumExclusive": "3"
+  },
+  "permissions": ["projects:read", "tasks:read"],
+  "authoring": {
+    "adapter": "react-vite"
+  },
+  "browser": {
+    "surfaces": {
+      "sprints": {
+        "entry": "./src/pages/SprintsPage.tsx"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "entry": "./src/actions/addToSprint.ts",
+        "export": "addToSprint"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "sprints",
+        "scope": "project",
+        "path": "sprints",
+        "title": "Sprints",
+        "surface": "sprints",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "add-to-sprint",
+        "slot": "task.actions",
+        "title": "Add to sprint",
+        "handler": "add-to-sprint"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "story-points",
+        "label": "Story points",
+        "type": "number",
+        "placements": ["task.details.fields", "task.card.badges", "task.list.columns"]
+      }
+    ]
+  }
+}

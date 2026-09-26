@@ -1,6 +1,6 @@
 # Launch++ plugin platform and developer experience
 
-Status: architecture proposal for review. No application code or SDK has been implemented.
+Status: v1-preview manifest and package schemas implemented; runtime, SDK, authoring, and lifecycle work remains in progress.
 
 This subsystem design is part of the [Launch++ architecture documentation](./README.md). The [system architecture](./system-architecture.md) defines the host runtime and module boundaries; this document owns the public plugin model and lifecycle. The [plugin storage design](./plugin-storage-design.md) and [plugin CLI design](./plugin-cli-design.md) own those authoring contracts in detail.
 
@@ -8,7 +8,7 @@ Launch++ should make a useful plugin feel like a small feature contribution: dec
 
 Imagine enabling Story Points for one project. A number field appears in task details; it becomes available as a list column, board-card property, filter, and sort key. It follows the current theme and exports with the organization. The author writes one manifest contribution. No database migration, API route, custom input component, or change to Launch++ is required.
 
-This is a proposed architecture and developer contract, not an implemented SDK. The repository currently contains only a basic package.json; every path, package name, command, and API below is proposed. The design focuses on the extension platform and its UX contracts, not final visual styling.
+The v1-preview manifest and normalized package contracts are now implemented in `@launchpp/plugin-protocol`. The SDK, authoring CLI, upload lifecycle, registry, and runtime integrations described below remain delivery work. The design focuses on the extension platform and its UX contracts, not final visual styling.
 
 The first author preview is complete when a developer can generate either a React/TypeScript or vanilla HTML/CSS/JavaScript plugin, add a project page through `launchpp.plugin.json`, read fixture project and task data through the public SDK, hot reload, pack and install it without application-internal imports. React is the recommended and best-supported authoring path, while the runtime contract remains framework-neutral. A Story Points example then validates native field contributions and portable storage. The first supported SDK release adds a Checklist Importer, Time Tracking and a read-only Due-date Calendar. These deliberately test different capabilities; they are reference plugins, not mandatory core features.
 
@@ -113,76 +113,35 @@ The CLI generates build configuration and package scripts. Directories, filename
 
 ```json
 {
-  "$schema": "https://launchpp.dev/schemas/plugin-v1.json",
+  "$schema": "./node_modules/@launchpp/plugin-protocol/schemas/plugin-source-v1-preview.json",
+  "manifestVersion": "1-preview",
   "id": "acme.sprint-planner",
   "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
   "version": "1.0.0",
-  "apiVersion": "1",
-  "authoring": {
-    "adapter": "react-vite"
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
   },
   "permissions": [
     "projects:read",
-    "tasks:read",
-    "tasks:write"
+    "tasks:read"
   ],
-  "data": {
-    "schema": "./data/schema.ts"
+  "authoring": {
+    "adapter": "react-vite"
   },
-  "contributes": {
-    "pages": [
-      {
-        "id": "sprints",
-        "scope": "project",
-        "path": "sprints",
-        "title": "Sprints",
-        "entry": "./src/pages/SprintsPage.tsx",
-        "navigation": {
-          "slot": "project.navigation",
-          "label": "Sprints",
-          "icon": "cycles"
-        }
-      }
-    ],
-    "panels": [
-      {
-        "id": "task-sprint",
-        "slot": "task.details.panels",
-        "title": "Sprint",
-        "entry": "./src/panels/TaskSprintPanel.tsx"
-      }
-    ],
-    "actions": [
-      {
-        "id": "add-to-sprint",
-        "slot": "task.actions",
-        "title": "Add to sprint",
-        "handler": "./src/actions/addToSprint.ts#addToSprint"
-      }
-    ],
-    "settings": [
-      {
-        "id": "settings",
-        "scope": "organization",
-        "title": "Sprint Planner",
-        "entry": "./src/settings/SettingsPage.tsx"
-      }
-    ]
-  }
-}
-```
-
-The `authoring.adapter` field selects the local build adapter and is removed from the installed contract. V1 recognizes only `react-vite`, `vanilla-typescript-vite` and `vanilla-javascript-vite`. Build tooling resolves and bundles `.tsx`, `.html`, `.ts`, `.js`, CSS and local asset entries into normalized browser surfaces and a generated distribution manifest. The host sees only an HTML document and its local assets:
-
-```json
-{
-  "id": "acme.sprint-planner",
-  "version": "1.0.0",
-  "apiVersion": "1",
   "browser": {
     "surfaces": {
       "sprints": {
-        "document": "./browser/surfaces/sprints/index.html"
+        "entry": "./src/pages/SprintsPage.tsx"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "entry": "./src/actions/addToSprint.ts",
+        "export": "addToSprint"
       }
     }
   },
@@ -193,7 +152,103 @@ The `authoring.adapter` field selects the local build adapter and is removed fro
         "scope": "project",
         "path": "sprints",
         "title": "Sprints",
-        "surface": "sprints"
+        "surface": "sprints",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "add-to-sprint",
+        "slot": "task.actions",
+        "title": "Add to sprint",
+        "handler": "add-to-sprint"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "story-points",
+        "label": "Story points",
+        "type": "number",
+        "placements": [
+          "task.details.fields",
+          "task.card.badges",
+          "task.list.columns"
+        ]
+      }
+    ]
+  }
+}
+```
+
+The `authoring.adapter` field selects the local build adapter and is removed from the installed contract. V1 recognizes only `react-vite`, `vanilla-typescript-vite` and `vanilla-javascript-vite`. Build tooling resolves and bundles `.tsx`, `.html`, `.ts`, `.js`, CSS and local asset entries into normalized browser surfaces and a generated distribution manifest. The host sees only an HTML document and its local assets:
+
+```json
+{
+  "manifestVersion": "1-preview",
+  "id": "acme.sprint-planner",
+  "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
+  "version": "1.0.0",
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
+  },
+  "permissions": [
+    "projects:read",
+    "tasks:read"
+  ],
+  "browser": {
+    "surfaces": {
+      "sprints": {
+        "document": "./browser/surfaces/sprints/index.html"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "module": "./server/handlers.js",
+        "export": "addToSprint"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "sprints",
+        "scope": "project",
+        "path": "sprints",
+        "title": "Sprints",
+        "surface": "sprints",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "add-to-sprint",
+        "slot": "task.actions",
+        "title": "Add to sprint",
+        "handler": "add-to-sprint"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "story-points",
+        "label": "Story points",
+        "type": "number",
+        "placements": [
+          "task.details.fields",
+          "task.card.badges",
+          "task.list.columns"
+        ]
       }
     ]
   }
