@@ -174,7 +174,7 @@ The Core alpha is stable enough to provide project/task fixtures and public capa
 ### Tasks
 
 - [x] **P2-01 — Publish manifest and package schemas v1-preview.** Cover identity, version/API ranges, permissions, authoring adapter, browser surfaces, server handlers, contributions, dependencies, and integrity metadata. Provide JSON Schema completion and precise validation errors.
-- [ ] **P2-02 — Implement package upload and staged installation.** Add Settings UI for file selection or drag-and-drop, archive inspection, compatibility/provenance summary, requested permissions, contribution preview, atomic staging, enablement, and rollback on failure.
+- [x] **P2-02 — Implement package upload and staged installation.** Add Settings UI for file selection or drag-and-drop, archive inspection, compatibility/provenance summary, requested permissions, contribution preview, atomic staging, enablement, and rollback on failure.
 - [ ] **P2-03 — Implement the extension registry.** Resolve installed/enabled packages and organization/project scope into stable contribution IDs, collision diagnostics, routes, settings entries, fields, panels, actions, and navigation placements.
 - [ ] **P2-04 — Implement host-rendered contributions.** Render declared navigation items, task/project actions, command-palette items, standard settings fields, and the first task field/board badge/list column using current host components and permission visibility.
 - [ ] **P2-05 — Implement the capability broker.** Map plugin SDK calls to ordinary authorized application services with actor, organization, project, grant, schema, quota, correlation, cancellation, and structured-error enforcement.

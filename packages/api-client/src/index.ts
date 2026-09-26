@@ -11,6 +11,8 @@ export type {
   OrganizationRegistrationInput,
   OrganizationRegistrationResult,
   OrganizationSummary,
+  PluginContributionPreview,
+  PluginPackageSummary,
   PublicOrganizationResolution,
   ProblemDetails,
   ProjectCatalog,
@@ -216,6 +218,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         return { status: payload.status };
       },
     }),
+    pluginPackages: core.pluginPackages,
     projects: core.projects,
     search: core.search,
     setup: Object.freeze({

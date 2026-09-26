@@ -13,6 +13,7 @@ import type { FastifyInstance } from "fastify";
 import { registerEventRoutes } from "./event-routes.js";
 import { InvalidationHub } from "./invalidation-hub.js";
 import { createOutboxDispatcher } from "./outbox-dispatcher.js";
+import { registerPluginPackageRoutes } from "./plugin-package-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { registerSearchRoutes } from "./search-routes.js";
 import { type BuildServerOptions, buildServer } from "./server.js";
@@ -101,6 +102,11 @@ export async function buildApplicationServer(
     await registerOrganizationRoutes(app, {
       config: options.config,
       database,
+      identity: identity.adapter,
+    });
+    await registerPluginPackageRoutes(app, {
+      database,
+      databasePath: options.config.databasePath,
       identity: identity.adapter,
     });
     await registerProjectRoutes(app, { database, identity: identity.adapter });

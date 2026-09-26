@@ -27,6 +27,12 @@ export { SqliteOrganizationMembershipRepository } from "./organization-membershi
 export { SqliteOrganizationRepository } from "./organization-repository.js";
 export { SqliteOrganizationRegistrationRepository } from "./organization-registration-repository.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
+export {
+  type OrganizationPluginPackageRecord,
+  type OrganizationPluginRecord,
+  type PluginPackageRecord,
+  SqlitePluginPackageRepository,
+} from "./plugin-package-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
 export {
   type InvalidationEvent,
@@ -45,7 +51,9 @@ export {
   invalidationEvents,
   labels,
   organizationMembers,
+  organizationPlugins,
   organizations,
+  pluginPackages,
   organizationRegistrationCommands,
   outboxMessages,
   projectFolders,

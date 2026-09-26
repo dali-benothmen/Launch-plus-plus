@@ -27,6 +27,15 @@ const apiClient: ApiClient = {
     }),
   },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
+  pluginPackages: {
+    enable: vi.fn(async () => {
+      throw new Error("Plugin packages are not used by this shell fixture.");
+    }),
+    list: vi.fn(async () => []),
+    stage: vi.fn(async () => {
+      throw new Error("Plugin packages are not used by this shell fixture.");
+    }),
+  },
   search: vi.fn(async () => ({ items: [] })),
   projects: {
     archive: vi.fn(async () => ({

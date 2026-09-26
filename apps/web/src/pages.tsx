@@ -1,6 +1,8 @@
 import {
   ApiError,
   type OrganizationContext,
+  type PluginContributionPreview,
+  type PluginPackageSummary,
   type ProjectCatalog,
   type ProjectSummary,
   type TaskView,
@@ -8,6 +10,7 @@ import {
 import {
   Alert,
   Button,
+  Descriptions,
   Dropdown,
   type DropdownMenuItem,
   Empty,
@@ -21,6 +24,8 @@ import {
   type TableColumn,
   Tag,
   Typography,
+  Upload,
+  type UploadRequestOptions,
 } from "@launchpp/ui";
 import {
   CalendarOutlined,
@@ -590,9 +595,7 @@ export function ProjectOverviewPage() {
   return (
     <section
       aria-labelledby="project-title"
-      className={
-        "page-stack project-workspace" + (activeView === "board" ? " is-board-view" : "")
-      }
+      className={"page-stack project-workspace" + (activeView === "board" ? " is-board-view" : "")}
     >
       {messageHolder}
       <header className="project-page-header">
@@ -654,16 +657,333 @@ export function InboxPage() {
   );
 }
 
+const maximumPluginArchiveBytes = 10 * 1024 * 1024;
+
+function formatPluginBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatPluginDate(timestamp: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(timestamp));
+}
+
 export function PluginsPage() {
+  const api = useApiClient();
+  const [messageApi, messageHolder] = message.useMessage();
+  const [organizationId, setOrganizationId] = useState<string>();
+  const [packages, setPackages] = useState<readonly PluginPackageSummary[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<PluginPackageSummary>();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>();
+  const [enablingPackageId, setEnablingPackageId] = useState<string>();
+
+  const loadPackages = useCallback(async () => {
+    setLoading(true);
+    setLoadError(undefined);
+    try {
+      const context = await api.organizations.list({ limit: 100 });
+      const currentOrganizationId = context.currentOrganizationId;
+      setOrganizationId(currentOrganizationId);
+      if (!currentOrganizationId) {
+        setPackages([]);
+        setSelectedPackage(undefined);
+        return;
+      }
+      const nextPackages = await api.pluginPackages.list(currentOrganizationId);
+      setPackages(nextPackages);
+      setSelectedPackage((current) =>
+        current ? nextPackages.find((item) => item.id === current.id) : nextPackages[0],
+      );
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    void loadPackages();
+  }, [loadPackages]);
+
+  const uploadPackage = (options: UploadRequestOptions<PluginPackageSummary>) => {
+    if (!organizationId) {
+      options.onError(new Error("Select an organization before uploading a plugin."));
+      return;
+    }
+    setLoadError(undefined);
+    options.onProgress({ percent: 20 });
+    void api.pluginPackages
+      .stage(organizationId, options.file)
+      .then((staged) => {
+        options.onProgress({ percent: 100 });
+        options.onSuccess(staged);
+        setSelectedPackage(staged);
+        setPackages((current) => [staged, ...current.filter((item) => item.id !== staged.id)]);
+        messageApi.success(`${staged.name} is staged for review.`);
+      })
+      .catch((error: unknown) => {
+        const reason = error instanceof Error ? error : new Error("Plugin upload failed.");
+        setLoadError(reason);
+        options.onError(reason);
+      });
+  };
+
+  const enablePackage = async () => {
+    if (!organizationId || !selectedPackage || enablingPackageId) return;
+    setEnablingPackageId(selectedPackage.id);
+    setLoadError(undefined);
+    try {
+      const enabled = await api.pluginPackages.enable(organizationId, selectedPackage.id);
+      setSelectedPackage(enabled);
+      setPackages((current) =>
+        current.map((item) =>
+          item.pluginId === enabled.pluginId
+            ? item.id === enabled.id
+              ? enabled
+              : (() => {
+                  const { enabledAt: _enabledAt, ...staged } = item;
+                  return { ...staged, state: "staged" as const };
+                })()
+            : item,
+        ),
+      );
+      messageApi.success(`${enabled.name} enabled for this organization.`);
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setEnablingPackageId(undefined);
+    }
+  };
+
+  const packageColumns = useMemo<readonly TableColumn<PluginPackageSummary>[]>(
+    () => [
+      {
+        key: "plugin",
+        title: "Plugin",
+        render: (_value, record) => (
+          <div>
+            <Typography.Text strong>{record.name}</Typography.Text>
+            <br />
+            <Typography.Text type="secondary">
+              {record.pluginId} · {record.version}
+            </Typography.Text>
+          </div>
+        ),
+      },
+      {
+        dataIndex: "state",
+        key: "state",
+        title: "State",
+        render: (_value, record) => (
+          <Tag color={record.state === "enabled" ? "green" : "blue"}>
+            {record.state === "enabled" ? "Enabled" : "Staged"}
+          </Tag>
+        ),
+      },
+      {
+        key: "uploaded",
+        title: "Uploaded",
+        render: (_value, record) => formatPluginDate(record.uploadedAt),
+      },
+      {
+        key: "review",
+        title: "",
+        width: 100,
+        render: (_value, record) => (
+          <Button onClick={() => setSelectedPackage(record)} size="small">
+            Review
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const contributionColumns = useMemo<readonly TableColumn<PluginContributionPreview>[]>(
+    () => [
+      {
+        dataIndex: "title",
+        key: "title",
+        title: "Contribution",
+      },
+      {
+        dataIndex: "kind",
+        key: "kind",
+        title: "Type",
+        render: (_value, record) => <Tag>{record.kind}</Tag>,
+      },
+      {
+        dataIndex: "placement",
+        key: "placement",
+        title: "Placement",
+        render: (_value, record) => record.placement ?? "—",
+      },
+    ],
+    [],
+  );
+
+  if (loading) {
+    return (
+      <div className="page-loading">
+        <Spin description="Loading plugins" />
+      </div>
+    );
+  }
+
   return (
-    <section aria-labelledby="plugins-title" className="page-stack">
-      <Typography.Text type="secondary">Launch++</Typography.Text>
-      <Typography.Title id="plugins-title" level={1}>
-        Plugins
-      </Typography.Title>
-      <Typography.Text type="secondary">
-        Installed plugins and the plugin marketplace will live here.
-      </Typography.Text>
+    <section aria-labelledby="plugins-title" className="page-stack plugin-settings-page">
+      {messageHolder}
+      <div>
+        <Typography.Text type="secondary">Settings</Typography.Text>
+        <Typography.Title id="plugins-title" level={1}>
+          Plugins
+        </Typography.Title>
+        <Typography.Text type="secondary">
+          Upload a packaged extension, review exactly what it adds and can access, then enable it
+          for this organization.
+        </Typography.Text>
+      </div>
+
+      {loadError ? (
+        <Alert
+          showIcon
+          title={loadError instanceof Error ? loadError.message : "Could not manage plugins."}
+          type="error"
+        />
+      ) : null}
+      {!organizationId ? (
+        <Alert showIcon title="Select an organization before managing plugins." type="warning" />
+      ) : null}
+
+      <div className="plugin-upload-section">
+        <Typography.Title level={2}>Upload package</Typography.Title>
+        <Upload.Dragger<PluginPackageSummary>
+          accept=".launch-plugin,application/vnd.launchpp.plugin,application/zip"
+          beforeUpload={(file) => {
+            if (!file.name.endsWith(".launch-plugin")) {
+              messageApi.error("Choose a .launch-plugin archive.");
+              return Upload.LIST_IGNORE;
+            }
+            if (file.size > maximumPluginArchiveBytes) {
+              messageApi.error("Plugin packages must be 10 MB or smaller.");
+              return Upload.LIST_IGNORE;
+            }
+            return true;
+          }}
+          customRequest={uploadPackage}
+          disabled={!organizationId}
+          maxCount={1}
+        >
+          <div className="plugin-upload-copy">
+            <Typography.Text strong>Drop a .launch-plugin archive here</Typography.Text>
+            <Typography.Text type="secondary">
+              or select a file. Launch++ inspects it without executing plugin code.
+            </Typography.Text>
+          </div>
+        </Upload.Dragger>
+      </div>
+
+      {selectedPackage ? (
+        <div className="plugin-review-section">
+          <div className="plugin-review-heading">
+            <div>
+              <Typography.Title level={2}>Review {selectedPackage.name}</Typography.Title>
+              <Typography.Text type="secondary">
+                {selectedPackage.pluginId} · {selectedPackage.version}
+              </Typography.Text>
+            </div>
+            <Button
+              disabled={selectedPackage.state === "enabled"}
+              loading={enablingPackageId === selectedPackage.id}
+              onClick={() => void enablePackage()}
+              variant="primary"
+            >
+              {selectedPackage.state === "enabled" ? "Enabled" : "Enable plugin"}
+            </Button>
+          </div>
+
+          <Alert
+            showIcon
+            title="Unsigned local package"
+            description="The archive hash proves the uploaded bytes are unchanged; it does not verify who published them. Enable only packages you trust."
+            type="warning"
+          />
+
+          <Descriptions bordered column={{ xs: 1, md: 2 }} size="small" title="Package summary">
+            <Descriptions.Item label="Compatibility">
+              Plugin API {selectedPackage.compatibility.apiMinimum} to before{" "}
+              {selectedPackage.compatibility.apiMaximumExclusive}
+            </Descriptions.Item>
+            <Descriptions.Item label="Archive size">
+              {formatPluginBytes(selectedPackage.archiveSizeBytes)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Source">
+              {selectedPackage.provenance.sourceFileName}
+            </Descriptions.Item>
+            <Descriptions.Item label="SHA-256">
+              <Typography.Text code copyable>
+                {selectedPackage.packageHash}
+              </Typography.Text>
+            </Descriptions.Item>
+            {selectedPackage.compatibility.host ? (
+              <Descriptions.Item label="Launch++ host">
+                {selectedPackage.compatibility.host}
+              </Descriptions.Item>
+            ) : null}
+            {selectedPackage.compatibility.sdk ? (
+              <Descriptions.Item label="SDK">{selectedPackage.compatibility.sdk}</Descriptions.Item>
+            ) : null}
+            {selectedPackage.compatibility.ui ? (
+              <Descriptions.Item label="UI library">
+                {selectedPackage.compatibility.ui}
+              </Descriptions.Item>
+            ) : null}
+          </Descriptions>
+
+          <div>
+            <Typography.Title level={3}>Requested permissions</Typography.Title>
+            <div className="plugin-permission-list">
+              {selectedPackage.requestedPermissions.length > 0 ? (
+                selectedPackage.requestedPermissions.map((permission) => (
+                  <Tag key={permission}>{permission}</Tag>
+                ))
+              ) : (
+                <Typography.Text type="secondary">No data access requested.</Typography.Text>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Typography.Title level={3}>Contribution preview</Typography.Title>
+            <Table<PluginContributionPreview>
+              columns={contributionColumns}
+              dataSource={selectedPackage.contributions}
+              locale={{ emptyText: "This package does not declare contributions." }}
+              pagination={false}
+              rowKey={(record) => `${record.kind}:${record.id}`}
+              size="small"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div>
+        <Typography.Title level={2}>Package catalog</Typography.Title>
+        <Table<PluginPackageSummary>
+          columns={packageColumns}
+          dataSource={packages}
+          loading={loading}
+          locale={{ emptyText: "No plugin packages have been uploaded." }}
+          pagination={false}
+          rowKey="id"
+          size="small"
+        />
+      </div>
     </section>
   );
 }

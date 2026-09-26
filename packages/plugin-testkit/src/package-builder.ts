@@ -5,7 +5,10 @@ import path from "node:path";
 import {
   type InstalledPluginManifest,
   type PluginIntegrity,
+  type PluginPackageIntegrity,
+  type PluginPackageManifest,
   validateInstalledPluginManifest,
+  validatePluginPackageManifest,
 } from "@launchpp/plugin-protocol";
 import { isAllowedPluginPackagePath } from "@launchpp/plugin-runtime";
 import { type Zippable, zipSync } from "fflate";
@@ -48,7 +51,10 @@ async function collectFiles(directory: string, prefix = ""): Promise<Map<string,
   return files;
 }
 
-function parseManifest(bytes: Uint8Array | undefined): InstalledPluginManifest {
+type PackableManifest = InstalledPluginManifest | PluginPackageManifest;
+type PackableIntegrity = PluginIntegrity | PluginPackageIntegrity;
+
+function parseManifest(bytes: Uint8Array | undefined): PackableManifest {
   if (bytes === undefined) throw new Error("Plugin package input is missing manifest.json.");
   let document: unknown;
   try {
@@ -56,7 +62,14 @@ function parseManifest(bytes: Uint8Array | undefined): InstalledPluginManifest {
   } catch (error) {
     throw new Error("Plugin manifest must contain valid UTF-8 JSON.", { cause: error });
   }
-  const result = validateInstalledPluginManifest(document);
+  const preview =
+    typeof document === "object" &&
+    document !== null &&
+    "manifestVersion" in document &&
+    document.manifestVersion === "1-preview";
+  const result = preview
+    ? validatePluginPackageManifest(document)
+    : validateInstalledPluginManifest(document);
   if (!result.ok) {
     const first = result.issues[0];
     throw new Error(
@@ -68,7 +81,21 @@ function parseManifest(bytes: Uint8Array | undefined): InstalledPluginManifest {
   return result.value;
 }
 
-function integrityDocument(files: ReadonlyMap<string, Uint8Array>): PluginIntegrity {
+function integrityDocument(
+  files: ReadonlyMap<string, Uint8Array>,
+  preview: boolean,
+): PackableIntegrity {
+  if (preview) {
+    const records: Record<string, { readonly sha256: string; readonly sizeBytes: number }> = {};
+    for (const filePath of [...files.keys()].sort()) {
+      const contents = files.get(filePath);
+      if (contents !== undefined) {
+        records[filePath] = { sha256: sha256(contents), sizeBytes: contents.byteLength };
+      }
+    }
+    return { algorithm: "sha256", files: records, formatVersion: "1-preview" };
+  }
+
   const hashes: Record<string, string> = {};
   for (const filePath of [...files.keys()].sort()) {
     const contents = files.get(filePath);
@@ -83,15 +110,18 @@ function canonicalJson(value: unknown): Uint8Array {
 
 export interface PackedPlugin {
   readonly archive: Uint8Array;
-  readonly integrity: PluginIntegrity;
-  readonly manifest: InstalledPluginManifest;
+  readonly integrity: PackableIntegrity;
+  readonly manifest: PackableManifest;
   readonly packageHash: string;
 }
 
 export async function packPluginDirectory(inputDirectory: string): Promise<PackedPlugin> {
   const files = await collectFiles(path.resolve(inputDirectory));
   const manifest = parseManifest(files.get("manifest.json"));
-  const integrity = integrityDocument(files);
+  const integrity = integrityDocument(
+    files,
+    "manifestVersion" in manifest && manifest.manifestVersion === "1-preview",
+  );
   files.set("integrity.json", canonicalJson(integrity));
 
   const zippable: Zippable = {};

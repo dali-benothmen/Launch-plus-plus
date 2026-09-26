@@ -1977,3 +1977,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+.plugin-settings-page {
+  display: grid;
+  gap: 24px;
+}
+
+.plugin-upload-section,
+.plugin-review-section {
+  display: grid;
+  gap: 16px;
+}
+
+.plugin-upload-section h2,
+.plugin-review-section h2,
+.plugin-review-section h3,
+.plugin-settings-page > div > h2 {
+  margin: 0;
+}
+
+.plugin-upload-copy {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.plugin-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.plugin-permission-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -121,6 +121,16 @@ export async function buildServer(options: BuildServerOptions): Promise<FastifyI
         "The request did not match the expected schema.",
       );
     }
+    if (hasProperty(error, "statusCode") && error.statusCode === 413) {
+      return sendProblem(
+        reply,
+        request,
+        413,
+        "payload_too_large",
+        "Payload too large",
+        "The uploaded payload exceeds the allowed size.",
+      );
+    }
     if (hasProperty(error, "statusCode") && error.statusCode === 429) {
       return sendProblem(
         reply,

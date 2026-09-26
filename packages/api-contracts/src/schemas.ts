@@ -589,6 +589,62 @@ export const InvalidationEventSchema = StrictObject(
 );
 export type InvalidationEvent = Type.Static<typeof InvalidationEventSchema>;
 
+export const PluginContributionPreviewSchema = StrictObject(
+  {
+    id: Type.String({ maxLength: 80, minLength: 1 }),
+    kind: Type.Union([
+      Type.Literal("action"),
+      Type.Literal("page"),
+      Type.Literal("panel"),
+      Type.Literal("settings"),
+      Type.Literal("taskField"),
+    ]),
+    placement: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+    title: Type.String({ maxLength: 120, minLength: 1 }),
+  },
+  { $id: "LaunchppPluginContributionPreviewV1" },
+);
+export type PluginContributionPreview = Type.Static<typeof PluginContributionPreviewSchema>;
+
+export const PluginPackageSummarySchema = StrictObject(
+  {
+    archiveSizeBytes: Type.Integer({ maximum: 10_485_760, minimum: 1 }),
+    compatibility: StrictObject({
+      apiMaximumExclusive: Type.String({ maxLength: 6, minLength: 1 }),
+      apiMinimum: Type.String({ maxLength: 6, minLength: 1 }),
+      host: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+      sdk: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+      ui: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+    }),
+    contributions: Type.Array(
+      Type.Unsafe<Type.Static<typeof PluginContributionPreviewSchema>>(
+        Type.Ref("LaunchppPluginContributionPreviewV1"),
+      ),
+      { maxItems: 500 },
+    ),
+    description: Type.Optional(Type.String({ maxLength: 500, minLength: 1 })),
+    enabledAt: Type.Optional(TimestampSchema),
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 120, minLength: 1 }),
+    packageHash: Type.String({ maxLength: 64, minLength: 64, pattern: "^[a-f0-9]{64}$" }),
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    provenance: StrictObject({
+      kind: Type.Literal("unsigned-local"),
+      label: Type.Literal("Unsigned local package"),
+      sourceFileName: Type.String({ maxLength: 240, minLength: 1 }),
+    }),
+    requestedPermissions: Type.Array(Type.String({ maxLength: 120, minLength: 1 }), {
+      maxItems: 100,
+      uniqueItems: true,
+    }),
+    state: Type.Union([Type.Literal("staged"), Type.Literal("enabled")]),
+    uploadedAt: TimestampSchema,
+    version: Type.String({ maxLength: 64, minLength: 1 }),
+  },
+  { $id: "LaunchppPluginPackageSummaryV1" },
+);
+export type PluginPackageSummary = Type.Static<typeof PluginPackageSummarySchema>;
+
 export const UpdateTaskInputSchema = StrictObject(
   {
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
@@ -649,6 +705,11 @@ export type CreateLabelInput = Type.Static<typeof CreateLabelInputSchema>;
 export const OrganizationParamsSchema = StrictObject(
   { organizationId: IdentifierSchema },
   { $id: "LaunchppOrganizationParamsV1" },
+);
+
+export const PluginPackageParamsSchema = StrictObject(
+  { organizationId: IdentifierSchema, packageId: IdentifierSchema },
+  { $id: "LaunchppPluginPackageParamsV1" },
 );
 
 export const ProjectParamsSchema = StrictObject(
@@ -742,6 +803,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   SearchResultSchema,
   SearchResponseSchema,
   InvalidationEventSchema,
+  PluginContributionPreviewSchema,
+  PluginPackageSummarySchema,
   UpdateTaskInputSchema,
   MoveTaskInputSchema,
   ReplaceTaskAssigneesInputSchema,
@@ -749,6 +812,7 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ArchiveTaskInputSchema,
   CreateLabelInputSchema,
   OrganizationParamsSchema,
+  PluginPackageParamsSchema,
   ProjectParamsSchema,
   ProjectStatusParamsSchema,
   ProjectFolderParamsSchema,

@@ -16,6 +16,7 @@ import type {
   OrganizationRegistrationInput,
   OrganizationRegistrationResult,
   OrganizationSummary,
+  PluginPackageSummary,
   PublicOrganizationResolution,
   ProjectCatalog,
   ProjectFolderSummary,
@@ -102,6 +103,11 @@ export interface CoreApiClient {
       input: OrganizationRegistrationInput,
       options?: RequestOptions,
     ): Promise<OrganizationRegistrationResult>;
+  };
+  readonly pluginPackages: {
+    enable(organizationId: string, packageId: string): Promise<PluginPackageSummary>;
+    list(organizationId: string): Promise<readonly PluginPackageSummary[]>;
+    stage(organizationId: string, file: File): Promise<PluginPackageSummary>;
   };
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
@@ -271,6 +277,29 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+    }),
+    pluginPackages: Object.freeze({
+      enable: (organizationId: string, packageId: string) =>
+        json<PluginPackageSummary>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "POST" },
+        ),
+      list: (organizationId: string) =>
+        json<readonly PluginPackageSummary[]>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
+        ),
+      stage: (organizationId: string, file: File) =>
+        json<PluginPackageSummary>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
+          {
+            body: file,
+            headers: {
+              "content-type": "application/vnd.launchpp.plugin",
+              "x-launchpp-file-name": encodeURIComponent(file.name),
+            },
+            method: "POST",
+          },
+        ),
     }),
     search: (query: SearchQuery) => {
       const parameters = new URLSearchParams({ q: query.q });

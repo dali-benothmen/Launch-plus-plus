@@ -190,9 +190,11 @@ incomplete or self-referential integrity metadata.
 
 The Phase 0 `apiVersion: "0"` installed manifest, `integrity.json` v0, and
 `protocolVersion: "0.1"` browser messages remain exported for the existing
-sandbox and deterministic-package proofs. P2-01 does not silently reinterpret
-those fixtures. Upload, staged installation, registry resolution, and packer
-migration to v1-preview belong to later Phase 2 tasks.
+sandbox and deterministic-package proofs. They are not silently reinterpreted.
+The authenticated upload path accepts only the v1-preview package manifest and
+integrity contract. The normalized-directory proof packer can emit either
+integrity format so maintainers can exercise intake; source compilation and the
+supported author-facing pack command remain separate later work.
 
 All JSON objects are closed. Context is created by the host, and plugins cannot
 supply actor, organization, project, installation, or grant fields. Unknown
