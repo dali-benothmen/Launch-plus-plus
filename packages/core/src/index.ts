@@ -36,8 +36,8 @@ export type {
 } from "./organizations/organization.js";
 export {
   OrganizationMembershipRequiredError,
-  OrganizationNameAlreadyExistsError,
   OrganizationNotFoundError,
+  OrganizationSlugAlreadyExistsError,
   OrganizationSlugInvalidError,
   OrganizationSlugReservedError,
   UserProfileMissingError,

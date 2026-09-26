@@ -17,7 +17,6 @@ import {
   RenameOrganizationService,
   SelectCurrentOrganizationService,
   type Organization,
-  OrganizationNameAlreadyExistsError,
   OrganizationNotFoundError,
   OrganizationQueryService,
 } from "@launchpp/core";
@@ -258,41 +257,27 @@ export async function registerOrganizationRoutes(
           "Setup is incomplete.",
         );
       }
-      try {
-        return await executeIdempotent(
-          request,
-          reply,
-          idempotency,
-          {
-            actorUserId: session.identity.id,
-            operation: "organization.create",
-            payload: request.body,
-            scopeKey: `installation:${currentInstallation.id}`,
-          },
-          async () => {
-            const organization = await createOrganization.execute({
-              correlationId: request.id,
-              displayName: session.identity.name,
-              installationId: currentInstallation.id,
-              name: request.body.name,
-              userId: session.identity.id,
-            });
-            return { body: organizationSummary(organization), status: 201 };
-          },
-        );
-      } catch (error) {
-        if (error instanceof OrganizationNameAlreadyExistsError) {
-          return sendProblem(
-            reply,
-            request,
-            409,
-            "organization_name_conflict",
-            "Organization name conflict",
-            error.message,
-          );
-        }
-        throw error;
-      }
+      return executeIdempotent(
+        request,
+        reply,
+        idempotency,
+        {
+          actorUserId: session.identity.id,
+          operation: "organization.create",
+          payload: request.body,
+          scopeKey: `installation:${currentInstallation.id}`,
+        },
+        async () => {
+          const organization = await createOrganization.execute({
+            correlationId: request.id,
+            displayName: session.identity.name,
+            installationId: currentInstallation.id,
+            name: request.body.name,
+            userId: session.identity.id,
+          });
+          return { body: organizationSummary(organization), status: 201 };
+        },
+      );
     },
   );
 
@@ -392,16 +377,6 @@ export async function registerOrganizationRoutes(
         });
         return organizationSummary(organization);
       } catch (error) {
-        if (error instanceof OrganizationNameAlreadyExistsError) {
-          return sendProblem(
-            reply,
-            request,
-            409,
-            "organization_name_conflict",
-            "Organization name conflict",
-            error.message,
-          );
-        }
         if (error instanceof OrganizationNotFoundError) {
           return sendProblem(
             reply,

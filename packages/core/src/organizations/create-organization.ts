@@ -11,6 +11,7 @@ export interface CreateOrganizationInput {
   readonly displayName: string;
   readonly installationId: string;
   readonly name: string;
+  readonly slug?: string;
   readonly userId: string;
 }
 
@@ -43,6 +44,7 @@ export class CreateOrganizationService {
         installationId: input.installationId,
         name,
         now,
+        ...(input.slug === undefined ? {} : { slug: input.slug }),
         userId: input.userId,
       }),
     );

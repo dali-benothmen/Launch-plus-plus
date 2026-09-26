@@ -117,7 +117,7 @@ Invariants:
 
 - Every active organization has at least one owner.
 - The final owner cannot leave, be removed, or be demoted without an ownership transfer.
-- Organization names are case-insensitively unique within an installation.
+- Organization display names may repeat and are never used as identifiers.
 - Organization slugs are unique within an installation for clean URLs, but APIs use the immutable ID.
 - Membership changes invalidate relevant sessions/query scopes and produce audit activity.
 

@@ -2,7 +2,7 @@ import type { OutboxWriter } from "../shared/outbox.js";
 import type { TransactionManager } from "../shared/transactions.js";
 import { normalizeOrganizationName } from "./organization-naming.js";
 import type { AuditWriter, Organization, OrganizationRepository } from "./organization.js";
-import { OrganizationNameAlreadyExistsError, OrganizationNotFoundError } from "./organization.js";
+import { OrganizationNotFoundError } from "./organization.js";
 
 export interface RenameOrganizationInput {
   readonly correlationId: string;
@@ -41,17 +41,6 @@ export class RenameOrganizationService {
         throw new OrganizationNotFoundError("The organization does not exist.");
       }
       if (organization.name === name) return organization;
-
-      const nameMatch = this.dependencies.organizations.findByName(
-        context,
-        organization.installationId,
-        name,
-      );
-      if (nameMatch && nameMatch.id !== organization.id) {
-        throw new OrganizationNameAlreadyExistsError(
-          "An organization with this name already exists.",
-        );
-      }
 
       const updatedAt = this.dependencies.clock();
       const renamedOrganization: Organization = Object.freeze({

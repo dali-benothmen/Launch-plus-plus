@@ -1,0 +1,1 @@
+DROP INDEX `organizations_installation_name_unique`;

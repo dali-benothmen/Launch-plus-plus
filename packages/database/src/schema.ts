@@ -168,10 +168,6 @@ export const organizations = sqliteTable(
     revision: integer("revision").notNull().default(1),
   },
   (table) => [
-    uniqueIndex("organizations_installation_name_unique").on(
-      table.installationId,
-      sql`lower(${table.name})`,
-    ),
     uniqueIndex("organizations_installation_slug_unique").on(table.installationId, table.slug),
     index("organizations_installation_updated_idx").on(table.installationId, table.updatedAt),
     check("organizations_name_not_blank", sql`length(trim(${table.name})) > 0`),
