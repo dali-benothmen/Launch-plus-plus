@@ -52,6 +52,7 @@ brand:
   shellRailBackground: "#2563EB"
   shellRailForeground: "#FFFFFF"
   shellRailSelectedBackground: "rgba(255, 255, 255, 0.2)"
+  shellSidebarBackground: "#EFF6FF"
   borderRadius: 6px
 componentTokens:
   button:
@@ -229,7 +230,7 @@ Context matters when applying shadows. The `drawerDownDark` token uses very low-
 
 Launch++ uses `#1668dc` as its primary color. Black remains available as an independent palette token for text, high-contrast surfaces, and future product needs; it is not the primary interaction color.
 
-The narrow global navigation rail uses `#2563EB` with white icons. Hovered and selected rail items use a 20% white background so the organization context remains clear without introducing a black selection surface.
+The narrow global navigation rail uses `#2563EB` with white icons. Hovered and selected rail items use a 20% white background so the organization context remains clear without introducing a black selection surface. The expanded organization sidebar uses `#EFF6FF` to provide a quiet visual relationship with the blue rail while keeping navigation content easy to scan.
 
 The page-level font aliases are:
 

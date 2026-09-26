@@ -179,7 +179,7 @@
   gap: 13px;
 }
 
-.rail-action {
+.launch-ui-button.rail-action {
   width: 30px;
   height: 30px;
   padding: 0;
@@ -188,7 +188,7 @@
   justify-content: center;
 }
 
-.rail-action:hover {
+.launch-ui-button.rail-action:hover {
   background: rgb(255 255 255 / 20%);
   color: #fff;
 }
@@ -199,7 +199,7 @@
   overflow-y: auto;
   height: 100vh;
   border-right: 1px solid var(--launch-color-border-secondary);
-  background: var(--launch-color-bg-elevated);
+  background: #eff6ff;
 }
 
 .organization-identity {
@@ -489,10 +489,6 @@
   flex: 1 1 auto;
 }
 
-.project-tabs {
-  --launch-ui-primary: var(--launch-color-text);
-  --launch-ui-primary-hover: var(--launch-color-text);
-}
 
 .project-tabs .launch-ui-tabs-list {
   border-bottom: 0;
