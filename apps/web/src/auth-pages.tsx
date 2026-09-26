@@ -365,7 +365,11 @@ export function SetupPage() {
 
   return (
     <AuthLayout presentation="plugins" title="Create your account">
-      <Typography.Paragraph className="auth-subtitle" type="secondary">
+      <Typography.Paragraph
+        className="auth-subtitle"
+        style={{ color: "#667085", fontSize: 14 }}
+        type="secondary"
+      >
         Start with your account. Your organization comes next.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
@@ -526,7 +530,11 @@ export function SignInPage() {
 
   return (
     <AuthLayout title="Welcome back">
-      <Typography.Paragraph className="auth-subtitle" type="secondary">
+      <Typography.Paragraph
+        className="auth-subtitle"
+        style={{ color: "#667085", fontSize: 14 }}
+        type="secondary"
+      >
         Pick up where your work left off.
       </Typography.Paragraph>
       <form className="auth-form" onSubmit={submit}>
