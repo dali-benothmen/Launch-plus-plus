@@ -147,7 +147,7 @@ Replace generic account signup with organization discovery, deliberate organizat
 
 ### Delivery phases
 
-- [ ] **Organization identity foundation.** Establish slug rules, allow duplicate display names, migrate persistence, and publish the public resolver.
+- [x] **Organization identity foundation.** Establish slug rules, allow duplicate display names, migrate persistence, and publish the public resolver.
 - [ ] **Organization and owner creation.** Add idempotent owner provisioning, the registration contract, locator, not-found confirmation, and creation UI.
 - [ ] **Contextual authentication and cutover.** Scope sign-in and recovery to the organization and preserve existing setup, session, and application routes.
 - [ ] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.

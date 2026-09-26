@@ -9,6 +9,7 @@ export type {
   OrganizationContext,
   OrganizationMemberSummary,
   OrganizationSummary,
+  PublicOrganizationResolution,
   ProblemDetails,
   ProjectCatalog,
   ProjectFolderSummary,

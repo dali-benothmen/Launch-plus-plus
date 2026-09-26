@@ -14,6 +14,7 @@ import type {
   OrganizationContext,
   OrganizationMemberSummary,
   OrganizationSummary,
+  PublicOrganizationResolution,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
@@ -91,6 +92,9 @@ function commentPath(
 }
 
 export interface CoreApiClient {
+  readonly organizationDirectory: {
+    resolve(slug: string): Promise<PublicOrganizationResolution>;
+  };
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
     archive(organizationId: string, projectId: string): Promise<ProjectSummary>;
@@ -246,6 +250,12 @@ export interface CoreApiClient {
 
 export function createCoreApiClient(json: RequestJson): CoreApiClient {
   return Object.freeze({
+    organizationDirectory: Object.freeze({
+      resolve: (slug: string) =>
+        json<PublicOrganizationResolution>(
+          `/api/v1/public/organizations/${encodeURIComponent(slug)}`,
+        ),
+    }),
     search: (query: SearchQuery) => {
       const parameters = new URLSearchParams({ q: query.q });
       if (query.limit !== undefined) parameters.set("limit", String(query.limit));

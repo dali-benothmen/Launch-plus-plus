@@ -389,6 +389,7 @@ Authentication handlers may live under `/api/auth/*` according to the auth adapt
 | Area | Representative endpoints |
 | --- | --- |
 | Session/profile | `GET /me`, `PATCH /me`, `GET /me/organizations` |
+| Public organization directory | `GET /public/organizations/:slug` returns only existence, normalized slug, and public display name |
 | Organizations | `POST /organizations`, `GET/PATCH /organizations/:id`, archive/restore/export operations |
 | Membership | list, invite, accept, change role, suspend/remove |
 | Projects | list/create/get/patch/archive/restore |
@@ -402,6 +403,8 @@ Authentication handlers may live under `/api/auth/*` according to the auth adapt
 | Themes | import, preview, install, select, remove |
 | Events | authenticated SSE stream |
 | Administration | health details, diagnostics, backup/restore coordination under operator policy |
+
+The public organization resolver is intentionally unauthenticated and separately rate-limited. It exposes no immutable IDs, owners, members, email addresses, projects, or activity; archived and deleted organizations resolve as unavailable.
 
 Endpoint names are provisional until route schemas are implemented. Dedicated action endpoints are preferable when an operation has meaningful invariants—such as moving a task between projects, transferring ownership, or enabling a plugin—rather than hiding the operation in a generic patch.
 

@@ -14,11 +14,14 @@ import {
 } from "@launchpp/authorization";
 import {
   CreateOrganizationService,
+  normalizeOrganizationSlug,
   RenameOrganizationService,
   SelectCurrentOrganizationService,
   type Organization,
   OrganizationNotFoundError,
   OrganizationQueryService,
+  OrganizationSlugInvalidError,
+  OrganizationSlugReservedError,
 } from "@launchpp/core";
 import {
   type SqliteDatabase,
@@ -41,6 +44,7 @@ const problemResponses = {
   403: { $ref: "LaunchppProblemDetailsV1#" },
   404: { $ref: "LaunchppProblemDetailsV1#" },
   409: { $ref: "LaunchppProblemDetailsV1#" },
+  429: { $ref: "LaunchppProblemDetailsV1#" },
   503: { $ref: "LaunchppProblemDetailsV1#" },
 } as const;
 
@@ -101,6 +105,74 @@ export async function registerOrganizationRoutes(
   const sessionFor = (request: FastifyRequest) =>
     input.identity.resolveSession(webHeaders(request.headers));
   const installation = () => input.database.read((context) => installations.findFirst(context));
+
+  app.get<{ Params: { readonly slug: string } }>(
+    "/api/v1/public/organizations/:slug",
+    {
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      schema: {
+        operationId: "resolvePublicOrganization",
+        params: { $ref: "LaunchppPublicOrganizationParamsV1#" },
+        response: {
+          200: { $ref: "LaunchppPublicOrganizationResolutionV1#" },
+          ...problemResponses,
+        },
+        summary: "Resolve a public organization slug",
+        tags: ["Organizations"],
+      },
+    },
+    async (request, reply) => {
+      let slug: string;
+      try {
+        slug = normalizeOrganizationSlug(request.params.slug);
+      } catch (error) {
+        if (error instanceof OrganizationSlugReservedError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "organization_slug_reserved",
+            "Reserved organization slug",
+            error.message,
+          );
+        }
+        if (error instanceof OrganizationSlugInvalidError) {
+          return sendProblem(
+            reply,
+            request,
+            400,
+            "organization_slug_invalid",
+            "Invalid organization slug",
+            error.message,
+          );
+        }
+        throw error;
+      }
+
+      const currentInstallation = installation();
+      if (!currentInstallation) {
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
+      }
+      const organization = input.database.read((context) =>
+        organizations.findBySlug(context, currentInstallation.id, slug),
+      );
+      if (
+        !organization ||
+        organization.archivedAt !== undefined ||
+        organization.deletedAt !== undefined
+      ) {
+        return { exists: false, slug };
+      }
+      return { exists: true, name: organization.name, slug: organization.slug };
+    },
+  );
 
   app.get<{ Querystring: CursorPageQuery }>(
     "/api/v1/organizations",

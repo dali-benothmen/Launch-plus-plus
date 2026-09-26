@@ -266,7 +266,7 @@ Each task is one implementation checkpoint and one commit. Stop after every task
 
 - [x] **Define the slug policy.** Add normalization, validation, reserved slugs, editable suggestions, and stable slug rules.
 - [x] **Correct organization-name persistence.** Allow duplicate display names, retain unique slugs, support exact requested slugs, and add a reversible migration.
-- [ ] **Publish the public organization resolver.** Add the rate-limited public lookup contract, OpenAPI schema, and API-client method without exposing private organization data.
+- [x] **Publish the public organization resolver.** Add the rate-limited public lookup contract, OpenAPI schema, and API-client method without exposing private organization data.
 
 Completion condition: duplicate names work, duplicate or reserved slugs do not, and slug lookup exposes only public organization identity.
 

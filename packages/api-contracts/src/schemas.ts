@@ -61,6 +61,24 @@ export const OrganizationSummarySchema = StrictObject(
 
 export type OrganizationSummary = Type.Static<typeof OrganizationSummarySchema>;
 
+export const PublicOrganizationParamsSchema = StrictObject(
+  { slug: Type.String({ maxLength: 200, minLength: 1 }) },
+  { $id: "LaunchppPublicOrganizationParamsV1" },
+);
+export type PublicOrganizationParams = Type.Static<typeof PublicOrganizationParamsSchema>;
+
+export const PublicOrganizationResolutionSchema = StrictObject(
+  {
+    exists: Type.Boolean(),
+    name: Type.Optional(Type.String({ maxLength: 80, minLength: 1 })),
+    slug: Type.String({ maxLength: 48, minLength: 3 }),
+  },
+  { $id: "LaunchppPublicOrganizationResolutionV1" },
+);
+export type PublicOrganizationResolution = Type.Static<
+  typeof PublicOrganizationResolutionSchema
+>;
+
 export const OrganizationContextSchema = StrictObject(
   {
     currentOrganizationId: Type.Optional(IdentifierSchema),
@@ -643,6 +661,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   CursorPageQuerySchema,
   IdempotencyHeadersSchema,
   OrganizationSummarySchema,
+  PublicOrganizationParamsSchema,
+  PublicOrganizationResolutionSchema,
   OrganizationContextSchema,
   OrganizationMemberSummarySchema,
   TeamSummarySchema,
