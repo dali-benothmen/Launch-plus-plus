@@ -130,8 +130,20 @@ function Field({
   );
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function ErrorMessage({ error }: { readonly error: unknown }) {
   return error instanceof Error ? <Alert title={error.message} type="error" /> : null;
+}
+
+function FieldError({ message }: { readonly message: string }) {
+  return message ? (
+    <Typography.Text style={{ fontSize: 12 }} type="danger">
+      {message}
+    </Typography.Text>
+  ) : null;
 }
 
 export function InstallationBoundary({
@@ -286,6 +298,7 @@ export function SetupPage() {
   const navigate = useNavigate();
   const [authorized, setAuthorized] = useState<boolean>();
   const [error, setError] = useState<unknown>();
+  const [fieldErrors, setFieldErrors] = useState({ email: "", name: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
 
@@ -322,13 +335,35 @@ export function SetupPage() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const email = String(data.get("email") ?? "").trim();
+    const name = String(data.get("name") ?? "").trim();
+    const passwordValue = String(data.get("password") ?? "");
+    const nextFieldErrors = {
+      email:
+        email.length === 0
+          ? "Email is required."
+          : isValidEmail(email)
+            ? ""
+            : "Enter a valid email address.",
+      name: name.length === 0 ? "Full name is required." : "",
+      password:
+        passwordValue.length === 0
+          ? "Password is required."
+          : passwordValue.length < 12
+            ? "Password must contain at least 12 characters."
+            : "",
+    };
+
     setError(undefined);
+    setFieldErrors(nextFieldErrors);
+    if (Object.values(nextFieldErrors).some(Boolean)) return;
+
     setLoading(true);
     try {
       await api.setup.createOwner({
-        email: String(data.get("email") ?? ""),
-        name: String(data.get("name") ?? ""),
-        password: String(data.get("password") ?? ""),
+        email,
+        name,
+        password: passwordValue,
       });
       navigate("/organization-setup", { replace: true });
     } catch (reason) {
@@ -367,38 +402,58 @@ export function SetupPage() {
     <AuthLayout presentation="plugins" title="Create your account">
       <Typography.Paragraph
         className="auth-subtitle"
-        style={{ color: "#667085", fontSize: 14 }}
+        style={{ color: "#667085", fontSize: 14, margin: "8px 0 32px" }}
         type="secondary"
       >
         Start with your account. Your organization comes next.
       </Typography.Paragraph>
-      <form className="auth-form" onSubmit={submit}>
+      <form className="auth-form" noValidate onSubmit={submit}>
         <ErrorMessage error={error} />
         <Field htmlFor="setup-name" label="Full name">
-          <Input autoComplete="name" id="setup-name" name="name" required size="large" />
+          <Input
+            aria-invalid={Boolean(fieldErrors.name)}
+            autoComplete="name"
+            id="setup-name"
+            name="name"
+            onChange={() => setFieldErrors((current) => ({ ...current, name: "" }))}
+            required
+            size="large"
+            {...(fieldErrors.name ? { status: "error" as const } : {})}
+          />
+          <FieldError message={fieldErrors.name} />
         </Field>
         <Field htmlFor="setup-email" label="Work email">
           <Input
+            aria-invalid={Boolean(fieldErrors.email)}
             autoComplete="email"
             id="setup-email"
             name="email"
+            onChange={() => setFieldErrors((current) => ({ ...current, email: "" }))}
+            placeholder="Enter your email"
             required
             size="large"
-            placeholder="Enter your email"
+            {...(fieldErrors.email ? { status: "error" as const } : {})}
             type="email"
           />
+          <FieldError message={fieldErrors.email} />
         </Field>
         <Field htmlFor="setup-password" label="Password">
           <Input.Password
+            aria-invalid={Boolean(fieldErrors.password)}
             autoComplete="new-password"
             id="setup-password"
             minLength={12}
             name="password"
-            onChange={(event) => setPassword(event.currentTarget.value)}
+            onChange={(event) => {
+              setPassword(event.currentTarget.value);
+              setFieldErrors((current) => ({ ...current, password: "" }));
+            }}
             placeholder="Enter your password"
             required
             size="large"
+            {...(fieldErrors.password ? { status: "error" as const } : {})}
           />
+          <FieldError message={fieldErrors.password} />
           <div className="auth-password-strength" aria-hidden="true">
             {[1, 2, 3, 4].map((step) => (
               <i className={step <= passwordStrength ? "is-active" : undefined} key={step} />
@@ -506,17 +561,33 @@ export function SignInPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<unknown>();
+  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const email = String(data.get("email") ?? "").trim();
+    const password = String(data.get("password") ?? "");
+    const nextFieldErrors = {
+      email:
+        email.length === 0
+          ? "Email is required."
+          : isValidEmail(email)
+            ? ""
+            : "Enter a valid email address.",
+      password: password.length === 0 ? "Password is required." : "",
+    };
+
     setError(undefined);
+    setFieldErrors(nextFieldErrors);
+    if (Object.values(nextFieldErrors).some(Boolean)) return;
+
     setLoading(true);
     try {
       await api.auth.signIn({
-        email: String(data.get("email") ?? ""),
-        password: String(data.get("password") ?? ""),
+        email,
+        password,
         rememberMe: data.get("rememberMe") === "on",
       });
       const from = (location.state as { from?: string } | null)?.from ?? "/app";
@@ -532,23 +603,27 @@ export function SignInPage() {
     <AuthLayout title="Welcome back">
       <Typography.Paragraph
         className="auth-subtitle"
-        style={{ color: "#667085", fontSize: 14 }}
+        style={{ color: "#667085", fontSize: 14, margin: "8px 0 36px" }}
         type="secondary"
       >
         Pick up where your work left off.
       </Typography.Paragraph>
-      <form className="auth-form" onSubmit={submit}>
+      <form className="auth-form" noValidate onSubmit={submit}>
         <ErrorMessage error={error} />
         <Field htmlFor="sign-in-email" label="Email">
           <Input
+            aria-invalid={Boolean(fieldErrors.email)}
             autoComplete="email"
             id="sign-in-email"
             name="email"
+            onChange={() => setFieldErrors((current) => ({ ...current, email: "" }))}
             placeholder="Enter your email"
             required
             size="large"
+            {...(fieldErrors.email ? { status: "error" as const } : {})}
             type="email"
           />
+          <FieldError message={fieldErrors.email} />
         </Field>
         <Field
           action={
@@ -566,13 +641,17 @@ export function SignInPage() {
           label="Password"
         >
           <Input.Password
+            aria-invalid={Boolean(fieldErrors.password)}
             autoComplete="current-password"
             id="sign-in-password"
             name="password"
+            onChange={() => setFieldErrors((current) => ({ ...current, password: "" }))}
             placeholder="Enter your password"
             required
             size="large"
+            {...(fieldErrors.password ? { status: "error" as const } : {})}
           />
+          <FieldError message={fieldErrors.password} />
         </Field>
         <Checkbox className="auth-remember" defaultChecked name="rememberMe">
           Keep me signed in

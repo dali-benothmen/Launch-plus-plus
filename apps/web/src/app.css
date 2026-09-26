@@ -52,10 +52,6 @@
   line-height: 1.25;
 }
 
-.auth-subtitle {
-  margin: 8px 0 32px;
-}
-
 .auth-form {
   display: grid;
   gap: 18px;
