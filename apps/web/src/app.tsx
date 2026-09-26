@@ -76,6 +76,14 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: "/o/:organizationSlug/recover",
+    element: (
+      <InstallationBoundary requiresSetup={false}>
+        <RecoveryPage />
+      </InstallationBoundary>
+    ),
+  },
+  {
     path: "/sign-in",
     element: (
       <InstallationBoundary requiresSetup={false}>

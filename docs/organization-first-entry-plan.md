@@ -283,7 +283,7 @@ Completion condition: an allowed visitor can deliberately create a complete owne
 ### Phase C - Contextual authentication and cutover
 
 - [x] **Make sign-in organization-scoped.** Show organization identity, remove generic signup, verify membership after authentication, and return members to their organization.
-- [ ] **Make recovery organization-scoped.** Preserve organization context and restore the existing identity without changing ownership.
+- [x] **Make recovery organization-scoped.** Preserve organization context and restore the existing identity without changing ownership.
 - [ ] **Add compatibility routing.** Preserve setup, sessions, existing application URLs, and temporary legacy entry routes while moving anonymous entry to the locator.
 - [ ] **Synchronize documentation and operations.** Update UI architecture, data/API architecture, environment configuration, privacy limits, and signup terminology.
 

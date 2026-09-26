@@ -1245,7 +1245,7 @@ export function SignInPage() {
 
   const organizationName = organization?.name ?? organization?.slug;
   const recoveryDestination = organization
-    ? `/recover?organization=${encodeURIComponent(organization.slug)}`
+    ? `/o/${encodeURIComponent(organization.slug)}/recover`
     : "/recover";
 
   return (
@@ -1281,7 +1281,9 @@ export function SignInPage() {
               href={recoveryDestination}
               onClick={(event) => {
                 event.preventDefault();
-                navigate(recoveryDestination);
+                navigate(recoveryDestination, {
+                  state: organization ? { organization } : undefined,
+                });
               }}
             >
               Forgot?
@@ -1347,11 +1349,67 @@ export function SignInPage() {
 
 export function RecoveryPage() {
   const api = useApiClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { organizationSlug: routeOrganizationSlug = "" } = useParams();
+  const [searchParameters] = useSearchParams();
+  const requestedOrganizationSlug = normalizeLocatorSlug(
+    routeOrganizationSlug || searchParameters.get("organization") || "",
+  );
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const initialOrganization =
+    navigationOrganization?.exists && navigationOrganization.slug === requestedOrganizationSlug
+      ? navigationOrganization
+      : undefined;
+  const [organization, setOrganization] = useState<PublicOrganizationResolution | undefined>(
+    initialOrganization,
+  );
+  const [organizationResolutionError, setOrganizationResolutionError] = useState<unknown>();
   const [capabilities, setCapabilities] = useState<{
     readonly email: boolean;
     readonly operatorRecovery: boolean;
   }>();
-  const [error, setError] = useState<unknown>();
+  const [recoveryError, setRecoveryError] = useState<unknown>();
+
+  useEffect(() => {
+    if (!requestedOrganizationSlug) return;
+    if (organization) {
+      if (routeOrganizationSlug !== organization.slug) {
+        navigate(`/o/${organization.slug}/recover`, {
+          replace: true,
+          state: { organization },
+        });
+      }
+      return;
+    }
+
+    let active = true;
+    void api.organizationDirectory
+      .resolve(requestedOrganizationSlug)
+      .then((resolvedOrganization) => {
+        if (!active) return;
+        if (!resolvedOrganization.exists) {
+          navigate(`/o/${resolvedOrganization.slug}`, { replace: true });
+          return;
+        }
+        if (routeOrganizationSlug !== resolvedOrganization.slug) {
+          navigate(`/o/${resolvedOrganization.slug}/recover`, {
+            replace: true,
+            state: { organization: resolvedOrganization },
+          });
+          return;
+        }
+        setOrganization(resolvedOrganization);
+      })
+      .catch((reason: unknown) => {
+        if (active) setOrganizationResolutionError(reason);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api, navigate, organization, requestedOrganizationSlug, routeOrganizationSlug]);
 
   useEffect(() => {
     let active = true;
@@ -1361,27 +1419,85 @@ export function RecoveryPage() {
         if (active) setCapabilities(result);
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason);
+        if (active) setRecoveryError(reason);
       });
     return () => {
       active = false;
     };
   }, [api]);
 
+  if (organizationResolutionError) {
+    return (
+      <AuthLayout title="Unable to open account recovery">
+        <ErrorMessage error={organizationResolutionError} />
+        <div className="auth-locator-back">
+          <Button onClick={() => navigate("/")} type="button">
+            Try another organization
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (requestedOrganizationSlug && !organization) {
+    return <Spin fullscreen description="Loading organization recovery" />;
+  }
+
+  const organizationName = organization?.name ?? organization?.slug;
+  const signInDestination = organization ? `/o/${organization.slug}/sign-in` : "/sign-in";
+
   return (
-    <AuthLayout title="Recover access">
-      <ErrorMessage error={error} />
-      {!error && !capabilities ? <Spin description="Checking recovery options" /> : null}
+    <AuthLayout
+      title={organizationName ? `Recover access to ${organizationName}` : "Recover access"}
+    >
+      <Typography.Paragraph className="auth-locator-subtitle" type="secondary">
+        {organization ? `${organization.slug}.launchpp.app · ` : ""}
+        Recovery restores your existing account. It never creates a replacement owner or
+        organization.
+      </Typography.Paragraph>
+      <ErrorMessage error={recoveryError} />
+      {!recoveryError && !capabilities ? <Spin description="Checking recovery options" /> : null}
       {capabilities && !capabilities.email && capabilities.operatorRecovery ? (
         <Alert
-          description="Email recovery is not configured yet. Ask the installation operator to restore access locally."
+          description="Email recovery is not configured. Ask the installation operator to restore your existing account locally."
           showIcon
           title="Operator recovery required"
           type="info"
         />
       ) : null}
-      <div className="auth-recovery-action">
-        <Link to="/sign-in">Return to sign in</Link>
+      {capabilities?.email ? (
+        <Alert
+          description="Ask the installation operator to send recovery instructions for your existing account."
+          showIcon
+          title="Email recovery is available"
+          type="info"
+        />
+      ) : null}
+      {capabilities && !capabilities.email && !capabilities.operatorRecovery ? (
+        <Alert
+          description="This installation does not currently expose an account recovery method."
+          showIcon
+          title="Recovery is unavailable"
+          type="warning"
+        />
+      ) : null}
+      <div className="auth-not-found-actions">
+        {organization ? (
+          <Button onClick={() => navigate("/")} type="button">
+            Use another organization
+          </Button>
+        ) : null}
+        <Button
+          onClick={() =>
+            navigate(signInDestination, {
+              state: organization ? { organization } : undefined,
+            })
+          }
+          type="button"
+          variant="primary"
+        >
+          Return to sign in
+        </Button>
       </div>
     </AuthLayout>
   );
