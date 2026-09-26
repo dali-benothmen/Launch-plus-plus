@@ -298,18 +298,22 @@ function organizationNameFromSlug(slug: string) {
 }
 
 export function OrganizationLocatorPage() {
+  const api = useApiClient();
   const navigate = useNavigate();
   const location = useLocation();
   const organizationInput = useRef<HTMLInputElement>(null);
+  const resolving = useRef(false);
   const returnPath = applicationReturnPath(location.state);
   const attemptedSlug = normalizeLocatorSlug(
     (location.state as OrganizationNavigationState | null)?.organizationSlug ?? "",
   );
   const [slug, setSlug] = useState(attemptedSlug);
   const [fieldError, setFieldError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (resolving.current) return;
     const normalizedSlug = normalizeLocatorSlug(slug);
     const nextError = organizationSlugError(normalizedSlug);
     setSlug(normalizedSlug);
@@ -319,9 +323,27 @@ export function OrganizationLocatorPage() {
       organizationInput.current?.focus();
       return;
     }
-    navigate(`/o/${encodeURIComponent(normalizedSlug)}`, {
-      state: returnPath ? { from: returnPath } : undefined,
-    });
+    resolving.current = true;
+    setLoading(true);
+    try {
+      const organization = await api.organizationDirectory.resolve(normalizedSlug);
+      const state: OrganizationNavigationState = {
+        ...(returnPath ? { from: returnPath } : {}),
+        organization,
+      };
+      navigate(
+        organization.exists ? "/o/" + organization.slug + "/sign-in" : "/o/" + organization.slug,
+        { state },
+      );
+    } catch {
+      message.error({
+        content: "We couldn't check this organization. Please try again.",
+        key: "organization-resolution-error",
+      });
+    } finally {
+      resolving.current = false;
+      setLoading(false);
+    }
   };
 
   return (
@@ -334,6 +356,7 @@ export function OrganizationLocatorPage() {
           <Input
             aria-invalid={Boolean(fieldError)}
             autoCapitalize="none"
+            disabled={loading}
             autoFocus
             autoComplete="organization"
             autoCorrect="off"
@@ -354,10 +377,22 @@ export function OrganizationLocatorPage() {
           />
           <FieldError message={fieldError} />
         </Field>
-        <Button block className="auth-submit" size="large" type="submit" variant="primary">
+        <Button
+          block
+          className="auth-submit"
+          loading={loading}
+          size="large"
+          type="submit"
+          variant="primary"
+        >
           Continue
         </Button>
-        <Button onClick={() => navigate("/organizations/new")} type="button" variant="link">
+        <Button
+          disabled={loading}
+          onClick={() => navigate("/organizations/new")}
+          type="button"
+          variant="link"
+        >
           Create a new organization
         </Button>
       </form>
@@ -372,13 +407,39 @@ export function OrganizationEntryPage() {
   const { organizationSlug = "" } = useParams();
   const returnPath = applicationReturnPath(location.state);
   const normalizedSlug = normalizeLocatorSlug(organizationSlug);
-  const [missing, setMissing] = useState(false);
+  const navigationOrganization = (location.state as OrganizationNavigationState | null)
+    ?.organization;
+  const resolvedNavigationOrganization =
+    navigationOrganization?.slug === normalizedSlug ? navigationOrganization : undefined;
+  const [missing, setMissing] = useState(resolvedNavigationOrganization?.exists === false);
   const [error, setError] = useState<unknown>();
 
   useEffect(() => {
     let active = true;
     setMissing(false);
     setError(undefined);
+    if (resolvedNavigationOrganization) {
+      if (!resolvedNavigationOrganization.exists) {
+        message.error({
+          content: "We couldn't find " + resolvedNavigationOrganization.slug + ".launchpp.app.",
+          key: "organization-not-found",
+        });
+        setMissing(true);
+        return () => {
+          active = false;
+        };
+      }
+      navigate("/o/" + resolvedNavigationOrganization.slug + "/sign-in", {
+        replace: true,
+        state: {
+          ...(returnPath ? { from: returnPath } : {}),
+          organization: resolvedNavigationOrganization,
+        },
+      });
+      return () => {
+        active = false;
+      };
+    }
     void api.organizationDirectory
       .resolve(normalizedSlug)
       .then((organization) => {
@@ -410,7 +471,7 @@ export function OrganizationEntryPage() {
     return () => {
       active = false;
     };
-  }, [api, navigate, normalizedSlug, returnPath]);
+  }, [api, navigate, normalizedSlug, resolvedNavigationOrganization, returnPath]);
 
   if (error) {
     return (
