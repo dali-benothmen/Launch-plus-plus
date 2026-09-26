@@ -189,6 +189,21 @@ export function InstallationBoundary({
 }
 
 const ORGANIZATION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const RESERVED_ORGANIZATION_SLUGS = new Set([
+  "admin",
+  "api",
+  "app",
+  "auth",
+  "plugins",
+  "settings",
+  "setup",
+  "support",
+  "www",
+]);
+
+type OrganizationNavigationState = {
+  readonly organizationSlug?: string;
+};
 
 function normalizeLocatorSlug(value: string) {
   return value.trim().toLowerCase();
@@ -199,13 +214,20 @@ function organizationSlugError(slug: string) {
   if (slug.length < 3 || slug.length > 48 || !ORGANIZATION_SLUG_PATTERN.test(slug)) {
     return "Use 3 to 48 lowercase letters, numbers, or single hyphens.";
   }
+  if (RESERVED_ORGANIZATION_SLUGS.has(slug)) {
+    return `The organization URL “${slug}” is reserved. Choose another address.`;
+  }
   return "";
 }
 
 export function OrganizationLocatorPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const organizationInput = useRef<HTMLInputElement>(null);
-  const [slug, setSlug] = useState("");
+  const attemptedSlug = normalizeLocatorSlug(
+    (location.state as OrganizationNavigationState | null)?.organizationSlug ?? "",
+  );
+  const [slug, setSlug] = useState(attemptedSlug);
   const [fieldError, setFieldError] = useState("");
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -254,7 +276,7 @@ export function OrganizationLocatorPage() {
         <Button block className="auth-submit" size="large" type="submit" variant="primary">
           Continue
         </Button>
-        <Button type="submit" variant="link">
+        <Button onClick={() => navigate("/organizations/new")} type="button" variant="link">
           Create a new organization
         </Button>
       </form>
@@ -309,14 +331,30 @@ export function OrganizationEntryPage() {
   }
 
   if (missing) {
+    const organizationState: OrganizationNavigationState = {
+      organizationSlug: normalizedSlug,
+    };
+
     return (
       <AuthLayout title={`We couldn't find “${normalizedSlug}”`}>
-        <Typography.Paragraph type="secondary">
-          Check the organization address and try again.
+        <Typography.Paragraph className="auth-not-found-copy" type="secondary">
+          Check the organization address, or deliberately create a new organization using this
+          address.
         </Typography.Paragraph>
-        <div className="auth-locator-back">
-          <Button onClick={() => navigate("/")} type="button">
+        <div className="auth-not-found-actions">
+          <Button onClick={() => navigate("/", { state: organizationState })} type="button">
             Back
+          </Button>
+          <Button
+            onClick={() =>
+              navigate(`/organizations/new?slug=${encodeURIComponent(normalizedSlug)}`, {
+                state: organizationState,
+              })
+            }
+            type="button"
+            variant="primary"
+          >
+            Create “{normalizedSlug}”
           </Button>
         </div>
       </AuthLayout>
