@@ -325,7 +325,7 @@ The proposed creation workflow is detailed in the [plugin CLI design](./plugin-c
 4. `pnpm test` runs against the same broker and runtime contracts used by Launch++.
 5. `pnpm pack` creates a `.launch-plugin` archive containing the generated manifest, static data schema, browser and server bundles, contract schemas, integrity hashes and license metadata. It contains no SQL or plugin-authored migration files.
 
-These are target commands, not commands available today. Plugin users install the resulting archive without a compiler or JavaScript toolchain.
+The create, development, validation, test, packaging, and inspection commands in this loop are now implemented for the author preview. Plugin users install the resulting archive without a compiler or JavaScript toolchain.
 
 The `.launch-plugin` file is a deterministic, ZIP-compatible archive, but it is not an arbitrary framework `dist/` folder. `launchpp pack` invokes the selected build adapter on the author's machine and normalizes its output into the exact portable shape Launch++ installs:
 
@@ -347,7 +347,7 @@ license.txt
 
 The exact optional files depend on declared capabilities. All browser documents and their referenced assets must remain inside the archive. Installation validates paths, sizes, manifest shape, compatibility and hashes, then stores the package immutably. It never runs npm, pnpm, a framework build, TypeScript, install scripts or plugin source code.
 
-The Phase 0 implementation fixes the deterministic ZIP, SHA-256 integrity, traversal/resource-limit, and atomic content-addressed staging behavior described in [Plugin packaging and intake proof](./plugin-package-proof.md). The author-facing CLI and upload review UI build on that single intake boundary later.
+The shared packaging implementation fixes the deterministic ZIP, SHA-256 integrity, traversal/resource-limit, and atomic content-addressed staging behavior described in [Plugin packaging and intake proof](./plugin-package-proof.md). The author-facing CLI and upload review UI both use that single archive boundary.
 
 ### Developer Mode and the live development channel
 

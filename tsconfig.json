@@ -20,6 +20,7 @@
     { "path": "./packages/plugin-cli" },
     { "path": "./packages/plugin-sdk" },
     { "path": "./packages/plugin-platform" },
+    { "path": "./packages/plugin-package" },
     { "path": "./packages/plugin-runtime" },
     { "path": "./packages/plugin-testkit" }
   ]

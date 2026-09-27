@@ -1,8 +1,6 @@
 # Plugin packaging and intake proof
 
-Status: accepted Phase 0 feasibility contract. The public author CLI and upload
-UI remain Phase 2 work; this proof fixes the security and reproducibility
-boundary they must use.
+Status: implemented packaging and intake boundary. The author-facing CLI now compiles source projects into this normalized format, while upload and staging reuse the same non-executing validator.
 
 ## Normalized package input
 
@@ -30,8 +28,7 @@ The internal proof command is:
 pnpm plugin:pack <normalized-directory> <output.launch-plugin>
 ```
 
-It will become the implementation behind `launchpp pack`; it is not the final
-author-facing command surface.
+The same deterministic writer is now shared by `launchpp pack`; this command remains available for repository-level normalized-package proofs.
 
 ## Deterministic archive
 
@@ -42,8 +39,7 @@ filesystem timestamps. The package hash is SHA-256 over the final archive
 bytes. Identical file bytes and paths therefore produce identical archive
 bytes and hashes.
 
-`integrity.json` v0 uses SHA-256 and names every file except itself exactly
-once. Intake verifies the manifest contract and each digest before staging.
+`integrity.json` v1-preview records the SHA-256 digest and expanded size of every file except itself exactly once; the retained legacy v0 proof records the same complete digest coverage without sizes. Intake verifies the manifest contract and each digest before staging.
 
 ## Non-executing intake
 

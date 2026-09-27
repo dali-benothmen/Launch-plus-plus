@@ -12,7 +12,7 @@ import {
   validatePluginPackageIntegrity,
   validatePluginPackageManifest,
 } from "@launchpp/plugin-protocol";
-import { unzipSync, type UnzipFileInfo } from "fflate";
+import { type UnzipFileInfo, unzipSync } from "fflate";
 
 export const PLUGIN_ARCHIVE_ERROR_CODES = {
   archiveTooLarge: "ARCHIVE_TOO_LARGE",

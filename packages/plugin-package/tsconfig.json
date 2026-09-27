@@ -8,5 +8,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../plugin-package" }]
+  "references": [{ "path": "../plugin-protocol" }]
 }

@@ -1,0 +1,30 @@
+{
+  "name": "@launchpp/plugin-package",
+  "version": "0.0.0",
+  "description": "Deterministic package creation and non-executing archive inspection for Launch++ plugins.",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@launchpp/plugin-protocol": "workspace:*",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5"
+  },
+  "engines": {
+    "node": ">=22.4.0"
+  }
+}

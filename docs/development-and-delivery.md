@@ -39,6 +39,7 @@ launchplusplus/
 │   ├── ui/                        Public React `@launchpp/ui`, powered by Ant Design
 │   ├── ui-tokens/                 Browser-standard CSS variables, icons, and base styles
 │   ├── plugin-protocol/           Manifests, RPC, permissions, contributions, public schemas
+│   ├── plugin-package/            Deterministic archives and non-executing package inspection
 │   ├── plugin-runtime/            Isolated server runtime and supervisor
 │   ├── plugin-platform/           Registry, broker, package/lifecycle services
 │   ├── plugin-data/               Public `@launchpp/data` schema DSL and generators

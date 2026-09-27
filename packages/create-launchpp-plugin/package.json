@@ -28,6 +28,8 @@
     "@launchpp/plugin-protocol": "workspace:*"
   },
   "devDependencies": {
+    "@launchpp/sdk": "workspace:*",
+    "@launchpp/ui": "workspace:*",
     "@types/node": "24.13.5"
   }
 }

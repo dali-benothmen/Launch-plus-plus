@@ -80,7 +80,7 @@
       "owner": "design-system",
       "visibility": "public",
       "allowWorkspaceDependencies": [
-        "@launchpp/plugin-sdk",
+        "@launchpp/sdk",
         "@launchpp/theme-runtime",
         "@launchpp/ui-tokens"
       ]
@@ -114,7 +114,7 @@
       "allowWorkspaceDependencies": []
     },
     {
-      "name": "@launchpp/plugin-sdk",
+      "name": "@launchpp/sdk",
       "path": "packages/plugin-sdk",
       "owner": "plugin-platform",
       "visibility": "public",
@@ -125,14 +125,25 @@
       "path": "packages/plugin-cli",
       "owner": "plugin-platform",
       "visibility": "public",
-      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol", "@launchpp/theme-runtime"]
+      "allowWorkspaceDependencies": [
+        "@launchpp/plugin-package",
+        "@launchpp/plugin-protocol",
+        "@launchpp/sdk",
+        "@launchpp/theme-runtime",
+        "@launchpp/ui"
+      ]
     },
     {
       "name": "create-launchpp-plugin",
       "path": "packages/create-launchpp-plugin",
       "owner": "plugin-platform",
       "visibility": "public",
-      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+      "allowWorkspaceDependencies": [
+        "@launchpp/cli",
+        "@launchpp/plugin-protocol",
+        "@launchpp/sdk",
+        "@launchpp/ui"
+      ]
     },
     {
       "name": "@launchpp/plugin-platform",
@@ -142,11 +153,18 @@
       "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
     },
     {
+      "name": "@launchpp/plugin-package",
+      "path": "packages/plugin-package",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
       "name": "@launchpp/plugin-runtime",
       "path": "packages/plugin-runtime",
       "owner": "plugin-platform",
       "visibility": "internal",
-      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+      "allowWorkspaceDependencies": ["@launchpp/plugin-package"]
     },
     {
       "name": "@launchpp/plugin-testkit",
@@ -164,7 +182,7 @@
         "@launchpp/auth-adapter",
         "@launchpp/plugin-platform",
         "@launchpp/plugin-runtime",
-        "@launchpp/plugin-sdk",
+        "@launchpp/sdk",
         "@launchpp/ui",
         "fastify",
         "react",
@@ -188,7 +206,7 @@
       "deny": ["@launchpp/database", "better-sqlite3", "drizzle-orm"]
     },
     {
-      "from": "@launchpp/plugin-sdk",
+      "from": "@launchpp/sdk",
       "deny": [
         "@launchpp/core",
         "@launchpp/database",

@@ -16,6 +16,8 @@ import { checkPlugin, type PluginDiagnostic } from "./check-command.js";
 import { connectDeveloperMode } from "./connected-dev.js";
 import { startDisposableDevHost } from "./dev-command.js";
 import { generatePluginArtifacts } from "./generation.js";
+import { comparePluginPackages, inspectPluginPackage } from "./inspect-command.js";
+import { packPluginProject } from "./pack-command.js";
 import { runPluginTests } from "./test-command.js";
 
 function help(): void {
@@ -27,6 +29,8 @@ Usage:
   launchpp generate
   launchpp check [--warnings-as-errors]
   launchpp test [-- <vitest options>]
+  launchpp pack [--output <file>]
+  launchpp inspect <archive> [--compare <archive>] [--json]
 
 Commands:
   dev                    Start the disposable or connected development host
@@ -34,6 +38,8 @@ Commands:
   generate               Generate manifest-derived types and test fixtures
   check                  Validate the manifest, source policy, permissions, and generated files
   test                   Run Launch++ checks followed by the project's Vitest suite
+  pack                   Build, normalize, hash, reopen, and validate a .launch-plugin archive
+  inspect                Validate and report on an archive without executing plugin code
 
 Development options:
   --connect <url>         Pair with an operator-enabled Launch++ installation
@@ -50,6 +56,11 @@ Add options:
   --scope <scope>         project, organization, or user where supported
   --slot <slot>           Supported action or panel slot
   --yes                   Apply the displayed plan without prompting
+
+Pack and inspect options:
+  --output <file>         Override the default dist/<id>-<version>.launch-plugin path
+  --compare <archive>     Compare an inspected archive with an earlier archive
+  --json                  Print a stable JSON inspection report
 
   --help                  Show this help
 `);
@@ -341,6 +352,152 @@ async function testPlugin(args: readonly string[]): Promise<void> {
   if (code !== 0) process.exitCode = code;
 }
 
+function bytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MiB`;
+}
+
+async function pack(args: readonly string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: [...args],
+    options: {
+      help: { short: "h", type: "boolean" },
+      output: { short: "o", type: "string" },
+    },
+    strict: true,
+  });
+  if (values.help) {
+    help();
+    return;
+  }
+  intro("Pack Launch++ plugin");
+  const result = await packPluginProject({
+    ...(values.output === undefined ? {} : { outputFile: values.output }),
+  });
+  const manifest = result.inspected.manifest;
+  note(
+    [
+      `Plugin: ${manifest.name} (${manifest.id})`,
+      `Version: ${manifest.version}`,
+      `Archive: ${result.outputFile}`,
+      `Size: ${bytes(result.archiveBytes)}`,
+      `SHA-256: ${result.inspected.packageHash}`,
+      `Permissions: ${manifest.permissions.length}`,
+    ].join("\n"),
+    "Validated package",
+  );
+  outro("Plugin archive ready.");
+}
+
+function printInspection(
+  report: Awaited<ReturnType<typeof inspectPluginPackage>>["report"],
+  comparison?: ReturnType<typeof comparePluginPackages>,
+): void {
+  process.stdout.write(`${report.name} (${report.id}) v${report.version}\n`);
+  process.stdout.write(`Integrity: ${report.integrity}\n`);
+  process.stdout.write(`Provenance: ${report.provenance}\n`);
+  process.stdout.write(`API: ${report.apiRange}\n`);
+  const compatibility = report.compatibility;
+  process.stdout.write(
+    `Compatibility: ${
+      [
+        compatibility?.host ? `host ${compatibility.host}` : undefined,
+        compatibility?.sdk ? `SDK ${compatibility.sdk}` : undefined,
+        compatibility?.ui ? `UI ${compatibility.ui}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(", ") || "not declared"
+    }\n`,
+  );
+  process.stdout.write(`Archive: ${bytes(report.archiveBytes)} · ${report.fileCount} files\n`);
+  process.stdout.write(`SHA-256: ${report.packageHash}\n`);
+  process.stdout.write(`\nPermissions\n`);
+  process.stdout.write(
+    report.permissions.length
+      ? report.permissions.map((item) => `  - ${item}\n`).join("")
+      : "  none\n",
+  );
+  process.stdout.write(`\nContributions\n`);
+  process.stdout.write(
+    report.contributions.length
+      ? report.contributions
+          .map((item) => `  - ${item.kind}:${item.id} → ${item.placement}\n`)
+          .join("")
+      : "  none\n",
+  );
+  process.stdout.write(`\nBrowser surfaces\n`);
+  process.stdout.write(
+    report.browser.length
+      ? report.browser
+          .map((item) => `  - ${item.id}: ${item.path} (${bytes(item.sizeBytes)})\n`)
+          .join("")
+      : "  none\n",
+  );
+  process.stdout.write(`\nServer handlers\n`);
+  process.stdout.write(
+    report.server.length
+      ? report.server
+          .map((item) => `  - ${item.id}: ${item.path} (${bytes(item.sizeBytes)})\n`)
+          .join("")
+      : "  none\n",
+  );
+  process.stdout.write(`\nDependencies\n`);
+  process.stdout.write(
+    report.build?.bundledDependencies?.length
+      ? report.build.bundledDependencies
+          .map((item) => `  - ${item.name}@${item.version}\n`)
+          .join("")
+      : "  none recorded\n",
+  );
+  if (comparison) {
+    process.stdout.write(`\nComparison ${comparison.fromVersion} → ${comparison.toVersion}\n`);
+    for (const [label, values] of [
+      ["Permissions added", comparison.permissionsAdded],
+      ["Permissions removed", comparison.permissionsRemoved],
+      ["Contributions added", comparison.contributionsAdded],
+      ["Contributions removed", comparison.contributionsRemoved],
+      ["Files added", comparison.filesAdded],
+      ["Files removed", comparison.filesRemoved],
+      ["Files changed", comparison.filesChanged],
+    ] as const) {
+      process.stdout.write(`  ${label}: ${values.length ? values.join(", ") : "none"}\n`);
+    }
+  }
+}
+
+async function inspect(args: readonly string[]): Promise<void> {
+  const { positionals, values } = parseArgs({
+    allowPositionals: true,
+    args: [...args],
+    options: {
+      compare: { type: "string" },
+      help: { short: "h", type: "boolean" },
+      json: { type: "boolean" },
+    },
+    strict: true,
+  });
+  if (values.help) {
+    help();
+    return;
+  }
+  if (positionals.length !== 1 || positionals[0] === undefined) {
+    throw new TypeError("Usage: launchpp inspect <archive.launch-plugin>");
+  }
+  const current = await inspectPluginPackage(positionals[0]);
+  const previous = values.compare ? await inspectPluginPackage(values.compare) : undefined;
+  const comparison = previous
+    ? comparePluginPackages(previous.archive, current.archive)
+    : undefined;
+  if (values.json) {
+    process.stdout.write(
+      `${JSON.stringify({ ...current.report, ...(comparison ? { comparison } : {}) }, null, 2)}\n`,
+    );
+    return;
+  }
+  printInspection(current.report, comparison);
+}
+
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   if (command === undefined || command === "--help" || command === "-h") {
@@ -352,6 +509,8 @@ async function main(): Promise<void> {
   if (command === "generate") return await generate(args);
   if (command === "check") return await check(args);
   if (command === "test") return await testPlugin(args);
+  if (command === "pack") return await pack(args);
+  if (command === "inspect") return await inspect(args);
   throw new TypeError(
     `Unknown command '${command}'. Run 'launchpp --help' for supported commands.`,
   );

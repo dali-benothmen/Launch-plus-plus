@@ -24,11 +24,15 @@
   },
   "dependencies": {
     "@clack/prompts": "1.8.1",
+    "@launchpp/plugin-package": "workspace:*",
     "@launchpp/plugin-protocol": "workspace:*",
     "@launchpp/theme-runtime": "workspace:*",
+    "@vitejs/plugin-react": "6.1.1",
     "vite": "8.3.0"
   },
   "devDependencies": {
+    "@launchpp/sdk": "workspace:*",
+    "@launchpp/ui": "workspace:*",
     "@types/node": "24.13.5"
   }
 }

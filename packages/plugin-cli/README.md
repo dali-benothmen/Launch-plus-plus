@@ -49,3 +49,25 @@ author-scoped session starts. Manifest changes re-register host-rendered contrib
 changes pause the session until the owner approves them again. `Ctrl+C`, server-side revocation,
 expiry, or a server restart removes the ephemeral session. Loopback HTTP is accepted for local
 development; remote installations require HTTPS.
+
+## Packaging and inspection
+
+```bash
+pnpm launchpp pack
+pnpm launchpp pack --output dist/custom-name.launch-plugin
+pnpm launchpp inspect dist/com.example.plugin-0.1.0.launch-plugin
+pnpm launchpp inspect dist/new.launch-plugin --compare dist/previous.launch-plugin
+pnpm launchpp inspect dist/new.launch-plugin --json
+```
+
+`pack` regenerates CLI-owned artifacts, runs the fast checks, compiles each React or vanilla browser
+surface with its supported Vite adapter, bundles eligible server-handler dependencies, normalizes
+action schemas and package paths, and records deterministic build metadata. It then emits the
+integrity-covered ZIP-compatible archive and reopens it through the production preview intake
+validator before atomically writing the output file. Source maps, package scripts, source
+TypeScript, development state, and arbitrary framework output are not included.
+
+`inspect` never executes package code. It applies archive size/path/integrity limits and reports
+identity, compatibility, unsigned-local provenance, permissions, contributions, browser/server
+entries and sizes, and the bundled dependency inventory. `--compare` reports permission,
+contribution, and file differences against an earlier archive; `--json` provides stable CI output.

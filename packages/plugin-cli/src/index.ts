@@ -24,3 +24,17 @@ export {
   generatePluginArtifacts,
   renderGeneratedArtifact,
 } from "./generation.js";
+export {
+  comparePluginPackages,
+  inspectPluginPackage,
+  type PluginBuildMetadata,
+  type PluginPackageComparison,
+  type PluginPackageContributionSummary,
+  type PluginPackageEntrySummary,
+  type PluginPackageInspectionReport,
+} from "./inspect-command.js";
+export {
+  type PackedPluginProject,
+  type PackPluginProjectOptions,
+  packPluginProject,
+} from "./pack-command.js";
