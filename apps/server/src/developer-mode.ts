@@ -158,7 +158,7 @@ export class DeveloperModeError extends Error {
 }
 
 export class DeveloperModeCoordinator {
-  readonly #enabled: boolean;
+  #enabled: boolean;
   readonly #pairings = new Map<string, PairingRecord>();
   readonly #sessions = new Map<string, DeveloperSessionRecord>();
   readonly #clock: () => number;
@@ -170,6 +170,25 @@ export class DeveloperModeCoordinator {
 
   get enabled(): boolean {
     return this.#enabled;
+  }
+
+  setEnabled(enabled: boolean): void {
+    if (this.#enabled === enabled) return;
+    this.#enabled = enabled;
+    if (enabled) return;
+    const now = this.#clock();
+    for (const pairing of this.#pairings.values()) {
+      if (pairing.state === "pending" || pairing.state === "approved") {
+        pairing.state = "expired";
+        delete pairing.handoff;
+      }
+    }
+    for (const session of this.#sessions.values()) {
+      if (session.revokedAt === undefined && session.expiresAt > now) {
+        session.revokedAt = now;
+        session.state = "revoked";
+      }
+    }
   }
 
   get pairingTtlSeconds(): number {

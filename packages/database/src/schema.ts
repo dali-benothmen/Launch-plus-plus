@@ -22,6 +22,9 @@ const authDate = customType<{ data: Date; driverData: string }>({
 export const installations = sqliteTable("installations", {
   id: text("id").primaryKey(),
   createdAt: integer("created_at").notNull(),
+  developerModeEnabled: integer("developer_mode_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
 });
 
 export const outboxMessages = sqliteTable(

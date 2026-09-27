@@ -44,7 +44,6 @@ export interface ServerConfig {
   readonly baseUrl: string;
   readonly bindAddress: string;
   readonly databasePath: string;
-  readonly developerModeEnabled: boolean;
   readonly environment: EnvironmentName;
   readonly logLevel: LogLevel;
   readonly organizationRegistrationPolicy: OrganizationRegistrationPolicy;
@@ -68,12 +67,6 @@ function parseEnum<const TValue extends string>(
     throw new ConfigurationError(`${name} must be one of: ${values.join(", ")}`);
   }
   return value as TValue;
-}
-
-function parseBoolean(name: string, value: string): boolean {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  throw new ConfigurationError(`${name} must be true or false`);
 }
 
 function parseInteger(name: string, value: string, minimum: number, maximum: number): number {
@@ -161,10 +154,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     baseUrl,
     bindAddress,
     databasePath,
-    developerModeEnabled: parseBoolean(
-      "LAUNCHPP_DEVELOPER_MODE_ENABLED",
-      variables.LAUNCHPP_DEVELOPER_MODE_ENABLED ?? "false",
-    ),
     environment: mode,
     logLevel: parseEnum("LAUNCHPP_LOG_LEVEL", variables.LAUNCHPP_LOG_LEVEL ?? "info", logLevels),
     organizationRegistrationPolicy: parseEnum(

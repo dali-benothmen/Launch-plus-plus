@@ -467,7 +467,7 @@ export function AppShell() {
         </aside>
       ) : null}
 
-      <div className="app-workspace">
+      <div className={`app-workspace${developerModeEnabled ? " has-developer-mode-banner" : ""}`}>
         <header className="app-header">
           <Typography.Text className="app-header-title">
             {headerTitle(location.pathname)}
@@ -505,15 +505,26 @@ export function AppShell() {
             </Avatar>
           </div>
         </header>
+        {developerModeEnabled ? (
+          <Alert
+            action={
+              <Typography.Link
+                href="/app/organization-settings"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate("/app/organization-settings");
+                }}
+              >
+                Disable in settings
+              </Typography.Link>
+            }
+            banner
+            className="developer-mode-banner"
+            title="Developer Mode is enabled. Temporary unsigned plugins may be connected."
+            type="warning"
+          />
+        ) : null}
         <main id="main-content" tabIndex={-1}>
-          {developerModeEnabled ? (
-            <Alert
-              showIcon
-              title="Developer Mode is enabled"
-              description="Temporary unsigned plugins may be connected to this installation."
-              type="warning"
-            />
-          ) : null}
           <ExtensionRegistryProvider value={extensionRegistries}>
             <Outlet />
           </ExtensionRegistryProvider>

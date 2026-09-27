@@ -11,6 +11,7 @@ export {
   installationLockPath,
 } from "./installation-lock.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
+export { SqliteInstallationSettingsRepository } from "./installation-settings-repository.js";
 export {
   createInstallationBackup,
   type DatabaseVerification,

@@ -26,6 +26,7 @@ import {
   ProjectsIcon,
   Select,
   Spin,
+  Switch,
   Table,
   type TableColumn,
   Tag,
@@ -1198,6 +1199,26 @@ export function OrganizationSettingsPage() {
     return () => window.clearInterval(interval);
   }, [api, organizationId, status?.enabled]);
 
+  const toggleDeveloperMode = async (enabled: boolean) => {
+    if (!organizationId || saving) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      const nextStatus = await api.developerMode.setEnabled(organizationId, enabled);
+      setStatus(nextStatus);
+      if (enabled && pairingId && pairingCode) {
+        setReview(await api.developerMode.reviewPairing(pairingId, pairingCode));
+      } else if (!enabled) {
+        setReview(undefined);
+      }
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const approvePairing = async () => {
     if (!pairingId || !pairingCode || !organizationId || saving) return;
     setSaving(true);
@@ -1302,22 +1323,28 @@ export function OrganizationSettingsPage() {
       </Typography.Title>
       {error instanceof Error ? <Alert showIcon title={error.message} type="error" /> : null}
       {loading ? <Spin description="Loading Developer Mode…" /> : null}
-      {!loading && status && !status.enabled ? (
-        <Alert
-          showIcon
-          title="Developer Mode is disabled"
-          description="The installation operator can enable temporary connected sessions with LAUNCHPP_DEVELOPER_MODE_ENABLED=true and restart Launch++."
-          type="info"
-        />
+      {!loading && status ? (
+        <Card title="Developer Mode">
+          <div className="developer-mode-setting">
+            <div>
+              <Typography.Text>Connected plugin development</Typography.Text>
+              <br />
+              <Typography.Text type="secondary">
+                Allow temporary, author-scoped plugin sessions. Disabling this immediately revokes
+                active sessions and pending pairings.
+              </Typography.Text>
+            </div>
+            <Switch
+              ariaLabel="Enable connected Developer Mode"
+              checked={status.enabled}
+              loading={saving}
+              onChange={(enabled) => void toggleDeveloperMode(enabled)}
+            />
+          </div>
+        </Card>
       ) : null}
       {!loading && status?.enabled ? (
         <>
-          <Alert
-            showIcon
-            title="Developer Mode is enabled"
-            description="Unsigned development plugins can be paired temporarily. Sessions are author-scoped, permission-checked, and expire automatically."
-            type="warning"
-          />
           {review ? (
             <Card title="Approve plugin pairing">
               <Descriptions

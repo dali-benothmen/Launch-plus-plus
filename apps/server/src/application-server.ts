@@ -48,9 +48,7 @@ export async function buildApplicationServer(
   let identity: ReturnType<typeof openBetterAuthIdentityAdapter> | undefined;
   let dispatcher: ReturnType<typeof createOutboxDispatcher> | undefined;
   const hub = new InvalidationHub();
-  const developerMode = new DeveloperModeCoordinator({
-    enabled: options.config.developerModeEnabled,
-  });
+  const developerMode = new DeveloperModeCoordinator({ enabled: false });
 
   try {
     try {

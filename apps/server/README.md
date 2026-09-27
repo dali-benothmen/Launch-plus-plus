@@ -42,7 +42,6 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | `LAUNCHPP_BASE_URL` | `http://localhost:5173` in development | Canonical browser-visible origin; required and HTTPS in production, with no path/query/hash |
 | `LAUNCHPP_BIND_ADDRESS` | `127.0.0.1` | Explicit interface or hostname |
 | `LAUNCHPP_DATABASE_PATH` | `data/launchpp.sqlite` | File-backed SQLite path; in-memory persistence is rejected |
-| `LAUNCHPP_DEVELOPER_MODE_ENABLED` | `false` | Enables authenticated, temporary connected plugin sessions; restart after changing |
 | `LAUNCHPP_PORT` | `3000` | Integer from 1 through 65535 |
 | `LAUNCHPP_LOG_LEVEL` | `info` | Pino severity or `silent` |
 | `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` | `authenticated` | `open`, `authenticated`, or `disabled`; only `open` permits public organization creation |
@@ -52,7 +51,7 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | `LAUNCHPP_RATE_LIMIT_WINDOW_MS` | `60000` | 1000 through 3600000 milliseconds |
 | `LAUNCHPP_SHUTDOWN_GRACE_MS` | `10000` | 100 through 120000 milliseconds |
 
-State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library. Email recovery is intentionally unavailable until an email provider is configured, so the recovery screen directs users to the installation operator.
+State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Connected Developer Mode is disabled by default and is persisted through the owner-only switch in Organization settings; disabling it revokes active sessions and pending pairings immediately. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library. Email recovery is intentionally unavailable until an email provider is configured, so the recovery screen directs users to the installation operator.
 
 Logs are structured JSON. Authorization, cookie, and CSRF headers are redacted. Public error and health responses never include stack traces, filesystem paths, or dependency details.
 

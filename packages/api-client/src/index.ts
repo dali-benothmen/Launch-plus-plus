@@ -131,6 +131,7 @@ export interface ApiClient extends Omit<CoreApiClient, "tasks"> {
     approvePermissions(sessionId: string): Promise<DeveloperModeSession>;
     reviewPairing(pairingId: string, code: string): Promise<DeveloperModePairingReview>;
     revoke(sessionId: string): Promise<void>;
+    setEnabled(organizationId: string, enabled: boolean): Promise<DeveloperModeStatus>;
     status(organizationId?: string): Promise<DeveloperModeStatus>;
   };
   readonly tasks: CoreApiClient["tasks"] & {
@@ -243,6 +244,12 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
           method: "DELETE",
         });
       },
+      setEnabled: (organizationId: string, enabled: boolean) =>
+        json<DeveloperModeStatus>("/api/v1/developer-mode/status", {
+          body: JSON.stringify({ enabled, organizationId }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
+        }),
       status: (organizationId?: string) =>
         json<DeveloperModeStatus>(
           `/api/v1/developer-mode/status${

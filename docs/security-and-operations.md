@@ -235,7 +235,7 @@ A Node worker thread is a supervisor mechanism, not the sole security boundary. 
 
 Developer Mode is a temporary delivery path for unsigned local builds, not a relaxation of plugin security:
 
-- It is disabled by default, can be enabled only by an installation operator, and shows a persistent warning while available.
+- It is disabled by default, can be enabled by an organization owner from Organization settings, and shows a persistent warning while available.
 - Pairing uses browser confirmation and a single-use, short-lived code. The resulting credential is bound to the operator-approved user, plugin ID, installation, development organization and session.
 - A connected build receives an ephemeral `dev:<session-id>:<plugin-id>` identity and never replaces the installed package or inherits its grants, secrets, records or provenance.
 - Visibility is limited to the paired author by default. The default target is a dedicated development organization with fixture or disposable data, not production organization data.

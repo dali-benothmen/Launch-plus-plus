@@ -182,7 +182,7 @@ By default, plugin data lives in an isolated disposable profile under the projec
 
 ### Connecting to an existing installation
 
-An installation operator can enable connected Developer Mode for the installation, which is disabled by default and displays a persistent warning while active. The author then runs:
+An organization owner can enable connected Developer Mode from Organization settings, which is disabled by default and displays a persistent warning while active. The author then runs:
 
 ```text
 pnpm dev --connect https://launch.example
@@ -545,7 +545,7 @@ Registry/marketplace commands naturally transmit packages and identity only afte
 - The manifest remains authoritative; file naming is convention, not registration.
 - Templates are small composable capability starters.
 - Development includes a disposable sandbox, fixtures, inspection, and hot reload.
-- An operator-controlled Developer Mode can pair an existing installation with the CLI through a temporary authenticated channel; it never replaces an installed release or disables security boundaries.
+- An owner-controlled Developer Mode can pair an existing installation with the CLI through a temporary authenticated channel; it never replaces an installed release or disables security boundaries.
 - Data generation and compatibility checks are first-class CLI responsibilities.
 - Plugins contain no SQL or author-maintained migrations.
 - Packaging occurs on the author's machine/CI and produces a static uploadable archive.

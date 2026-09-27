@@ -2,7 +2,7 @@
 
 The project-local CLI for Launch++ plugin authors.
 
-The preview provides disposable development and an operator-enabled connected workflow:
+The preview provides disposable development and an owner-enabled connected workflow:
 
 ```bash
 pnpm launchpp dev

@@ -19,6 +19,12 @@ const apiClient: ApiClient = {
       throw new Error("Developer Mode is not used by this shell fixture.");
     }),
     revoke: vi.fn(async () => undefined),
+    setEnabled: vi.fn(async (_organizationId, enabled) => ({
+      enabled,
+      pairingTtlSeconds: 300,
+      sessionTtlSeconds: 1_800,
+      sessions: [],
+    })),
     status: vi.fn(async () => ({
       enabled: false,
       pairingTtlSeconds: 300,

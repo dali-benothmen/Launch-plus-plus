@@ -397,6 +397,13 @@
   margin-top: 24px;
 }
 
+.developer-mode-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -692,6 +699,15 @@
   height: 100vh;
   grid-template-rows: 47px minmax(0, 1fr);
   background: var(--launch-color-bg-elevated);
+}
+
+.app-workspace.has-developer-mode-banner {
+  grid-template-rows: 47px auto minmax(0, 1fr);
+}
+
+.developer-mode-banner {
+  border-inline: 0;
+  border-radius: 0;
 }
 
 .app-header {

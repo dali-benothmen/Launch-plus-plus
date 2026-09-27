@@ -1,0 +1,1 @@
+ALTER TABLE `installations` ADD `developer_mode_enabled` integer DEFAULT false NOT NULL;

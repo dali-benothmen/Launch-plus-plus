@@ -1,7 +1,12 @@
+import { randomUUID } from "node:crypto";
+
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import { actorFromIdentitySession, canAccessOrganization } from "@launchpp/authorization";
 import {
+  SqliteAuditWriter,
   type SqliteDatabase,
+  SqliteInstallationRepository,
+  SqliteInstallationSettingsRepository,
   SqliteOrganizationMembershipRepository,
   SqliteProjectRepository,
 } from "@launchpp/database";
@@ -91,8 +96,21 @@ export async function registerDeveloperModeRoutes(
     identity: BetterAuthIdentityAdapter;
   }>,
 ): Promise<void> {
+  const audit = new SqliteAuditWriter();
+  const installations = new SqliteInstallationRepository();
+  const settings = new SqliteInstallationSettingsRepository();
   const memberships = new SqliteOrganizationMembershipRepository();
   const projects = new SqliteProjectRepository();
+  const currentInstallation = () =>
+    input.database.read((context) => installations.findFirst(context));
+  const persistedInstallation = currentInstallation();
+  if (persistedInstallation) {
+    input.coordinator.setEnabled(
+      input.database.read((context) =>
+        settings.developerModeEnabled(context, persistedInstallation.id),
+      ),
+    );
+  }
 
   const identity = async (request: FastifyRequest, reply: FastifyReply) => {
     const session = await input.identity.resolveSession(webHeaders(request.headers));
@@ -317,6 +335,75 @@ export async function registerDeveloperModeRoutes(
         sessions: request.query.organizationId
           ? input.coordinator.list(request.query.organizationId)
           : [],
+      };
+    },
+  );
+
+  app.patch<{ Body: { readonly enabled: boolean; readonly organizationId: string } }>(
+    "/api/v1/developer-mode/status",
+    {
+      schema: {
+        body: {
+          additionalProperties: false,
+          properties: {
+            enabled: { type: "boolean" },
+            organizationId: { maxLength: 100, minLength: 1, type: "string" },
+          },
+          required: ["enabled", "organizationId"],
+          type: "object",
+        },
+        operationId: "setDeveloperModeStatus",
+        response: { 200: openObjectResponse, ...problemResponses },
+        summary: "Enable or disable connected Developer Mode",
+        tags: ["Developer Mode"],
+      },
+    },
+    async (request, reply) => {
+      const session = await owner(request, reply, request.body.organizationId);
+      if (!session) return;
+      const installation = currentInstallation();
+      if (!installation) {
+        return sendProblem(
+          reply,
+          request,
+          503,
+          "setup_required",
+          "Setup required",
+          "Setup is incomplete.",
+        );
+      }
+      const occurredAt = Date.now();
+      await input.database.write((context) => {
+        settings.setDeveloperModeEnabled(context, installation.id, request.body.enabled);
+        audit.append(context, {
+          actorId: session.identity.id,
+          actorType: "user",
+          correlationId: request.id,
+          id: randomUUID(),
+          installationId: installation.id,
+          metadata: { enabled: request.body.enabled },
+          occurredAt,
+          operation: "developer_mode.settings.update",
+          organizationId: request.body.organizationId,
+          outcome: "succeeded",
+          targetId: installation.id,
+          targetType: "installation",
+        });
+      });
+      input.coordinator.setEnabled(request.body.enabled);
+      request.log.warn(
+        {
+          actorUserId: session.identity.id,
+          enabled: request.body.enabled,
+          organizationId: request.body.organizationId,
+        },
+        "connected Developer Mode setting changed",
+      );
+      return {
+        enabled: input.coordinator.enabled,
+        pairingTtlSeconds: input.coordinator.pairingTtlSeconds,
+        sessionTtlSeconds: input.coordinator.sessionTtlSeconds,
+        sessions: input.coordinator.list(request.body.organizationId),
       };
     },
   );
