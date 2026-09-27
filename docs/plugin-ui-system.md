@@ -1,6 +1,6 @@
 # Launch++ plugin UI system
 
-Status: accepted v1 product and architecture direction. The framework-neutral SDK, React bindings, and public React UI/provider contract are implemented; templates and production custom-surface hosting remain later work.
+Status: accepted v1 product and architecture direction. The framework-neutral SDK, React bindings, public React UI/provider contract, and supported React/vanilla templates are implemented; the development host and production custom-surface hosting remain later work.
 
 This document owns the supported plugin authoring stacks and the relationship between React, vanilla browser code, Ant Design, Launch++ themes, and packaged plugin surfaces. The [plugin system](./plugin-system-design.md) owns runtime capabilities and isolation; the [plugin CLI](./plugin-cli-design.md) owns scaffolding and builds; the [theme system](./theme-system-design.md) owns the public visual-token contract.
 

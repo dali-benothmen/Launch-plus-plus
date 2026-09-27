@@ -1,7 +1,7 @@
 {
   "$schema": "./architecture-boundaries.schema.json",
   "workspaceRoots": ["apps", "packages"],
-  "packageNamePattern": "^@launchpp(?:-internal)?/[a-z0-9-]+$",
+  "packageNamePattern": "^(?:@launchpp(?:-internal)?/[a-z0-9-]+|create-launchpp-plugin)$",
   "packages": [
     {
       "name": "@launchpp-internal/web",
@@ -79,7 +79,11 @@
       "path": "packages/ui",
       "owner": "design-system",
       "visibility": "public",
-      "allowWorkspaceDependencies": ["@launchpp/theme-runtime", "@launchpp/ui-tokens"]
+      "allowWorkspaceDependencies": [
+        "@launchpp/plugin-sdk",
+        "@launchpp/theme-runtime",
+        "@launchpp/ui-tokens"
+      ]
     },
     {
       "name": "@launchpp/ui-tokens",
@@ -108,6 +112,20 @@
       "owner": "plugin-platform",
       "visibility": "public",
       "allowWorkspaceDependencies": []
+    },
+    {
+      "name": "@launchpp/plugin-sdk",
+      "path": "packages/plugin-sdk",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
+      "name": "create-launchpp-plugin",
+      "path": "packages/create-launchpp-plugin",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
     },
     {
       "name": "@launchpp/plugin-platform",

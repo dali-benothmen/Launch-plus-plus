@@ -1,0 +1,32 @@
+{
+  "name": "create-launchpp-plugin",
+  "version": "0.0.0",
+  "description": "Scaffold supported Launch++ plugin projects.",
+  "type": "module",
+  "bin": {
+    "create-launchpp-plugin": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.4.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1",
+    "@launchpp/plugin-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5"
+  }
+}
