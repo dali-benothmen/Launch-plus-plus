@@ -180,6 +180,9 @@ importers:
       '@clack/prompts':
         specifier: 1.8.1
         version: 1.8.1
+      '@launchpp/cli':
+        specifier: workspace:*
+        version: link:../plugin-cli
       '@launchpp/plugin-protocol':
         specifier: workspace:*
         version: link:../plugin-protocol

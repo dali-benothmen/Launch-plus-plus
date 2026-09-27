@@ -1,5 +1,6 @@
 import { access, mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { renderGeneratedArtifact } from "@launchpp/cli";
 import { type PluginSourceManifest, validatePluginSourceManifest } from "@launchpp/plugin-protocol";
 
 export const FRAMEWORKS = ["react-typescript", "vanilla-typescript", "vanilla-javascript"] as const;
@@ -213,7 +214,7 @@ function generatedPackageJson(options: ScaffoldOptions, capabilities: readonly P
   const isReact = options.framework === "react-typescript";
   const isTypeScript = options.framework !== "vanilla-javascript";
   const dependencies = {
-    ...(hasSurface ? { "@launchpp/sdk": "0.0.0" } : {}),
+    "@launchpp/sdk": "0.0.0",
     ...(isReact && hasSurface
       ? {
           "@launchpp/ui": "0.0.0",
@@ -452,11 +453,13 @@ function tsconfig(framework: PluginFramework, includeTests: boolean): string {
 function generatedTest(options: ScaffoldOptions, permissions: readonly string[]): string {
   return `import { describe, expect, it } from "vitest";
 import manifest from "../launchpp.plugin.json";
+import { launchppFixtures } from "../src/generated/launchpp.js";
 
 describe(${JSON.stringify(`${options.displayName} manifest`)}, () => {
   it("declares its identity and exact permissions", () => {
     expect(manifest.id).toBe(${JSON.stringify(options.pluginId)});
     expect(manifest.permissions).toEqual(${JSON.stringify(permissions)});
+    expect(launchppFixtures.context.pluginId).toBe(manifest.id);
   });
 });
 `;
@@ -496,6 +499,7 @@ function projectFiles(
   const hasSurface = capabilities.includes("project-page") || capabilities.includes("task-panel");
   files.set(".gitignore", "node_modules\ndist\n*.launch-plugin\n.launchpp/\n");
   files.set("launchpp.plugin.json", `${JSON.stringify(manifest, null, 2)}\n`);
+  files.set("src/generated/launchpp.ts", renderGeneratedArtifact(manifest));
   files.set(
     "package.json",
     `${JSON.stringify(generatedPackageJson(options, capabilities), null, 2)}\n`,

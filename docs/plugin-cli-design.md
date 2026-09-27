@@ -1,6 +1,6 @@
 # Launch++ plugin CLI and project workflow
 
-Status: active preview contract. The project scaffolder, supported React/vanilla templates, disposable project-local development host, and connected Developer Mode control plane are implemented; generation, validation, testing, and packaging commands remain later work.
+Status: active preview contract. The project scaffolder, supported React/vanilla templates, disposable and connected development modes, contribution generation, deterministic client/fixture generation, validation, and test orchestration are implemented; packaging remains later work.
 
 This document owns plugin project creation, local development, validation, code generation, testing, packaging, and SDK upgrades. It complements the [plugin system](./plugin-system-design.md) and [plugin storage design](./plugin-storage-design.md).
 
@@ -100,6 +100,7 @@ sprint-planner/
 ├── launchpp.plugin.json
 ├── src/
 │   ├── actions/task-action.ts
+│   ├── generated/launchpp.ts
 │   └── PluginSurface.tsx
 ├── tests/manifest.test.ts
 ├── package.json

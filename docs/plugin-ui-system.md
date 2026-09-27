@@ -202,7 +202,7 @@ They do not receive React hooks or React/Ant components. A vanilla author uses n
 - [ ] A vanilla author renders a matching custom page using only `@launchpp/sdk` and `@launchpp/ui-tokens`.
 - [ ] React and vanilla projects pack to the same normalized runtime contract.
 - [ ] Theme switching updates host, React-plugin, and vanilla-plugin surfaces coherently.
-- [ ] Direct application imports and dependencies on Ant class names fail `launchpp check` or produce an explicit unsupported-usage diagnostic.
+- [x] Direct application imports and dependencies on Ant class names fail `launchpp check` or produce an explicit unsupported-usage diagnostic.
 - [ ] Unused Ant components are not included in a packed plugin surface.
 - [ ] A supported older packed React plugin continues to run after a host UI-library upgrade.
 - [ ] Host-rendered contributions always use the host's current components.

@@ -21,4 +21,5 @@ pnpm create launchpp-plugin my-plugin \
 ```
 
 The command refuses to overwrite a non-empty directory and never installs
-dependencies automatically.
+dependencies automatically. It also creates `src/generated/launchpp.ts` with the current
+manifest-derived client types and protocol-compatible fixtures.

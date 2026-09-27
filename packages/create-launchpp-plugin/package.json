@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@clack/prompts": "1.8.1",
+    "@launchpp/cli": "workspace:*",
     "@launchpp/plugin-protocol": "workspace:*"
   },
   "devDependencies": {
