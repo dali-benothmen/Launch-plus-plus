@@ -1,5 +1,8 @@
 # `create-launchpp-plugin`
 
+See the [Launch++ plugin author preview](../../docs/plugin-author-preview.md) for the complete
+repository quick start, supported contracts, packaging/upload flow, and current limitations.
+
 Scaffold one of the supported Launch++ plugin authoring projects:
 
 ```bash

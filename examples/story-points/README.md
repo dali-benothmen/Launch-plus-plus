@@ -1,5 +1,8 @@
 # Story Points
 
+See the [Launch++ plugin author preview](../../docs/plugin-author-preview.md) for installation,
+development modes, packaging, upload, compatibility, and troubleshooting.
+
 Story Points is the declaration-only Launch++ reference plugin. Its manifest contributes one
 host-managed numeric task field without a browser surface, server handler, private import, plugin
 database schema, or migration.

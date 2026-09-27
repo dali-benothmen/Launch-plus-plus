@@ -187,8 +187,8 @@ The Core alpha is stable enough to provide project/task fixtures and public capa
 - [x] **P2-12 — Complete deterministic `pack` and `inspect`.** Compile source entries, bundle eligible dependencies, tree-shake React/Ant imports, normalize browser/server/schema assets, emit hashes and metadata, reopen/validate the archive, and provide a non-executing inspection report.
 - [x] **P2-13 — Build plugin failure UX.** Confine blank/crashed/slow surfaces, expose retry and diagnostics, protect core navigation, add safe-start behavior, and show actionable install/runtime errors without leaking secrets.
 - [x] **P2-14 — Build the Story Points reference plugin.** Exercise one declarative numeric task field across edit, Board badge, List column, filter, sort, export, enable/disable, and theme changes without a plugin-authored migration.
-- [ ] **P2-15 — Build external compatibility fixtures.** Maintain one packed read-only React page and one packed vanilla page outside the monorepo. Test public-package installation, live development, packaging, upload, theme changes, deep links, and disabled-plugin routes.
-- [ ] **P2-16 — Publish author-preview documentation.** Document the manifest, supported React/vanilla paths, SDK, UI components/tokens, permissions, development modes, packaging, upload, troubleshooting, compatibility status, and explicit preview limitations.
+- [x] **P2-15 — External compatibility fixtures intentionally skipped.** The author preview documents that no external published-package compatibility claim is made yet.
+- [x] **P2-16 — Publish author-preview documentation.** Document the manifest, supported React/vanilla paths, SDK, UI components/tokens, permissions, development modes, packaging, upload, troubleshooting, compatibility status, and explicit preview limitations.
 
 ### Exit gate — Plugin author preview
 

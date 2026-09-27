@@ -2,6 +2,9 @@
 
 The project-local CLI for Launch++ plugin authors.
 
+See the [Launch++ plugin author preview](../../docs/plugin-author-preview.md) for the complete
+end-to-end workflow and current compatibility limits.
+
 ## Commands
 
 ```bash
