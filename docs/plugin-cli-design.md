@@ -182,7 +182,7 @@ By default, plugin data lives in an isolated disposable profile under the projec
 
 ### Connecting to an existing installation
 
-An organization owner can enable connected Developer Mode from Organization settings, which is disabled by default and displays a persistent warning while active. The author then runs:
+An organization owner can enable connected Developer Mode from global Settings, which is disabled by default and displays a persistent warning while active. The author then runs:
 
 ```text
 pnpm dev --connect https://launch.example

@@ -351,7 +351,7 @@ The Phase 0 implementation fixes the deterministic ZIP, SHA-256 integrity, trave
 
 ### Developer Mode and the live development channel
 
-The pack-and-upload loop is for release validation, not every edit. Launch++ includes an owner-controlled **Organization settings → Developer Mode** switch and the CLI supports two development paths:
+The pack-and-upload loop is for release validation, not every edit. Launch++ includes an owner-controlled **Settings → Developer Mode** switch and the CLI supports two development paths:
 
 - `launchpp dev` starts a disposable local Launch++ organization with fixtures. This is the safest and default path.
 - `launchpp dev --connect https://launch.example` pairs the local CLI with an existing Launch++ installation for an authenticated preview.

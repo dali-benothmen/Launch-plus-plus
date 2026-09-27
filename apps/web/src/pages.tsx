@@ -1199,26 +1199,6 @@ export function OrganizationSettingsPage() {
     return () => window.clearInterval(interval);
   }, [api, organizationId, status?.enabled]);
 
-  const toggleDeveloperMode = async (enabled: boolean) => {
-    if (!organizationId || saving) return;
-    setSaving(true);
-    setError(undefined);
-    try {
-      const nextStatus = await api.developerMode.setEnabled(organizationId, enabled);
-      setStatus(nextStatus);
-      if (enabled && pairingId && pairingCode) {
-        setReview(await api.developerMode.reviewPairing(pairingId, pairingCode));
-      } else if (!enabled) {
-        setReview(undefined);
-      }
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const approvePairing = async () => {
     if (!pairingId || !pairingCode || !organizationId || saving) return;
     setSaving(true);
@@ -1323,26 +1303,6 @@ export function OrganizationSettingsPage() {
       </Typography.Title>
       {error instanceof Error ? <Alert showIcon title={error.message} type="error" /> : null}
       {loading ? <Spin description="Loading Developer Mode…" /> : null}
-      {!loading && status ? (
-        <Card title="Developer Mode">
-          <div className="developer-mode-setting">
-            <div>
-              <Typography.Text>Connected plugin development</Typography.Text>
-              <br />
-              <Typography.Text type="secondary">
-                Allow temporary, author-scoped plugin sessions. Disabling this immediately revokes
-                active sessions and pending pairings.
-              </Typography.Text>
-            </div>
-            <Switch
-              ariaLabel="Enable connected Developer Mode"
-              checked={status.enabled}
-              loading={saving}
-              onChange={(enabled) => void toggleDeveloperMode(enabled)}
-            />
-          </div>
-        </Card>
-      ) : null}
       {!loading && status?.enabled ? (
         <>
           {review ? (
@@ -1408,6 +1368,45 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<unknown>();
   const [signingOut, setSigningOut] = useState(false);
+  const [developerModeOrganizationId, setDeveloperModeOrganizationId] = useState("");
+  const [developerModeStatus, setDeveloperModeStatus] = useState<DeveloperModeStatus>();
+  const [developerModeLoading, setDeveloperModeLoading] = useState(true);
+  const [developerModeSaving, setDeveloperModeSaving] = useState(false);
+
+  const loadDeveloperMode = useCallback(async () => {
+    setDeveloperModeLoading(true);
+    try {
+      const context = await api.organizations.list({ limit: 100 });
+      const organizationId = context.currentOrganizationId ?? context.organizations[0]?.id;
+      if (!organizationId) return;
+      setDeveloperModeOrganizationId(organizationId);
+      setDeveloperModeStatus(await api.developerMode.status(organizationId));
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setDeveloperModeLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    void loadDeveloperMode();
+  }, [loadDeveloperMode]);
+
+  const toggleDeveloperMode = async (enabled: boolean) => {
+    if (!developerModeOrganizationId || developerModeSaving) return;
+    setDeveloperModeSaving(true);
+    setError(undefined);
+    try {
+      setDeveloperModeStatus(
+        await api.developerMode.setEnabled(developerModeOrganizationId, enabled),
+      );
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setDeveloperModeSaving(false);
+    }
+  };
 
   const signOut = async () => {
     setError(undefined);
@@ -1430,6 +1429,24 @@ export function SettingsPage() {
         Account, organization, appearance, and plugin settings will live here.
       </Typography.Text>
       {error instanceof Error ? <Alert title={error.message} type="error" /> : null}
+      <Card title="Developer Mode">
+        <div className="developer-mode-setting">
+          <div>
+            <Typography.Text>Connected plugin development</Typography.Text>
+            <br />
+            <Typography.Text type="secondary">
+              Allow temporary, author-scoped plugin sessions. Disabling this immediately revokes
+              active sessions and pending pairings.
+            </Typography.Text>
+          </div>
+          <Switch
+            ariaLabel="Enable connected Developer Mode"
+            checked={developerModeStatus?.enabled ?? false}
+            loading={developerModeLoading || developerModeSaving}
+            onChange={(enabled) => void toggleDeveloperMode(enabled)}
+          />
+        </div>
+      </Card>
       <div className="settings-actions">
         <Button loading={signingOut} onClick={() => void signOut()}>
           Sign out

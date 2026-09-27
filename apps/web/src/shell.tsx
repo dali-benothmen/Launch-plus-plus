@@ -509,10 +509,10 @@ export function AppShell() {
           <Alert
             action={
               <Typography.Link
-                href="/app/organization-settings"
+                href="/app/settings"
                 onClick={(event) => {
                   event.preventDefault();
-                  navigate("/app/organization-settings");
+                  navigate("/app/settings");
                 }}
               >
                 Disable in settings
