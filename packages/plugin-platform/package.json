@@ -11,6 +11,7 @@
     }
   },
   "dependencies": {
-    "@launchpp/plugin-protocol": "workspace:*"
+    "@launchpp/plugin-protocol": "workspace:*",
+    "typebox": "1.3.33"
   }
 }

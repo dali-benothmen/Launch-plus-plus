@@ -10,6 +10,7 @@ import {
 } from "@launchpp/database";
 import type { FastifyInstance } from "fastify";
 
+import { registerCapabilityBrokerRoutes } from "./capability-broker-routes.js";
 import { registerEventRoutes } from "./event-routes.js";
 import { registerExtensionRegistryRoutes } from "./extension-registry-routes.js";
 import { InvalidationHub } from "./invalidation-hub.js";
@@ -111,6 +112,7 @@ export async function buildApplicationServer(
       identity: identity.adapter,
     });
     await registerExtensionRegistryRoutes(app, { database, identity: identity.adapter });
+    await registerCapabilityBrokerRoutes(app, { database, identity: identity.adapter });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
     await registerTeamRoutes(app, { database, identity: identity.adapter });
