@@ -664,6 +664,7 @@ export const ExtensionRegistryDiagnosticSchema = StrictObject(
       Type.Literal("contribution_id_collision"),
       Type.Literal("dependency_version_mismatch"),
       Type.Literal("missing_dependency"),
+      Type.Literal("permission_grant_missing"),
       Type.Literal("permission_grant_invalid"),
       Type.Literal("route_collision"),
     ]),

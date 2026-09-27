@@ -42,6 +42,7 @@ import {
   type UploadRequestOptions,
 } from "@launchpp/ui";
 import {
+  AppstoreOutlined,
   CalendarOutlined,
   CheckSquareOutlined,
   CommentOutlined,
@@ -55,10 +56,12 @@ import {
   PaperClipOutlined,
   SmileOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
   UserAddOutlined,
   UserOutlined,
 } from "@launchpp/ui/icons";
 import {
+  Fragment,
   type ReactNode,
   useCallback,
   useEffect,
@@ -73,6 +76,7 @@ import {
   formatFileSize,
   maximumAttachmentBytes,
 } from "./attachments.js";
+import { useExtensionRegistries } from "./extensions.js";
 import { invalidationEventName } from "./invalidation.js";
 
 interface TaskDetailPanelProps {
@@ -316,6 +320,7 @@ export function TaskDetailPanel({
   organizationId,
 }: TaskDetailPanelProps) {
   const api = useApiClient();
+  const { project: projectExtensions } = useExtensionRegistries();
   const narrow = useNarrowScreen();
   const [messageApi, messageHolder] = message.useMessage();
   const [detail, setDetail] = useState<TaskDetail>();
@@ -1276,6 +1281,20 @@ export function TaskDetailPanel({
   const selectedTeamIndex = selectedTeam
     ? teams.findIndex((team) => team.id === selectedTeam.id)
     : -1;
+  const extensionFields = projectExtensions.fields.filter((field) =>
+    field.placements.includes("task.details.fields"),
+  );
+  const extensionActions = projectExtensions.actions.filter(
+    (action) => action.slot === "task.actions",
+  );
+  const extensionActionItems: readonly DropdownMenuItem[] = extensionActions.map((action) => ({
+    key: action.id,
+    label: action.title,
+    onClick: () =>
+      messageApi.info(
+        `${action.title} is registered for this task, but its handler is not available yet.`,
+      ),
+  }));
 
   const content = loadError ? (
     <div className="task-detail-state">
@@ -1544,6 +1563,16 @@ export function TaskDetailPanel({
                 </Tag>
               </div>
             )}
+
+            {extensionFields.map((field) => (
+              <Fragment key={field.id}>
+                <div className="task-detail-meta-label">
+                  <AppstoreOutlined />
+                  {field.label}
+                </div>
+                <Typography.Text type="secondary">Not set</Typography.Text>
+              </Fragment>
+            ))}
           </div>
         </div>
 
@@ -2205,6 +2234,17 @@ export function TaskDetailPanel({
                 onClick={() => void copyTaskUrl()}
                 variant="text"
               />
+              {extensionActionItems.length > 0 ? (
+                <Dropdown menu={{ items: extensionActionItems }} trigger={["click"]}>
+                  <Button
+                    aria-label="Extension actions"
+                    className="task-detail-header-action"
+                    icon={<ThunderboltOutlined style={taskDetailHeaderIconStyle} />}
+                    iconOnly
+                    variant="text"
+                  />
+                </Dropdown>
+              ) : null}
               {!archived ? (
                 <Button
                   aria-label="Edit task"

@@ -1,9 +1,10 @@
 import type { SearchResult } from "@launchpp/api-client";
-import { Button, Empty, Input, List, Modal, Spin, Tag, Typography } from "@launchpp/ui";
+import { Button, Empty, Input, List, Modal, message, Spin, Tag, Typography } from "@launchpp/ui";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useApiClient } from "./api-client-context.js";
+import { useExtensionRegistries } from "./extensions.js";
 
 export interface GlobalSearchProps {
   readonly onClose: () => void;
@@ -13,6 +14,8 @@ export interface GlobalSearchProps {
 export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
   const api = useApiClient();
   const navigate = useNavigate();
+  const registries = useExtensionRegistries();
+  const [messageApi, messageHolder] = message.useMessage();
   const requestId = useRef(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<readonly SearchResult[]>([]);
@@ -55,6 +58,19 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
     return () => window.clearTimeout(timer);
   }, [api, open, query]);
 
+  const commandActions = [...registries.organization.actions, ...registries.project.actions].filter(
+    (action, index, actions) =>
+      action.slot === "commandPalette" &&
+      actions.findIndex((candidate) => candidate.id === action.id) === index,
+  );
+  const visibleCommands = commandActions.filter((action) =>
+    query.trim()
+      ? `${action.title} ${action.pluginId}`
+          .toLocaleLowerCase()
+          .includes(query.trim().toLocaleLowerCase())
+      : true,
+  );
+
   const openResult = (result: SearchResult) => {
     const root = `/app/organizations/${result.organizationId}/projects/${result.projectId}`;
     navigate(result.kind === "task" ? `${root}/board/tasks/${result.resourceId}` : `${root}/board`);
@@ -62,6 +78,8 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
   };
 
   return (
+    <>
+      {messageHolder}
     <Modal footer={null} onCancel={onClose} open={open} title="Search" width={620}>
       <div className="global-search">
         <Input.Search
@@ -71,6 +89,31 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
           placeholder="Search projects and tasks"
           value={query}
         />
+          {visibleCommands.length > 0 ? (
+            <List
+              className="global-search-results"
+              itemRender={(action) => (
+                <Button
+                  block
+                  className="global-search-result"
+                  onClick={() =>
+                    messageApi.info(
+                      `${action.title} is registered, but its handler is not available yet.`,
+                    )
+                  }
+                  variant="text"
+                >
+                  <span>
+                    <Typography.Text strong>{action.title}</Typography.Text>
+                    <Typography.Text type="secondary">{action.pluginId}</Typography.Text>
+                  </span>
+                  <Tag>Command</Tag>
+                </Button>
+              )}
+              items={visibleCommands}
+              rowKey="id"
+            />
+          ) : null}
         {loading ? (
           <div className="global-search-state">
             <Spin size="small" />
@@ -78,7 +121,10 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
         ) : error ? (
           <Typography.Text type="danger">{error}</Typography.Text>
         ) : query.trim() && results.length === 0 ? (
-          <Empty description="No matching projects or tasks" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty
+              description="No matching projects or tasks"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
         ) : results.length > 0 ? (
           <List
             className="global-search-results"
@@ -99,10 +145,11 @@ export function GlobalSearch({ onClose, open }: GlobalSearchProps) {
             items={results}
             rowKey="resourceId"
           />
-        ) : (
+          ) : visibleCommands.length === 0 ? (
           <Typography.Text type="secondary">Start typing to search.</Typography.Text>
-        )}
+          ) : null}
       </div>
     </Modal>
+    </>
   );
 }

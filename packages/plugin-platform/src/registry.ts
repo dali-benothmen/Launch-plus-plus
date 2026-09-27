@@ -16,6 +16,7 @@ export type ExtensionRegistryDiagnosticCode =
   | "contribution_id_collision"
   | "dependency_version_mismatch"
   | "missing_dependency"
+  | "permission_grant_missing"
   | "permission_grant_invalid"
   | "route_collision";
 
@@ -229,6 +230,23 @@ export function resolveExtensionRegistry(
         diagnostics.push({
           code: "permission_grant_invalid",
           message: `Accepted permission '${permission}' is not requested by ${manifest.id}.`,
+          pluginId: manifest.id,
+          severity: "error",
+        });
+        blockedPlugins.add(manifest.id);
+      }
+    }
+    const acceptedPermissions = new Set(pluginPackage.acceptedPermissions);
+    for (const permission of requestedPermissions) {
+      if (!acceptedPermissions.has(permission)) {
+        diagnostics.push({
+          code: "permission_grant_missing",
+          message:
+            "Requested permission '" +
+            permission +
+            "' has not been granted to " +
+            manifest.id +
+            ".",
           pluginId: manifest.id,
           severity: "error",
         });

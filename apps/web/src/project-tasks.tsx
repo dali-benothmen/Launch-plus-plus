@@ -56,6 +56,7 @@ import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { fileToBase64, maximumAttachmentBytes } from "./attachments.js";
 import { useApiClient } from "./api-client-context.js";
+import { useExtensionRegistries } from "./extensions.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
 import { TaskDetailPanel } from "./task-detail.js";
@@ -413,6 +414,7 @@ export function ProjectTaskOrganization({
 }: ProjectTaskOrganizationProps) {
   const api = useApiClient();
   const navigate = useNavigate();
+  const { project: projectExtensions } = useExtensionRegistries();
   const [searchParams] = useSearchParams();
   const [messageApi, messageHolder] = message.useMessage();
   const [tasks, setTasks] = useState<readonly TaskView[]>([]);
@@ -829,44 +831,65 @@ export function ProjectTaskOrganization({
     window.setTimeout(() => openTask(pendingTask), 250);
   };
 
-  const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
-    {
-      key: "edit",
-      label: "Edit task",
-      onClick: ({ domEvent }) => {
-        domEvent.stopPropagation();
-        suppressTaskCardOpen();
-        pendingTaskMenuOpenRef.current = task;
+  const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => {
+    const extensionItems: readonly DropdownMenuItem[] = projectExtensions.actions
+      .filter(
+        (action) =>
+          action.slot === "task.card.actions" ||
+          action.slot === "board.card.actions",
+      )
+      .map((action) => ({
+        key: action.id,
+        label: action.title,
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          messageApi.info(
+            `${action.title} is registered for ${task.reference}, but its handler is not available yet.`,
+          );
+        },
+      }));
+    return [
+      {
+        key: "edit",
+        label: "Edit task",
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          pendingTaskMenuOpenRef.current = task;
+        },
       },
-    },
-    {
-      children: displayStatuses
-        .filter((status) => status.id !== task.statusId)
-        .map((status) => ({
-          key: `move-${status.id}`,
-          label: status.name,
-          onClick: ({ domEvent }) => {
-            domEvent.stopPropagation();
-            suppressTaskCardOpen();
-            void moveTask(task, status.id);
-          },
-        })),
-      key: "move",
-      label: "Move to",
-    },
-    { type: "divider" },
-    {
-      danger: true,
-      key: "delete",
-      label: "Delete task",
-      onClick: ({ domEvent }) => {
-        domEvent.stopPropagation();
-        suppressTaskCardOpen();
-        setDeleteError(undefined);
-        setDeleteTarget({ kind: "task", task });
+      {
+        children: displayStatuses
+          .filter((status) => status.id !== task.statusId)
+          .map((status) => ({
+            key: `move-${status.id}`,
+            label: status.name,
+            onClick: ({ domEvent }) => {
+              domEvent.stopPropagation();
+              suppressTaskCardOpen();
+              void moveTask(task, status.id);
+            },
+          })),
+        key: "move",
+        label: "Move to",
       },
-    },
-  ];
+      { type: "divider" },
+      ...extensionItems,
+      ...(extensionItems.length > 0 ? [{ type: "divider" as const }] : []),
+      {
+        danger: true,
+        key: "delete",
+        label: "Delete task",
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          setDeleteError(undefined);
+          setDeleteTarget({ kind: "task", task });
+        },
+      },
+    ];
+  };
   const saveTask = async () => {
     const currentDraft = draftRef.current;
     if (!editor || saving || !currentDraft.statusId) return;
@@ -1145,6 +1168,15 @@ export function ProjectTaskOrganization({
                               {taskPriorityPresentation[task.priority].label}
                             </Tag>
                             {renderTeamTag(teams, task.teamId)}
+                            {projectExtensions.fields
+                              .filter((field) =>
+                                field.placements.includes("task.card.badges"),
+                              )
+                              .map((field) => (
+                                <Tag key={field.id}>
+                                  {field.label}: {"\u2014"}
+                                </Tag>
+                              ))}
                           </div>
                           <div className="task-card-summary">
                             <div className="task-card-metrics">
@@ -1218,6 +1250,18 @@ export function ProjectTaskOrganization({
     medium: 1,
     low: 2,
   };
+  const extensionListColumns = useMemo<ReadonlyArray<TableColumn<TaskView>>>(
+    () =>
+      projectExtensions.fields
+        .filter((field) => field.placements.includes("task.list.columns"))
+        .map((field) => ({
+          key: field.id,
+          render: () => <span className="task-list-empty-value">{"\u2014"}</span>,
+          title: field.label,
+          width: 120,
+        })),
+    [projectExtensions.fields],
+  );
   const columns: ReadonlyArray<TableColumn<TaskView>> = [
     {
       key: "name",
@@ -1292,6 +1336,7 @@ export function ProjectTaskOrganization({
       title: "Due date",
       width: 130,
     },
+    ...extensionListColumns,
     {
       key: "assignee",
       render: (_value, task) =>
@@ -1525,8 +1570,26 @@ export function ProjectTaskOrganization({
     );
   };
 
+  const toolbarExtensionActions = projectExtensions.actions.filter(
+    (action) =>
+      action.slot === "project.toolbar" ||
+      (view === "board" && action.slot === "board.toolbar"),
+  );
   const actionButtons = (
     <div className="task-header-actions">
+      {toolbarExtensionActions.map((action) => (
+        <Button
+          key={action.id}
+          onClick={() =>
+            messageApi.info(
+              `${action.title} is registered, but its handler is not available yet.`,
+            )
+          }
+          size="small"
+        >
+          {action.title}
+        </Button>
+      ))}
       <Button onClick={openColumnEditor} size="small">
         + Add column
       </Button>

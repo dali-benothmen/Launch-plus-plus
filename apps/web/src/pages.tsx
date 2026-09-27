@@ -1,5 +1,6 @@
 import {
   ApiError,
+  type ExtensionRegistry,
   type OrganizationContext,
   type PluginContributionPreview,
   type PluginPackageSummary,
@@ -17,8 +18,8 @@ import {
   Form,
   Input,
   MoreIcon,
-  ProjectsIcon,
   message,
+  ProjectsIcon,
   Spin,
   Table,
   type TableColumn,
@@ -37,6 +38,11 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import {
+  ExtensionSettingsPreview,
+  emptyExtensionRegistry,
+  extensionRegistryChangedEvent,
+} from "./extensions.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
 import { ProjectTaskOrganization } from "./project-tasks.js";
@@ -678,9 +684,17 @@ export function PluginsPage() {
   const [organizationId, setOrganizationId] = useState<string>();
   const [packages, setPackages] = useState<readonly PluginPackageSummary[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PluginPackageSummary>();
+  const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
+  const [organizationRegistry, setOrganizationRegistry] = useState<ExtensionRegistry>(
+    emptyExtensionRegistry(),
+  );
+  const [projectRegistries, setProjectRegistries] = useState<
+    Readonly<Record<string, ExtensionRegistry>>
+  >({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>();
   const [enablingPackageId, setEnablingPackageId] = useState<string>();
+  const [changingProjectId, setChangingProjectId] = useState<string>();
 
   const loadPackages = useCallback(async () => {
     setLoading(true);
@@ -691,11 +705,32 @@ export function PluginsPage() {
       setOrganizationId(currentOrganizationId);
       if (!currentOrganizationId) {
         setPackages([]);
+        setProjects([]);
+        setOrganizationRegistry(emptyExtensionRegistry());
+        setProjectRegistries({});
         setSelectedPackage(undefined);
         return;
       }
-      const nextPackages = await api.pluginPackages.list(currentOrganizationId);
+      const [nextPackages, catalog, nextOrganizationRegistry] = await Promise.all([
+        api.pluginPackages.list(currentOrganizationId),
+        api.projects.list(currentOrganizationId, { limit: 100 }),
+        api.extensionRegistry.getOrganization(currentOrganizationId),
+      ]);
+      const nextProjects = catalog.projects
+        .filter((project) => project.archivedAt === undefined)
+        .toSorted((first, second) => first.position - second.position);
+      const nextProjectRegistries = Object.fromEntries(
+        await Promise.all(
+          nextProjects.map(async (project) => [
+            project.id,
+            await api.extensionRegistry.getProject(currentOrganizationId, project.id),
+          ]),
+        ),
+      );
       setPackages(nextPackages);
+      setProjects(nextProjects);
+      setOrganizationRegistry(nextOrganizationRegistry);
+      setProjectRegistries(nextProjectRegistries);
       setSelectedPackage((current) =>
         current ? nextPackages.find((item) => item.id === current.id) : nextPackages[0],
       );
@@ -752,6 +787,8 @@ export function PluginsPage() {
             : item,
         ),
       );
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      await loadPackages();
       messageApi.success(`${enabled.name} enabled for this organization.`);
     } catch (error) {
       setLoadError(error);
@@ -759,6 +796,82 @@ export function PluginsPage() {
       setEnablingPackageId(undefined);
     }
   };
+
+  const changeProjectActivation = async (project: ProjectSummary) => {
+    if (!organizationId || !selectedPackage || changingProjectId) return;
+    const enabled =
+      projectRegistries[project.id]?.packages.some(
+        (item) => item.id === selectedPackage.id && item.projectEnabled,
+      ) ?? false;
+    setChangingProjectId(project.id);
+    setLoadError(undefined);
+    try {
+      if (enabled) {
+        await api.extensionRegistry.disableProject(organizationId, project.id, selectedPackage.id);
+      } else {
+        await api.extensionRegistry.enableProject(organizationId, project.id, selectedPackage.id);
+      }
+      await loadPackages();
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      messageApi.success(
+        `${selectedPackage.name} ${enabled ? "disabled for" : "enabled for"} ${project.name}.`,
+      );
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setChangingProjectId(undefined);
+    }
+  };
+
+  const projectAccessColumns: readonly TableColumn<ProjectSummary>[] = [
+    {
+      dataIndex: "name",
+      key: "project",
+      title: "Project",
+    },
+    {
+      key: "state",
+      title: "State",
+      render: (_value, project) => {
+        const enabled =
+          projectRegistries[project.id]?.packages.some(
+            (item) => item.id === selectedPackage?.id && item.projectEnabled,
+          ) ?? false;
+        return <Tag color={enabled ? "green" : "default"}>{enabled ? "Enabled" : "Disabled"}</Tag>;
+      },
+    },
+    {
+      key: "action",
+      title: "",
+      width: 120,
+      render: (_value, project) => {
+        const enabled =
+          projectRegistries[project.id]?.packages.some(
+            (item) => item.id === selectedPackage?.id && item.projectEnabled,
+          ) ?? false;
+        return (
+          <Button
+            loading={changingProjectId === project.id}
+            onClick={() => void changeProjectActivation(project)}
+            size="small"
+          >
+            {enabled ? "Disable" : "Enable"}
+          </Button>
+        );
+      },
+    },
+  ];
+
+  const selectedSettings = [
+    ...organizationRegistry.settings
+      .filter((item) => item.packageId === selectedPackage?.id)
+      .map((contribution) => ({ contribution, location: "Organization" })),
+    ...projects.flatMap((project) =>
+      (projectRegistries[project.id]?.settings ?? [])
+        .filter((item) => item.packageId === selectedPackage?.id)
+        .map((contribution) => ({ contribution, location: project.name })),
+    ),
+  ];
 
   const packageColumns = useMemo<readonly TableColumn<PluginPackageSummary>[]>(
     () => [
@@ -969,6 +1082,32 @@ export function PluginsPage() {
               size="small"
             />
           </div>
+
+          {selectedPackage.state === "enabled" ? (
+            <div>
+              <Typography.Title level={3}>Project access</Typography.Title>
+              <Table<ProjectSummary>
+                columns={projectAccessColumns}
+                dataSource={projects}
+                locale={{ emptyText: "No active projects are available." }}
+                pagination={false}
+                rowKey="id"
+                size="small"
+              />
+            </div>
+          ) : null}
+
+          {selectedSettings.length > 0 ? (
+            <div>
+              <Typography.Title level={3}>Host-rendered settings</Typography.Title>
+              {selectedSettings.map(({ contribution, location }) => (
+                <div key={`${location}:${contribution.id}`}>
+                  <Typography.Text type="secondary">{location}</Typography.Text>
+                  <ExtensionSettingsPreview contribution={contribution} />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

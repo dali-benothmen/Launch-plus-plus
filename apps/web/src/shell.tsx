@@ -1,4 +1,4 @@
-import type { ProjectSummary, TeamSummary } from "@launchpp/api-client";
+import type { ExtensionRegistry, ProjectSummary, TeamSummary } from "@launchpp/api-client";
 import {
   Alert,
   Avatar,
@@ -24,6 +24,11 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
+import {
+  ExtensionRegistryProvider,
+  emptyExtensionRegistry,
+  extensionRegistryChangedEvent,
+} from "./extensions.js";
 import { GlobalSearch } from "./global-search.js";
 import { InvalidationListener, invalidationEventName } from "./invalidation.js";
 import { openProjectCreationEvent, projectNavigationChangedEvent } from "./project-navigation.js";
@@ -98,6 +103,10 @@ export function AppShell() {
   const [memberName, setMemberName] = useState("Launch++ member");
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
   const [teams, setTeams] = useState<readonly TeamSummary[]>([]);
+  const [organizationExtensions, setOrganizationExtensions] =
+    useState<ExtensionRegistry>(emptyExtensionRegistry);
+  const [projectExtensions, setProjectExtensions] =
+    useState<ExtensionRegistry>(emptyExtensionRegistry);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [projectError, setProjectError] = useState<unknown>();
@@ -118,13 +127,21 @@ export function AppShell() {
         (item) => item.id === context.currentOrganizationId,
       );
       if (session) setMemberName(session.identity.name);
-      if (!organization) return;
+      if (!organization) {
+        setOrganizationId("");
+        setOrganizationExtensions(emptyExtensionRegistry());
+        return;
+      }
       setOrganizationId(organization.id);
       setOrganizationName(organization.name);
-      const [catalog, nextTeams] = await Promise.all([
+      const [catalog, nextTeams, nextExtensions] = await Promise.all([
         api.projects.list(organization.id, { limit: 100 }),
         api.teams.list(organization.id),
+        api.extensionRegistry
+          .getOrganization(organization.id)
+          .catch(() => emptyExtensionRegistry()),
       ]);
+      setOrganizationExtensions(nextExtensions);
       setProjects(
         catalog.projects
           .filter((project) => project.archivedAt === undefined)
@@ -140,9 +157,11 @@ export function AppShell() {
     void loadNavigation();
     const reload = () => void loadNavigation();
     window.addEventListener(projectNavigationChangedEvent, reload);
+    window.addEventListener(extensionRegistryChangedEvent, reload);
     window.addEventListener(invalidationEventName, reload);
     return () => {
       window.removeEventListener(projectNavigationChangedEvent, reload);
+      window.removeEventListener(extensionRegistryChangedEvent, reload);
       window.removeEventListener(invalidationEventName, reload);
     };
   }, [loadNavigation]);
@@ -162,6 +181,51 @@ export function AppShell() {
       window.removeEventListener(openProjectCreationEvent, openProjectModal);
     };
   }, []);
+
+  const activeProjectId = location.pathname.match(
+    /^\/app\/organizations\/[^/]+\/projects\/([^/]+)/,
+  )?.[1];
+
+  useEffect(() => {
+    if (!organizationId || !activeProjectId) {
+      setProjectExtensions(emptyExtensionRegistry());
+      return;
+    }
+    let current = true;
+    const load = () => {
+      void api.extensionRegistry
+        .getProject(organizationId, activeProjectId)
+        .then((registry) => {
+          if (current) setProjectExtensions(registry);
+        })
+        .catch(() => {
+          if (current) setProjectExtensions(emptyExtensionRegistry());
+        });
+    };
+    setProjectExtensions(emptyExtensionRegistry());
+    load();
+    window.addEventListener(extensionRegistryChangedEvent, load);
+    return () => {
+      current = false;
+      window.removeEventListener(extensionRegistryChangedEvent, load);
+    };
+  }, [activeProjectId, api, organizationId]);
+
+  const extensionRegistries = useMemo(
+    () => ({ organization: organizationExtensions, project: projectExtensions }),
+    [organizationExtensions, projectExtensions],
+  );
+  const extensionNavigation = useMemo(
+    () => [
+      ...organizationExtensions.navigation.filter(
+        (item) => item.slot === "organization.navigation",
+      ),
+      ...(activeProjectId
+        ? projectExtensions.navigation.filter((item) => item.slot === "project.navigation")
+        : []),
+    ],
+    [activeProjectId, organizationExtensions.navigation, projectExtensions.navigation],
+  );
 
   const recentProject = useMemo(
     () =>
@@ -314,6 +378,28 @@ export function AppShell() {
             ))}
           </nav>
 
+            {extensionNavigation.length > 0 ? (
+              <div className="sidebar-section">
+                <Typography.Text className="sidebar-section-label" type="secondary">
+                  Extensions
+                </Typography.Text>
+                <nav className="sidebar-projects" aria-label="Extensions">
+                  {extensionNavigation.map((item) => (
+                    <NavLink
+                      className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
+                      key={item.id}
+                      to={item.route}
+                    >
+                      <span aria-hidden className="sidebar-icon">
+                        <PluginsIcon />
+                      </span>
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </nav>
+              </div>
+            ) : null}
+
           <div className="sidebar-section">
             <Typography.Text className="sidebar-section-label" type="secondary">
               Projects
@@ -411,11 +497,15 @@ export function AppShell() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
-          <Outlet />
+          <ExtensionRegistryProvider value={extensionRegistries}>
+            <Outlet />
+          </ExtensionRegistryProvider>
         </main>
       </div>
 
-      <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />
+      <ExtensionRegistryProvider value={extensionRegistries}>
+        <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />
+      </ExtensionRegistryProvider>
 
       <Modal
         confirmLoading={savingProject}

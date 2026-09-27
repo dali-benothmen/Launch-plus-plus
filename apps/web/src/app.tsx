@@ -25,6 +25,7 @@ import {
   SetupPage,
   SignInPage,
 } from "./auth-pages.js";
+import { ExtensionContributionPage } from "./extensions.js";
 import { OrganizationHomePage, OrganizationProjectsPage } from "./organization-home.js";
 import {
   InboxPage,
@@ -143,6 +144,16 @@ export const appRoutes: RouteObject[] = [
       { path: "inbox", element: <InboxPage />, errorElement: <RouteFailurePage /> },
       { path: "my-tasks", element: <MyWorkPage />, errorElement: <RouteFailurePage /> },
       { path: "plugins", element: <PluginsPage />, errorElement: <RouteFailurePage /> },
+      {
+        path: "organizations/:organizationId/extensions/:pluginId/*",
+        element: <ExtensionContributionPage />,
+        errorElement: <RouteFailurePage />,
+      },
+      {
+        path: "organizations/:organizationId/projects/:projectId/extensions/:pluginId/*",
+        element: <ExtensionContributionPage />,
+        errorElement: <RouteFailurePage />,
+      },
       {
         path: "organizations/:organizationId/projects/:projectId",
         element: <Navigate replace to="board" />,
