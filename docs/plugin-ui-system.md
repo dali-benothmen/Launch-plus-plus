@@ -1,6 +1,6 @@
 # Launch++ plugin UI system
 
-Status: accepted v1 product and architecture direction. No UI package, plugin template, or runtime has been implemented.
+Status: accepted v1 product and architecture direction. The framework-neutral SDK and React bindings are implemented; plugin templates and production custom-surface hosting remain later work.
 
 This document owns the supported plugin authoring stacks and the relationship between React, vanilla browser code, Ant Design, Launch++ themes, and packaged plugin surfaces. The [plugin system](./plugin-system-design.md) owns runtime capabilities and isolation; the [plugin CLI](./plugin-cli-design.md) owns scaffolding and builds; the [theme system](./theme-system-design.md) owns the public visual-token contract.
 
@@ -25,6 +25,8 @@ This scope is intentional. Launch++ should spend its early engineering budget on
 | `@launchpp/ui-tokens` | CSS and static assets | Stable semantic custom properties, icons, motion values, and foundational styles for custom React and vanilla UI |
 
 The core SDK must never require React. `@launchpp/ui` is intentionally React-only. `@launchpp/ui-tokens` does not turn native HTML into Ant Design components; it gives custom elements the same visual vocabulary.
+
+The preview SDK promotes the Phase 0 browser bridge into its public transport. `createClient` performs the origin-checked, nonce-bound handshake and exposes host-provided context/theme data, project/task/comment capabilities, navigation, commands, cancellation, and structured errors. `@launchpp/sdk/react` supplies `LaunchppProvider`, context/theme/project hooks, cancellable capability queries, and mutation helpers over that same client. It does not introduce a React-specific wire contract. Production custom-surface hosting and generated bootstrap composition are delivered by the later UI and development-runtime tasks.
 
 ```mermaid
 flowchart TB
