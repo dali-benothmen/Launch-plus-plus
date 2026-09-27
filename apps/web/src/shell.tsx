@@ -308,13 +308,33 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell${organizationSidebarVisible ? " has-organization-sidebar" : ""}`}
+      className={`app-shell${organizationSidebarVisible ? " has-organization-sidebar" : ""}${developerModeEnabled ? " has-developer-mode-banner" : ""}`}
     >
       {messageHolder}
       <InvalidationListener />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
+
+      {developerModeEnabled ? (
+        <Alert
+          action={
+            <Typography.Link
+              href="/app/settings"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/app/settings");
+              }}
+            >
+              Disable in settings
+            </Typography.Link>
+          }
+          banner
+          className="developer-mode-banner"
+          title="Developer Mode is enabled. Temporary unsigned plugins may be connected."
+          type="warning"
+        />
+      ) : null}
 
       <aside aria-label="Global navigation" className="icon-rail">
         <NavLink aria-label="Launch++ home" className="brand-mark" to="/app">
@@ -467,7 +487,7 @@ export function AppShell() {
         </aside>
       ) : null}
 
-      <div className={`app-workspace${developerModeEnabled ? " has-developer-mode-banner" : ""}`}>
+      <div className="app-workspace">
         <header className="app-header">
           <Typography.Text className="app-header-title">
             {headerTitle(location.pathname)}
@@ -505,25 +525,6 @@ export function AppShell() {
             </Avatar>
           </div>
         </header>
-        {developerModeEnabled ? (
-          <Alert
-            action={
-              <Typography.Link
-                href="/app/settings"
-                onClick={(event) => {
-                  event.preventDefault();
-                  navigate("/app/settings");
-                }}
-              >
-                Disable in settings
-              </Typography.Link>
-            }
-            banner
-            className="developer-mode-banner"
-            title="Developer Mode is enabled. Temporary unsigned plugins may be connected."
-            type="warning"
-          />
-        ) : null}
         <main id="main-content" tabIndex={-1}>
           <ExtensionRegistryProvider value={extensionRegistries}>
             <Outlet />
