@@ -318,20 +318,23 @@ export function AppShell() {
 
       {developerModeEnabled ? (
         <Alert
-          action={
-            <Typography.Link
-              href="/app/settings"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate("/app/settings");
-              }}
-            >
-              Disable in settings
-            </Typography.Link>
-          }
           banner
           className="developer-mode-banner"
-          title="Developer Mode is enabled. Temporary unsigned plugins may be connected."
+          title={
+            <>
+              Developer Mode is on. Tap{" "}
+              <Typography.Link
+                href="/app/settings"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate("/app/settings");
+                }}
+              >
+                here
+              </Typography.Link>{" "}
+              to turn it off.
+            </>
+          }
           type="warning"
         />
       ) : null}
