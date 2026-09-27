@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "6.3.4",
+    "@launchpp/sdk": "workspace:*",
     "@launchpp/theme-runtime": "workspace:*",
     "@launchpp/ui-tokens": "workspace:*",
     "@radix-ui/react-dialog": "1.1.23",

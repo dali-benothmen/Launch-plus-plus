@@ -278,6 +278,9 @@ importers:
       '@ant-design/icons':
         specifier: 6.3.4
         version: 6.3.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@launchpp/sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
       '@launchpp/theme-runtime':
         specifier: workspace:*
         version: link:../theme-runtime

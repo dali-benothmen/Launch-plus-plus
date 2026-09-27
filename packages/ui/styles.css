@@ -9421,6 +9421,111 @@
   }
 }
 
+.launch-ui-plugin-surface {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  flex-direction: column;
+  background: var(--launch-color-surface);
+  color: var(--launch-color-text-primary);
+}
+
+.launch-ui-plugin-surface.is-page {
+  min-height: 100%;
+  padding: 24px;
+  background: var(--launch-color-bg-canvas);
+}
+
+.launch-ui-plugin-surface.is-panel {
+  min-height: 100%;
+  padding: 16px;
+}
+
+.launch-ui-plugin-surface.is-settings {
+  max-width: 960px;
+  min-height: 100%;
+  padding: 24px;
+  margin-inline: auto;
+}
+
+.launch-ui-plugin-surface-header {
+  min-width: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--launch-color-border-secondary);
+}
+
+.launch-ui-plugin-surface-heading {
+  min-width: 0;
+}
+
+.launch-ui-plugin-surface-heading .launch-ui-title,
+.launch-ui-plugin-surface-heading .launch-ui-paragraph,
+.launch-ui-plugin-surface-section .launch-ui-title {
+  margin: 0;
+}
+
+.launch-ui-plugin-surface-heading .launch-ui-paragraph {
+  margin-top: 4px;
+}
+
+.launch-ui-plugin-surface-actions {
+  flex: none;
+}
+
+.launch-ui-plugin-surface-body {
+  min-width: 0;
+  padding-top: 24px;
+  flex: 1;
+}
+
+.launch-ui-plugin-surface.is-panel .launch-ui-plugin-surface-body {
+  padding-top: 16px;
+}
+
+.launch-ui-plugin-surface-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--launch-color-border-secondary);
+  margin-top: 24px;
+}
+
+.launch-ui-plugin-surface-section {
+  min-width: 0;
+}
+
+.launch-ui-plugin-surface-section + .launch-ui-plugin-surface-section {
+  padding-top: 24px;
+  border-top: 1px solid var(--launch-color-border-secondary);
+  margin-top: 24px;
+}
+
+.launch-ui-plugin-surface-section-body {
+  min-width: 0;
+  margin-top: 12px;
+}
+
+.launch-ui-plugin-state {
+  display: grid;
+  min-height: 200px;
+  width: 100%;
+  place-items: center;
+}
+
+@media (max-width: 640px) {
+  .launch-ui-plugin-surface.is-page,
+  .launch-ui-plugin-surface.is-settings {
+    padding: 16px;
+  }
+
+  .launch-ui-plugin-surface-header {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .launch-ui-plugin-surface-actions {
+    justify-content: flex-start;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .launch-ui-button,
   .launch-ui-avatar-popover,

@@ -1,4 +1,8 @@
-export type { PluginContext, PluginError } from "@launchpp/plugin-protocol";
+export {
+  PLUGIN_ERROR_CODES,
+  type PluginContext,
+  type PluginError,
+} from "@launchpp/plugin-protocol";
 export {
   type CommandClient,
   type CommentClient,
