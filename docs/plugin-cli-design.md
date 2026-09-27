@@ -1,6 +1,6 @@
 # Launch++ plugin CLI and project workflow
 
-Status: active preview contract. The project scaffolder and supported React/vanilla templates are implemented; the project-local CLI and development host remain later work.
+Status: active preview contract. The project scaffolder, supported React/vanilla templates, and disposable project-local development host are implemented; connected development and the remaining CLI commands remain later work.
 
 This document owns plugin project creation, local development, validation, code generation, testing, packaging, and SDK upgrades. It complements the [plugin system](./plugin-system-design.md) and [plugin storage design](./plugin-storage-design.md).
 

@@ -17,6 +17,7 @@
     { "path": "./packages/theme-runtime" },
     { "path": "./packages/plugin-protocol" },
     { "path": "./packages/create-launchpp-plugin" },
+    { "path": "./packages/plugin-cli" },
     { "path": "./packages/plugin-sdk" },
     { "path": "./packages/plugin-platform" },
     { "path": "./packages/plugin-runtime" },

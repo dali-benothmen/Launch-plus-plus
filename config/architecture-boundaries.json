@@ -121,6 +121,13 @@
       "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
     },
     {
+      "name": "@launchpp/cli",
+      "path": "packages/plugin-cli",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol", "@launchpp/theme-runtime"]
+    },
+    {
       "name": "create-launchpp-plugin",
       "path": "packages/create-launchpp-plugin",
       "owner": "plugin-platform",
