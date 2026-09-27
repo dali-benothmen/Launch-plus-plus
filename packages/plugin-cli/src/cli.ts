@@ -6,6 +6,7 @@ import process from "node:process";
 import { parseArgs } from "node:util";
 import { cancel, confirm, intro, isCancel, outro } from "@clack/prompts";
 
+import { connectDeveloperMode } from "./connected-dev.js";
 import { startDisposableDevHost } from "./dev-command.js";
 
 function help(): void {
@@ -15,6 +16,7 @@ Usage:
   launchpp dev [options]
 
 Development options:
+  --connect <url>         Pair with an operator-enabled Launch++ installation
   --fresh                 Reset the selected disposable profile before startup
   --profile <name>        Profile stored under .launchpp/dev (default: default)
   --port <number>         Inspector port (default: 4173)
@@ -44,6 +46,7 @@ async function dev(args: readonly string[]): Promise<void> {
   const { values } = parseArgs({
     args: [...args],
     options: {
+      connect: { type: "string" },
       fresh: { type: "boolean" },
       help: { short: "h", type: "boolean" },
       port: { type: "string" },
@@ -89,13 +92,25 @@ async function dev(args: readonly string[]): Promise<void> {
   process.stdout.write(`[launchpp:dev] Open: ${host.url}\n`);
   process.stdout.write(`[launchpp:dev] Watching for changes…\n\n`);
 
+  let connected: Awaited<ReturnType<typeof connectDeveloperMode>> | undefined;
+  if (values.connect) {
+    try {
+      connected = await connectDeveloperMode({
+        manifestPath: path.join(projectDirectory, "launchpp.plugin.json"),
+        url: values.connect,
+      });
+    } catch (error) {
+      await host.close();
+      throw error;
+    }
+  }
+
   await new Promise<void>((resolve) => {
     let stopping = false;
     const stop = () => {
       if (stopping) return;
       stopping = true;
-      void host
-        .close()
+      void Promise.all([host.close(), connected?.close()])
         .catch((error: unknown) => {
           process.stderr.write(
             `[launchpp:dev] Shutdown failed: ${error instanceof Error ? error.message : String(error)}\n`,

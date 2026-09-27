@@ -42,6 +42,7 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | `LAUNCHPP_BASE_URL` | `http://localhost:5173` in development | Canonical browser-visible origin; required and HTTPS in production, with no path/query/hash |
 | `LAUNCHPP_BIND_ADDRESS` | `127.0.0.1` | Explicit interface or hostname |
 | `LAUNCHPP_DATABASE_PATH` | `data/launchpp.sqlite` | File-backed SQLite path; in-memory persistence is rejected |
+| `LAUNCHPP_DEVELOPER_MODE_ENABLED` | `false` | Enables authenticated, temporary connected plugin sessions; restart after changing |
 | `LAUNCHPP_PORT` | `3000` | Integer from 1 through 65535 |
 | `LAUNCHPP_LOG_LEVEL` | `info` | Pino severity or `silent` |
 | `LAUNCHPP_ORGANIZATION_REGISTRATION_POLICY` | `authenticated` | `open`, `authenticated`, or `disabled`; only `open` permits public organization creation |

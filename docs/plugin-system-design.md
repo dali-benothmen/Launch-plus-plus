@@ -1,6 +1,6 @@
 # Launch++ plugin platform and developer experience
 
-Status: v1-preview manifest and package schemas implemented; runtime, SDK, authoring, and lifecycle work remains in progress.
+Status: v1-preview schemas, package intake, extension registry, public SDK/UI contracts, scaffolding, disposable development, and the connected Developer Mode control plane are implemented; remaining authoring and runtime work is in progress.
 
 This subsystem design is part of the [Launch++ architecture documentation](./README.md). The [system architecture](./system-architecture.md) defines the host runtime and module boundaries; this document owns the public plugin model and lifecycle. The [plugin storage design](./plugin-storage-design.md) and [plugin CLI design](./plugin-cli-design.md) own those authoring contracts in detail.
 
@@ -357,6 +357,8 @@ The pack-and-upload loop is for release validation, not every edit. Launch++ inc
 - `launchpp dev --connect https://launch.example` pairs the local CLI with an existing Launch++ installation for an authenticated preview.
 
 Connected development uses a short-lived, one-time pairing code confirmed in the browser. The CLI opens an outbound authenticated TLS/WebSocket channel and streams compiled incremental artifacts—not source files—to the host. A remote VPS never reaches into the developer's localhost or filesystem. The host registers an ephemeral identity such as `dev:<session-id>:<plugin-id>`; it does not replace or mutate the installed release.
+
+The current connected preview implements this control plane for host-rendered contributions through authenticated outbound HTTPS requests. Compiled browser and server artifact streaming is activated only after the deterministic build adapter exists, so this milestone does not upload source code or invent an interim bundle format.
 
 A development plugin is visible only to its author by default and runs in a dedicated development organization rather than production data. Access for selected test users can be added later. Requested permissions still require explicit approval, permission changes prompt again, and the same iframe sandbox, capability broker, runtime limits, network policy and data boundaries apply. Developer Mode enables a temporary unsigned live-build channel; it does not disable security.
 

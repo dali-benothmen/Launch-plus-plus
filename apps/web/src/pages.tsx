@@ -1,5 +1,8 @@
 import {
   ApiError,
+  type DeveloperModePairingReview,
+  type DeveloperModeSession,
+  type DeveloperModeStatus,
   type ExtensionRegistry,
   type OrganizationContext,
   type PluginContributionPreview,
@@ -11,6 +14,7 @@ import {
 import {
   Alert,
   Button,
+  Card,
   Descriptions,
   Dropdown,
   type DropdownMenuItem,
@@ -20,6 +24,7 @@ import {
   MoreIcon,
   message,
   ProjectsIcon,
+  Select,
   Spin,
   Table,
   type TableColumn,
@@ -36,7 +41,7 @@ import {
   PaperClipOutlined,
 } from "@launchpp/ui/icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApiClient } from "./api-client-context.js";
 import {
   ExtensionSettingsPreview,
@@ -1141,14 +1146,232 @@ export function MembersPage() {
 }
 
 export function OrganizationSettingsPage() {
+  const api = useApiClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [organizationId, setOrganizationId] = useState("");
+  const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
+  const [status, setStatus] = useState<DeveloperModeStatus>();
+  const [review, setReview] = useState<DeveloperModePairingReview>();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<unknown>();
+
+  const pairingId = searchParams.get("pairing") ?? undefined;
+  const pairingCode = searchParams.get("code") ?? undefined;
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(undefined);
+    try {
+      const context = await api.organizations.list({ limit: 100 });
+      const currentId = context.currentOrganizationId ?? context.organizations[0]?.id;
+      if (!currentId) throw new Error("Select an organization before managing Developer Mode.");
+      setOrganizationId(currentId);
+      const [nextStatus, catalog] = await Promise.all([
+        api.developerMode.status(currentId),
+        api.projects.list(currentId, { limit: 100 }),
+      ]);
+      setStatus(nextStatus);
+      setProjects(catalog.projects.filter((project) => project.archivedAt === undefined));
+      if (pairingId && pairingCode && nextStatus.enabled) {
+        setReview(await api.developerMode.reviewPairing(pairingId, pairingCode));
+      } else {
+        setReview(undefined);
+      }
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setLoading(false);
+    }
+  }, [api, pairingCode, pairingId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!organizationId || !status?.enabled) return;
+    const interval = window.setInterval(() => {
+      void api.developerMode.status(organizationId).then(setStatus).catch(setError);
+    }, 3_000);
+    return () => window.clearInterval(interval);
+  }, [api, organizationId, status?.enabled]);
+
+  const approvePairing = async () => {
+    if (!pairingId || !pairingCode || !organizationId || saving) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      await api.developerMode.approvePairing(pairingId, {
+        code: pairingCode,
+        organizationId,
+        ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
+      });
+      setSearchParams({}, { replace: true });
+      setReview(undefined);
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      setStatus(await api.developerMode.status(organizationId));
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revoke = async (sessionId: string) => {
+    setSaving(true);
+    setError(undefined);
+    try {
+      await api.developerMode.revoke(sessionId);
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      await load();
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const approvePermissions = async (sessionId: string) => {
+    setSaving(true);
+    setError(undefined);
+    try {
+      await api.developerMode.approvePermissions(sessionId);
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      await load();
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const columns: readonly TableColumn<DeveloperModeSession>[] = [
+    { key: "plugin", title: "Plugin", render: (_value, session) => session.name },
+    {
+      key: "state",
+      title: "State",
+      render: (_value, session) => (
+        <Tag
+          color={
+            session.state === "active"
+              ? "green"
+              : session.state === "awaiting_permission_review"
+                ? "orange"
+                : "default"
+          }
+        >
+          {session.state.replaceAll("_", " ")}
+        </Tag>
+      ),
+    },
+    {
+      key: "expires",
+      title: "Expires",
+      render: (_value, session) => new Date(session.expiresAt).toLocaleString(),
+    },
+    {
+      key: "actions",
+      title: "",
+      render: (_value, session) => (
+        <div className="settings-actions">
+          {session.state === "awaiting_permission_review" ? (
+            <Button
+              disabled={saving}
+              onClick={() => void approvePermissions(session.id)}
+              size="small"
+            >
+              Approve permissions
+            </Button>
+          ) : null}
+          {session.state === "active" || session.state === "awaiting_permission_review" ? (
+            <Button danger disabled={saving} onClick={() => void revoke(session.id)} size="small">
+              Revoke
+            </Button>
+          ) : null}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <section aria-labelledby="organization-settings-title" className="page-stack">
       <Typography.Title id="organization-settings-title" level={1}>
         Organization settings
       </Typography.Title>
-      <Typography.Text type="secondary">
-        Organization settings will be available with the collaboration slice.
-      </Typography.Text>
+      {error instanceof Error ? <Alert showIcon title={error.message} type="error" /> : null}
+      {loading ? <Spin description="Loading Developer Mode…" /> : null}
+      {!loading && status && !status.enabled ? (
+        <Alert
+          showIcon
+          title="Developer Mode is disabled"
+          description="The installation operator can enable temporary connected sessions with LAUNCHPP_DEVELOPER_MODE_ENABLED=true and restart Launch++."
+          type="info"
+        />
+      ) : null}
+      {!loading && status?.enabled ? (
+        <>
+          <Alert
+            showIcon
+            title="Developer Mode is enabled"
+            description="Unsigned development plugins can be paired temporarily. Sessions are author-scoped, permission-checked, and expire automatically."
+            type="warning"
+          />
+          {review ? (
+            <Card title="Approve plugin pairing">
+              <Descriptions
+                bordered
+                column={1}
+                items={[
+                  {
+                    key: "plugin",
+                    label: "Plugin",
+                    children: `${review.name} (${review.pluginId})`,
+                  },
+                  { key: "version", label: "Version", children: review.version },
+                  {
+                    key: "permissions",
+                    label: "Requested permissions",
+                    children: review.requestedPermissions.join(", ") || "None",
+                  },
+                ]}
+                size="small"
+              />
+              <Form layout="vertical">
+                <Form.Item label="Development project">
+                  <Select
+                    allowClear
+                    onChange={(value) =>
+                      setSelectedProjectId(typeof value === "string" ? value : undefined)
+                    }
+                    options={projects.map((project) => ({
+                      label: project.name,
+                      value: project.id,
+                    }))}
+                    placeholder="Organization scope only"
+                    value={selectedProjectId}
+                  />
+                </Form.Item>
+                <Button loading={saving} onClick={() => void approvePairing()} variant="primary">
+                  Approve pairing
+                </Button>
+              </Form>
+            </Card>
+          ) : null}
+          <div>
+            <Typography.Title level={2}>Connected sessions</Typography.Title>
+            <Table<DeveloperModeSession>
+              columns={columns}
+              dataSource={status.sessions}
+              locale={{ emptyText: "No connected development sessions." }}
+              pagination={false}
+              rowKey="id"
+              size="small"
+            />
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }

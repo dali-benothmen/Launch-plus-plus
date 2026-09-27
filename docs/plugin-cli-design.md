@@ -1,6 +1,6 @@
 # Launch++ plugin CLI and project workflow
 
-Status: active preview contract. The project scaffolder, supported React/vanilla templates, and disposable project-local development host are implemented; connected development and the remaining CLI commands remain later work.
+Status: active preview contract. The project scaffolder, supported React/vanilla templates, disposable project-local development host, and connected Developer Mode control plane are implemented; generation, validation, testing, and packaging commands remain later work.
 
 This document owns plugin project creation, local development, validation, code generation, testing, packaging, and SDK upgrades. It complements the [plugin system](./plugin-system-design.md) and [plugin storage design](./plugin-storage-design.md).
 
@@ -182,13 +182,15 @@ By default, plugin data lives in an isolated disposable profile under the projec
 
 ### Connecting to an existing installation
 
-An installation operator can enable **Settings → Developer → Developer Mode**, which is disabled by default and displays a persistent warning while active. The author then runs:
+An installation operator can enable connected Developer Mode for the installation, which is disabled by default and displays a persistent warning while active. The author then runs:
 
 ```text
 pnpm dev --connect https://launch.example
 ```
 
 The CLI requests a short-lived one-time pairing code and opens the installation in a browser for confirmation. After the user confirms the plugin ID, requested permissions and development organization, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
+
+The current preview implements the authenticated HTTPS control plane: pairing, owner approval, author-scoped registration, manifest refresh, permission reapproval, expiry, revocation, and teardown. It exposes host-rendered contributions immediately. Compiled custom-surface and server artifacts join this channel after the deterministic build adapter is implemented; the host never reads source files or connects back to the author machine.
 
 The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, is scoped to a dedicated development organization, expires automatically and may be revoked from either the CLI or Settings. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
 

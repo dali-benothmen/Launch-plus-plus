@@ -242,6 +242,9 @@ Developer Mode is a temporary delivery path for unsigned local builds, not a rel
 - Permissions require explicit review. A permission or destination change pauses delivery until approved again.
 - Browser and server code use the normal iframe isolation, capability broker, runtime quotas, schema validation and network policy.
 - A remote CLI creates an outbound mutually authenticated TLS/WebSocket session and sends compiled incremental artifacts. The server cannot browse the author's filesystem or initiate access to localhost.
+
+The current preview delivers the control-plane subset over authenticated outbound HTTPS requests. It registers manifests and host-rendered contributions only; compiled browser/server artifact delivery follows the deterministic build adapter. The same short session, actor scope, grants, and teardown rules already apply.
+
 - Session credentials have short absolute lifetimes, are stored as secrets, are redacted from logs, and can be revoked from the CLI or server UI.
 - Disconnect, expiry, user/session revocation, operator shutdown or disabling Developer Mode removes ephemeral contributions/assets, terminates handlers, revokes credentials and records an audit event.
 - Development data follows an explicit disposable or retained-profile policy. Only disposable profiles may be reset after an incompatible schema change.

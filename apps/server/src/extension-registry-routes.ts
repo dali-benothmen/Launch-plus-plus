@@ -20,6 +20,7 @@ import {
 } from "@launchpp/plugin-protocol";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
+import type { DeveloperModeCoordinator } from "./developer-mode.js";
 import { sendProblem } from "./problem-details.js";
 
 const problemResponses = {
@@ -81,7 +82,11 @@ function acceptedPermissions(record: EnabledOrganizationPluginPackageRecord): Pr
 
 export async function registerExtensionRegistryRoutes(
   app: FastifyInstance,
-  input: Readonly<{ database: SqliteDatabase; identity: BetterAuthIdentityAdapter }>,
+  input: Readonly<{
+    database: SqliteDatabase;
+    developerMode: DeveloperModeCoordinator;
+    identity: BetterAuthIdentityAdapter;
+  }>,
 ): Promise<void> {
   const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
@@ -163,7 +168,12 @@ export async function registerExtensionRegistryRoutes(
     return project;
   };
 
-  const resolve = (installationId: string, organizationId: string, projectId?: string) => {
+  const resolve = (
+    installationId: string,
+    userId: string,
+    organizationId: string,
+    projectId?: string,
+  ) => {
     const enabled = input.database.read((context) =>
       packages.listEnabledForOrganization(context, installationId, organizationId),
     );
@@ -174,15 +184,19 @@ export async function registerExtensionRegistryRoutes(
           )
         : [],
     );
-    return resolveExtensionRegistry(
-      { organizationId, ...(projectId ? { projectId } : {}) },
-      enabled.map((record) => ({
-        acceptedPermissions: acceptedPermissions(record),
-        manifest: storedManifest(record),
-        packageId: record.id,
-        projectEnabled: projectPackageIds.has(record.id),
-      })),
-    );
+    const connected = input.developerMode.packagesFor(userId, organizationId, projectId);
+    const connectedPluginIds = new Set(connected.map((item) => item.manifest.id));
+    return resolveExtensionRegistry({ organizationId, ...(projectId ? { projectId } : {}) }, [
+      ...enabled
+        .filter((record) => !connectedPluginIds.has(record.pluginId))
+        .map((record) => ({
+          acceptedPermissions: acceptedPermissions(record),
+          manifest: storedManifest(record),
+          packageId: record.id,
+          projectEnabled: projectPackageIds.has(record.id),
+        })),
+      ...connected,
+    ]);
   };
 
   app.get<{ Params: { readonly organizationId: string } }>(
@@ -199,7 +213,7 @@ export async function registerExtensionRegistryRoutes(
     async (request, reply) => {
       const access = await authorize(request, reply, request.params.organizationId, false);
       if (!access) return;
-      return resolve(access.installation.id, request.params.organizationId);
+      return resolve(access.installation.id, access.userId, request.params.organizationId);
     },
   );
 
@@ -224,6 +238,7 @@ export async function registerExtensionRegistryRoutes(
       }
       return resolve(
         access.installation.id,
+        access.userId,
         request.params.organizationId,
         request.params.projectId,
       );

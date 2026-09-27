@@ -99,6 +99,7 @@ export function AppShell() {
   const [messageApi, messageHolder] = message.useMessage();
   const [searchOpen, setSearchOpen] = useState(false);
   const [organizationId, setOrganizationId] = useState("");
+  const [developerModeEnabled, setDeveloperModeEnabled] = useState(false);
   const [organizationName, setOrganizationName] = useState("Organization");
   const [memberName, setMemberName] = useState("Launch++ member");
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
@@ -119,10 +120,12 @@ export function AppShell() {
 
   const loadNavigation = useCallback(async () => {
     try {
-      const [session, context] = await Promise.all([
+      const [session, context, developerMode] = await Promise.all([
         api.auth.session(),
         api.organizations.list({ limit: 100 }),
+        api.developerMode.status().catch(() => undefined),
       ]);
+      setDeveloperModeEnabled(developerMode?.enabled ?? false);
       const organization = context.organizations.find(
         (item) => item.id === context.currentOrganizationId,
       );
@@ -165,6 +168,12 @@ export function AppShell() {
       window.removeEventListener(invalidationEventName, reload);
     };
   }, [loadNavigation]);
+
+  useEffect(() => {
+    if (!developerModeEnabled) return;
+    const interval = window.setInterval(() => void loadNavigation(), 3_000);
+    return () => window.clearInterval(interval);
+  }, [developerModeEnabled, loadNavigation]);
 
   useEffect(() => {
     const openSearch = (event: KeyboardEvent) => {
@@ -497,6 +506,14 @@ export function AppShell() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
+          {developerModeEnabled ? (
+            <Alert
+              showIcon
+              title="Developer Mode is enabled"
+              description="Temporary unsigned plugins may be connected to this installation."
+              type="warning"
+            />
+          ) : null}
           <ExtensionRegistryProvider value={extensionRegistries}>
             <Outlet />
           </ExtensionRegistryProvider>

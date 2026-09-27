@@ -8,6 +8,24 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { App, appRoutes } from "./app.js";
 
 const apiClient: ApiClient = {
+  developerMode: {
+    approvePairing: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    approvePermissions: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    reviewPairing: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    revoke: vi.fn(async () => undefined),
+    status: vi.fn(async () => ({
+      enabled: false,
+      pairingTtlSeconds: 300,
+      sessionTtlSeconds: 1800,
+      sessions: [],
+    })),
+  },
   auth: {
     recoveryCapabilities: vi.fn(async () => ({ email: false, operatorRecovery: true })),
     session: vi.fn(async () => ({

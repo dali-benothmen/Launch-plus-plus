@@ -55,6 +55,38 @@ export interface SessionState {
   readonly identity: SessionIdentity;
 }
 
+export type DeveloperSessionState = "active" | "awaiting_permission_review" | "expired" | "revoked";
+
+export interface DeveloperModeSession {
+  readonly actorUserId: string;
+  readonly createdAt: number;
+  readonly expiresAt: number;
+  readonly grantedPermissions: readonly string[];
+  readonly id: string;
+  readonly name: string;
+  readonly organizationId: string;
+  readonly pluginId: string;
+  readonly projectId?: string;
+  readonly requestedPermissions: readonly string[];
+  readonly state: DeveloperSessionState;
+}
+
+export interface DeveloperModeStatus {
+  readonly enabled: boolean;
+  readonly pairingTtlSeconds: number;
+  readonly sessionTtlSeconds: number;
+  readonly sessions: readonly DeveloperModeSession[];
+}
+
+export interface DeveloperModePairingReview {
+  readonly expiresAt: number;
+  readonly id: string;
+  readonly name: string;
+  readonly pluginId: string;
+  readonly requestedPermissions: readonly string[];
+  readonly version: string;
+}
+
 export interface OwnerSetupInput {
   readonly email: string;
   readonly name: string;
@@ -87,6 +119,20 @@ export class ApiError extends Error {
 }
 
 export interface ApiClient extends Omit<CoreApiClient, "tasks"> {
+  readonly developerMode: {
+    approvePairing(
+      pairingId: string,
+      input: Readonly<{
+        code: string;
+        organizationId: string;
+        projectId?: string;
+      }>,
+    ): Promise<DeveloperModeSession>;
+    approvePermissions(sessionId: string): Promise<DeveloperModeSession>;
+    reviewPairing(pairingId: string, code: string): Promise<DeveloperModePairingReview>;
+    revoke(sessionId: string): Promise<void>;
+    status(organizationId?: string): Promise<DeveloperModeStatus>;
+  };
   readonly tasks: CoreApiClient["tasks"] & {
     downloadAttachment(
       organizationId: string,
@@ -170,6 +216,40 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
 
   const core = createCoreApiClient(json);
   return Object.freeze({
+    developerMode: Object.freeze({
+      approvePairing: (
+        pairingId: string,
+        input: Readonly<{ code: string; organizationId: string; projectId?: string }>,
+      ) =>
+        json<DeveloperModeSession>(
+          `/api/v1/developer-mode/pairings/${encodeURIComponent(pairingId)}/approve`,
+          {
+            body: JSON.stringify(input),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          },
+        ),
+      approvePermissions: (sessionId: string) =>
+        json<DeveloperModeSession>(
+          `/api/v1/developer-mode/sessions/${encodeURIComponent(sessionId)}/approve-permissions`,
+          { method: "POST" },
+        ),
+      reviewPairing: (pairingId: string, code: string) =>
+        json<DeveloperModePairingReview>(
+          `/api/v1/developer-mode/pairings/${encodeURIComponent(pairingId)}/review?code=${encodeURIComponent(code)}`,
+        ),
+      async revoke(sessionId: string): Promise<void> {
+        await json(`/api/v1/developer-mode/sessions/${encodeURIComponent(sessionId)}`, {
+          method: "DELETE",
+        });
+      },
+      status: (organizationId?: string) =>
+        json<DeveloperModeStatus>(
+          `/api/v1/developer-mode/status${
+            organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : ""
+          }`,
+        ),
+    }),
     auth: Object.freeze({
       recoveryCapabilities: () =>
         json<{ readonly email: boolean; readonly operatorRecovery: boolean }>(

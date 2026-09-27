@@ -44,6 +44,7 @@ import {
 } from "@launchpp/plugin-protocol";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
+import { type DeveloperModeCoordinator, DeveloperModeError } from "./developer-mode.js";
 import { sendProblem } from "./problem-details.js";
 
 interface CapabilityParams {
@@ -215,7 +216,11 @@ function statusFor(error: CapabilityBrokerError): number {
 
 export async function registerCapabilityBrokerRoutes(
   app: FastifyInstance,
-  input: Readonly<{ database: SqliteDatabase; identity: BetterAuthIdentityAdapter }>,
+  input: Readonly<{
+    database: SqliteDatabase;
+    developerMode: DeveloperModeCoordinator;
+    identity: BetterAuthIdentityAdapter;
+  }>,
 ): Promise<void> {
   const installations = new SqliteInstallationRepository();
   const memberships = new SqliteOrganizationMembershipRepository();
@@ -431,6 +436,41 @@ export async function registerCapabilityBrokerRoutes(
               context.correlationId,
             );
           }
+          if (context.projectId) {
+            const project = projects.findProjectById(readContext, context.projectId);
+            if (
+              !project ||
+              project.organizationId !== context.organizationId ||
+              project.archivedAt !== undefined ||
+              project.deletedAt !== undefined
+            ) {
+              throw new CapabilityBrokerError(
+                PLUGIN_ERROR_CODES.notFound,
+                "The project is unavailable.",
+                false,
+                context.correlationId,
+              );
+            }
+          }
+          try {
+            const developmentGrant = input.developerMode.grantFor({
+              actorUserId: context.actorId,
+              organizationId: context.organizationId,
+              packageId: context.packageId,
+              ...(context.projectId ? { projectId: context.projectId } : {}),
+            });
+            if (developmentGrant) return developmentGrant;
+          } catch (error) {
+            if (error instanceof DeveloperModeError) {
+              throw new CapabilityBrokerError(
+                PLUGIN_ERROR_CODES.unavailable,
+                error.message,
+                false,
+                context.correlationId,
+              );
+            }
+            throw error;
+          }
           const enabled = packages.findEnabledByPackageId(
             readContext,
             context.organizationId,
@@ -448,22 +488,6 @@ export async function registerCapabilityBrokerRoutes(
               false,
               context.correlationId,
             );
-          }
-          if (context.projectId) {
-            const project = projects.findProjectById(readContext, context.projectId);
-            if (
-              !project ||
-              project.organizationId !== context.organizationId ||
-              project.archivedAt !== undefined ||
-              project.deletedAt !== undefined
-            ) {
-              throw new CapabilityBrokerError(
-                PLUGIN_ERROR_CODES.notFound,
-                "The project is unavailable.",
-                false,
-                context.correlationId,
-              );
-            }
           }
           return {
             grantedPermissions: acceptedPermissions(enabled.acceptedPermissionsJson),

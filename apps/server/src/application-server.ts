@@ -11,6 +11,8 @@ import {
 import type { FastifyInstance } from "fastify";
 
 import { registerCapabilityBrokerRoutes } from "./capability-broker-routes.js";
+import { DeveloperModeCoordinator } from "./developer-mode.js";
+import { registerDeveloperModeRoutes } from "./developer-mode-routes.js";
 import { registerEventRoutes } from "./event-routes.js";
 import { registerExtensionRegistryRoutes } from "./extension-registry-routes.js";
 import { InvalidationHub } from "./invalidation-hub.js";
@@ -46,6 +48,9 @@ export async function buildApplicationServer(
   let identity: ReturnType<typeof openBetterAuthIdentityAdapter> | undefined;
   let dispatcher: ReturnType<typeof createOutboxDispatcher> | undefined;
   const hub = new InvalidationHub();
+  const developerMode = new DeveloperModeCoordinator({
+    enabled: options.config.developerModeEnabled,
+  });
 
   try {
     try {
@@ -111,8 +116,22 @@ export async function buildApplicationServer(
       databasePath: options.config.databasePath,
       identity: identity.adapter,
     });
-    await registerExtensionRegistryRoutes(app, { database, identity: identity.adapter });
-    await registerCapabilityBrokerRoutes(app, { database, identity: identity.adapter });
+    await registerDeveloperModeRoutes(app, {
+      config: options.config,
+      coordinator: developerMode,
+      database,
+      identity: identity.adapter,
+    });
+    await registerExtensionRegistryRoutes(app, {
+      database,
+      developerMode,
+      identity: identity.adapter,
+    });
+    await registerCapabilityBrokerRoutes(app, {
+      database,
+      developerMode,
+      identity: identity.adapter,
+    });
     await registerProjectRoutes(app, { database, identity: identity.adapter });
     await registerTaskRoutes(app, { database, identity: identity.adapter });
     await registerTeamRoutes(app, { database, identity: identity.adapter });
