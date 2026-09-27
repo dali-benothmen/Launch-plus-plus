@@ -80,6 +80,8 @@ const problemResponses = {
   503: { $ref: "LaunchppProblemDetailsV1#" },
 } as const;
 
+const openObjectResponse = { additionalProperties: true, type: "object" } as const;
+
 export async function registerDeveloperModeRoutes(
   app: FastifyInstance,
   input: Readonly<{
@@ -142,7 +144,7 @@ export async function registerDeveloperModeRoutes(
           type: "object",
         },
         operationId: "createDeveloperModePairing",
-        response: { 201: { type: "object" }, ...problemResponses },
+        response: { 201: openObjectResponse, ...problemResponses },
         summary: "Create a short-lived Developer Mode pairing request",
         tags: ["Developer Mode"],
       },
@@ -181,7 +183,7 @@ export async function registerDeveloperModeRoutes(
       schema: {
         operationId: "pollDeveloperModePairing",
         params: paramsSchema("pairingId"),
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Poll a Developer Mode pairing request",
         tags: ["Developer Mode"],
       },
@@ -207,7 +209,7 @@ export async function registerDeveloperModeRoutes(
           required: ["code"],
           type: "object",
         },
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Review a pending Developer Mode pairing",
         tags: ["Developer Mode"],
       },
@@ -241,7 +243,7 @@ export async function registerDeveloperModeRoutes(
         },
         operationId: "approveDeveloperModePairing",
         params: paramsSchema("pairingId"),
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Approve a Developer Mode pairing",
         tags: ["Developer Mode"],
       },
@@ -298,7 +300,7 @@ export async function registerDeveloperModeRoutes(
           properties: { organizationId: { maxLength: 100, minLength: 1, type: "string" } },
           type: "object",
         },
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Read Developer Mode status and sessions",
         tags: ["Developer Mode"],
       },
@@ -325,7 +327,7 @@ export async function registerDeveloperModeRoutes(
       schema: {
         operationId: "approveDeveloperModePermissions",
         params: paramsSchema("sessionId"),
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Approve changed permissions for a connected session",
         tags: ["Developer Mode"],
       },
@@ -365,7 +367,7 @@ export async function registerDeveloperModeRoutes(
         },
         operationId: "updateDeveloperModeManifest",
         params: paramsSchema("sessionId"),
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Re-register a connected development manifest",
         tags: ["Developer Mode"],
       },
@@ -405,7 +407,7 @@ export async function registerDeveloperModeRoutes(
       schema: {
         operationId: "heartbeatDeveloperModeSession",
         params: paramsSchema("sessionId"),
-        response: { 200: { type: "object" }, ...problemResponses },
+        response: { 200: openObjectResponse, ...problemResponses },
         summary: "Keep a connected development session observable",
         tags: ["Developer Mode"],
       },
