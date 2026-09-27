@@ -3,7 +3,7 @@
   "id": "launchpp.preview-sample",
   "name": "Preview sample",
   "description": "A non-executing package used to review the staged installation flow.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "apiVersion": {
     "minimum": "1",
     "maximumExclusive": "2"
@@ -48,6 +48,12 @@
         "id": "sample-action",
         "slot": "task.actions",
         "title": "Sample action",
+        "handler": "sample-action"
+      },
+      {
+        "id": "sample-command",
+        "slot": "commandPalette",
+        "title": "Sample command",
         "handler": "sample-action"
       }
     ],
