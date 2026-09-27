@@ -29,6 +29,11 @@ export { SqliteOrganizationRegistrationRepository } from "./organization-registr
 export { SqliteOrganizationRepository } from "./organization-repository.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
 export {
+  type PluginFieldValue,
+  type PluginFieldValueRecord,
+  SqlitePluginFieldValueRepository,
+} from "./plugin-field-value-repository.js";
+export {
   type EnabledOrganizationPluginPackageRecord,
   type OrganizationPluginPackageRecord,
   type OrganizationPluginRecord,
@@ -58,6 +63,7 @@ export {
   organizationRegistrationCommands,
   organizations,
   outboxMessages,
+  pluginFieldValues,
   pluginPackages,
   projectFolders,
   projectPlugins,

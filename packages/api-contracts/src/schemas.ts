@@ -341,6 +341,12 @@ export const TaskPrioritySchema = Type.Union([
 ]);
 export type TaskPriority = Type.Static<typeof TaskPrioritySchema>;
 
+export const ExtensionFieldValueSchema = Type.Union([
+  Type.Number(),
+  Type.String({ maxLength: 500 }),
+]);
+export type ExtensionFieldValue = Type.Static<typeof ExtensionFieldValueSchema>;
+
 export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
@@ -351,6 +357,10 @@ export const TaskViewSchema = StrictObject(
     createdByUserId: IdentifierSchema,
     description: Type.String({ maxLength: 100_000 }),
     dueDate: Type.Optional(DateSchema),
+    extensionFields: Type.Record(
+      Type.String({ maxLength: 400, minLength: 1 }),
+      ExtensionFieldValueSchema,
+    ),
     id: IdentifierSchema,
     labels: Type.Array(
       Type.Unsafe<Type.Static<typeof LabelSummarySchema>>(Type.Ref("LaunchppLabelSummaryV1")),
@@ -491,6 +501,20 @@ export const TaskPageSchema = StrictObject(
   { $id: "LaunchppTaskPageV1" },
 );
 export type TaskPage = Type.Static<typeof TaskPageSchema>;
+
+export const TaskExtensionFieldValuesSchema = StrictObject(
+  {
+    values: Type.Record(Type.String({ maxLength: 400, minLength: 1 }), ExtensionFieldValueSchema),
+  },
+  { $id: "LaunchppTaskExtensionFieldValuesV1" },
+);
+export type TaskExtensionFieldValues = Type.Static<typeof TaskExtensionFieldValuesSchema>;
+
+export const UpdateTaskExtensionFieldInputSchema = StrictObject(
+  { value: Type.Union([ExtensionFieldValueSchema, Type.Null()]) },
+  { $id: "LaunchppUpdateTaskExtensionFieldInputV1" },
+);
+export type UpdateTaskExtensionFieldInput = Type.Static<typeof UpdateTaskExtensionFieldInputSchema>;
 
 export const CreateTaskInputSchema = StrictObject(
   {
@@ -944,6 +968,17 @@ export const TaskCommentParamsSchema = StrictObject(
   { $id: "LaunchppTaskCommentParamsV1" },
 );
 
+export const TaskExtensionFieldParamsSchema = StrictObject(
+  {
+    fieldId: Type.String({ maxLength: 100, minLength: 1 }),
+    organizationId: IdentifierSchema,
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskExtensionFieldParamsV1" },
+);
+
 export const CORE_API_SCHEMAS = Object.freeze([
   ProblemDetailsSchema,
   CursorPageQuerySchema,
@@ -982,6 +1017,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskActivitySchema,
   TaskDetailSchema,
   TaskPageSchema,
+  TaskExtensionFieldValuesSchema,
+  UpdateTaskExtensionFieldInputSchema,
   CreateTaskInputSchema,
   CreateTaskCommentInputSchema,
   SetTaskCommentReactionInputSchema,
@@ -1009,5 +1046,6 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ProjectFolderParamsSchema,
   TaskParamsSchema,
   TaskCommentParamsSchema,
+  TaskExtensionFieldParamsSchema,
   TaskAttachmentParamsSchema,
 ] as const);

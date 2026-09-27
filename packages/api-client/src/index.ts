@@ -4,6 +4,7 @@ import { type CoreApiClient, createCoreApiClient } from "./generated.js";
 
 export type {
   CursorPageQuery,
+  ExtensionFieldValue,
   ExtensionRegistry,
   ExtensionRegistryDiagnostic,
   ExtensionRegistryPackage,
@@ -31,11 +32,13 @@ export type {
   TaskAttachmentSummary,
   TaskComment,
   TaskDetail,
+  TaskExtensionFieldValues,
   TaskPage,
   TaskPriority,
   TaskView,
   TeamInput,
   TeamSummary,
+  UpdateTaskExtensionFieldInput,
 } from "@launchpp/api-contracts";
 export type { CoreApiClient, RequestOptions } from "./generated.js";
 

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../packages/plugin-protocol/schemas/plugin-source-v1-preview.json",
+  "apiVersion": {
+    "maximumExclusive": "2",
+    "minimum": "1"
+  },
+  "authoring": {
+    "adapter": "react-vite"
+  },
+  "contributes": {
+    "taskFields": [
+      {
+        "description": "A relative estimate of the effort required to complete the task.",
+        "id": "story-points",
+        "label": "Story points",
+        "placements": ["task.details.fields", "task.card.badges", "task.list.columns"],
+        "type": "number"
+      }
+    ]
+  },
+  "description": "Estimate task effort with one native numeric field.",
+  "id": "launchpp.story-points",
+  "manifestVersion": "1-preview",
+  "name": "Story Points",
+  "permissions": [],
+  "version": "1.0.0"
+}

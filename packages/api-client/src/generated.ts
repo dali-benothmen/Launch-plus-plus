@@ -32,12 +32,14 @@ import type {
   SetTaskCommentReactionInput,
   TaskComment,
   TaskDetail,
+  TaskExtensionFieldValues,
   TaskPage,
   TaskView,
   TeamInput,
   TeamSummary,
   UpdateProjectInput,
   UpdateTaskCommentInput,
+  UpdateTaskExtensionFieldInput,
   UpdateTaskInput,
 } from "@launchpp/api-contracts";
 
@@ -253,6 +255,14 @@ export interface CoreApiClient {
       taskId: string,
       input: ArchiveTaskInput,
     ): Promise<TaskView>;
+    setExtensionField(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      pluginId: string,
+      fieldId: string,
+      input: UpdateTaskExtensionFieldInput,
+    ): Promise<TaskExtensionFieldValues>;
     update(
       organizationId: string,
       projectId: string,
@@ -598,6 +608,22 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: { "content-type": "application/json" },
           method: "POST",
         }),
+      setExtensionField: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        pluginId: string,
+        fieldId: string,
+        input: UpdateTaskExtensionFieldInput,
+      ) =>
+        json<TaskExtensionFieldValues>(
+          `${taskPath(organizationId, projectId, taskId)}/extension-fields/${encodeURIComponent(pluginId)}/${encodeURIComponent(fieldId)}`,
+          {
+            body: JSON.stringify(input),
+            headers: { "content-type": "application/json" },
+            method: "PUT",
+          },
+        ),
       update: (organizationId: string, projectId: string, taskId: string, input: UpdateTaskInput) =>
         json<TaskView>(taskPath(organizationId, projectId, taskId), {
           body: JSON.stringify(input),

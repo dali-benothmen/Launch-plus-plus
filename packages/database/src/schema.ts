@@ -8,6 +8,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -830,6 +831,59 @@ export const projectPlugins = sqliteTable(
   ],
 );
 
+export const pluginFieldValues = sqliteTable(
+  "plugin_field_values",
+  {
+    organizationId: text("organization_id").notNull(),
+    projectId: text("project_id").notNull(),
+    taskId: text("task_id").notNull(),
+    pluginId: text("plugin_id").notNull(),
+    fieldId: text("field_id").notNull(),
+    valueType: text("value_type", { enum: ["number", "text"] }).notNull(),
+    numberValue: real("number_value"),
+    textValue: text("text_value"),
+    updatedByUserId: text("updated_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    updatedAt: integer("updated_at").notNull(),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.pluginId, table.fieldId] }),
+    foreignKey({
+      columns: [table.organizationId, table.taskId],
+      foreignColumns: [tasks.organizationId, tasks.id],
+      name: "plugin_field_values_organization_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "plugin_field_values_organization_project_fk",
+    }).onDelete("cascade"),
+    index("plugin_field_values_project_field_idx").on(
+      table.organizationId,
+      table.projectId,
+      table.pluginId,
+      table.fieldId,
+    ),
+    index("plugin_field_values_number_idx").on(
+      table.organizationId,
+      table.projectId,
+      table.pluginId,
+      table.fieldId,
+      table.numberValue,
+    ),
+    check("plugin_field_values_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+    check("plugin_field_values_field_id_not_blank", sql`length(trim(${table.fieldId})) > 0`),
+    check("plugin_field_values_revision_positive", sql`${table.revision} > 0`),
+    check(
+      "plugin_field_values_value_valid",
+      sql`(${table.valueType} = 'number' and ${table.numberValue} is not null and ${table.textValue} is null)
+          or (${table.valueType} = 'text' and ${table.textValue} is not null and ${table.numberValue} is null)`,
+    ),
+  ],
+);
+
 export const auditEntries = sqliteTable(
   "audit_entries",
   {
@@ -887,5 +941,6 @@ export const databaseSchema = {
   organizationMembers,
   organizations,
   organizationPlugins,
+  pluginFieldValues,
   pluginPackages,
 };

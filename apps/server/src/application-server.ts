@@ -18,6 +18,7 @@ import { registerExtensionRegistryRoutes } from "./extension-registry-routes.js"
 import { InvalidationHub } from "./invalidation-hub.js";
 import { registerOrganizationRoutes } from "./organization-routes.js";
 import { createOutboxDispatcher } from "./outbox-dispatcher.js";
+import { registerPluginFieldRoutes } from "./plugin-field-routes.js";
 import { registerPluginPackageRoutes } from "./plugin-package-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { registerSearchRoutes } from "./search-routes.js";
@@ -126,6 +127,11 @@ export async function buildApplicationServer(
       identity: identity.adapter,
     });
     await registerCapabilityBrokerRoutes(app, {
+      database,
+      developerMode,
+      identity: identity.adapter,
+    });
+    await registerPluginFieldRoutes(app, {
       database,
       developerMode,
       identity: identity.adapter,

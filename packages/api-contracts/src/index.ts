@@ -8,6 +8,7 @@ export type {
   CreateTaskInput,
   CursorPageQuery,
   DeleteTaskCommentInput,
+  ExtensionFieldValue,
   ExtensionRegistry,
   ExtensionRegistryDiagnostic,
   ExtensionRegistryPackage,
@@ -49,6 +50,7 @@ export type {
   TaskComment,
   TaskCommentReactionSummary,
   TaskDetail,
+  TaskExtensionFieldValues,
   TaskPage,
   TaskPriority,
   TaskView,
@@ -56,6 +58,7 @@ export type {
   TeamSummary,
   UpdateProjectInput,
   UpdateTaskCommentInput,
+  UpdateTaskExtensionFieldInput,
   UpdateTaskInput,
 } from "./schemas.js";
 export {
@@ -70,6 +73,7 @@ export {
   CreateTaskInputSchema,
   CursorPageQuerySchema,
   DeleteTaskCommentInputSchema,
+  ExtensionFieldValueSchema,
   ExtensionRegistryDiagnosticSchema,
   ExtensionRegistryPackageSchema,
   ExtensionRegistrySchema,
@@ -118,6 +122,8 @@ export {
   TaskCommentReactionSummarySchema,
   TaskCommentSchema,
   TaskDetailSchema,
+  TaskExtensionFieldParamsSchema,
+  TaskExtensionFieldValuesSchema,
   TaskPageSchema,
   TaskParamsSchema,
   TaskPrioritySchema,
@@ -126,5 +132,6 @@ export {
   TeamSummarySchema,
   UpdateProjectInputSchema,
   UpdateTaskCommentInputSchema,
+  UpdateTaskExtensionFieldInputSchema,
   UpdateTaskInputSchema,
 } from "./schemas.js";
