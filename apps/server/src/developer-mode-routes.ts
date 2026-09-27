@@ -187,7 +187,7 @@ export async function registerDeveloperModeRoutes(
         );
         return reply.status(201).send({
           ...pairing,
-          approvalUrl: `${input.config.baseUrl}/app/organization-settings?pairing=${encodeURIComponent(pairing.id)}&code=${encodeURIComponent(pairing.code)}`,
+          approvalUrl: `${input.config.baseUrl}/app/plugins?pairing=${encodeURIComponent(pairing.id)}&code=${encodeURIComponent(pairing.code)}`,
         });
       } catch (error) {
         return sendDeveloperError(reply, request, error);

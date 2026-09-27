@@ -397,10 +397,10 @@ export function AppShell() {
                 <>
                   Developer Mode is on. Tap{" "}
                   <Typography.Link
-                    href="/app/settings"
+                    href="/app/plugins"
                     onClick={(event) => {
                       event.preventDefault();
-                      navigate("/app/settings");
+                      navigate("/app/plugins");
                     }}
                   >
                     here

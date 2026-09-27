@@ -370,7 +370,7 @@ The application validates that configured paths resolve under the intended data 
 
 Temporary uploads and extraction use dedicated random directories with quotas and are removed on success/failure. A cleanup task handles abandoned quarantine directories without traversing outside the configured root.
 
-The author-preview package store is currently derived from the configured database location: `<database-directory>/packages/<plugin-id>/<version>/<archive-sha256>/`. Extraction first writes a random `.staging-*` sibling with private file modes and only renames it after complete validation. If the following catalog transaction fails, the newly renamed directory is removed. Package identity, manifest, integrity, provenance, organization enablement and accepted permissions remain in SQLite, so operational copies must preserve both the database and its sibling `packages/` directory. A separately configurable package root and coordinated package backup are future operational hardening, not implied by this preview.
+The author-preview package store is currently derived from the configured database location: `<database-directory>/packages/<plugin-id>/<version>/<archive-sha256>/`. Extraction first writes a random `.staging-*` sibling with private file modes and only renames it after complete validation. If the following catalog transaction fails, the newly renamed directory is removed. Package identity, manifest, integrity, provenance, app activation, and accepted permissions remain in SQLite, so operational copies must preserve both the database and its sibling `packages/` directory. A separately configurable package root and coordinated package backup are future operational hardening, not implied by this preview.
 
 ## Supported deployment profiles
 

@@ -18,7 +18,7 @@ guide describes what the current repository actually supports.
 | Custom surfaces | React and vanilla surfaces run in the disposable development host; installed and connected custom-surface artifact delivery is not complete |
 | Data access | Brokered project, task, and comment capabilities with explicit permissions |
 | Development | Disposable local host or short-lived connected Developer Mode |
-| Distribution | Deterministic `.launch-plugin` archive, non-executing inspection, manual upload, organization enablement, and project enablement |
+| Distribution | Deterministic `.launch-plugin` archive, non-executing inspection, manual upload, and app-wide activation |
 | Trust | Uploaded packages are labeled unsigned local packages; integrity proves bytes, not publisher identity |
 | Compatibility | Preview-only; no stable source or runtime compatibility promise yet |
 
@@ -393,21 +393,20 @@ pnpm launchpp inspect dist/new.launch-plugin --json
 Inspection reports identity, compatibility, provenance, permissions, contributions, entries, sizes,
 dependencies, integrity, and—in compare mode—release changes.
 
-## Upload and enable
+## Upload and activate
 
 1. Open **Plugins** in the narrow application rail.
-2. Select the target organization.
-3. Drop or select the generated `.launch-plugin` file.
-4. Review identity, version, archive hash, compatibility, permissions, contributions, and
+2. Drop or select the generated `.launch-plugin` file.
+3. Review identity, version, archive hash, compatibility, permissions, contributions, and
    diagnostics.
-5. Enable the staged package for the organization.
-6. Enable it for each project where project-scoped contributions should appear.
+4. Activate the staged package for the Launch++ app.
 
 Upload inspects and stages the archive without executing it. The current UI accepts packages up to
 10 MB. Different bytes cannot reuse the same plugin ID and version: increase `version`, pack again,
 and upload the new archive.
 
-Project disablement removes project UI and behavior while retaining host-managed task-field values.
+Activation applies the plugin to every organization and project in the app. Deactivation removes
+its contributions and behavior while retaining host-managed task-field values.
 Plugin safe mode in global Settings suppresses optional plugin contributions for the current browser
 session while keeping plugin management available.
 
@@ -420,12 +419,12 @@ session while keeping plugin management available.
 | Generated artifacts are missing or stale | Run `pnpm launchpp generate`, then `pnpm check` |
 | Pairing code or approval URL is `undefined` | Rebuild `packages/plugin-cli` and restart both Launch++ and the plugin command |
 | Pairing expires | Enable Developer Mode, rerun the command, and approve within five minutes |
-| Permission change pauses a connected session | Review and approve the changed permission set in organization settings |
+| Permission change pauses a connected session | Review and approve the changed permission set on the Plugins page |
 | Package identity conflict | Increase the manifest version, pack again, and upload the new archive |
-| Contribution is absent | Confirm organization enablement, project enablement, the declared slot/scope, and that plugin safe mode is off |
-| Capability returns `FORBIDDEN` | Confirm the permission is declared and approved, project scope is enabled, and the signed-in actor has domain access |
+| Contribution is absent | Confirm app activation, the declared slot/scope, and that plugin safe mode is off |
+| Capability returns `FORBIDDEN` | Confirm the permission is declared and approved and the signed-in actor has domain access |
 | Capability returns `CONFLICT` | Reload the current resource and retry with its latest revision |
-| A plugin disrupts the UI | Use global Settings to restart in plugin safe mode, then inspect or disable the package for the project |
+| A plugin disrupts the UI | Use global Settings to restart in plugin safe mode, then inspect or deactivate the plugin |
 | Custom page only shows a registered placeholder | Installed custom-surface delivery is not implemented in this preview; use the disposable host for the surface itself |
 
 Error reports include a correlation identifier where available. Preserve it when reporting a broker

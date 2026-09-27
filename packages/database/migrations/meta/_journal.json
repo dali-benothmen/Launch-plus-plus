@@ -169,6 +169,13 @@
       "when": 1790530147041,
       "tag": "0023_far_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1790534033730,
+      "tag": "0024_gifted_mac_gargan",
+      "breakpoints": true
     }
   ]
 }

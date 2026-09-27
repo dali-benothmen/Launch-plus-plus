@@ -4,12 +4,11 @@ import path from "node:path";
 
 import type { PluginPackageSummary } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
-import { actorFromIdentitySession, canAccessOrganization } from "@launchpp/authorization";
 import {
-  type OrganizationPluginPackageRecord,
+  type InstallationPluginPackageRecord,
   type PluginPackageRecord,
-  type SqliteDatabase,
   SqliteAuditWriter,
+  type SqliteDatabase,
   SqliteInstallationRepository,
   SqliteOrganizationMembershipRepository,
   SqlitePluginPackageRepository,
@@ -20,8 +19,8 @@ import {
 } from "@launchpp/plugin-protocol";
 import {
   DEFAULT_PLUGIN_ARCHIVE_LIMITS,
-  PluginArchiveError,
   inspectPreviewPluginArchive,
+  PluginArchiveError,
   stagePreviewPluginArchive,
 } from "@launchpp/plugin-runtime";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -118,7 +117,7 @@ function parseStoredManifest(record: PluginPackageRecord): PluginPackageManifest
   return result.value;
 }
 
-function packageSummary(record: OrganizationPluginPackageRecord): PluginPackageSummary {
+function packageSummary(record: InstallationPluginPackageRecord): PluginPackageSummary {
   const manifest = parseStoredManifest(record);
   return {
     archiveSizeBytes: record.archiveSizeBytes,
@@ -168,11 +167,7 @@ export async function registerPluginPackageRoutes(
     (_request, body, done) => done(null, body),
   );
 
-  const authorizeOwner = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-    organizationId: string,
-  ) => {
+  const authorizeOwner = async (request: FastifyRequest, reply: FastifyReply) => {
     const session = await input.identity.resolveSession(webHeaders(request.headers));
     if (!session) {
       sendProblem(
@@ -191,30 +186,27 @@ export async function registerPluginPackageRoutes(
       return undefined;
     }
     const membership = input.database.read((context) =>
-      memberships.find(context, organizationId, session.identity.id),
+      memberships.findActiveOwnerForUser(context, session.identity.id),
     );
-    if (
-      !canAccessOrganization(actorFromIdentitySession(session), membership, "organization.manage")
-    ) {
+    if (!membership) {
       sendProblem(
         reply,
         request,
         403,
         "plugin_management_denied",
         "Plugin management denied",
-        "Organization ownership is required to stage or enable plugins.",
+        "Organization ownership is required to manage app plugins.",
       );
       return undefined;
     }
-    return { installation, userId: session.identity.id };
+    return { installation, organizationId: membership.organizationId, userId: session.identity.id };
   };
 
-  app.get<{ Params: { readonly organizationId: string } }>(
-    "/api/v1/organizations/:organizationId/plugin-packages",
+  app.get(
+    "/api/v1/plugin-packages",
     {
       schema: {
         operationId: "listPluginPackages",
-        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: {
           200: { items: { $ref: "LaunchppPluginPackageSummaryV1#" }, type: "array" },
           ...problemResponses,
@@ -224,31 +216,23 @@ export async function registerPluginPackageRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorizeOwner(request, reply, request.params.organizationId);
+      const access = await authorizeOwner(request, reply);
       if (!access) return;
       return input.database
-        .read((context) =>
-          packages.listForOrganization(
-            context,
-            access.installation.id,
-            request.params.organizationId,
-          ),
-        )
+        .read((context) => packages.listForInstallation(context, access.installation.id))
         .map(packageSummary);
     },
   );
 
   app.post<{
     Body: Buffer;
-    Params: { readonly organizationId: string };
   }>(
-    "/api/v1/organizations/:organizationId/plugin-packages",
+    "/api/v1/plugin-packages",
     {
       bodyLimit: DEFAULT_PLUGIN_ARCHIVE_LIMITS.maxArchiveBytes,
       schema: {
         consumes: [pluginPackageMediaType],
         operationId: "stagePluginPackage",
-        params: { $ref: "LaunchppOrganizationParamsV1#" },
         response: {
           200: { $ref: "LaunchppPluginPackageSummaryV1#" },
           201: { $ref: "LaunchppPluginPackageSummaryV1#" },
@@ -259,7 +243,7 @@ export async function registerPluginPackageRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorizeOwner(request, reply, request.params.organizationId);
+      const access = await authorizeOwner(request, reply);
       if (!access) return;
       if (!Buffer.isBuffer(request.body) || request.body.byteLength === 0) {
         return sendProblem(
@@ -295,7 +279,7 @@ export async function registerPluginPackageRoutes(
           }
           const current = input.database.read((context) =>
             packages
-              .listForOrganization(context, access.installation.id, request.params.organizationId)
+              .listForInstallation(context, access.installation.id)
               .find((item) => item.id === existing.id),
           );
           return packageSummary(current ?? existing);
@@ -334,7 +318,7 @@ export async function registerPluginPackageRoutes(
               },
               occurredAt: now,
               operation: "plugin.package.staged",
-              organizationId: request.params.organizationId,
+              organizationId: access.organizationId,
               outcome: "succeeded",
               targetId: record.id,
               targetType: "pluginPackage",
@@ -364,21 +348,24 @@ export async function registerPluginPackageRoutes(
     },
   );
 
-  app.post<{
-    Params: { readonly organizationId: string; readonly packageId: string };
-  }>(
-    "/api/v1/organizations/:organizationId/plugin-packages/:packageId/enable",
+  app.post<{ Params: { readonly packageId: string } }>(
+    "/api/v1/plugin-packages/:packageId/activate",
     {
       schema: {
-        operationId: "enablePluginPackage",
-        params: { $ref: "LaunchppPluginPackageParamsV1#" },
+        operationId: "activatePluginPackage",
+        params: {
+          additionalProperties: false,
+          properties: { packageId: { maxLength: 100, minLength: 1, type: "string" } },
+          required: ["packageId"],
+          type: "object",
+        },
         response: { 200: { $ref: "LaunchppPluginPackageSummaryV1#" }, ...problemResponses },
-        summary: "Enable a staged package for an organization",
+        summary: "Activate a staged package for the Launch++ app",
         tags: ["Plugins"],
       },
     },
     async (request, reply) => {
-      const access = await authorizeOwner(request, reply, request.params.organizationId);
+      const access = await authorizeOwner(request, reply);
       if (!access) return;
       const record = input.database.read((context) =>
         packages.findById(context, access.installation.id, request.params.packageId),
@@ -400,7 +387,7 @@ export async function registerPluginPackageRoutes(
           acceptedPermissionsJson: JSON.stringify(manifest.permissions),
           enabledAt: now,
           enabledByUserId: access.userId,
-          organizationId: request.params.organizationId,
+          installationId: access.installation.id,
           pluginId: record.pluginId,
           pluginPackageId: record.id,
           updatedAt: now,
@@ -418,14 +405,77 @@ export async function registerPluginPackageRoutes(
             version: record.version,
           },
           occurredAt: now,
-          operation: "plugin.organization.enabled",
-          organizationId: request.params.organizationId,
+          operation: "plugin.installation.activated",
+          organizationId: access.organizationId,
           outcome: "succeeded",
           targetId: record.id,
           targetType: "pluginPackage",
         });
       });
       return packageSummary({ ...record, enabledAt: now });
+    },
+  );
+
+  app.delete<{ Params: { readonly packageId: string } }>(
+    "/api/v1/plugin-packages/:packageId/activate",
+    {
+      schema: {
+        operationId: "deactivatePluginPackage",
+        params: {
+          additionalProperties: false,
+          properties: { packageId: { maxLength: 100, minLength: 1, type: "string" } },
+          required: ["packageId"],
+          type: "object",
+        },
+        response: { 204: { type: "null" }, ...problemResponses },
+        summary: "Deactivate a plugin across the Launch++ app",
+        tags: ["Plugins"],
+      },
+    },
+    async (request, reply) => {
+      const access = await authorizeOwner(request, reply);
+      if (!access) return;
+      const record = input.database.read((context) =>
+        packages.findById(context, access.installation.id, request.params.packageId),
+      );
+      const enabled = record
+        ? input.database.read((context) =>
+            packages.findEnabledByPackageId(context, access.installation.id, record.id),
+          )
+        : undefined;
+      if (!record || !enabled) {
+        return sendProblem(
+          reply,
+          request,
+          404,
+          "plugin_package_not_active",
+          "Plugin is not active",
+          "The plugin package is not active in this Launch++ app.",
+        );
+      }
+      const now = Date.now();
+      await input.database.write((context) => {
+        packages.disable(context, access.installation.id, record.pluginId);
+        audit.append(context, {
+          actorId: access.userId,
+          actorType: "user",
+          correlationId: request.id,
+          id: randomUUID(),
+          installationId: access.installation.id,
+          metadata: {
+            packageHash: record.packageHash,
+            pluginId: record.pluginId,
+            version: record.version,
+          },
+          occurredAt: now,
+          operation: "plugin.installation.deactivated",
+          organizationId: access.organizationId,
+          outcome: "succeeded",
+          targetId: record.id,
+          targetType: "pluginPackage",
+        });
+      });
+      return reply.status(204).send();
     },
   );
 }

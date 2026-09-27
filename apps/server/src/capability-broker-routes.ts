@@ -473,7 +473,7 @@ export async function registerCapabilityBrokerRoutes(
           }
           const enabled = packages.findEnabledByPackageId(
             readContext,
-            context.organizationId,
+            context.installationId,
             context.packageId,
           );
           const pluginPackage = packages.findById(
@@ -484,7 +484,7 @@ export async function registerCapabilityBrokerRoutes(
           if (!enabled || !pluginPackage || enabled.pluginId !== pluginPackage.pluginId) {
             throw new CapabilityBrokerError(
               PLUGIN_ERROR_CODES.unavailable,
-              "The plugin package is not enabled for this organization.",
+              "The plugin package is not active in this Launch++ app.",
               false,
               context.correlationId,
             );
@@ -492,15 +492,7 @@ export async function registerCapabilityBrokerRoutes(
           return {
             grantedPermissions: acceptedPermissions(enabled.acceptedPermissionsJson),
             pluginId: enabled.pluginId,
-            projectEnabled: context.projectId
-              ? packages
-                  .listProjectEnabledPackageIds(
-                    readContext,
-                    context.organizationId,
-                    context.projectId,
-                  )
-                  .includes(context.packageId)
-              : false,
+            projectEnabled: context.projectId !== undefined,
           };
         }),
     },

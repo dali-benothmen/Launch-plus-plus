@@ -324,9 +324,8 @@ The public authoring and evolution contract is defined in [plugin-storage-design
 The plugin document defines lifecycle semantics. Logical records include:
 
 - `plugin_packages` — immutable manifest, version, digest, provenance, signature status, package location.
-- `installation_plugins` — operator allow/deny state and package availability.
-- `organization_plugins` — selected version, grants, enablement, installed schema digest, health.
-- `project_plugins` — project activation and non-secret settings.
+- `installation_plugins` — selected package version, accepted grants, app-wide activation, and the
+  activating owner. Active packages are available to every organization and project.
 - `plugin_field_definitions` and `plugin_field_values` — typed native extensions to core entities.
 - `plugin_collection_definitions` and `plugin_records` — namespaced private storage with declared indexes.
 - `plugin_secret_references` — metadata only; ciphertext belongs to the vault.

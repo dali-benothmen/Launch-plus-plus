@@ -1,7 +1,7 @@
 import type {
-  ReadContext,
   OrganizationMembership,
   OrganizationMembershipRepository,
+  ReadContext,
   WriteContext,
 } from "@launchpp/core";
 import { requireSqliteConnection } from "./context.js";
@@ -55,6 +55,19 @@ export class SqliteOrganizationMembershipRepository implements OrganizationMembe
          FROM organization_members WHERE organization_id = ? AND user_id = ?`,
       )
       .get(organizationId, userId);
+    return row ? mapMembership(row) : undefined;
+  }
+
+  findActiveOwnerForUser(context: ReadContext, userId: string): OrganizationMembership | undefined {
+    const row = requireSqliteConnection(context)
+      .prepare<[string], MembershipRow>(
+        `SELECT organization_id, user_id, role, state, joined_at, updated_at
+         FROM organization_members
+         WHERE user_id = ? AND role = 'owner' AND state = 'active'
+         ORDER BY joined_at ASC, organization_id ASC
+         LIMIT 1`,
+      )
+      .get(userId);
     return row ? mapMembership(row) : undefined;
   }
 

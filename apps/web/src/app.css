@@ -2050,6 +2050,82 @@
   gap: 16px;
 }
 
+.plugin-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.plugin-card {
+  min-height: 230px;
+  cursor: pointer;
+}
+
+.plugin-card:focus-visible {
+  outline: 2px solid var(--launch-color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.plugin-card-content {
+  display: flex;
+  min-height: 182px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plugin-card-heading,
+.plugin-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plugin-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--launch-color-primary, #2563eb);
+  font-size: 20px;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 8px;
+}
+
+.plugin-card-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.plugin-card-copy h3,
+.plugin-development-sessions h3 {
+  margin: 0;
+}
+
+.plugin-card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.plugin-card-footer {
+  margin-top: auto;
+}
+
+.plugin-development-sessions,
+.plugin-pairing-review {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.plugin-pairing-actions {
+  justify-content: flex-end;
+}
+
 .plugin-permission-list {
   display: flex;
   flex-wrap: wrap;

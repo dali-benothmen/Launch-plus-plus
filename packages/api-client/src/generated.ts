@@ -99,12 +99,6 @@ function commentPath(
 
 export interface CoreApiClient {
   readonly extensionRegistry: {
-    disableProject(organizationId: string, projectId: string, packageId: string): Promise<void>;
-    enableProject(
-      organizationId: string,
-      projectId: string,
-      packageId: string,
-    ): Promise<ExtensionRegistry>;
     getOrganization(organizationId: string): Promise<ExtensionRegistry>;
     getProject(organizationId: string, projectId: string): Promise<ExtensionRegistry>;
   };
@@ -118,9 +112,10 @@ export interface CoreApiClient {
     ): Promise<OrganizationRegistrationResult>;
   };
   readonly pluginPackages: {
-    enable(organizationId: string, packageId: string): Promise<PluginPackageSummary>;
-    list(organizationId: string): Promise<readonly PluginPackageSummary[]>;
-    stage(organizationId: string, file: File): Promise<PluginPackageSummary>;
+    activate(packageId: string): Promise<PluginPackageSummary>;
+    deactivate(packageId: string): Promise<void>;
+    list(): Promise<readonly PluginPackageSummary[]>;
+    stage(file: File): Promise<PluginPackageSummary>;
   };
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
@@ -286,17 +281,6 @@ export interface CoreApiClient {
 export function createCoreApiClient(json: RequestJson): CoreApiClient {
   return Object.freeze({
     extensionRegistry: Object.freeze({
-      async disableProject(organizationId: string, projectId: string, packageId: string) {
-        await json(
-          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
-          { method: "DELETE" },
-        );
-      },
-      enableProject: (organizationId: string, projectId: string, packageId: string) =>
-        json<ExtensionRegistry>(
-          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
-          { method: "POST" },
-        ),
       getOrganization: (organizationId: string) =>
         json<ExtensionRegistry>(
           `/api/v1/organizations/${encodeURIComponent(organizationId)}/extensions/registry`,
@@ -319,27 +303,26 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
         }),
     }),
     pluginPackages: Object.freeze({
-      enable: (organizationId: string, packageId: string) =>
+      activate: (packageId: string) =>
         json<PluginPackageSummary>(
-          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          `/api/v1/plugin-packages/${encodeURIComponent(packageId)}/activate`,
           { method: "POST" },
         ),
-      list: (organizationId: string) =>
-        json<readonly PluginPackageSummary[]>(
-          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
-        ),
-      stage: (organizationId: string, file: File) =>
-        json<PluginPackageSummary>(
-          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
-          {
-            body: file,
-            headers: {
-              "content-type": "application/vnd.launchpp.plugin",
-              "x-launchpp-file-name": encodeURIComponent(file.name),
-            },
-            method: "POST",
+      async deactivate(packageId: string) {
+        await json(`/api/v1/plugin-packages/${encodeURIComponent(packageId)}/activate`, {
+          method: "DELETE",
+        });
+      },
+      list: () => json<readonly PluginPackageSummary[]>("/api/v1/plugin-packages"),
+      stage: (file: File) =>
+        json<PluginPackageSummary>("/api/v1/plugin-packages", {
+          body: file,
+          headers: {
+            "content-type": "application/vnd.launchpp.plugin",
+            "x-launchpp-file-name": encodeURIComponent(file.name),
           },
-        ),
+          method: "POST",
+        }),
     }),
     search: (query: SearchQuery) => {
       const parameters = new URLSearchParams({ q: query.q });

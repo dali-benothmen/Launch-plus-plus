@@ -351,7 +351,7 @@ The shared packaging implementation fixes the deterministic ZIP, SHA-256 integri
 
 ### Developer Mode and the live development channel
 
-The pack-and-upload loop is for release validation, not every edit. Launch++ includes an owner-controlled **Settings → Developer Mode** switch and the CLI supports two development paths:
+The pack-and-upload loop is for release validation, not every edit. Launch++ includes an owner-controlled **Plugins → Developer Mode** switch and the CLI supports two development paths:
 
 - `launchpp dev` starts a disposable local Launch++ organization with fixtures. This is the safest and default path.
 - `launchpp dev --connect https://launch.example` pairs the local CLI with an existing Launch++ installation for an authenticated preview.
@@ -404,9 +404,9 @@ Use native rendering for small contributions, including fields, settings and com
 
 Custom views live within the application’s navigation and route model, with deep links and scoped URLs owned by the host. The host mediates dialogs, toasts, navigation and permission prompts. Plugin CSS cannot modify the shell. Theme packages set validated semantic tokens; custom plugins receive the resolved tokens.
 
-Organization administrators enable plugins; project-scoped plugins are then enabled only in chosen projects. Server operators control which executable packages are allowed on their installation. A locally running solo owner sees these as one simple flow. Installation shows what will be added, what access is requested, and any connection setup. A plugin with no required settings can be enabled in one action.
+Plugin activation is installation-wide: an active plugin is available to every organization and project in the Launch++ app. Owners review provenance, contributions, requested permissions, and diagnostics before activating a staged package. A future hosted operator role may separate package intake from activation, but the local MVP keeps this as one clear Plugins-page flow.
 
-The implemented author-preview flow uses the authenticated Plugins destination and the versioned HTTP client. An organization owner selects or drops one `.launch-plugin` file; the server applies the compressed/expanded size, entry-count, path, reference, API-range and integrity limits before atomically renaming extracted bytes into the immutable package store. It records the normalized manifest, integrity document, archive digest, source filename and explicit `unsigned-local` provenance. The review shows compatibility, provenance, requested permissions and every declared contribution before a separate Enable action stores the organization grant set. Staging and enablement are audited. A failed catalog transaction removes newly staged bytes, while validation failure never reaches the package store.
+The implemented author-preview flow uses the authenticated Plugins destination and the versioned HTTP client. An organization owner selects or drops one `.launch-plugin` file; the server applies the compressed/expanded size, entry-count, path, reference, API-range and integrity limits before atomically renaming extracted bytes into the immutable package store. It records the normalized manifest, integrity document, archive digest, source filename and explicit `unsigned-local` provenance. The review shows compatibility, provenance, requested permissions and every declared contribution before a separate Activate action stores one installation grant set. Staging, activation, and deactivation are audited. A failed catalog transaction removes newly staged bytes, while validation failure never reaches the package store.
 
 For the local author preview, an organization owner performs the combined operator/administrator flow. This does not claim that organization ownership grants installation-operator authority in a future shared deployment. Enablement in this slice records availability and accepted permissions only: contribution registration, routes, rendering, capability execution, dependencies, updates, disable/uninstall and publisher signatures remain owned by later lifecycle tasks. Uploaded server code is never executed during inspection or enablement.
 

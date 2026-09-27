@@ -51,7 +51,7 @@ Configuration is parsed once before the server is constructed. Unknown `LAUNCHPP
 | `LAUNCHPP_RATE_LIMIT_WINDOW_MS` | `60000` | 1000 through 3600000 milliseconds |
 | `LAUNCHPP_SHUTDOWN_GRACE_MS` | `10000` | 100 through 120000 milliseconds |
 
-State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Connected Developer Mode is disabled by default and is persisted through the owner-only switch in global Settings; disabling it revokes active sessions and pending pairings immediately. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library. Email recovery is intentionally unavailable until an email provider is configured, so the recovery screen directs users to the installation operator.
+State-changing browser requests require an `Origin` matching `LAUNCHPP_BASE_URL`. Connected Developer Mode is disabled by default and is persisted through the owner-only switch on the Plugins page; disabling it revokes active sessions and pending pairings immediately. Better Auth is mounted at `/api/auth/*` behind the identity adapter; product authorization remains in application services rather than the authentication library. Email recovery is intentionally unavailable until an email provider is configured, so the recovery screen directs users to the installation operator.
 
 Logs are structured JSON. Authorization, cookie, and CSRF headers are redacted. Public error and health responses never include stack traces, filesystem paths, or dependency details.
 

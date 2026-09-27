@@ -183,17 +183,17 @@ By default, plugin data lives in an isolated disposable profile under the projec
 
 ### Connecting to an existing installation
 
-An organization owner can enable connected Developer Mode from global Settings, which is disabled by default and displays a persistent warning while active. The author then runs:
+An organization owner can enable connected Developer Mode from the Plugins page, which is disabled by default and displays a persistent warning while active. The author then runs:
 
 ```text
 pnpm dev --connect https://launch.example
 ```
 
-The CLI requests a short-lived one-time pairing code and opens the installation in a browser for confirmation. After the user confirms the plugin ID, requested permissions and development organization, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
+The CLI requests a short-lived one-time pairing code and opens the Plugins page in a browser. Launch++ immediately presents an approval modal with the plugin identity and requested permissions. After approval, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
 
 The current preview implements the authenticated HTTPS control plane: pairing, owner approval, author-scoped registration, manifest refresh, permission reapproval, expiry, revocation, and teardown. It exposes host-rendered contributions immediately. Compiled custom-surface and server artifacts join this channel after the deterministic build adapter is implemented; the host never reads source files or connects back to the author machine.
 
-The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, is scoped to a dedicated development organization, expires automatically and may be revoked from either the CLI or Settings. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
+The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, expires automatically and may be revoked from either the CLI or the Plugins page. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
 
 The connection uses the same sandbox, broker, permissions, data boundaries, runtime quotas and network allowlists as a packaged plugin. Initial grants require approval and a manifest permission change pauses the session for another review. Developer Mode is an unsigned, temporary delivery channel—not a trusted mode and not a security bypass.
 

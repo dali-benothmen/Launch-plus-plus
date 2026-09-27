@@ -276,19 +276,19 @@ Settings uses the global rail plus the contextual sidebar. The contextual naviga
 
 - **General:** organization name and defaults.
 - **Members:** the administrative view of invitations, roles, and removal; it links to the main Members directory rather than duplicating it.
-- **Extensions:** enable operator-installed packages, review grants, choose project scopes, configure organization plugin settings, and inspect health.
+- **Extensions:** review app-active packages and host-rendered organization settings.
 - **Data and export:** organization export/import entry points, retention explanations, and authorized deletion.
 
 ### Current project
 
 - **General:** name, folder placement, archive/restore, and deletion.
 - **Workflow:** ordered statuses and project defaults.
-- **Extensions:** enable approved plugins, configure project-scoped settings, and control supported field/view placements.
+- **Extensions:** configure supported plugin field/view placements; activation remains app-wide.
 
 ### Installation operator
 
-- **Packages:** upload a `.launch-plugin`, validate it, review identity/provenance/permissions, install versions, and remove unused artifacts.
-- **Developer Mode:** enable the temporary channel, approve pairing, choose a development organization, show connected developer/session/expiry, and revoke access.
+- **Plugins:** upload a `.launch-plugin`, review identity/provenance/permissions, activate one version app-wide, inspect details, and deactivate it.
+- **Developer Mode:** enable the temporary channel from Plugins, approve pairing in a modal, show connected developer/session/expiry, and revoke access.
 - **System:** canonical URL, mail/integration configuration summaries, application version, and update readiness.
 - **Backups:** backup status and create, verify, and restore entry points with strong confirmation.
 - **Diagnostics:** health, storage use, failed jobs/plugins, safe-start controls, and redacted diagnostic export.
@@ -297,16 +297,15 @@ Organization ownership does not automatically grant installation-operator access
 
 ## Plugin management journey
 
-Package installation and organization enablement remain separate:
+Package staging and app activation remain separate:
 
-1. An installation operator opens **Settings → Installation → Packages** and uploads an archive.
+1. An owner opens **Plugins** and uploads an archive.
 2. Launch++ validates it before any executable code runs.
-3. The operator reviews publisher/provenance, contents, compatibility, permissions, and size, then adds it to the installation package pool.
-4. An organization administrator opens **Settings → Organization → Extensions**, reviews organization grants and project scopes, and enables it.
-5. Project administrators configure project enablement and placements where allowed.
-6. Disabling removes contributions and execution while retaining data. Removing a package and purging plugin data are distinct, more privileged actions.
+3. The owner reviews provenance, contents, compatibility, permissions, and size.
+4. Activating makes the selected version available to every organization and project in the app.
+5. Deactivating removes contributions and execution while retaining data. Removing a package and purging plugin data remain distinct future operations.
 
-A future marketplace changes discovery, purchase, and acquisition. It does not replace the permission review, organization enablement, or project-placement surfaces.
+A future marketplace changes discovery, purchase, and acquisition. It does not replace permission review, app activation, or project-placement configuration.
 
 ## Plugin contribution placement
 
@@ -408,4 +407,4 @@ The first usability review should verify:
 - Whether folders and the project table remain clear for realistic project sets.
 - Whether the two-row project header remains calm after several plugin views are enabled.
 - Whether the route-backed task panel preserves enough Board/List context at common laptop widths.
-- Whether package installation versus organization enablement is understandable to self-hosted administrators.
+- Whether package staging versus app-wide activation is understandable to self-hosted administrators.

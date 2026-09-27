@@ -1,10 +1,7 @@
-import { randomUUID } from "node:crypto";
-
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import { actorFromIdentitySession, canAccessOrganization } from "@launchpp/authorization";
 import {
-  type EnabledOrganizationPluginPackageRecord,
-  SqliteAuditWriter,
+  type EnabledInstallationPluginPackageRecord,
   type SqliteDatabase,
   SqliteInstallationRepository,
   SqliteOrganizationMembershipRepository,
@@ -31,12 +28,6 @@ const problemResponses = {
   503: { $ref: "LaunchppProblemDetailsV1#" },
 } as const;
 
-interface ProjectPackageParams {
-  readonly organizationId: string;
-  readonly packageId: string;
-  readonly projectId: string;
-}
-
 function webHeaders(headers: FastifyRequest["headers"]): Headers {
   const result = new Headers();
   for (const [name, value] of Object.entries(headers)) {
@@ -47,7 +38,7 @@ function webHeaders(headers: FastifyRequest["headers"]): Headers {
   return result;
 }
 
-function storedManifest(record: EnabledOrganizationPluginPackageRecord): PluginPackageManifest {
+function storedManifest(record: EnabledInstallationPluginPackageRecord): PluginPackageManifest {
   let document: unknown;
   try {
     document = JSON.parse(record.manifestJson) as unknown;
@@ -61,7 +52,7 @@ function storedManifest(record: EnabledOrganizationPluginPackageRecord): PluginP
   return result.value;
 }
 
-function acceptedPermissions(record: EnabledOrganizationPluginPackageRecord): PreviewPermission[] {
+function acceptedPermissions(record: EnabledInstallationPluginPackageRecord): PreviewPermission[] {
   let document: unknown;
   try {
     document = JSON.parse(record.acceptedPermissionsJson) as unknown;
@@ -88,7 +79,6 @@ export async function registerExtensionRegistryRoutes(
     identity: BetterAuthIdentityAdapter;
   }>,
 ): Promise<void> {
-  const audit = new SqliteAuditWriter();
   const installations = new SqliteInstallationRepository();
   const memberships = new SqliteOrganizationMembershipRepository();
   const packages = new SqlitePluginPackageRepository();
@@ -98,7 +88,6 @@ export async function registerExtensionRegistryRoutes(
     request: FastifyRequest,
     reply: FastifyReply,
     organizationId: string,
-    manage: boolean,
   ) => {
     const session = await input.identity.resolveSession(webHeaders(request.headers));
     if (!session) {
@@ -121,11 +110,7 @@ export async function registerExtensionRegistryRoutes(
       memberships.find(context, organizationId, session.identity.id),
     );
     if (
-      !canAccessOrganization(
-        actorFromIdentitySession(session),
-        membership,
-        manage ? "organization.manage" : "organization.read",
-      )
+      !canAccessOrganization(actorFromIdentitySession(session), membership, "organization.read")
     ) {
       sendProblem(
         reply,
@@ -133,9 +118,7 @@ export async function registerExtensionRegistryRoutes(
         403,
         "extension_registry_denied",
         "Extension access denied",
-        manage
-          ? "Organization ownership is required to change project extension activation."
-          : "Active organization membership is required to read the extension registry.",
+        "Active organization membership is required to read the extension registry.",
       );
       return undefined;
     }
@@ -174,16 +157,7 @@ export async function registerExtensionRegistryRoutes(
     organizationId: string,
     projectId?: string,
   ) => {
-    const enabled = input.database.read((context) =>
-      packages.listEnabledForOrganization(context, installationId, organizationId),
-    );
-    const projectPackageIds = new Set(
-      projectId
-        ? input.database.read((context) =>
-            packages.listProjectEnabledPackageIds(context, organizationId, projectId),
-          )
-        : [],
-    );
+    const enabled = input.database.read((context) => packages.listEnabled(context, installationId));
     const connected = input.developerMode.packagesFor(userId, organizationId, projectId);
     const connectedPluginIds = new Set(connected.map((item) => item.manifest.id));
     return resolveExtensionRegistry({ organizationId, ...(projectId ? { projectId } : {}) }, [
@@ -193,7 +167,7 @@ export async function registerExtensionRegistryRoutes(
           acceptedPermissions: acceptedPermissions(record),
           manifest: storedManifest(record),
           packageId: record.id,
-          projectEnabled: projectPackageIds.has(record.id),
+          projectEnabled: true,
         })),
       ...connected,
     ]);
@@ -211,7 +185,7 @@ export async function registerExtensionRegistryRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.organizationId, false);
+      const access = await authorize(request, reply, request.params.organizationId);
       if (!access) return;
       return resolve(access.installation.id, access.userId, request.params.organizationId);
     },
@@ -229,7 +203,7 @@ export async function registerExtensionRegistryRoutes(
       },
     },
     async (request, reply) => {
-      const access = await authorize(request, reply, request.params.organizationId, false);
+      const access = await authorize(request, reply, request.params.organizationId);
       if (
         !access ||
         !requireProject(request, reply, request.params.organizationId, request.params.projectId)
@@ -242,132 +216,6 @@ export async function registerExtensionRegistryRoutes(
         request.params.organizationId,
         request.params.projectId,
       );
-    },
-  );
-
-  app.post<{ Params: ProjectPackageParams }>(
-    "/api/v1/organizations/:organizationId/projects/:projectId/plugin-packages/:packageId/enable",
-    {
-      schema: {
-        operationId: "enableProjectPluginPackage",
-        params: {
-          additionalProperties: false,
-          properties: {
-            organizationId: { maxLength: 100, minLength: 1, type: "string" },
-            packageId: { maxLength: 100, minLength: 1, type: "string" },
-            projectId: { maxLength: 100, minLength: 1, type: "string" },
-          },
-          required: ["organizationId", "packageId", "projectId"],
-          type: "object",
-        },
-        response: { 200: { $ref: "LaunchppExtensionRegistryV1#" }, ...problemResponses },
-        summary: "Enable an organization plugin for one project",
-        tags: ["Plugins"],
-      },
-    },
-    async (request, reply) => {
-      const { organizationId, packageId, projectId } = request.params;
-      const access = await authorize(request, reply, organizationId, true);
-      if (!access || !requireProject(request, reply, organizationId, projectId)) return;
-      const enabled = input.database.read((context) =>
-        packages.findEnabledByPackageId(context, organizationId, packageId),
-      );
-      if (!enabled) {
-        return sendProblem(
-          reply,
-          request,
-          409,
-          "plugin_not_enabled_for_organization",
-          "Plugin is not enabled",
-          "Enable this exact package for the organization before enabling its project contributions.",
-        );
-      }
-      const now = Date.now();
-      await input.database.write((context) => {
-        packages.enableForProject(context, {
-          enabledAt: now,
-          enabledByUserId: access.userId,
-          organizationId,
-          pluginId: enabled.pluginId,
-          pluginPackageId: enabled.pluginPackageId,
-          projectId,
-          updatedAt: now,
-        });
-        audit.append(context, {
-          actorId: access.userId,
-          actorType: "user",
-          correlationId: request.id,
-          id: randomUUID(),
-          installationId: access.installation.id,
-          metadata: { packageId, pluginId: enabled.pluginId },
-          occurredAt: now,
-          operation: "plugin.project.enabled",
-          organizationId,
-          outcome: "succeeded",
-          targetId: projectId,
-          targetType: "project",
-        });
-      });
-      return resolve(access.installation.id, organizationId, projectId);
-    },
-  );
-
-  app.delete<{ Params: ProjectPackageParams }>(
-    "/api/v1/organizations/:organizationId/projects/:projectId/plugin-packages/:packageId/enable",
-    {
-      schema: {
-        operationId: "disableProjectPluginPackage",
-        params: {
-          additionalProperties: false,
-          properties: {
-            organizationId: { maxLength: 100, minLength: 1, type: "string" },
-            packageId: { maxLength: 100, minLength: 1, type: "string" },
-            projectId: { maxLength: 100, minLength: 1, type: "string" },
-          },
-          required: ["organizationId", "packageId", "projectId"],
-          type: "object",
-        },
-        response: { 204: { type: "null" }, ...problemResponses },
-        summary: "Disable a plugin for one project",
-        tags: ["Plugins"],
-      },
-    },
-    async (request, reply) => {
-      const { organizationId, packageId, projectId } = request.params;
-      const access = await authorize(request, reply, organizationId, true);
-      if (!access || !requireProject(request, reply, organizationId, projectId)) return;
-      const enabled = input.database.read((context) =>
-        packages.findEnabledByPackageId(context, organizationId, packageId),
-      );
-      if (!enabled) {
-        return sendProblem(
-          reply,
-          request,
-          404,
-          "plugin_package_not_found",
-          "Plugin package not found",
-          "This package is not enabled for the organization.",
-        );
-      }
-      const now = Date.now();
-      await input.database.write((context) => {
-        packages.disableForProject(context, organizationId, projectId, enabled.pluginId);
-        audit.append(context, {
-          actorId: access.userId,
-          actorType: "user",
-          correlationId: request.id,
-          id: randomUUID(),
-          installationId: access.installation.id,
-          metadata: { packageId, pluginId: enabled.pluginId },
-          occurredAt: now,
-          operation: "plugin.project.disabled",
-          organizationId,
-          outcome: "succeeded",
-          targetId: projectId,
-          targetType: "project",
-        });
-      });
-      return reply.status(204).send();
     },
   );
 }

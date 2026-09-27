@@ -43,10 +43,6 @@ const apiClient: ApiClient = {
     signOut: vi.fn(async () => undefined),
   },
   extensionRegistry: {
-    disableProject: vi.fn(async () => undefined),
-    enableProject: vi.fn(async () => {
-      throw new Error("Extension registries are not used by this shell fixture.");
-    }),
     getOrganization: vi.fn(async () => {
       throw new Error("Extension registries are not used by this shell fixture.");
     }),
@@ -64,9 +60,10 @@ const apiClient: ApiClient = {
   },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
   pluginPackages: {
-    enable: vi.fn(async () => {
+    activate: vi.fn(async () => {
       throw new Error("Plugin packages are not used by this shell fixture.");
     }),
+    deactivate: vi.fn(async () => undefined),
     list: vi.fn(async () => []),
     stage: vi.fn(async () => {
       throw new Error("Plugin packages are not used by this shell fixture.");

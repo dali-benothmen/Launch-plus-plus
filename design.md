@@ -700,6 +700,12 @@ Date pickers, tree controls, transfer lists, cascaders, carousels, tours, color 
 
 ## Accessibility and quality bar
 
+The Plugins page uses a responsive card grid with one card per plugin. Each card keeps identity,
+description, version, status, and the primary activation action scannable; selecting the card opens
+details in a right-side drawer. Package upload and Developer Mode remain separate sections on the
+same page, and connected-development pairing uses a focused approval modal.
+
+
 - Use semantic HTML first; Radix supplies behavior where native elements are insufficient.
 - Every control is keyboard operable and has a visible focus state.
 - Icon-only controls have accessible names.

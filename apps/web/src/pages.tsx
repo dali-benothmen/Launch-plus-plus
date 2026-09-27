@@ -16,15 +16,17 @@ import {
   Button,
   Card,
   Descriptions,
+  Drawer,
   Dropdown,
   type DropdownMenuItem,
   Empty,
   Form,
   Input,
+  Modal,
   MoreIcon,
   message,
+  PluginsIcon,
   ProjectsIcon,
-  Select,
   Spin,
   Switch,
   Table,
@@ -679,14 +681,7 @@ function formatPluginBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatPluginDate(timestamp: number) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp));
-}
-
-type PluginFailureOperation = "enable" | "load" | "project" | "upload";
+type PluginFailureOperation = "activate" | "deactivate" | "load" | "upload";
 
 interface PluginFailureContent {
   readonly correlationId?: string;
@@ -736,24 +731,25 @@ function pluginFailureContent(error: unknown): PluginFailureContent {
 
 export function PluginsPage() {
   const api = useApiClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { safeStart: pluginSafeStart } = useExtensionRegistries();
   const [messageApi, messageHolder] = message.useMessage();
   const [organizationId, setOrganizationId] = useState<string>();
   const [packages, setPackages] = useState<readonly PluginPackageSummary[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PluginPackageSummary>();
-  const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
   const [organizationRegistry, setOrganizationRegistry] = useState<ExtensionRegistry>(
     emptyExtensionRegistry(),
   );
-  const [projectRegistries, setProjectRegistries] = useState<
-    Readonly<Record<string, ExtensionRegistry>>
-  >({});
+  const [developerModeStatus, setDeveloperModeStatus] = useState<DeveloperModeStatus>();
+  const [pairingReview, setPairingReview] = useState<DeveloperModePairingReview>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>();
   const [failureOperation, setFailureOperation] = useState<PluginFailureOperation>();
   const [registryLoadFailed, setRegistryLoadFailed] = useState(false);
-  const [enablingPackageId, setEnablingPackageId] = useState<string>();
-  const [changingProjectId, setChangingProjectId] = useState<string>();
+  const [changingPackageId, setChangingPackageId] = useState<string>();
+  const [developerModeSaving, setDeveloperModeSaving] = useState(false);
+  const pairingId = searchParams.get("pairing") ?? undefined;
+  const pairingCode = searchParams.get("code") ?? undefined;
 
   const loadPackages = useCallback(async () => {
     setLoading(true);
@@ -766,19 +762,14 @@ export function PluginsPage() {
       setOrganizationId(currentOrganizationId);
       if (!currentOrganizationId) {
         setPackages([]);
-        setProjects([]);
         setOrganizationRegistry(emptyExtensionRegistry());
-        setProjectRegistries({});
         setSelectedPackage(undefined);
         return;
       }
-      const [nextPackages, catalog] = await Promise.all([
-        api.pluginPackages.list(currentOrganizationId),
-        api.projects.list(currentOrganizationId, { limit: 100 }),
+      const [nextPackages, nextDeveloperModeStatus] = await Promise.all([
+        api.pluginPackages.list(),
+        api.developerMode.status(currentOrganizationId),
       ]);
-      const nextProjects = catalog.projects
-        .filter((project) => project.archivedAt === undefined)
-        .toSorted((first, second) => first.position - second.position);
       let registryFailed = false;
       const nextOrganizationRegistry = await api.extensionRegistry
         .getOrganization(currentOrganizationId)
@@ -786,38 +777,40 @@ export function PluginsPage() {
           registryFailed = true;
           return emptyExtensionRegistry();
         });
-      const nextProjectRegistries = Object.fromEntries(
-        await Promise.all(
-          nextProjects.map(async (project) => {
-            const registry = await api.extensionRegistry
-              .getProject(currentOrganizationId, project.id)
-              .catch(() => {
-                registryFailed = true;
-                return emptyExtensionRegistry();
-              });
-            return [project.id, registry] as const;
-          }),
-        ),
-      );
       setPackages(nextPackages);
-      setProjects(nextProjects);
+      setDeveloperModeStatus(nextDeveloperModeStatus);
       setOrganizationRegistry(nextOrganizationRegistry);
-      setProjectRegistries(nextProjectRegistries);
       setRegistryLoadFailed(registryFailed);
       setSelectedPackage((current) =>
-        current ? nextPackages.find((item) => item.id === current.id) : nextPackages[0],
+        current ? nextPackages.find((item) => item.id === current.id) : undefined,
       );
+      if (pairingId && pairingCode && nextDeveloperModeStatus.enabled) {
+        setPairingReview(await api.developerMode.reviewPairing(pairingId, pairingCode));
+      } else {
+        setPairingReview(undefined);
+      }
     } catch (error) {
       setLoadError(error);
       setFailureOperation("load");
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, pairingCode, pairingId]);
 
   useEffect(() => {
     void loadPackages();
   }, [loadPackages]);
+
+  useEffect(() => {
+    if (!organizationId || !developerModeStatus?.enabled) return;
+    const interval = window.setInterval(() => {
+      void api.developerMode
+        .status(organizationId)
+        .then(setDeveloperModeStatus)
+        .catch(setLoadError);
+    }, 3_000);
+    return () => window.clearInterval(interval);
+  }, [api, developerModeStatus?.enabled, organizationId]);
 
   const uploadPackage = (options: UploadRequestOptions<PluginPackageSummary>) => {
     if (!organizationId) {
@@ -828,7 +821,7 @@ export function PluginsPage() {
     setFailureOperation(undefined);
     options.onProgress({ percent: 20 });
     void api.pluginPackages
-      .stage(organizationId, options.file)
+      .stage(options.file)
       .then((staged) => {
         options.onProgress({ percent: 100 });
         options.onSuccess(staged);
@@ -844,127 +837,108 @@ export function PluginsPage() {
       });
   };
 
-  const enablePackage = async () => {
-    if (!organizationId || !selectedPackage || enablingPackageId) return;
-    setEnablingPackageId(selectedPackage.id);
+  const changePackageActivation = async (pluginPackage: PluginPackageSummary) => {
+    if (changingPackageId) return;
+    setChangingPackageId(pluginPackage.id);
     setLoadError(undefined);
     setFailureOperation(undefined);
     try {
-      const enabled = await api.pluginPackages.enable(organizationId, selectedPackage.id);
-      setSelectedPackage(enabled);
-      setPackages((current) =>
-        current.map((item) =>
-          item.pluginId === enabled.pluginId
-            ? item.id === enabled.id
-              ? enabled
-              : (() => {
-                  const { enabledAt: _enabledAt, ...staged } = item;
-                  return { ...staged, state: "staged" as const };
-                })()
-            : item,
-        ),
-      );
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-      await loadPackages();
-      messageApi.success(`${enabled.name} enabled for this organization.`);
-    } catch (error) {
-      setLoadError(error);
-      setFailureOperation("enable");
-    } finally {
-      setEnablingPackageId(undefined);
-    }
-  };
-
-  const changeProjectActivation = async (project: ProjectSummary) => {
-    if (!organizationId || !selectedPackage || changingProjectId) return;
-    const enabled =
-      projectRegistries[project.id]?.packages.some(
-        (item) => item.id === selectedPackage.id && item.projectEnabled,
-      ) ?? false;
-    setChangingProjectId(project.id);
-    setLoadError(undefined);
-    setFailureOperation(undefined);
-    try {
-      if (enabled) {
-        await api.extensionRegistry.disableProject(organizationId, project.id, selectedPackage.id);
+      if (pluginPackage.state === "enabled") {
+        await api.pluginPackages.deactivate(pluginPackage.id);
+        setFailureOperation("deactivate");
+        messageApi.success(`${pluginPackage.name} deactivated across Launch++.`);
       } else {
-        await api.extensionRegistry.enableProject(organizationId, project.id, selectedPackage.id);
+        await api.pluginPackages.activate(pluginPackage.id);
+        setFailureOperation("activate");
+        messageApi.success(`${pluginPackage.name} activated across Launch++.`);
       }
-      await loadPackages();
       window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-      messageApi.success(
-        `${selectedPackage.name} ${enabled ? "disabled for" : "enabled for"} ${project.name}.`,
-      );
+      await loadPackages();
     } catch (error) {
       setLoadError(error);
-      setFailureOperation("project");
+      setFailureOperation(pluginPackage.state === "enabled" ? "deactivate" : "activate");
     } finally {
-      setChangingProjectId(undefined);
+      setChangingPackageId(undefined);
     }
   };
 
-  const projectAccessColumns: readonly TableColumn<ProjectSummary>[] = [
-    {
-      dataIndex: "name",
-      key: "project",
-      title: "Project",
-    },
-    {
-      key: "state",
-      title: "State",
-      render: (_value, project) => {
-        const enabled =
-          projectRegistries[project.id]?.packages.some(
-            (item) => item.id === selectedPackage?.id && item.projectEnabled,
-          ) ?? false;
-        return <Tag color={enabled ? "green" : "default"}>{enabled ? "Enabled" : "Disabled"}</Tag>;
-      },
-    },
-    {
-      key: "action",
-      title: "",
-      width: 120,
-      render: (_value, project) => {
-        const enabled =
-          projectRegistries[project.id]?.packages.some(
-            (item) => item.id === selectedPackage?.id && item.projectEnabled,
-          ) ?? false;
-        return (
-          <Button
-            loading={changingProjectId === project.id}
-            onClick={() => void changeProjectActivation(project)}
-            size="small"
-          >
-            {enabled ? "Disable" : "Enable"}
-          </Button>
-        );
-      },
-    },
-  ];
+  const toggleDeveloperMode = async (enabled: boolean) => {
+    if (!organizationId || developerModeSaving) return;
+    setDeveloperModeSaving(true);
+    setLoadError(undefined);
+    try {
+      setDeveloperModeStatus(await api.developerMode.setEnabled(organizationId, enabled));
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setDeveloperModeSaving(false);
+    }
+  };
+
+  const closePairing = () => {
+    setPairingReview(undefined);
+    setSearchParams({}, { replace: true });
+  };
+
+  const approvePairing = async () => {
+    if (!pairingId || !pairingCode || !organizationId || developerModeSaving) return;
+    setDeveloperModeSaving(true);
+    setLoadError(undefined);
+    try {
+      await api.developerMode.approvePairing(pairingId, {
+        code: pairingCode,
+        organizationId,
+      });
+      closePairing();
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      setDeveloperModeStatus(await api.developerMode.status(organizationId));
+      messageApi.success("Development plugin connected.");
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setDeveloperModeSaving(false);
+    }
+  };
+
+  const revokeSession = async (sessionId: string) => {
+    if (!organizationId || developerModeSaving) return;
+    setDeveloperModeSaving(true);
+    try {
+      await api.developerMode.revoke(sessionId);
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      setDeveloperModeStatus(await api.developerMode.status(organizationId));
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setDeveloperModeSaving(false);
+    }
+  };
+
+  const approveSessionPermissions = async (sessionId: string) => {
+    if (!organizationId || developerModeSaving) return;
+    setDeveloperModeSaving(true);
+    try {
+      await api.developerMode.approvePermissions(sessionId);
+      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+      setDeveloperModeStatus(await api.developerMode.status(organizationId));
+    } catch (error) {
+      setLoadError(error);
+    } finally {
+      setDeveloperModeSaving(false);
+    }
+  };
 
   const selectedSettings = [
     ...organizationRegistry.settings
       .filter((item) => item.packageId === selectedPackage?.id)
-      .map((contribution) => ({ contribution, location: "Organization" })),
-    ...projects.flatMap((project) =>
-      (projectRegistries[project.id]?.settings ?? [])
-        .filter((item) => item.packageId === selectedPackage?.id)
-        .map((contribution) => ({ contribution, location: project.name })),
-    ),
+      .map((contribution) => ({ contribution, location: "App" })),
   ];
 
-  const registryDiagnostics = [
-    ...organizationRegistry.diagnostics.map((diagnostic) => ({
-      diagnostic,
-      location: "Organization",
-    })),
-    ...projects.flatMap((project) =>
-      (projectRegistries[project.id]?.diagnostics ?? []).map((diagnostic) => ({
-        diagnostic,
-        location: project.name,
-      })),
-    ),
-  ];
+  const registryDiagnostics = organizationRegistry.diagnostics.map((diagnostic) => ({
+    diagnostic,
+    location: "App",
+  }));
   const diagnosticPluginIds = new Set(
     registryDiagnostics.map(({ diagnostic }) => diagnostic.pluginId),
   );
@@ -979,49 +953,60 @@ export function PluginsPage() {
           candidate.location === location,
       ) === index,
   );
+  const catalogPackages = useMemo(() => {
+    const grouped = new Map<string, PluginPackageSummary[]>();
+    for (const pluginPackage of packages) {
+      const versions = grouped.get(pluginPackage.pluginId) ?? [];
+      versions.push(pluginPackage);
+      grouped.set(pluginPackage.pluginId, versions);
+    }
+    return Array.from(
+      grouped.values(),
+      (versions) => versions.find((version) => version.state === "enabled") ?? versions[0],
+    ).filter((pluginPackage): pluginPackage is PluginPackageSummary => pluginPackage !== undefined);
+  }, [packages]);
 
-  const packageColumns: readonly TableColumn<PluginPackageSummary>[] = [
+  const sessionColumns: readonly TableColumn<DeveloperModeSession>[] = [
+    { key: "plugin", title: "Plugin", render: (_value, session) => session.name },
     {
-      key: "plugin",
-      title: "Plugin",
-      render: (_value, record) => (
-        <div>
-          <Typography.Text strong>{record.name}</Typography.Text>
-          <br />
-          <Typography.Text type="secondary">
-            {record.pluginId} · {record.version}
-          </Typography.Text>
-        </div>
+      key: "state",
+      title: "State",
+      render: (_value, session) => (
+        <Tag color={session.state === "active" ? "green" : "orange"}>
+          {session.state.replaceAll("_", " ")}
+        </Tag>
       ),
     },
     {
-      dataIndex: "state",
-      key: "state",
-      title: "State",
-      render: (_value, record) =>
-        diagnosticPluginIds.has(record.pluginId) ? (
-          <Tag color="red">Needs attention</Tag>
-        ) : pluginSafeStart && record.state === "enabled" ? (
-          <Tag color="orange">Paused by safe mode</Tag>
-        ) : (
-          <Tag color={record.state === "enabled" ? "green" : "blue"}>
-            {record.state === "enabled" ? "Enabled" : "Staged"}
-          </Tag>
-        ),
+      key: "expires",
+      title: "Expires",
+      render: (_value, session) => new Date(session.expiresAt).toLocaleString(),
     },
     {
-      key: "uploaded",
-      title: "Uploaded",
-      render: (_value, record) => formatPluginDate(record.uploadedAt),
-    },
-    {
-      key: "review",
+      key: "actions",
       title: "",
-      width: 100,
-      render: (_value, record) => (
-        <Button onClick={() => setSelectedPackage(record)} size="small">
-          Review
-        </Button>
+      render: (_value, session) => (
+        <div className="settings-actions">
+          {session.state === "awaiting_permission_review" ? (
+            <Button
+              disabled={developerModeSaving}
+              onClick={() => void approveSessionPermissions(session.id)}
+              size="small"
+            >
+              Approve permissions
+            </Button>
+          ) : null}
+          {session.state === "active" || session.state === "awaiting_permission_review" ? (
+            <Button
+              danger
+              disabled={developerModeSaving}
+              onClick={() => void revokeSession(session.id)}
+              size="small"
+            >
+              Revoke
+            </Button>
+          ) : null}
+        </div>
       ),
     },
   ];
@@ -1068,21 +1053,15 @@ export function PluginsPage() {
           Plugins
         </Typography.Title>
         <Typography.Text type="secondary">
-          Upload a packaged extension, review exactly what it adds and can access, then enable it
-          for this organization.
+          Manage installed plugins, connected development sessions, and app-wide activation.
         </Typography.Text>
       </div>
 
       {operationFailure ? (
         <Alert
           action={
-            failureOperation === "load" || failureOperation === "enable" ? (
-              <Button
-                onClick={() =>
-                  failureOperation === "load" ? void loadPackages() : void enablePackage()
-                }
-                size="small"
-              >
+            failureOperation === "load" ? (
+              <Button onClick={() => void loadPackages()} size="small">
                 Try again
               </Button>
             ) : undefined
@@ -1156,150 +1135,275 @@ export function PluginsPage() {
         </Upload.Dragger>
       </div>
 
+      <div>
+        <Typography.Title level={2}>Installed plugins</Typography.Title>
+        {catalogPackages.length > 0 ? (
+          <div className="plugin-card-grid">
+            {catalogPackages.map((pluginPackage) => {
+              const hasDiagnostics = diagnosticPluginIds.has(pluginPackage.pluginId);
+              return (
+                <Card
+                  className="plugin-card"
+                  key={pluginPackage.id}
+                  onClick={() => setSelectedPackage(pluginPackage)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedPackage(pluginPackage);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="plugin-card-content">
+                    <div className="plugin-card-heading">
+                      <span className="plugin-card-icon" aria-hidden>
+                        <PluginsIcon />
+                      </span>
+                      {hasDiagnostics ? (
+                        <Tag color="red">Needs attention</Tag>
+                      ) : pluginSafeStart && pluginPackage.state === "enabled" ? (
+                        <Tag color="orange">Paused</Tag>
+                      ) : (
+                        <Tag color={pluginPackage.state === "enabled" ? "green" : "default"}>
+                          {pluginPackage.state === "enabled" ? "Active" : "Inactive"}
+                        </Tag>
+                      )}
+                    </div>
+                    <div className="plugin-card-copy">
+                      <Typography.Title level={3}>{pluginPackage.name}</Typography.Title>
+                      <Typography.Text className="plugin-card-description" type="secondary">
+                        {pluginPackage.description ?? "No description provided."}
+                      </Typography.Text>
+                    </div>
+                    <div className="plugin-card-footer">
+                      <Typography.Text type="secondary">
+                        Version {pluginPackage.version}
+                      </Typography.Text>
+                      <Button
+                        loading={changingPackageId === pluginPackage.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void changePackageActivation(pluginPackage);
+                        }}
+                        size="small"
+                        variant={pluginPackage.state === "enabled" ? "default" : "primary"}
+                      >
+                        {pluginPackage.state === "enabled" ? "Deactivate" : "Activate"}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Empty description="No plugins uploaded" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+
       {selectedPackage ? (
-        <div className="plugin-review-section">
-          <div className="plugin-review-heading">
-            <div>
-              <Typography.Title level={2}>Review {selectedPackage.name}</Typography.Title>
-              <Typography.Text type="secondary">
-                {selectedPackage.pluginId} · {selectedPackage.version}
-              </Typography.Text>
-            </div>
+        <Drawer
+          extra={
             <Button
-              disabled={selectedPackage.state === "enabled"}
-              loading={enablingPackageId === selectedPackage.id}
-              onClick={() => void enablePackage()}
-              variant="primary"
-            >
-              {selectedPackage.state === "enabled" ? "Enabled" : "Enable plugin"}
-            </Button>
-          </div>
-
-          <Alert
-            showIcon
-            title="Unsigned local package"
-            description="The archive hash proves the uploaded bytes are unchanged; it does not verify who published them. Enable only packages you trust."
-            type="warning"
-          />
-
-          {selectedDiagnostics.length > 0 ? (
-            <div className="plugin-diagnostic-list">
-              <Typography.Title level={3}>Diagnostics</Typography.Title>
-              {selectedDiagnostics.map(({ diagnostic, location }) => (
-                <Alert
-                  description={
-                    <>
-                      {location} · {diagnostic.code}
-                      {diagnostic.contributionId
-                        ? ` · Contribution: ${diagnostic.contributionId}`
-                        : ""}
-                    </>
-                  }
-                  key={`${location}:${diagnostic.code}:${diagnostic.contributionId ?? "package"}`}
-                  showIcon
-                  title={diagnostic.message}
-                  type="error"
-                />
-              ))}
-            </div>
-          ) : null}
-
-          <Descriptions bordered column={{ xs: 1, md: 2 }} size="small" title="Package summary">
-            <Descriptions.Item label="Compatibility">
-              Plugin API {selectedPackage.compatibility.apiMinimum} to before{" "}
-              {selectedPackage.compatibility.apiMaximumExclusive}
-            </Descriptions.Item>
-            <Descriptions.Item label="Archive size">
-              {formatPluginBytes(selectedPackage.archiveSizeBytes)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Source">
-              {selectedPackage.provenance.sourceFileName}
-            </Descriptions.Item>
-            <Descriptions.Item label="SHA-256">
-              <Typography.Text code copyable>
-                {selectedPackage.packageHash}
-              </Typography.Text>
-            </Descriptions.Item>
-            {selectedPackage.compatibility.host ? (
-              <Descriptions.Item label="Launch++ host">
-                {selectedPackage.compatibility.host}
-              </Descriptions.Item>
-            ) : null}
-            {selectedPackage.compatibility.sdk ? (
-              <Descriptions.Item label="SDK">{selectedPackage.compatibility.sdk}</Descriptions.Item>
-            ) : null}
-            {selectedPackage.compatibility.ui ? (
-              <Descriptions.Item label="UI library">
-                {selectedPackage.compatibility.ui}
-              </Descriptions.Item>
-            ) : null}
-          </Descriptions>
-
-          <div>
-            <Typography.Title level={3}>Requested permissions</Typography.Title>
-            <div className="plugin-permission-list">
-              {selectedPackage.requestedPermissions.length > 0 ? (
-                selectedPackage.requestedPermissions.map((permission) => (
-                  <Tag key={permission}>{permission}</Tag>
-                ))
-              ) : (
-                <Typography.Text type="secondary">No data access requested.</Typography.Text>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <Typography.Title level={3}>Contribution preview</Typography.Title>
-            <Table<PluginContributionPreview>
-              columns={contributionColumns}
-              dataSource={selectedPackage.contributions}
-              locale={{ emptyText: "This package does not declare contributions." }}
-              pagination={false}
-              rowKey={(record) => `${record.kind}:${record.id}`}
+              loading={changingPackageId === selectedPackage.id}
+              onClick={() => void changePackageActivation(selectedPackage)}
               size="small"
-            />
-          </div>
+              variant={selectedPackage.state === "enabled" ? "default" : "primary"}
+            >
+              {selectedPackage.state === "enabled" ? "Deactivate" : "Activate"}
+            </Button>
+          }
+          onClose={() => setSelectedPackage(undefined)}
+          open
+          title={selectedPackage.name}
+          size={620}
+        >
+          <div className="plugin-review-section">
+            <Typography.Text type="secondary">
+              {selectedPackage.pluginId} · {selectedPackage.version}
+            </Typography.Text>
 
-          {selectedPackage.state === "enabled" ? (
+            <Alert
+              showIcon
+              title="Unsigned local package"
+              description="The archive hash proves the uploaded bytes are unchanged; it does not verify who published them. Activate only packages you trust."
+              type="warning"
+            />
+
+            {selectedDiagnostics.length > 0 ? (
+              <div className="plugin-diagnostic-list">
+                <Typography.Title level={3}>Diagnostics</Typography.Title>
+                {selectedDiagnostics.map(({ diagnostic, location }) => (
+                  <Alert
+                    description={
+                      <>
+                        {location} · {diagnostic.code}
+                        {diagnostic.contributionId
+                          ? ` · Contribution: ${diagnostic.contributionId}`
+                          : ""}
+                      </>
+                    }
+                    key={`${location}:${diagnostic.code}:${diagnostic.contributionId ?? "package"}`}
+                    showIcon
+                    title={diagnostic.message}
+                    type="error"
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            <Descriptions bordered column={{ xs: 1, md: 2 }} size="small" title="Package summary">
+              <Descriptions.Item label="Compatibility">
+                Plugin API {selectedPackage.compatibility.apiMinimum} to before{" "}
+                {selectedPackage.compatibility.apiMaximumExclusive}
+              </Descriptions.Item>
+              <Descriptions.Item label="Archive size">
+                {formatPluginBytes(selectedPackage.archiveSizeBytes)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Source">
+                {selectedPackage.provenance.sourceFileName}
+              </Descriptions.Item>
+              <Descriptions.Item label="SHA-256">
+                <Typography.Text code copyable>
+                  {selectedPackage.packageHash}
+                </Typography.Text>
+              </Descriptions.Item>
+              {selectedPackage.compatibility.host ? (
+                <Descriptions.Item label="Launch++ host">
+                  {selectedPackage.compatibility.host}
+                </Descriptions.Item>
+              ) : null}
+              {selectedPackage.compatibility.sdk ? (
+                <Descriptions.Item label="SDK">
+                  {selectedPackage.compatibility.sdk}
+                </Descriptions.Item>
+              ) : null}
+              {selectedPackage.compatibility.ui ? (
+                <Descriptions.Item label="UI library">
+                  {selectedPackage.compatibility.ui}
+                </Descriptions.Item>
+              ) : null}
+            </Descriptions>
+
             <div>
-              <Typography.Title level={3}>Project access</Typography.Title>
-              <Table<ProjectSummary>
-                columns={projectAccessColumns}
-                dataSource={projects}
-                locale={{ emptyText: "No active projects are available." }}
+              <Typography.Title level={3}>Requested permissions</Typography.Title>
+              <div className="plugin-permission-list">
+                {selectedPackage.requestedPermissions.length > 0 ? (
+                  selectedPackage.requestedPermissions.map((permission) => (
+                    <Tag key={permission}>{permission}</Tag>
+                  ))
+                ) : (
+                  <Typography.Text type="secondary">No data access requested.</Typography.Text>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Typography.Title level={3}>Contribution preview</Typography.Title>
+              <Table<PluginContributionPreview>
+                columns={contributionColumns}
+                dataSource={selectedPackage.contributions}
+                locale={{ emptyText: "This package does not declare contributions." }}
                 pagination={false}
-                rowKey="id"
+                rowKey={(record) => `${record.kind}:${record.id}`}
                 size="small"
               />
             </div>
-          ) : null}
 
-          {selectedSettings.length > 0 ? (
-            <div>
-              <Typography.Title level={3}>Host-rendered settings</Typography.Title>
-              {selectedSettings.map(({ contribution, location }) => (
-                <div key={`${location}:${contribution.id}`}>
-                  <Typography.Text type="secondary">{location}</Typography.Text>
-                  <ExtensionSettingsPreview contribution={contribution} />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+            {selectedSettings.length > 0 ? (
+              <div>
+                <Typography.Title level={3}>Host-rendered settings</Typography.Title>
+                {selectedSettings.map(({ contribution, location }) => (
+                  <div key={`${location}:${contribution.id}`}>
+                    <Typography.Text type="secondary">{location}</Typography.Text>
+                    <ExtensionSettingsPreview contribution={contribution} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </Drawer>
       ) : null}
 
-      <div>
-        <Typography.Title level={2}>Package catalog</Typography.Title>
-        <Table<PluginPackageSummary>
-          columns={packageColumns}
-          dataSource={packages}
-          loading={loading}
-          locale={{ emptyText: "No plugin packages have been uploaded." }}
-          pagination={false}
-          rowKey="id"
-          size="small"
-        />
-      </div>
+      <Card title="Developer Mode">
+        <div className="developer-mode-setting">
+          <div>
+            <Typography.Text>Connected plugin development</Typography.Text>
+            <br />
+            <Typography.Text type="secondary">
+              Allow temporary development plugins to pair with this Launch++ app. Turning it off
+              revokes active sessions and pending pairings.
+            </Typography.Text>
+          </div>
+          <Switch
+            ariaLabel="Enable connected Developer Mode"
+            checked={developerModeStatus?.enabled ?? false}
+            loading={developerModeSaving}
+            onChange={(enabled) => void toggleDeveloperMode(enabled)}
+          />
+        </div>
+        {developerModeStatus?.enabled ? (
+          <div className="plugin-development-sessions">
+            <Typography.Title level={3}>Connected sessions</Typography.Title>
+            <Table<DeveloperModeSession>
+              columns={sessionColumns}
+              dataSource={developerModeStatus.sessions}
+              locale={{ emptyText: "No connected development sessions." }}
+              pagination={false}
+              rowKey="id"
+              size="small"
+            />
+          </div>
+        ) : null}
+      </Card>
+
+      <Modal
+        centered
+        footer={null}
+        onCancel={closePairing}
+        open={pairingReview !== undefined}
+        title="Connect development plugin"
+        width={520}
+      >
+        {pairingReview ? (
+          <div className="plugin-pairing-review">
+            <Typography.Text>
+              Approve this temporary development session only if you started it.
+            </Typography.Text>
+            <Descriptions
+              bordered
+              column={1}
+              items={[
+                {
+                  key: "plugin",
+                  label: "Plugin",
+                  children: `${pairingReview.name} (${pairingReview.pluginId})`,
+                },
+                { key: "version", label: "Version", children: pairingReview.version },
+                {
+                  key: "permissions",
+                  label: "Permissions",
+                  children: pairingReview.requestedPermissions.join(", ") || "None",
+                },
+              ]}
+              size="small"
+            />
+            <div className="settings-actions plugin-pairing-actions">
+              <Button disabled={developerModeSaving} onClick={closePairing}>
+                Cancel
+              </Button>
+              <Button
+                loading={developerModeSaving}
+                onClick={() => void approvePairing()}
+                variant="primary"
+              >
+                Approve connection
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </section>
   );
 }
@@ -1318,218 +1422,15 @@ export function MembersPage() {
 }
 
 export function OrganizationSettingsPage() {
-  const api = useApiClient();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [organizationId, setOrganizationId] = useState("");
-  const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
-  const [status, setStatus] = useState<DeveloperModeStatus>();
-  const [review, setReview] = useState<DeveloperModePairingReview>();
-  const [selectedProjectId, setSelectedProjectId] = useState<string>();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<unknown>();
-
-  const pairingId = searchParams.get("pairing") ?? undefined;
-  const pairingCode = searchParams.get("code") ?? undefined;
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(undefined);
-    try {
-      const context = await api.organizations.list({ limit: 100 });
-      const currentId = context.currentOrganizationId ?? context.organizations[0]?.id;
-      if (!currentId) throw new Error("Select an organization before managing Developer Mode.");
-      setOrganizationId(currentId);
-      const [nextStatus, catalog] = await Promise.all([
-        api.developerMode.status(currentId),
-        api.projects.list(currentId, { limit: 100 }),
-      ]);
-      setStatus(nextStatus);
-      setProjects(catalog.projects.filter((project) => project.archivedAt === undefined));
-      if (pairingId && pairingCode && nextStatus.enabled) {
-        setReview(await api.developerMode.reviewPairing(pairingId, pairingCode));
-      } else {
-        setReview(undefined);
-      }
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, pairingCode, pairingId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (!organizationId || !status?.enabled) return;
-    const interval = window.setInterval(() => {
-      void api.developerMode.status(organizationId).then(setStatus).catch(setError);
-    }, 3_000);
-    return () => window.clearInterval(interval);
-  }, [api, organizationId, status?.enabled]);
-
-  const approvePairing = async () => {
-    if (!pairingId || !pairingCode || !organizationId || saving) return;
-    setSaving(true);
-    setError(undefined);
-    try {
-      await api.developerMode.approvePairing(pairingId, {
-        code: pairingCode,
-        organizationId,
-        ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
-      });
-      setSearchParams({}, { replace: true });
-      setReview(undefined);
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-      setStatus(await api.developerMode.status(organizationId));
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const revoke = async (sessionId: string) => {
-    setSaving(true);
-    setError(undefined);
-    try {
-      await api.developerMode.revoke(sessionId);
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-      await load();
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const approvePermissions = async (sessionId: string) => {
-    setSaving(true);
-    setError(undefined);
-    try {
-      await api.developerMode.approvePermissions(sessionId);
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-      await load();
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const columns: readonly TableColumn<DeveloperModeSession>[] = [
-    { key: "plugin", title: "Plugin", render: (_value, session) => session.name },
-    {
-      key: "state",
-      title: "State",
-      render: (_value, session) => (
-        <Tag
-          color={
-            session.state === "active"
-              ? "green"
-              : session.state === "awaiting_permission_review"
-                ? "orange"
-                : "default"
-          }
-        >
-          {session.state.replaceAll("_", " ")}
-        </Tag>
-      ),
-    },
-    {
-      key: "expires",
-      title: "Expires",
-      render: (_value, session) => new Date(session.expiresAt).toLocaleString(),
-    },
-    {
-      key: "actions",
-      title: "",
-      render: (_value, session) => (
-        <div className="settings-actions">
-          {session.state === "awaiting_permission_review" ? (
-            <Button
-              disabled={saving}
-              onClick={() => void approvePermissions(session.id)}
-              size="small"
-            >
-              Approve permissions
-            </Button>
-          ) : null}
-          {session.state === "active" || session.state === "awaiting_permission_review" ? (
-            <Button danger disabled={saving} onClick={() => void revoke(session.id)} size="small">
-              Revoke
-            </Button>
-          ) : null}
-        </div>
-      ),
-    },
-  ];
-
   return (
     <section aria-labelledby="organization-settings-title" className="page-stack">
       <Typography.Title id="organization-settings-title" level={1}>
         Organization settings
       </Typography.Title>
-      {error instanceof Error ? <Alert showIcon title={error.message} type="error" /> : null}
-      {loading ? <Spin description="Loading Developer Mode…" /> : null}
-      {!loading && status?.enabled ? (
-        <>
-          {review ? (
-            <Card title="Approve plugin pairing">
-              <Descriptions
-                bordered
-                column={1}
-                items={[
-                  {
-                    key: "plugin",
-                    label: "Plugin",
-                    children: `${review.name} (${review.pluginId})`,
-                  },
-                  { key: "version", label: "Version", children: review.version },
-                  {
-                    key: "permissions",
-                    label: "Requested permissions",
-                    children: review.requestedPermissions.join(", ") || "None",
-                  },
-                ]}
-                size="small"
-              />
-              <Form layout="vertical">
-                <Form.Item label="Development project">
-                  <Select
-                    allowClear
-                    onChange={(value) =>
-                      setSelectedProjectId(typeof value === "string" ? value : undefined)
-                    }
-                    options={projects.map((project) => ({
-                      label: project.name,
-                      value: project.id,
-                    }))}
-                    placeholder="Organization scope only"
-                    value={selectedProjectId}
-                  />
-                </Form.Item>
-                <Button loading={saving} onClick={() => void approvePairing()} variant="primary">
-                  Approve pairing
-                </Button>
-              </Form>
-            </Card>
-          ) : null}
-          <div>
-            <Typography.Title level={2}>Connected sessions</Typography.Title>
-            <Table<DeveloperModeSession>
-              columns={columns}
-              dataSource={status.sessions}
-              locale={{ emptyText: "No connected development sessions." }}
-              pagination={false}
-              rowKey="id"
-              size="small"
-            />
-          </div>
-        </>
-      ) : null}
+      <Typography.Text type="secondary">
+        Organization profile and member defaults will live here. Manage plugins and Developer Mode
+        from the Plugins page.
+      </Typography.Text>
     </section>
   );
 }
@@ -1540,45 +1441,6 @@ export function SettingsPage() {
   const { safeStart: pluginSafeStart } = useExtensionRegistries();
   const [error, setError] = useState<unknown>();
   const [signingOut, setSigningOut] = useState(false);
-  const [developerModeOrganizationId, setDeveloperModeOrganizationId] = useState("");
-  const [developerModeStatus, setDeveloperModeStatus] = useState<DeveloperModeStatus>();
-  const [developerModeLoading, setDeveloperModeLoading] = useState(true);
-  const [developerModeSaving, setDeveloperModeSaving] = useState(false);
-
-  const loadDeveloperMode = useCallback(async () => {
-    setDeveloperModeLoading(true);
-    try {
-      const context = await api.organizations.list({ limit: 100 });
-      const organizationId = context.currentOrganizationId ?? context.organizations[0]?.id;
-      if (!organizationId) return;
-      setDeveloperModeOrganizationId(organizationId);
-      setDeveloperModeStatus(await api.developerMode.status(organizationId));
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setDeveloperModeLoading(false);
-    }
-  }, [api]);
-
-  useEffect(() => {
-    void loadDeveloperMode();
-  }, [loadDeveloperMode]);
-
-  const toggleDeveloperMode = async (enabled: boolean) => {
-    if (!developerModeOrganizationId || developerModeSaving) return;
-    setDeveloperModeSaving(true);
-    setError(undefined);
-    try {
-      setDeveloperModeStatus(
-        await api.developerMode.setEnabled(developerModeOrganizationId, enabled),
-      );
-      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
-    } catch (reason) {
-      setError(reason);
-    } finally {
-      setDeveloperModeSaving(false);
-    }
-  };
 
   const signOut = async () => {
     setError(undefined);
@@ -1622,24 +1484,6 @@ export function SettingsPage() {
           >
             {pluginSafeStart ? "Restart with plugins" : "Restart in safe mode"}
           </Button>
-        </div>
-      </Card>
-      <Card title="Developer Mode">
-        <div className="developer-mode-setting">
-          <div>
-            <Typography.Text>Connected plugin development</Typography.Text>
-            <br />
-            <Typography.Text type="secondary">
-              Allow temporary, author-scoped plugin sessions. Disabling this immediately revokes
-              active sessions and pending pairings.
-            </Typography.Text>
-          </div>
-          <Switch
-            ariaLabel="Enable connected Developer Mode"
-            checked={developerModeStatus?.enabled ?? false}
-            loading={developerModeLoading || developerModeSaving}
-            onChange={(enabled) => void toggleDeveloperMode(enabled)}
-          />
         </div>
       </Card>
       <div className="settings-actions">

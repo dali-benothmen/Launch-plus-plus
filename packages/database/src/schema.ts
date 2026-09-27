@@ -777,12 +777,12 @@ export const pluginPackages = sqliteTable(
   ],
 );
 
-export const organizationPlugins = sqliteTable(
-  "organization_plugins",
+export const installationPlugins = sqliteTable(
+  "installation_plugins",
   {
-    organizationId: text("organization_id")
+    installationId: text("installation_id")
       .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
+      .references(() => installations.id, { onDelete: "cascade" }),
     pluginId: text("plugin_id").notNull(),
     pluginPackageId: text("plugin_package_id")
       .notNull()
@@ -795,39 +795,9 @@ export const organizationPlugins = sqliteTable(
     updatedAt: integer("updated_at").notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.organizationId, table.pluginId] }),
-    index("organization_plugins_package_idx").on(table.pluginPackageId),
-    check("organization_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
-  ],
-);
-
-export const projectPlugins = sqliteTable(
-  "project_plugins",
-  {
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organizations.id, { onDelete: "cascade" }),
-    projectId: text("project_id").notNull(),
-    pluginId: text("plugin_id").notNull(),
-    pluginPackageId: text("plugin_package_id")
-      .notNull()
-      .references(() => pluginPackages.id, { onDelete: "restrict" }),
-    enabledByUserId: text("enabled_by_user_id")
-      .notNull()
-      .references(() => authUsers.id, { onDelete: "restrict" }),
-    enabledAt: integer("enabled_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.projectId, table.pluginId] }),
-    foreignKey({
-      columns: [table.organizationId, table.projectId],
-      foreignColumns: [projects.organizationId, projects.id],
-      name: "project_plugins_organization_project_fk",
-    }).onDelete("cascade"),
-    index("project_plugins_organization_project_idx").on(table.organizationId, table.projectId),
-    index("project_plugins_package_idx").on(table.pluginPackageId),
-    check("project_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+    primaryKey({ columns: [table.installationId, table.pluginId] }),
+    index("installation_plugins_package_idx").on(table.pluginPackageId),
+    check("installation_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
   ],
 );
 
@@ -921,13 +891,13 @@ export const databaseSchema = {
   authSessions,
   authUsers,
   authVerifications,
+  installationPlugins,
   installations,
   idempotencyRecords,
   invalidationEvents,
   labels,
   outboxMessages,
   projectFolders,
-  projectPlugins,
   projectPreferences,
   projectStatuses,
   projects,
@@ -940,7 +910,6 @@ export const databaseSchema = {
   userProfiles,
   organizationMembers,
   organizations,
-  organizationPlugins,
   pluginFieldValues,
   pluginPackages,
 };

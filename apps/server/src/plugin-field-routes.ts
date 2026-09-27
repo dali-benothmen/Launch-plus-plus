@@ -4,7 +4,7 @@ import type { UpdateTaskExtensionFieldInput } from "@launchpp/api-contracts";
 import type { BetterAuthIdentityAdapter } from "@launchpp/auth-adapter";
 import { actorFromIdentitySession, canAccessOrganization } from "@launchpp/authorization";
 import {
-  type EnabledOrganizationPluginPackageRecord,
+  type EnabledInstallationPluginPackageRecord,
   SqliteAuditWriter,
   type SqliteDatabase,
   SqliteInstallationRepository,
@@ -50,7 +50,7 @@ function webHeaders(headers: FastifyRequest["headers"]): Headers {
   return result;
 }
 
-function storedManifest(record: EnabledOrganizationPluginPackageRecord): PluginPackageManifest {
+function storedManifest(record: EnabledInstallationPluginPackageRecord): PluginPackageManifest {
   const validation = validatePluginPackageManifest(JSON.parse(record.manifestJson) as unknown);
   if (!validation.ok) throw new Error(`Stored manifest for '${record.pluginId}' is invalid.`);
   return validation.value;
@@ -165,17 +165,7 @@ export async function registerPluginFieldRoutes(
       }
 
       const installed = input.database.read((context) => {
-        const enabledProjectPackages = new Set(
-          packages.listProjectEnabledPackageIds(
-            context,
-            request.params.organizationId,
-            request.params.projectId,
-          ),
-        );
-        return packages
-          .listEnabledForOrganization(context, installation.id, request.params.organizationId)
-          .filter((item) => enabledProjectPackages.has(item.id))
-          .map((item) => storedManifest(item));
+        return packages.listEnabled(context, installation.id).map((item) => storedManifest(item));
       });
       const connected = input.developerMode
         .packagesFor(session.identity.id, request.params.organizationId, request.params.projectId)
@@ -194,7 +184,7 @@ export async function registerPluginFieldRoutes(
           404,
           "task_field_unavailable",
           "Task field unavailable",
-          "Enable the plugin for this project before editing its task field.",
+          "Activate the plugin before editing its task field.",
         );
         return;
       }
