@@ -410,7 +410,7 @@ The implemented author-preview flow uses the authenticated Plugins destination a
 
 For the local author preview, an organization owner performs the combined operator/administrator flow. This does not claim that organization ownership grants installation-operator authority in a future shared deployment. Enablement in this slice records availability and accepted permissions only: contribution registration, routes, rendering, capability execution, dependencies, updates, disable/uninstall and publisher signatures remain owned by later lifecycle tasks. Uploaded server code is never executed during inspection or enablement.
 
-Errors remain local to the affected plugin surface. Repeated failures pause its handlers and show an actionable status in Settings → Extensions. A safe-start option loads the core with all optional plugins disabled.
+Errors remain local to the affected plugin surface. The host now bounds initial loading, distinguishes slow and unavailable surfaces, offers surface-local retry and redacted diagnostics, and keeps the shell navigable when registry loading fails. Global Settings can restart the current browser session in plugin safe mode, which suppresses optional contributions without changing installed packages or their data. Registry diagnostics mark affected packages as needing attention in Plugins. Server-handler execution remains disabled in the author preview, so automatic repeated-handler failure pausing becomes relevant only when that production runtime is enabled.
 
 ### Shared state and core data access
 

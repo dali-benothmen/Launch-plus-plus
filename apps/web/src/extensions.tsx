@@ -5,6 +5,27 @@ import { useLocation } from "react-router-dom";
 
 export const extensionRegistryChangedEvent = "launchpp:extension-registry-changed";
 
+const pluginSafeStartStorageKey = "launchpp:plugin-safe-start";
+
+export function initializePluginSafeStart(search: string): boolean {
+  const requested = new URLSearchParams(search).get("safe-start") === "plugins";
+  try {
+    if (requested) sessionStorage.setItem(pluginSafeStartStorageKey, "1");
+    return requested || sessionStorage.getItem(pluginSafeStartStorageKey) === "1";
+  } catch {
+    return requested;
+  }
+}
+
+export function setPluginSafeStart(enabled: boolean): void {
+  try {
+    if (enabled) sessionStorage.setItem(pluginSafeStartStorageKey, "1");
+    else sessionStorage.removeItem(pluginSafeStartStorageKey);
+  } catch {
+    // The URL query remains a one-load fallback when session storage is unavailable.
+  }
+}
+
 export function emptyExtensionRegistry(): ExtensionRegistry {
   return {
     actions: [],
@@ -23,11 +44,13 @@ export function emptyExtensionRegistry(): ExtensionRegistry {
 export interface ExtensionRegistries {
   readonly organization: ExtensionRegistry;
   readonly project: ExtensionRegistry;
+  readonly safeStart: boolean;
 }
 
 const ExtensionRegistryContext = createContext<ExtensionRegistries>({
   organization: emptyExtensionRegistry(),
   project: emptyExtensionRegistry(),
+  safeStart: false,
 });
 
 export function ExtensionRegistryProvider({

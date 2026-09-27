@@ -28,6 +28,8 @@ import {
   ExtensionRegistryProvider,
   emptyExtensionRegistry,
   extensionRegistryChangedEvent,
+  initializePluginSafeStart,
+  setPluginSafeStart,
 } from "./extensions.js";
 import { GlobalSearch } from "./global-search.js";
 import { InvalidationListener, invalidationEventName } from "./invalidation.js";
@@ -100,6 +102,9 @@ export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [organizationId, setOrganizationId] = useState("");
   const [developerModeEnabled, setDeveloperModeEnabled] = useState(false);
+  const [pluginSafeStart] = useState(() => initializePluginSafeStart(window.location.search));
+  const [organizationExtensionFailure, setOrganizationExtensionFailure] = useState(false);
+  const [projectExtensionFailure, setProjectExtensionFailure] = useState(false);
   const [organizationName, setOrganizationName] = useState("Organization");
   const [memberName, setMemberName] = useState("Launch++ member");
   const [projects, setProjects] = useState<readonly ProjectSummary[]>([]);
@@ -133,17 +138,26 @@ export function AppShell() {
       if (!organization) {
         setOrganizationId("");
         setOrganizationExtensions(emptyExtensionRegistry());
+        setOrganizationExtensionFailure(false);
         return;
       }
       setOrganizationId(organization.id);
       setOrganizationName(organization.name);
-      const [catalog, nextTeams, nextExtensions] = await Promise.all([
+      const [catalog, nextTeams] = await Promise.all([
         api.projects.list(organization.id, { limit: 100 }),
         api.teams.list(organization.id),
-        api.extensionRegistry
-          .getOrganization(organization.id)
-          .catch(() => emptyExtensionRegistry()),
       ]);
+      let nextExtensions = emptyExtensionRegistry();
+      if (pluginSafeStart) {
+        setOrganizationExtensionFailure(false);
+      } else {
+        try {
+          nextExtensions = await api.extensionRegistry.getOrganization(organization.id);
+          setOrganizationExtensionFailure(false);
+        } catch {
+          setOrganizationExtensionFailure(true);
+        }
+      }
       setOrganizationExtensions(nextExtensions);
       setProjects(
         catalog.projects
@@ -154,7 +168,7 @@ export function AppShell() {
     } catch {
       // Route-level screens own load failures. Navigation remains usable while they recover.
     }
-  }, [api]);
+  }, [api, pluginSafeStart]);
 
   useEffect(() => {
     void loadNavigation();
@@ -196,8 +210,9 @@ export function AppShell() {
   )?.[1];
 
   useEffect(() => {
-    if (!organizationId || !activeProjectId) {
+    if (!organizationId || !activeProjectId || pluginSafeStart) {
       setProjectExtensions(emptyExtensionRegistry());
+      setProjectExtensionFailure(false);
       return;
     }
     let current = true;
@@ -205,10 +220,14 @@ export function AppShell() {
       void api.extensionRegistry
         .getProject(organizationId, activeProjectId)
         .then((registry) => {
-          if (current) setProjectExtensions(registry);
+          if (!current) return;
+          setProjectExtensions(registry);
+          setProjectExtensionFailure(false);
         })
         .catch(() => {
-          if (current) setProjectExtensions(emptyExtensionRegistry());
+          if (!current) return;
+          setProjectExtensions(emptyExtensionRegistry());
+          setProjectExtensionFailure(true);
         });
     };
     setProjectExtensions(emptyExtensionRegistry());
@@ -218,11 +237,15 @@ export function AppShell() {
       current = false;
       window.removeEventListener(extensionRegistryChangedEvent, load);
     };
-  }, [activeProjectId, api, organizationId]);
+  }, [activeProjectId, api, organizationId, pluginSafeStart]);
 
   const extensionRegistries = useMemo(
-    () => ({ organization: organizationExtensions, project: projectExtensions }),
-    [organizationExtensions, projectExtensions],
+    () => ({
+      organization: organizationExtensions,
+      project: projectExtensions,
+      safeStart: pluginSafeStart,
+    }),
+    [organizationExtensions, pluginSafeStart, projectExtensions],
   );
   const extensionNavigation = useMemo(
     () => [
@@ -248,6 +271,8 @@ export function AppShell() {
     ? `/app/organizations/${recentProject.organizationId}/projects/${recentProject.id}/board`
     : "/app/projects";
   const organizationSidebarVisible = isOrganizationRoute(location.pathname);
+  const extensionLoadFailed = organizationExtensionFailure || projectExtensionFailure;
+  const systemBannerVisible = developerModeEnabled || pluginSafeStart || extensionLoadFailed;
   const notificationItems: readonly DropdownMenuItem[] = [
     { disabled: true, key: "empty", label: "You have no new notifications" },
   ];
@@ -308,7 +333,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell${organizationSidebarVisible ? " has-organization-sidebar" : ""}${developerModeEnabled ? " has-developer-mode-banner" : ""}`}
+      className={`app-shell${organizationSidebarVisible ? " has-organization-sidebar" : ""}${systemBannerVisible ? " has-system-banner" : ""}`}
     >
       {messageHolder}
       <InvalidationListener />
@@ -316,27 +341,77 @@ export function AppShell() {
         Skip to content
       </a>
 
-      {developerModeEnabled ? (
-        <Alert
-          banner
-          className="developer-mode-banner"
-          title={
-            <>
-              Developer Mode is on. Tap{" "}
-              <Typography.Link
-                href="/app/settings"
-                onClick={(event) => {
-                  event.preventDefault();
-                  navigate("/app/settings");
-                }}
-              >
-                here
-              </Typography.Link>{" "}
-              to turn it off.
-            </>
-          }
-          type="warning"
-        />
+      {systemBannerVisible ? (
+        <div className="app-system-banners">
+          {pluginSafeStart ? (
+            <Alert
+              action={
+                <Button
+                  onClick={() => {
+                    setPluginSafeStart(false);
+                    window.location.assign("/app");
+                  }}
+                  size="small"
+                >
+                  Restart with plugins
+                </Button>
+              }
+              banner
+              title="Plugin safe mode is on. Optional plugins are disabled for this browser session."
+              type="warning"
+            />
+          ) : null}
+          {extensionLoadFailed && !pluginSafeStart ? (
+            <Alert
+              action={
+                <div className="system-banner-actions">
+                  <Button
+                    onClick={() => {
+                      void loadNavigation();
+                      window.dispatchEvent(new Event(extensionRegistryChangedEvent));
+                    }}
+                    size="small"
+                  >
+                    Retry
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setPluginSafeStart(true);
+                      window.location.assign("/app");
+                    }}
+                    size="small"
+                  >
+                    Restart in safe mode
+                  </Button>
+                </div>
+              }
+              banner
+              title="Some plugins could not load. Core Launch++ features remain available."
+              type="error"
+            />
+          ) : null}
+          {developerModeEnabled ? (
+            <Alert
+              banner
+              title={
+                <>
+                  Developer Mode is on. Tap{" "}
+                  <Typography.Link
+                    href="/app/settings"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate("/app/settings");
+                    }}
+                  >
+                    here
+                  </Typography.Link>{" "}
+                  to turn it off.
+                </>
+              }
+              type="warning"
+            />
+          ) : null}
+        </div>
       ) : null}
 
       <aside aria-label="Global navigation" className="icon-rail">
@@ -410,27 +485,27 @@ export function AppShell() {
             ))}
           </nav>
 
-            {extensionNavigation.length > 0 ? (
-              <div className="sidebar-section">
-                <Typography.Text className="sidebar-section-label" type="secondary">
-                  Extensions
-                </Typography.Text>
-                <nav className="sidebar-projects" aria-label="Extensions">
-                  {extensionNavigation.map((item) => (
-                    <NavLink
-                      className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
-                      key={item.id}
-                      to={item.route}
-                    >
-                      <span aria-hidden className="sidebar-icon">
-                        <PluginsIcon />
-                      </span>
-                      <span>{item.label}</span>
-                    </NavLink>
-                  ))}
-                </nav>
-              </div>
-            ) : null}
+          {extensionNavigation.length > 0 ? (
+            <div className="sidebar-section">
+              <Typography.Text className="sidebar-section-label" type="secondary">
+                Extensions
+              </Typography.Text>
+              <nav className="sidebar-projects" aria-label="Extensions">
+                {extensionNavigation.map((item) => (
+                  <NavLink
+                    className={({ isActive }) => `sidebar-link${isActive ? " is-active" : ""}`}
+                    key={item.id}
+                    to={item.route}
+                  >
+                    <span aria-hidden className="sidebar-icon">
+                      <PluginsIcon />
+                    </span>
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ) : null}
 
           <div className="sidebar-section">
             <Typography.Text className="sidebar-section-label" type="secondary">

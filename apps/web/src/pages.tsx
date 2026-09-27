@@ -48,6 +48,8 @@ import {
   ExtensionSettingsPreview,
   emptyExtensionRegistry,
   extensionRegistryChangedEvent,
+  setPluginSafeStart,
+  useExtensionRegistries,
 } from "./extensions.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
@@ -684,8 +686,57 @@ function formatPluginDate(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
+type PluginFailureOperation = "enable" | "load" | "project" | "upload";
+
+interface PluginFailureContent {
+  readonly correlationId?: string;
+  readonly description: string;
+  readonly guidance: string;
+  readonly title: string;
+}
+
+function pluginFailureContent(error: unknown): PluginFailureContent {
+  if (!(error instanceof ApiError)) {
+    return {
+      description: "Launch++ could not complete the plugin operation.",
+      guidance:
+        "Try again. If the problem continues, restart in plugin safe mode and review the package.",
+      title: "Plugin operation failed",
+    };
+  }
+
+  const rebuildCodes = new Set([
+    "archive_too_large",
+    "duplicate_path",
+    "entry_too_large",
+    "forbidden_path",
+    "integrity_mismatch",
+    "invalid_archive",
+    "invalid_integrity",
+    "invalid_manifest",
+    "too_many_entries",
+    "zip_bomb",
+  ]);
+  const guidance =
+    error.code === "plugin_package_identity_conflict"
+      ? "Increase the plugin version, run launchpp pack again, and upload the new archive."
+      : error.code && rebuildCodes.has(error.code)
+        ? "Run launchpp check, rebuild with launchpp pack, and upload the generated archive."
+        : error.status === 403
+          ? "Sign in as an organization owner before managing plugins."
+          : "Try again. Use the diagnostic reference when the problem continues.";
+
+  return {
+    ...(error.correlationId ? { correlationId: error.correlationId } : {}),
+    description: error.message,
+    guidance,
+    title: error.problem?.title ?? "Plugin operation failed",
+  };
+}
+
 export function PluginsPage() {
   const api = useApiClient();
+  const { safeStart: pluginSafeStart } = useExtensionRegistries();
   const [messageApi, messageHolder] = message.useMessage();
   const [organizationId, setOrganizationId] = useState<string>();
   const [packages, setPackages] = useState<readonly PluginPackageSummary[]>([]);
@@ -699,12 +750,16 @@ export function PluginsPage() {
   >({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>();
+  const [failureOperation, setFailureOperation] = useState<PluginFailureOperation>();
+  const [registryLoadFailed, setRegistryLoadFailed] = useState(false);
   const [enablingPackageId, setEnablingPackageId] = useState<string>();
   const [changingProjectId, setChangingProjectId] = useState<string>();
 
   const loadPackages = useCallback(async () => {
     setLoading(true);
     setLoadError(undefined);
+    setFailureOperation(undefined);
+    setRegistryLoadFailed(false);
     try {
       const context = await api.organizations.list({ limit: 100 });
       const currentOrganizationId = context.currentOrganizationId;
@@ -717,31 +772,44 @@ export function PluginsPage() {
         setSelectedPackage(undefined);
         return;
       }
-      const [nextPackages, catalog, nextOrganizationRegistry] = await Promise.all([
+      const [nextPackages, catalog] = await Promise.all([
         api.pluginPackages.list(currentOrganizationId),
         api.projects.list(currentOrganizationId, { limit: 100 }),
-        api.extensionRegistry.getOrganization(currentOrganizationId),
       ]);
       const nextProjects = catalog.projects
         .filter((project) => project.archivedAt === undefined)
         .toSorted((first, second) => first.position - second.position);
+      let registryFailed = false;
+      const nextOrganizationRegistry = await api.extensionRegistry
+        .getOrganization(currentOrganizationId)
+        .catch(() => {
+          registryFailed = true;
+          return emptyExtensionRegistry();
+        });
       const nextProjectRegistries = Object.fromEntries(
         await Promise.all(
-          nextProjects.map(async (project) => [
-            project.id,
-            await api.extensionRegistry.getProject(currentOrganizationId, project.id),
-          ]),
+          nextProjects.map(async (project) => {
+            const registry = await api.extensionRegistry
+              .getProject(currentOrganizationId, project.id)
+              .catch(() => {
+                registryFailed = true;
+                return emptyExtensionRegistry();
+              });
+            return [project.id, registry] as const;
+          }),
         ),
       );
       setPackages(nextPackages);
       setProjects(nextProjects);
       setOrganizationRegistry(nextOrganizationRegistry);
       setProjectRegistries(nextProjectRegistries);
+      setRegistryLoadFailed(registryFailed);
       setSelectedPackage((current) =>
         current ? nextPackages.find((item) => item.id === current.id) : nextPackages[0],
       );
     } catch (error) {
       setLoadError(error);
+      setFailureOperation("load");
     } finally {
       setLoading(false);
     }
@@ -757,6 +825,7 @@ export function PluginsPage() {
       return;
     }
     setLoadError(undefined);
+    setFailureOperation(undefined);
     options.onProgress({ percent: 20 });
     void api.pluginPackages
       .stage(organizationId, options.file)
@@ -770,6 +839,7 @@ export function PluginsPage() {
       .catch((error: unknown) => {
         const reason = error instanceof Error ? error : new Error("Plugin upload failed.");
         setLoadError(reason);
+        setFailureOperation("upload");
         options.onError(reason);
       });
   };
@@ -778,6 +848,7 @@ export function PluginsPage() {
     if (!organizationId || !selectedPackage || enablingPackageId) return;
     setEnablingPackageId(selectedPackage.id);
     setLoadError(undefined);
+    setFailureOperation(undefined);
     try {
       const enabled = await api.pluginPackages.enable(organizationId, selectedPackage.id);
       setSelectedPackage(enabled);
@@ -798,6 +869,7 @@ export function PluginsPage() {
       messageApi.success(`${enabled.name} enabled for this organization.`);
     } catch (error) {
       setLoadError(error);
+      setFailureOperation("enable");
     } finally {
       setEnablingPackageId(undefined);
     }
@@ -811,6 +883,7 @@ export function PluginsPage() {
       ) ?? false;
     setChangingProjectId(project.id);
     setLoadError(undefined);
+    setFailureOperation(undefined);
     try {
       if (enabled) {
         await api.extensionRegistry.disableProject(organizationId, project.id, selectedPackage.id);
@@ -824,6 +897,7 @@ export function PluginsPage() {
       );
     } catch (error) {
       setLoadError(error);
+      setFailureOperation("project");
     } finally {
       setChangingProjectId(undefined);
     }
@@ -879,49 +953,78 @@ export function PluginsPage() {
     ),
   ];
 
-  const packageColumns = useMemo<readonly TableColumn<PluginPackageSummary>[]>(
-    () => [
-      {
-        key: "plugin",
-        title: "Plugin",
-        render: (_value, record) => (
-          <div>
-            <Typography.Text strong>{record.name}</Typography.Text>
-            <br />
-            <Typography.Text type="secondary">
-              {record.pluginId} · {record.version}
-            </Typography.Text>
-          </div>
-        ),
-      },
-      {
-        dataIndex: "state",
-        key: "state",
-        title: "State",
-        render: (_value, record) => (
+  const registryDiagnostics = [
+    ...organizationRegistry.diagnostics.map((diagnostic) => ({
+      diagnostic,
+      location: "Organization",
+    })),
+    ...projects.flatMap((project) =>
+      (projectRegistries[project.id]?.diagnostics ?? []).map((diagnostic) => ({
+        diagnostic,
+        location: project.name,
+      })),
+    ),
+  ];
+  const diagnosticPluginIds = new Set(
+    registryDiagnostics.map(({ diagnostic }) => diagnostic.pluginId),
+  );
+  const selectedDiagnostics = registryDiagnostics.filter(
+    ({ diagnostic, location }, index, diagnostics) =>
+      diagnostic.pluginId === selectedPackage?.pluginId &&
+      diagnostics.findIndex(
+        (candidate) =>
+          candidate.diagnostic.code === diagnostic.code &&
+          candidate.diagnostic.contributionId === diagnostic.contributionId &&
+          candidate.diagnostic.message === diagnostic.message &&
+          candidate.location === location,
+      ) === index,
+  );
+
+  const packageColumns: readonly TableColumn<PluginPackageSummary>[] = [
+    {
+      key: "plugin",
+      title: "Plugin",
+      render: (_value, record) => (
+        <div>
+          <Typography.Text strong>{record.name}</Typography.Text>
+          <br />
+          <Typography.Text type="secondary">
+            {record.pluginId} · {record.version}
+          </Typography.Text>
+        </div>
+      ),
+    },
+    {
+      dataIndex: "state",
+      key: "state",
+      title: "State",
+      render: (_value, record) =>
+        diagnosticPluginIds.has(record.pluginId) ? (
+          <Tag color="red">Needs attention</Tag>
+        ) : pluginSafeStart && record.state === "enabled" ? (
+          <Tag color="orange">Paused by safe mode</Tag>
+        ) : (
           <Tag color={record.state === "enabled" ? "green" : "blue"}>
             {record.state === "enabled" ? "Enabled" : "Staged"}
           </Tag>
         ),
-      },
-      {
-        key: "uploaded",
-        title: "Uploaded",
-        render: (_value, record) => formatPluginDate(record.uploadedAt),
-      },
-      {
-        key: "review",
-        title: "",
-        width: 100,
-        render: (_value, record) => (
-          <Button onClick={() => setSelectedPackage(record)} size="small">
-            Review
-          </Button>
-        ),
-      },
-    ],
-    [],
-  );
+    },
+    {
+      key: "uploaded",
+      title: "Uploaded",
+      render: (_value, record) => formatPluginDate(record.uploadedAt),
+    },
+    {
+      key: "review",
+      title: "",
+      width: 100,
+      render: (_value, record) => (
+        <Button onClick={() => setSelectedPackage(record)} size="small">
+          Review
+        </Button>
+      ),
+    },
+  ];
 
   const contributionColumns = useMemo<readonly TableColumn<PluginContributionPreview>[]>(
     () => [
@@ -946,6 +1049,8 @@ export function PluginsPage() {
     [],
   );
 
+  const operationFailure = loadError ? pluginFailureContent(loadError) : undefined;
+
   if (loading) {
     return (
       <div className="page-loading">
@@ -968,15 +1073,59 @@ export function PluginsPage() {
         </Typography.Text>
       </div>
 
-      {loadError ? (
+      {operationFailure ? (
         <Alert
+          action={
+            failureOperation === "load" || failureOperation === "enable" ? (
+              <Button
+                onClick={() =>
+                  failureOperation === "load" ? void loadPackages() : void enablePackage()
+                }
+                size="small"
+              >
+                Try again
+              </Button>
+            ) : undefined
+          }
+          description={
+            <div className="plugin-operation-error-details">
+              <Typography.Text>{operationFailure.description}</Typography.Text>
+              <Typography.Text type="secondary">{operationFailure.guidance}</Typography.Text>
+              {operationFailure.correlationId ? (
+                <Typography.Text type="secondary">
+                  Diagnostic reference: {operationFailure.correlationId}
+                </Typography.Text>
+              ) : null}
+            </div>
+          }
           showIcon
-          title={loadError instanceof Error ? loadError.message : "Could not manage plugins."}
+          title={operationFailure.title}
           type="error"
         />
       ) : null}
       {!organizationId ? (
         <Alert showIcon title="Select an organization before managing plugins." type="warning" />
+      ) : null}
+      {pluginSafeStart ? (
+        <Alert
+          description="Installed packages and their data are unchanged. Exit safe mode from global Settings when you are ready to load them again."
+          showIcon
+          title="Plugin safe mode is active"
+          type="info"
+        />
+      ) : null}
+      {registryLoadFailed ? (
+        <Alert
+          action={
+            <Button onClick={() => void loadPackages()} size="small">
+              Retry
+            </Button>
+          }
+          description="Package management remains available, but contribution status may be incomplete."
+          showIcon
+          title="Some plugin diagnostics could not be loaded"
+          type="warning"
+        />
       ) : null}
 
       <div className="plugin-upload-section">
@@ -1032,6 +1181,28 @@ export function PluginsPage() {
             description="The archive hash proves the uploaded bytes are unchanged; it does not verify who published them. Enable only packages you trust."
             type="warning"
           />
+
+          {selectedDiagnostics.length > 0 ? (
+            <div className="plugin-diagnostic-list">
+              <Typography.Title level={3}>Diagnostics</Typography.Title>
+              {selectedDiagnostics.map(({ diagnostic, location }) => (
+                <Alert
+                  description={
+                    <>
+                      {location} · {diagnostic.code}
+                      {diagnostic.contributionId
+                        ? ` · Contribution: ${diagnostic.contributionId}`
+                        : ""}
+                    </>
+                  }
+                  key={`${location}:${diagnostic.code}:${diagnostic.contributionId ?? "package"}`}
+                  showIcon
+                  title={diagnostic.message}
+                  type="error"
+                />
+              ))}
+            </div>
+          ) : null}
 
           <Descriptions bordered column={{ xs: 1, md: 2 }} size="small" title="Package summary">
             <Descriptions.Item label="Compatibility">
@@ -1366,6 +1537,7 @@ export function OrganizationSettingsPage() {
 export function SettingsPage() {
   const api = useApiClient();
   const navigate = useNavigate();
+  const { safeStart: pluginSafeStart } = useExtensionRegistries();
   const [error, setError] = useState<unknown>();
   const [signingOut, setSigningOut] = useState(false);
   const [developerModeOrganizationId, setDeveloperModeOrganizationId] = useState("");
@@ -1429,6 +1601,29 @@ export function SettingsPage() {
         Account, organization, appearance, and plugin settings will live here.
       </Typography.Text>
       {error instanceof Error ? <Alert title={error.message} type="error" /> : null}
+      <Card title="Plugin safe mode">
+        <div className="developer-mode-setting">
+          <div>
+            <Typography.Text>Start Launch++ without optional plugins</Typography.Text>
+            <br />
+            <Typography.Text type="secondary">
+              Use safe mode when a plugin prevents normal work. It applies only to this browser
+              session and keeps plugin management available.
+            </Typography.Text>
+          </div>
+          <Button
+            onClick={() => {
+              setPluginSafeStart(!pluginSafeStart);
+              window.location.assign(
+                pluginSafeStart ? "/app/settings" : "/app/settings?safe-start=plugins",
+              );
+            }}
+            variant={pluginSafeStart ? "default" : "primary"}
+          >
+            {pluginSafeStart ? "Restart with plugins" : "Restart in safe mode"}
+          </Button>
+        </div>
+      </Card>
       <Card title="Developer Mode">
         <div className="developer-mode-setting">
           <div>

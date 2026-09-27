@@ -43,7 +43,7 @@ export function toLaunchppError(error: unknown): LaunchppError {
     return new LaunchppError(
       {
         code: PLUGIN_ERROR_CODES.internal,
-        message: error.message || "The plugin request failed.",
+        message: "The plugin encountered an unexpected error.",
         retryable: false,
       },
       { cause: error },
