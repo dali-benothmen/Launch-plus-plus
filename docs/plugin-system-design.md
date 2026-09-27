@@ -1,6 +1,6 @@
 # Launch++ plugin platform and developer experience
 
-Status: architecture proposal for review. No application code or SDK has been implemented.
+Status: v1-preview schemas, package intake, extension registry, public SDK/UI contracts, scaffolding, disposable development, and the connected Developer Mode control plane are implemented; remaining authoring and runtime work is in progress.
 
 This subsystem design is part of the [Launch++ architecture documentation](./README.md). The [system architecture](./system-architecture.md) defines the host runtime and module boundaries; this document owns the public plugin model and lifecycle. The [plugin storage design](./plugin-storage-design.md) and [plugin CLI design](./plugin-cli-design.md) own those authoring contracts in detail.
 
@@ -8,7 +8,7 @@ Launch++ should make a useful plugin feel like a small feature contribution: dec
 
 Imagine enabling Story Points for one project. A number field appears in task details; it becomes available as a list column, board-card property, filter, and sort key. It follows the current theme and exports with the organization. The author writes one manifest contribution. No database migration, API route, custom input component, or change to Launch++ is required.
 
-This is a proposed architecture and developer contract, not an implemented SDK. The repository currently contains only a basic package.json; every path, package name, command, and API below is proposed. The design focuses on the extension platform and its UX contracts, not final visual styling.
+The v1-preview manifest and normalized package contracts are now implemented in `@launchpp/plugin-protocol`. The SDK, authoring CLI, upload lifecycle, registry, and runtime integrations described below remain delivery work. The design focuses on the extension platform and its UX contracts, not final visual styling.
 
 The first author preview is complete when a developer can generate either a React/TypeScript or vanilla HTML/CSS/JavaScript plugin, add a project page through `launchpp.plugin.json`, read fixture project and task data through the public SDK, hot reload, pack and install it without application-internal imports. React is the recommended and best-supported authoring path, while the runtime contract remains framework-neutral. A Story Points example then validates native field contributions and portable storage. The first supported SDK release adds a Checklist Importer, Time Tracking and a read-only Due-date Calendar. These deliberately test different capabilities; they are reference plugins, not mandatory core features.
 
@@ -113,76 +113,35 @@ The CLI generates build configuration and package scripts. Directories, filename
 
 ```json
 {
-  "$schema": "https://launchpp.dev/schemas/plugin-v1.json",
+  "$schema": "./node_modules/@launchpp/plugin-protocol/schemas/plugin-source-v1-preview.json",
+  "manifestVersion": "1-preview",
   "id": "acme.sprint-planner",
   "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
   "version": "1.0.0",
-  "apiVersion": "1",
-  "authoring": {
-    "adapter": "react-vite"
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
   },
   "permissions": [
     "projects:read",
-    "tasks:read",
-    "tasks:write"
+    "tasks:read"
   ],
-  "data": {
-    "schema": "./data/schema.ts"
+  "authoring": {
+    "adapter": "react-vite"
   },
-  "contributes": {
-    "pages": [
-      {
-        "id": "sprints",
-        "scope": "project",
-        "path": "sprints",
-        "title": "Sprints",
-        "entry": "./src/pages/SprintsPage.tsx",
-        "navigation": {
-          "slot": "project.navigation",
-          "label": "Sprints",
-          "icon": "cycles"
-        }
-      }
-    ],
-    "panels": [
-      {
-        "id": "task-sprint",
-        "slot": "task.details.panels",
-        "title": "Sprint",
-        "entry": "./src/panels/TaskSprintPanel.tsx"
-      }
-    ],
-    "actions": [
-      {
-        "id": "add-to-sprint",
-        "slot": "task.actions",
-        "title": "Add to sprint",
-        "handler": "./src/actions/addToSprint.ts#addToSprint"
-      }
-    ],
-    "settings": [
-      {
-        "id": "settings",
-        "scope": "organization",
-        "title": "Sprint Planner",
-        "entry": "./src/settings/SettingsPage.tsx"
-      }
-    ]
-  }
-}
-```
-
-The `authoring.adapter` field selects the local build adapter and is removed from the installed contract. V1 recognizes only `react-vite`, `vanilla-typescript-vite` and `vanilla-javascript-vite`. Build tooling resolves and bundles `.tsx`, `.html`, `.ts`, `.js`, CSS and local asset entries into normalized browser surfaces and a generated distribution manifest. The host sees only an HTML document and its local assets:
-
-```json
-{
-  "id": "acme.sprint-planner",
-  "version": "1.0.0",
-  "apiVersion": "1",
   "browser": {
     "surfaces": {
       "sprints": {
-        "document": "./browser/surfaces/sprints/index.html"
+        "entry": "./src/pages/SprintsPage.tsx"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "entry": "./src/actions/addToSprint.ts",
+        "export": "addToSprint"
       }
     }
   },
@@ -193,7 +152,103 @@ The `authoring.adapter` field selects the local build adapter and is removed fro
         "scope": "project",
         "path": "sprints",
         "title": "Sprints",
-        "surface": "sprints"
+        "surface": "sprints",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "add-to-sprint",
+        "slot": "task.actions",
+        "title": "Add to sprint",
+        "handler": "add-to-sprint"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "story-points",
+        "label": "Story points",
+        "type": "number",
+        "placements": [
+          "task.details.fields",
+          "task.card.badges",
+          "task.list.columns"
+        ]
+      }
+    ]
+  }
+}
+```
+
+The `authoring.adapter` field selects the local build adapter and is removed from the installed contract. V1 recognizes only `react-vite`, `vanilla-typescript-vite` and `vanilla-javascript-vite`. Build tooling resolves and bundles `.tsx`, `.html`, `.ts`, `.js`, CSS and local asset entries into normalized browser surfaces and a generated distribution manifest. The host sees only an HTML document and its local assets:
+
+```json
+{
+  "manifestVersion": "1-preview",
+  "id": "acme.sprint-planner",
+  "name": "Sprint Planner",
+  "description": "Plan project work in named sprints.",
+  "version": "1.0.0",
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
+  },
+  "permissions": [
+    "projects:read",
+    "tasks:read"
+  ],
+  "browser": {
+    "surfaces": {
+      "sprints": {
+        "document": "./browser/surfaces/sprints/index.html"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "add-to-sprint": {
+        "module": "./server/handlers.js",
+        "export": "addToSprint"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "sprints",
+        "scope": "project",
+        "path": "sprints",
+        "title": "Sprints",
+        "surface": "sprints",
+        "navigation": {
+          "slot": "project.navigation",
+          "label": "Sprints",
+          "icon": "cycles"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "add-to-sprint",
+        "slot": "task.actions",
+        "title": "Add to sprint",
+        "handler": "add-to-sprint"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "story-points",
+        "label": "Story points",
+        "type": "number",
+        "placements": [
+          "task.details.fields",
+          "task.card.badges",
+          "task.list.columns"
+        ]
       }
     ]
   }
@@ -270,7 +325,7 @@ The proposed creation workflow is detailed in the [plugin CLI design](./plugin-c
 4. `pnpm test` runs against the same broker and runtime contracts used by Launch++.
 5. `pnpm pack` creates a `.launch-plugin` archive containing the generated manifest, static data schema, browser and server bundles, contract schemas, integrity hashes and license metadata. It contains no SQL or plugin-authored migration files.
 
-These are target commands, not commands available today. Plugin users install the resulting archive without a compiler or JavaScript toolchain.
+The create, development, validation, test, packaging, and inspection commands in this loop are now implemented for the author preview. Plugin users install the resulting archive without a compiler or JavaScript toolchain.
 
 The `.launch-plugin` file is a deterministic, ZIP-compatible archive, but it is not an arbitrary framework `dist/` folder. `launchpp pack` invokes the selected build adapter on the author's machine and normalizes its output into the exact portable shape Launch++ installs:
 
@@ -292,16 +347,18 @@ license.txt
 
 The exact optional files depend on declared capabilities. All browser documents and their referenced assets must remain inside the archive. Installation validates paths, sizes, manifest shape, compatibility and hashes, then stores the package immutably. It never runs npm, pnpm, a framework build, TypeScript, install scripts or plugin source code.
 
-The Phase 0 implementation fixes the deterministic ZIP, SHA-256 integrity, traversal/resource-limit, and atomic content-addressed staging behavior described in [Plugin packaging and intake proof](./plugin-package-proof.md). The author-facing CLI and upload review UI build on that single intake boundary later.
+The shared packaging implementation fixes the deterministic ZIP, SHA-256 integrity, traversal/resource-limit, and atomic content-addressed staging behavior described in [Plugin packaging and intake proof](./plugin-package-proof.md). The author-facing CLI and upload review UI both use that single archive boundary.
 
 ### Developer Mode and the live development channel
 
-The pack-and-upload loop is for release validation, not every edit. Launch++ includes an operator-controlled **Settings → Developer → Developer Mode** switch and the CLI supports two development paths:
+The pack-and-upload loop is for release validation, not every edit. Launch++ includes an owner-controlled **Settings → Developer Mode** switch and the CLI supports two development paths:
 
 - `launchpp dev` starts a disposable local Launch++ organization with fixtures. This is the safest and default path.
 - `launchpp dev --connect https://launch.example` pairs the local CLI with an existing Launch++ installation for an authenticated preview.
 
 Connected development uses a short-lived, one-time pairing code confirmed in the browser. The CLI opens an outbound authenticated TLS/WebSocket channel and streams compiled incremental artifacts—not source files—to the host. A remote VPS never reaches into the developer's localhost or filesystem. The host registers an ephemeral identity such as `dev:<session-id>:<plugin-id>`; it does not replace or mutate the installed release.
+
+The current connected preview implements this control plane for host-rendered contributions through authenticated outbound HTTPS requests. Compiled browser and server artifact streaming is activated only after the deterministic build adapter exists, so this milestone does not upload source code or invent an interim bundle format.
 
 A development plugin is visible only to its author by default and runs in a dedicated development organization rather than production data. Access for selected test users can be added later. Requested permissions still require explicit approval, permission changes prompt again, and the same iframe sandbox, capability broker, runtime limits, network policy and data boundaries apply. Developer Mode enables a temporary unsigned live-build channel; it does not disable security.
 
@@ -349,7 +406,11 @@ Custom views live within the application’s navigation and route model, with de
 
 Organization administrators enable plugins; project-scoped plugins are then enabled only in chosen projects. Server operators control which executable packages are allowed on their installation. A locally running solo owner sees these as one simple flow. Installation shows what will be added, what access is requested, and any connection setup. A plugin with no required settings can be enabled in one action.
 
-Errors remain local to the affected plugin surface. Repeated failures pause its handlers and show an actionable status in Settings → Extensions. A safe-start option loads the core with all optional plugins disabled.
+The implemented author-preview flow uses the authenticated Plugins destination and the versioned HTTP client. An organization owner selects or drops one `.launch-plugin` file; the server applies the compressed/expanded size, entry-count, path, reference, API-range and integrity limits before atomically renaming extracted bytes into the immutable package store. It records the normalized manifest, integrity document, archive digest, source filename and explicit `unsigned-local` provenance. The review shows compatibility, provenance, requested permissions and every declared contribution before a separate Enable action stores the organization grant set. Staging and enablement are audited. A failed catalog transaction removes newly staged bytes, while validation failure never reaches the package store.
+
+For the local author preview, an organization owner performs the combined operator/administrator flow. This does not claim that organization ownership grants installation-operator authority in a future shared deployment. Enablement in this slice records availability and accepted permissions only: contribution registration, routes, rendering, capability execution, dependencies, updates, disable/uninstall and publisher signatures remain owned by later lifecycle tasks. Uploaded server code is never executed during inspection or enablement.
+
+Errors remain local to the affected plugin surface. The host now bounds initial loading, distinguishes slow and unavailable surfaces, offers surface-local retry and redacted diagnostics, and keeps the shell navigable when registry loading fails. Global Settings can restart the current browser session in plugin safe mode, which suppresses optional contributions without changing installed packages or their data. Registry diagnostics mark affected packages as needing attention in Plugins. Server-handler execution remains disabled in the author preview, so automatic repeated-handler failure pausing becomes relevant only when that production runtime is enabled.
 
 ### Shared state and core data access
 
@@ -445,6 +506,10 @@ Plugins cannot import another plugin's source, call private handlers or query it
 ### Execution and permissions
 
 Use a capability broker: plugins receive narrow SDK operations, never a database connection, environment variables, filesystem access, shell access or application session cookie.
+
+The implemented v1-preview broker exposes `context.get`; project list/create/update; task list/get/create/update; and comment list/create. Each invocation uses host-derived actor, installation, organization, package, and optional project identity. The broker resolves current package enablement and accepted grants from storage, requires project activation whenever project context is present, validates capability-specific input and output schemas, applies call/payload/deadline limits, propagates cancellation and correlation, and returns stable structured plugin errors. Core mutations still pass through the ordinary project and task application services, so plugin grants never bypass domain authorization or audit/outbox behavior.
+
+The authenticated internal transport is exposed under organization- and project-scoped package capability routes. It is the boundary that the SDK and sandbox bridge will consume, not a promise that uploaded server handlers are executable today. Public untrusted server execution remains disabled until the process-isolation and asynchronous bridge gates in the runtime decision are satisfied.
 
 For server behavior, the feasibility prototype is QuickJS compiled to WebAssembly, inside a supervised worker with fresh invocation contexts, memory limits and execution deadlines. The spike proved the basic controls but did **not** qualify a same-process worker as the security boundary for untrusted publisher code. The accepted decision limits executable bundles to an operator-trusted preview until an OS-process supervisor passes the adversarial and async-broker gates. Expose only the SDK bridge and retain the ability to change the runtime behind that protocol. See [Server plugin runtime feasibility decision](./server-plugin-runtime-decision.md).
 
@@ -615,6 +680,12 @@ The existing package.json is only an npm scaffold. There is no existing applicat
 1. Prove the runtime and wire contract. Add packages/plugin-protocol for versioned schemas, packages/plugin-runtime for the isolated execution adapter, and packages/plugin-testkit for broker/isolation fixtures. Exercise async calls, cancellation, memory limits and browser messaging before promising public untrusted execution.
 2. Prove the browser-standard contract and supported authoring paths. Add minimal project/task reads in `packages/core`, policy checks in `packages/authorization`, the sandbox bridge in `apps/web`, and public authoring support in `packages/plugin-sdk`, `packages/plugin-data`, `packages/ui`, `packages/ui-tokens` and `packages/plugin-cli`. Generate both a JSON-manifest React/TypeScript project using the Ant Design-powered UI package and a minimal vanilla surface against the same broker. Prove HMR or safe iframe reload, typed context/hooks, native and custom components, deep links, light/dark themes, keyboard use and packaging outside the monorepo.
 3. Prove native contributions and portable storage. Add the field registry and host renderers, then build examples/story-points. Prove edit → list/filter → export → disable → re-enable without application changes or custom browser code.
+
+The Story Points reference plugin now proves this declaration-only path. Launch++ owns the generic
+task-field table and API, validates writes against the enabled project registry, renders native
+editing/Board/List/filter/sort/export placements, and retains values while a plugin is disabled.
+The example contributes only `launchpp.plugin.json`; it contains no executable surface, private
+import, SQL, or plugin-authored migration.
 4. Prove actions and durable behavior. Add command input schemas, native prompts and the typed invocation API. Build examples/checklist-importer to prove input → read-only preview → confirmation → retry-safe batch creation without custom UI. Then add typed collections and examples/time-tracking with start/stop actions and a React Timesheets view. Enforce one active timer per actor with a declared unique index; make stop/retry safe. Add outbox/job delivery after these contracts work.
 5. Prove richer views and lifecycle. Build examples/due-date-calendar as a read-only custom project view, then implement package updates, automatic safe schema evolution, incompatible-change rejection, disable/uninstall behavior and organization migration in apps/server plus platform modules.
 6. Productize authoring and installation. Complete packages/plugin-cli with check/test, richer diagnostics and the full create/dev/check/test/pack workflow. Validate locally and on a supported VPS distribution, then freeze the first supported surface after independent plugin-author feedback. Keep marketplace discovery, billing and dependency resolution for subsequent iterations.

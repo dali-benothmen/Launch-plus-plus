@@ -1,0 +1,38 @@
+{
+  "name": "@launchpp/cli",
+  "version": "0.0.0",
+  "description": "Project-local development and packaging CLI for Launch++ plugins.",
+  "type": "module",
+  "bin": {
+    "launchpp": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.4.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1",
+    "@launchpp/plugin-package": "workspace:*",
+    "@launchpp/plugin-protocol": "workspace:*",
+    "@launchpp/theme-runtime": "workspace:*",
+    "@vitejs/plugin-react": "6.1.1",
+    "vite": "8.3.0"
+  },
+  "devDependencies": {
+    "@launchpp/sdk": "workspace:*",
+    "@launchpp/ui": "workspace:*",
+    "@types/node": "24.13.5"
+  }
+}

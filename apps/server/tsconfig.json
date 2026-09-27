@@ -13,6 +13,7 @@
     { "path": "../../packages/authorization" },
     { "path": "../../packages/core" },
     { "path": "../../packages/database" },
+    { "path": "../../packages/plugin-platform" },
     { "path": "../../packages/plugin-protocol" },
     { "path": "../../packages/plugin-runtime" }
   ]

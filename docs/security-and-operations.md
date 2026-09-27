@@ -235,13 +235,16 @@ A Node worker thread is a supervisor mechanism, not the sole security boundary. 
 
 Developer Mode is a temporary delivery path for unsigned local builds, not a relaxation of plugin security:
 
-- It is disabled by default, can be enabled only by an installation operator, and shows a persistent warning while available.
+- It is disabled by default, can be enabled by an organization owner from Organization settings, and shows a persistent warning while available.
 - Pairing uses browser confirmation and a single-use, short-lived code. The resulting credential is bound to the operator-approved user, plugin ID, installation, development organization and session.
 - A connected build receives an ephemeral `dev:<session-id>:<plugin-id>` identity and never replaces the installed package or inherits its grants, secrets, records or provenance.
 - Visibility is limited to the paired author by default. The default target is a dedicated development organization with fixture or disposable data, not production organization data.
 - Permissions require explicit review. A permission or destination change pauses delivery until approved again.
 - Browser and server code use the normal iframe isolation, capability broker, runtime quotas, schema validation and network policy.
 - A remote CLI creates an outbound mutually authenticated TLS/WebSocket session and sends compiled incremental artifacts. The server cannot browse the author's filesystem or initiate access to localhost.
+
+The current preview delivers the control-plane subset over authenticated outbound HTTPS requests. It registers manifests and host-rendered contributions only; compiled browser/server artifact delivery follows the deterministic build adapter. The same short session, actor scope, grants, and teardown rules already apply.
+
 - Session credentials have short absolute lifetimes, are stored as secrets, are redacted from logs, and can be revoked from the CLI or server UI.
 - Disconnect, expiry, user/session revocation, operator shutdown or disabling Developer Mode removes ephemeral contributions/assets, terminates handlers, revokes credentials and records an audit event.
 - Development data follows an explicit disposable or retained-profile policy. Only disposable profiles may be reset after an incompatible schema change.
@@ -366,6 +369,8 @@ data/
 The application validates that configured paths resolve under the intended data root unless an operator explicitly configures an external store. Files use least-privilege ownership; package/asset filenames come from content digests, never raw uploaded paths.
 
 Temporary uploads and extraction use dedicated random directories with quotas and are removed on success/failure. A cleanup task handles abandoned quarantine directories without traversing outside the configured root.
+
+The author-preview package store is currently derived from the configured database location: `<database-directory>/packages/<plugin-id>/<version>/<archive-sha256>/`. Extraction first writes a random `.staging-*` sibling with private file modes and only renames it after complete validation. If the following catalog transaction fails, the newly renamed directory is removed. Package identity, manifest, integrity, provenance, organization enablement and accepted permissions remain in SQLite, so operational copies must preserve both the database and its sibling `packages/` directory. A separately configurable package root and coordinated package backup are future operational hardening, not implied by this preview.
 
 ## Supported deployment profiles
 

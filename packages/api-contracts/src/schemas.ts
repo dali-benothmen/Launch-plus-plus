@@ -341,6 +341,12 @@ export const TaskPrioritySchema = Type.Union([
 ]);
 export type TaskPriority = Type.Static<typeof TaskPrioritySchema>;
 
+export const ExtensionFieldValueSchema = Type.Union([
+  Type.Number(),
+  Type.String({ maxLength: 500 }),
+]);
+export type ExtensionFieldValue = Type.Static<typeof ExtensionFieldValueSchema>;
+
 export const TaskViewSchema = StrictObject(
   {
     archivedAt: Type.Optional(TimestampSchema),
@@ -351,6 +357,10 @@ export const TaskViewSchema = StrictObject(
     createdByUserId: IdentifierSchema,
     description: Type.String({ maxLength: 100_000 }),
     dueDate: Type.Optional(DateSchema),
+    extensionFields: Type.Record(
+      Type.String({ maxLength: 400, minLength: 1 }),
+      ExtensionFieldValueSchema,
+    ),
     id: IdentifierSchema,
     labels: Type.Array(
       Type.Unsafe<Type.Static<typeof LabelSummarySchema>>(Type.Ref("LaunchppLabelSummaryV1")),
@@ -492,6 +502,20 @@ export const TaskPageSchema = StrictObject(
 );
 export type TaskPage = Type.Static<typeof TaskPageSchema>;
 
+export const TaskExtensionFieldValuesSchema = StrictObject(
+  {
+    values: Type.Record(Type.String({ maxLength: 400, minLength: 1 }), ExtensionFieldValueSchema),
+  },
+  { $id: "LaunchppTaskExtensionFieldValuesV1" },
+);
+export type TaskExtensionFieldValues = Type.Static<typeof TaskExtensionFieldValuesSchema>;
+
+export const UpdateTaskExtensionFieldInputSchema = StrictObject(
+  { value: Type.Union([ExtensionFieldValueSchema, Type.Null()]) },
+  { $id: "LaunchppUpdateTaskExtensionFieldInputV1" },
+);
+export type UpdateTaskExtensionFieldInput = Type.Static<typeof UpdateTaskExtensionFieldInputSchema>;
+
 export const CreateTaskInputSchema = StrictObject(
   {
     assigneeUserIds: Type.Optional(
@@ -589,6 +613,250 @@ export const InvalidationEventSchema = StrictObject(
 );
 export type InvalidationEvent = Type.Static<typeof InvalidationEventSchema>;
 
+export const PluginContributionPreviewSchema = StrictObject(
+  {
+    id: Type.String({ maxLength: 80, minLength: 1 }),
+    kind: Type.Union([
+      Type.Literal("action"),
+      Type.Literal("page"),
+      Type.Literal("panel"),
+      Type.Literal("settings"),
+      Type.Literal("taskField"),
+    ]),
+    placement: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+    title: Type.String({ maxLength: 120, minLength: 1 }),
+  },
+  { $id: "LaunchppPluginContributionPreviewV1" },
+);
+export type PluginContributionPreview = Type.Static<typeof PluginContributionPreviewSchema>;
+
+export const PluginPackageSummarySchema = StrictObject(
+  {
+    archiveSizeBytes: Type.Integer({ maximum: 10_485_760, minimum: 1 }),
+    compatibility: StrictObject({
+      apiMaximumExclusive: Type.String({ maxLength: 6, minLength: 1 }),
+      apiMinimum: Type.String({ maxLength: 6, minLength: 1 }),
+      host: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+      sdk: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+      ui: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+    }),
+    contributions: Type.Array(
+      Type.Unsafe<Type.Static<typeof PluginContributionPreviewSchema>>(
+        Type.Ref("LaunchppPluginContributionPreviewV1"),
+      ),
+      { maxItems: 500 },
+    ),
+    description: Type.Optional(Type.String({ maxLength: 500, minLength: 1 })),
+    enabledAt: Type.Optional(TimestampSchema),
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 120, minLength: 1 }),
+    packageHash: Type.String({ maxLength: 64, minLength: 64, pattern: "^[a-f0-9]{64}$" }),
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    provenance: StrictObject({
+      kind: Type.Literal("unsigned-local"),
+      label: Type.Literal("Unsigned local package"),
+      sourceFileName: Type.String({ maxLength: 240, minLength: 1 }),
+    }),
+    requestedPermissions: Type.Array(Type.String({ maxLength: 120, minLength: 1 }), {
+      maxItems: 100,
+      uniqueItems: true,
+    }),
+    state: Type.Union([Type.Literal("staged"), Type.Literal("enabled")]),
+    uploadedAt: TimestampSchema,
+    version: Type.String({ maxLength: 64, minLength: 1 }),
+  },
+  { $id: "LaunchppPluginPackageSummaryV1" },
+);
+export type PluginPackageSummary = Type.Static<typeof PluginPackageSummarySchema>;
+
+const ExtensionStableIdSchema = Type.String({ maxLength: 400, minLength: 1 });
+const ExtensionActivationScopeSchema = Type.Union([
+  Type.Literal("organization"),
+  Type.Literal("project"),
+]);
+const ExtensionContributionBase = {
+  activationScope: ExtensionActivationScopeSchema,
+  id: ExtensionStableIdSchema,
+  localId: Type.String({ maxLength: 100, minLength: 1 }),
+  packageId: IdentifierSchema,
+  pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+} as const;
+
+export const ExtensionRegistryDiagnosticSchema = StrictObject(
+  {
+    code: Type.Union([
+      Type.Literal("contribution_id_collision"),
+      Type.Literal("dependency_version_mismatch"),
+      Type.Literal("missing_dependency"),
+      Type.Literal("permission_grant_missing"),
+      Type.Literal("permission_grant_invalid"),
+      Type.Literal("route_collision"),
+    ]),
+    contributionId: Type.Optional(ExtensionStableIdSchema),
+    message: Type.String({ maxLength: 1_000, minLength: 1 }),
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    relatedPluginId: Type.Optional(Type.String({ maxLength: 120, minLength: 3 })),
+    severity: Type.Literal("error"),
+  },
+  { $id: "LaunchppExtensionRegistryDiagnosticV1" },
+);
+export type ExtensionRegistryDiagnostic = Type.Static<typeof ExtensionRegistryDiagnosticSchema>;
+
+export const ExtensionRegistryPackageSchema = StrictObject(
+  {
+    acceptedPermissions: Type.Array(Type.String({ maxLength: 120, minLength: 1 }), {
+      maxItems: 100,
+      uniqueItems: true,
+    }),
+    id: IdentifierSchema,
+    name: Type.String({ maxLength: 120, minLength: 1 }),
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    projectEnabled: Type.Boolean(),
+    version: Type.String({ maxLength: 64, minLength: 1 }),
+  },
+  { $id: "LaunchppExtensionRegistryPackageV1" },
+);
+export type ExtensionRegistryPackage = Type.Static<typeof ExtensionRegistryPackageSchema>;
+
+export const ExtensionPageSchema = StrictObject({
+  ...ExtensionContributionBase,
+  path: Type.String({ maxLength: 120, minLength: 1 }),
+  scope: Type.Union([Type.Literal("organization"), Type.Literal("project")]),
+  surface: Type.String({ maxLength: 100, minLength: 1 }),
+  title: Type.String({ maxLength: 120, minLength: 1 }),
+});
+
+export const ExtensionRouteSchema = StrictObject({
+  ...ExtensionContributionBase,
+  pageId: ExtensionStableIdSchema,
+  path: Type.String({ maxLength: 800, minLength: 1 }),
+});
+
+export const ExtensionNavigationSchema = StrictObject({
+  ...ExtensionContributionBase,
+  icon: Type.Optional(Type.String({ maxLength: 80, minLength: 1 })),
+  label: Type.String({ maxLength: 80, minLength: 1 }),
+  pageId: ExtensionStableIdSchema,
+  route: Type.String({ maxLength: 800, minLength: 1 }),
+  slot: Type.Union([Type.Literal("organization.navigation"), Type.Literal("project.navigation")]),
+});
+
+export const ExtensionPanelSchema = StrictObject({
+  ...ExtensionContributionBase,
+  slot: Type.Union([Type.Literal("task.details.panels"), Type.Literal("board.sidebar")]),
+  surface: Type.String({ maxLength: 100, minLength: 1 }),
+  title: Type.String({ maxLength: 120, minLength: 1 }),
+});
+
+export const ExtensionActionSchema = StrictObject({
+  ...ExtensionContributionBase,
+  handler: Type.String({ maxLength: 100, minLength: 1 }),
+  icon: Type.Optional(Type.String({ maxLength: 80, minLength: 1 })),
+  inputSchema: Type.Optional(Type.String({ maxLength: 300, minLength: 1 })),
+  slot: Type.Union([
+    Type.Literal("project.toolbar"),
+    Type.Literal("task.actions"),
+    Type.Literal("task.card.actions"),
+    Type.Literal("board.toolbar"),
+    Type.Literal("board.card.actions"),
+    Type.Literal("commandPalette"),
+  ]),
+  title: Type.String({ maxLength: 120, minLength: 1 }),
+});
+
+const ExtensionSettingFieldBase = {
+  description: Type.Optional(Type.String({ maxLength: 240, minLength: 1 })),
+  id: Type.String({ maxLength: 80, minLength: 1 }),
+  label: Type.String({ maxLength: 120, minLength: 1 }),
+  required: Type.Optional(Type.Boolean()),
+} as const;
+
+export const ExtensionSettingFieldSchema = Type.Union([
+  StrictObject({
+    ...ExtensionSettingFieldBase,
+    default: Type.Optional(Type.String({ maxLength: 500 })),
+    maxLength: Type.Optional(Type.Integer({ maximum: 500, minimum: 1 })),
+    type: Type.Literal("text"),
+  }),
+  StrictObject({
+    ...ExtensionSettingFieldBase,
+    default: Type.Optional(Type.Number()),
+    maximum: Type.Optional(Type.Number()),
+    minimum: Type.Optional(Type.Number()),
+    type: Type.Literal("number"),
+  }),
+  StrictObject({
+    ...ExtensionSettingFieldBase,
+    default: Type.Optional(Type.Boolean()),
+    type: Type.Literal("boolean"),
+  }),
+  StrictObject({
+    ...ExtensionSettingFieldBase,
+    default: Type.Optional(Type.String({ maxLength: 120, minLength: 1 })),
+    options: Type.Array(
+      StrictObject({
+        label: Type.String({ maxLength: 120, minLength: 1 }),
+        value: Type.String({ maxLength: 120, minLength: 1 }),
+      }),
+      { maxItems: 100, minItems: 1 },
+    ),
+    type: Type.Literal("select"),
+  }),
+]);
+
+export const ExtensionSettingsSchema = StrictObject({
+  ...ExtensionContributionBase,
+  fields: Type.Optional(Type.Array(ExtensionSettingFieldSchema, { maxItems: 100 })),
+  scope: Type.Union([Type.Literal("user"), Type.Literal("organization"), Type.Literal("project")]),
+  surface: Type.Optional(Type.String({ maxLength: 100, minLength: 1 })),
+  title: Type.String({ maxLength: 120, minLength: 1 }),
+});
+
+export const ExtensionFieldSchema = StrictObject({
+  ...ExtensionContributionBase,
+  description: Type.Optional(Type.String({ maxLength: 240, minLength: 1 })),
+  label: Type.String({ maxLength: 120, minLength: 1 }),
+  placements: Type.Array(
+    Type.Union([
+      Type.Literal("task.details.fields"),
+      Type.Literal("task.card.badges"),
+      Type.Literal("task.list.columns"),
+    ]),
+    { maxItems: 3, uniqueItems: true },
+  ),
+  type: Type.Union([Type.Literal("number"), Type.Literal("text")]),
+});
+
+export const ExtensionRegistrySchema = StrictObject(
+  {
+    actions: Type.Array(ExtensionActionSchema, { maxItems: 1_000 }),
+    diagnostics: Type.Array(
+      Type.Unsafe<Type.Static<typeof ExtensionRegistryDiagnosticSchema>>(
+        Type.Ref("LaunchppExtensionRegistryDiagnosticV1"),
+      ),
+      { maxItems: 1_000 },
+    ),
+    fields: Type.Array(ExtensionFieldSchema, { maxItems: 1_000 }),
+    navigation: Type.Array(ExtensionNavigationSchema, { maxItems: 1_000 }),
+    packages: Type.Array(
+      Type.Unsafe<Type.Static<typeof ExtensionRegistryPackageSchema>>(
+        Type.Ref("LaunchppExtensionRegistryPackageV1"),
+      ),
+      { maxItems: 1_000 },
+    ),
+    pages: Type.Array(ExtensionPageSchema, { maxItems: 1_000 }),
+    panels: Type.Array(ExtensionPanelSchema, { maxItems: 1_000 }),
+    routes: Type.Array(ExtensionRouteSchema, { maxItems: 1_000 }),
+    scope: StrictObject({
+      organizationId: IdentifierSchema,
+      projectId: Type.Optional(IdentifierSchema),
+    }),
+    settings: Type.Array(ExtensionSettingsSchema, { maxItems: 1_000 }),
+  },
+  { $id: "LaunchppExtensionRegistryV1" },
+);
+export type ExtensionRegistry = Type.Static<typeof ExtensionRegistrySchema>;
+
 export const UpdateTaskInputSchema = StrictObject(
   {
     description: Type.Optional(Type.String({ maxLength: 100_000 })),
@@ -651,6 +919,11 @@ export const OrganizationParamsSchema = StrictObject(
   { $id: "LaunchppOrganizationParamsV1" },
 );
 
+export const PluginPackageParamsSchema = StrictObject(
+  { organizationId: IdentifierSchema, packageId: IdentifierSchema },
+  { $id: "LaunchppPluginPackageParamsV1" },
+);
+
 export const ProjectParamsSchema = StrictObject(
   { projectId: IdentifierSchema, organizationId: IdentifierSchema },
   { $id: "LaunchppProjectParamsV1" },
@@ -695,6 +968,17 @@ export const TaskCommentParamsSchema = StrictObject(
   { $id: "LaunchppTaskCommentParamsV1" },
 );
 
+export const TaskExtensionFieldParamsSchema = StrictObject(
+  {
+    fieldId: Type.String({ maxLength: 100, minLength: 1 }),
+    organizationId: IdentifierSchema,
+    pluginId: Type.String({ maxLength: 120, minLength: 3 }),
+    projectId: IdentifierSchema,
+    taskId: IdentifierSchema,
+  },
+  { $id: "LaunchppTaskExtensionFieldParamsV1" },
+);
+
 export const CORE_API_SCHEMAS = Object.freeze([
   ProblemDetailsSchema,
   CursorPageQuerySchema,
@@ -733,6 +1017,8 @@ export const CORE_API_SCHEMAS = Object.freeze([
   TaskActivitySchema,
   TaskDetailSchema,
   TaskPageSchema,
+  TaskExtensionFieldValuesSchema,
+  UpdateTaskExtensionFieldInputSchema,
   CreateTaskInputSchema,
   CreateTaskCommentInputSchema,
   SetTaskCommentReactionInputSchema,
@@ -742,6 +1028,11 @@ export const CORE_API_SCHEMAS = Object.freeze([
   SearchResultSchema,
   SearchResponseSchema,
   InvalidationEventSchema,
+  PluginContributionPreviewSchema,
+  PluginPackageSummarySchema,
+  ExtensionRegistryDiagnosticSchema,
+  ExtensionRegistryPackageSchema,
+  ExtensionRegistrySchema,
   UpdateTaskInputSchema,
   MoveTaskInputSchema,
   ReplaceTaskAssigneesInputSchema,
@@ -749,10 +1040,12 @@ export const CORE_API_SCHEMAS = Object.freeze([
   ArchiveTaskInputSchema,
   CreateLabelInputSchema,
   OrganizationParamsSchema,
+  PluginPackageParamsSchema,
   ProjectParamsSchema,
   ProjectStatusParamsSchema,
   ProjectFolderParamsSchema,
   TaskParamsSchema,
   TaskCommentParamsSchema,
+  TaskExtensionFieldParamsSchema,
   TaskAttachmentParamsSchema,
 ] as const);

@@ -1,4 +1,22 @@
 export {
+  DEFAULT_PLUGIN_ARCHIVE_LIMITS,
+  type InspectedPluginArchive,
+  type InspectedPreviewPluginArchive,
+  type InstalledPluginPackage,
+  inspectPluginArchive,
+  inspectPreviewPluginArchive,
+  installPluginArchive,
+  isAllowedPluginPackagePath,
+  type PackedPlugin,
+  PLUGIN_ARCHIVE_ERROR_CODES,
+  PluginArchiveError,
+  type PluginArchiveErrorCode,
+  type PluginArchiveLimits,
+  packPluginDirectory,
+  type StagedPreviewPluginPackage,
+  stagePreviewPluginArchive,
+} from "@launchpp/plugin-package";
+export {
   PLUGIN_EXECUTION_ERROR_CODES,
   PluginExecutionError,
   type PluginExecutionErrorCode,
@@ -10,15 +28,3 @@ export {
   type PluginHandlerExecutionOptions,
   type PluginHandlerInvocation,
 } from "./isolated-handler-runtime.js";
-export {
-  DEFAULT_PLUGIN_ARCHIVE_LIMITS,
-  PLUGIN_ARCHIVE_ERROR_CODES,
-  PluginArchiveError,
-  inspectPluginArchive,
-  installPluginArchive,
-  isAllowedPluginPackagePath,
-  type InspectedPluginArchive,
-  type InstalledPluginPackage,
-  type PluginArchiveErrorCode,
-  type PluginArchiveLimits,
-} from "./package-intake.js";

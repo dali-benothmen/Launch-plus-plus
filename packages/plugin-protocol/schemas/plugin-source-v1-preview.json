@@ -1,0 +1,818 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "id",
+    "manifestVersion",
+    "name",
+    "permissions",
+    "version",
+    "authoring"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema location used by editors for completion and diagnostics.",
+      "maxLength": 300,
+      "minLength": 1
+    },
+    "apiVersion": {
+      "type": "object",
+      "required": ["maximumExclusive", "minimum"],
+      "properties": {
+        "maximumExclusive": {
+          "type": "string",
+          "description": "First unsupported Launch++ plugin API major.",
+          "examples": ["2"],
+          "pattern": "^[1-9][0-9]{0,5}$"
+        },
+        "minimum": {
+          "type": "string",
+          "description": "Oldest supported Launch++ plugin API major.",
+          "examples": ["1"],
+          "pattern": "^[1-9][0-9]{0,5}$"
+        }
+      },
+      "description": "Half-open Launch++ plugin API major range: minimum inclusive, maximum exclusive.",
+      "title": "Launch++ plugin API range v1-preview",
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Compatible Launch++ application versions.",
+          "examples": ["^1.0.0", ">=1.0.0 <2.0.0"],
+          "maxLength": 120,
+          "minLength": 1,
+          "pattern": "^(?:\\*|(?:(?:\\^|~|>=|<=|>|<)?[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?)(?:\\s+(?:(?:>=|<=|>|<)[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?))*)$"
+        },
+        "sdk": {
+          "type": "string",
+          "description": "Compatible @launchpp/sdk versions used to build browser or server code.",
+          "examples": ["^1.0.0", ">=1.0.0 <2.0.0"],
+          "maxLength": 120,
+          "minLength": 1,
+          "pattern": "^(?:\\*|(?:(?:\\^|~|>=|<=|>|<)?[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?)(?:\\s+(?:(?:>=|<=|>|<)[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?))*)$"
+        },
+        "ui": {
+          "type": "string",
+          "description": "Compatible @launchpp/ui versions used to build custom React surfaces.",
+          "examples": ["^1.0.0", ">=1.0.0 <2.0.0"],
+          "maxLength": 120,
+          "minLength": 1,
+          "pattern": "^(?:\\*|(?:(?:\\^|~|>=|<=|>|<)?[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?)(?:\\s+(?:(?:>=|<=|>|<)[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?))*)$"
+        }
+      },
+      "description": "Optional build-time compatibility evidence recorded for review and diagnostics.",
+      "title": "Launch++ plugin compatibility v1-preview",
+      "additionalProperties": false
+    },
+    "contributes": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["handler", "id", "slot", "title"],
+            "properties": {
+              "handler": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "icon": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "inputSchema": {
+                "type": "string",
+                "maxLength": 240,
+                "minLength": 3,
+                "pattern": "^\\./(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$",
+                "description": "Static JSON Schema used by the host to render and validate action input."
+              },
+              "slot": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "project.toolbar"
+                  },
+                  {
+                    "type": "string",
+                    "const": "task.actions"
+                  },
+                  {
+                    "type": "string",
+                    "const": "task.card.actions"
+                  },
+                  {
+                    "type": "string",
+                    "const": "board.toolbar"
+                  },
+                  {
+                    "type": "string",
+                    "const": "board.card.actions"
+                  },
+                  {
+                    "type": "string",
+                    "const": "commandPalette"
+                  }
+                ]
+              },
+              "title": {
+                "type": "string",
+                "description": "Human-readable name shown in Launch++.",
+                "maxLength": 120,
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "description": "A host-rendered action backed by a declared server handler.",
+            "title": "Launch++ action contribution v1-preview",
+            "additionalProperties": false
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "path", "scope", "surface", "title"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "navigation": {
+                "type": "object",
+                "required": ["label", "slot"],
+                "properties": {
+                  "icon": {
+                    "type": "string",
+                    "description": "Host icon identifier.",
+                    "maxLength": 80,
+                    "minLength": 1
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Navigation label.",
+                    "maxLength": 80,
+                    "minLength": 1
+                  },
+                  "slot": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "organization.navigation"
+                      },
+                      {
+                        "type": "string",
+                        "const": "project.navigation"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "path": {
+                "type": "string",
+                "description": "Host-owned path segment beneath the organization or project plugin route.",
+                "maxLength": 120,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+(?:[/-][a-z0-9]+)*$"
+              },
+              "scope": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "organization"
+                  },
+                  {
+                    "type": "string",
+                    "const": "project"
+                  }
+                ]
+              },
+              "surface": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string",
+                "description": "Human-readable name shown in Launch++.",
+                "maxLength": 120,
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "description": "A custom organization or project page rendered in a sandboxed browser surface.",
+            "title": "Launch++ page contribution v1-preview",
+            "additionalProperties": false
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "panels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "slot", "surface", "title"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "slot": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "task.details.panels"
+                  },
+                  {
+                    "type": "string",
+                    "const": "board.sidebar"
+                  }
+                ]
+              },
+              "surface": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string",
+                "description": "Human-readable name shown in Launch++.",
+                "maxLength": 120,
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "description": "A substantial custom panel rendered in a sandboxed browser surface.",
+            "title": "Launch++ panel contribution v1-preview",
+            "additionalProperties": false
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": ["id", "scope", "title", "fields"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 1,
+                    "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "user"
+                      },
+                      {
+                        "type": "string",
+                        "const": "organization"
+                      },
+                      {
+                        "type": "string",
+                        "const": "project"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Human-readable name shown in Launch++.",
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": ["id", "label", "type"],
+                          "properties": {
+                            "description": {
+                              "type": "string",
+                              "maxLength": 240,
+                              "minLength": 1
+                            },
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80,
+                              "minLength": 1,
+                              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "default": {
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            "maxLength": {
+                              "type": "integer",
+                              "maximum": 500,
+                              "minimum": 1
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "text"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": ["id", "label", "type"],
+                          "properties": {
+                            "description": {
+                              "type": "string",
+                              "maxLength": 240,
+                              "minLength": 1
+                            },
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80,
+                              "minLength": 1,
+                              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "default": {
+                              "type": "number"
+                            },
+                            "maximum": {
+                              "type": "number"
+                            },
+                            "minimum": {
+                              "type": "number"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "number"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": ["id", "label", "type"],
+                          "properties": {
+                            "description": {
+                              "type": "string",
+                              "maxLength": 240,
+                              "minLength": 1
+                            },
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80,
+                              "minLength": 1,
+                              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "default": {
+                              "type": "boolean"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": ["id", "label", "options", "type"],
+                          "properties": {
+                            "description": {
+                              "type": "string",
+                              "maxLength": 240,
+                              "minLength": 1
+                            },
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80,
+                              "minLength": 1,
+                              "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "default": {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            "options": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": ["label", "value"],
+                                "properties": {
+                                  "label": {
+                                    "type": "string",
+                                    "maxLength": 120,
+                                    "minLength": 1
+                                  },
+                                  "value": {
+                                    "type": "string",
+                                    "maxLength": 120,
+                                    "minLength": 1
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "maxItems": 100,
+                              "minItems": 1
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "select"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "A standard setting control rendered and persisted by the host.",
+                      "title": "Launch++ setting field v1-preview"
+                    },
+                    "maxItems": 100,
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": ["id", "scope", "title", "surface"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 1,
+                    "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "user"
+                      },
+                      {
+                        "type": "string",
+                        "const": "organization"
+                      },
+                      {
+                        "type": "string",
+                        "const": "project"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Human-readable name shown in Launch++.",
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "surface": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 1,
+                    "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ],
+            "description": "Host-rendered standard settings fields or one substantial custom settings surface.",
+            "title": "Launch++ settings contribution v1-preview"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "taskFields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "type"],
+            "properties": {
+              "description": {
+                "type": "string",
+                "maxLength": 240,
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              "placements": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "task.details.fields"
+                    },
+                    {
+                      "type": "string",
+                      "const": "task.card.badges"
+                    },
+                    {
+                      "type": "string",
+                      "const": "task.list.columns"
+                    }
+                  ]
+                },
+                "maxItems": 3,
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "number"
+                  },
+                  {
+                    "type": "string",
+                    "const": "text"
+                  }
+                ]
+              }
+            },
+            "description": "A host-managed task field available to task detail, Board badges, List columns, filters, sorting, and export.",
+            "title": "Launch++ task field contribution v1-preview",
+            "additionalProperties": false
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        }
+      },
+      "description": "Static host-rendered and custom-surface contributions registered by the plugin.",
+      "title": "Launch++ contributions v1-preview",
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "optional": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9]+(?:[.-][a-z0-9]+)+$": {
+              "type": "string",
+              "description": "Preview compatibility range using an exact version, wildcard, caret, tilde, or ordered comparator set.",
+              "examples": ["^1.0.0", ">=1.0.0 <2.0.0"],
+              "maxLength": 120,
+              "minLength": 1,
+              "pattern": "^(?:\\*|(?:(?:\\^|~|>=|<=|>|<)?[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?)(?:\\s+(?:(?:>=|<=|>|<)[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?))*)$"
+            }
+          },
+          "description": "Packages that enable optional integration behavior when present."
+        },
+        "required": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9]+(?:[.-][a-z0-9]+)+$": {
+              "type": "string",
+              "description": "Preview compatibility range using an exact version, wildcard, caret, tilde, or ordered comparator set.",
+              "examples": ["^1.0.0", ">=1.0.0 <2.0.0"],
+              "maxLength": 120,
+              "minLength": 1,
+              "pattern": "^(?:\\*|(?:(?:\\^|~|>=|<=|>|<)?[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?)(?:\\s+(?:(?:>=|<=|>|<)[0-9]+(?:\\.[0-9]+){0,2}(?:-[0-9A-Za-z.-]+)?))*)$"
+            }
+          },
+          "description": "Packages that must be installed and compatible before this plugin is enabled."
+        }
+      },
+      "description": "Package-level dependencies only; direct source or storage access is never granted.",
+      "title": "Launch++ plugin dependencies v1-preview",
+      "additionalProperties": false
+    },
+    "description": {
+      "type": "string",
+      "description": "Short plain-text explanation shown during package review.",
+      "maxLength": 500,
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 3,
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"
+    },
+    "manifestVersion": {
+      "type": "string",
+      "const": "1-preview",
+      "description": "Preview manifest schema version."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name shown in Launch++.",
+      "maxLength": 120,
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string",
+            "const": "projects:read"
+          },
+          {
+            "type": "string",
+            "const": "projects:write"
+          },
+          {
+            "type": "string",
+            "const": "tasks:read"
+          },
+          {
+            "type": "string",
+            "const": "tasks:write"
+          },
+          {
+            "type": "string",
+            "const": "comments:read"
+          },
+          {
+            "type": "string",
+            "const": "comments:write"
+          },
+          {
+            "type": "string",
+            "const": "members:read"
+          }
+        ],
+        "description": "A bounded host capability requested by the plugin.",
+        "title": "Launch++ plugin permission v1-preview"
+      },
+      "description": "Complete permission request shown before enablement.",
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "version": {
+      "type": "string",
+      "description": "Plugin release version expressed as semantic versioning.",
+      "examples": ["1.0.0"],
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "authoring": {
+      "type": "object",
+      "required": ["adapter"],
+      "properties": {
+        "adapter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "react-vite"
+            },
+            {
+              "type": "string",
+              "const": "vanilla-typescript-vite"
+            },
+            {
+              "type": "string",
+              "const": "vanilla-javascript-vite"
+            }
+          ],
+          "description": "Supported local build adapter. This field is removed from the installed package.",
+          "title": "Launch++ plugin authoring adapter v1-preview"
+        }
+      },
+      "additionalProperties": false
+    },
+    "browser": {
+      "type": "object",
+      "required": ["surfaces"],
+      "properties": {
+        "surfaces": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$": {
+              "type": "object",
+              "required": ["entry"],
+              "properties": {
+                "entry": {
+                  "type": "string",
+                  "maxLength": 240,
+                  "minLength": 3,
+                  "pattern": "^\\./(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$",
+                  "description": "Author-project HTML, JavaScript, TypeScript, or TSX entry compiled by the adapter.",
+                  "examples": ["./src/pages/SprintsPage.tsx"]
+                }
+              },
+              "description": "A custom browser surface in the author project.",
+              "title": "Launch++ source browser surface v1-preview",
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "server": {
+      "type": "object",
+      "required": ["handlers"],
+      "properties": {
+        "handlers": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$": {
+              "type": "object",
+              "required": ["entry", "export"],
+              "properties": {
+                "entry": {
+                  "type": "string",
+                  "maxLength": 240,
+                  "minLength": 3,
+                  "pattern": "^\\./(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$",
+                  "description": "Author-project JavaScript or TypeScript module compiled by the packer.",
+                  "examples": ["./src/actions/addToSprint.ts"]
+                },
+                "export": {
+                  "type": "string",
+                  "description": "Named function exported by the source module.",
+                  "examples": ["addToSprint"],
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+                }
+              },
+              "description": "A server handler source entry. Executable handlers remain operator-trusted preview code.",
+              "title": "Launch++ source server handler v1-preview",
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$id": "https://launchpp.dev/schemas/plugin-source-v1-preview.json",
+  "description": "Authoritative launchpp.plugin.json contract consumed by Launch++ authoring tools.",
+  "title": "Launch++ source plugin manifest v1-preview",
+  "additionalProperties": false
+}

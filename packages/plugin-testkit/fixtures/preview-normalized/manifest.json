@@ -1,0 +1,69 @@
+{
+  "manifestVersion": "1-preview",
+  "id": "launchpp.preview-sample",
+  "name": "Preview sample",
+  "description": "A non-executing package used to review the staged installation flow.",
+  "version": "1.0.1",
+  "apiVersion": {
+    "minimum": "1",
+    "maximumExclusive": "2"
+  },
+  "compatibility": {
+    "host": "^0.0.0",
+    "sdk": "^0.0.0",
+    "ui": "^0.0.0"
+  },
+  "permissions": ["projects:read", "tasks:read"],
+  "browser": {
+    "surfaces": {
+      "sample": {
+        "document": "./browser/surfaces/sample/index.html"
+      }
+    }
+  },
+  "server": {
+    "handlers": {
+      "sample-action": {
+        "module": "./server/handlers.js",
+        "export": "sampleAction"
+      }
+    }
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "sample-page",
+        "scope": "organization",
+        "path": "preview-sample",
+        "title": "Preview sample",
+        "surface": "sample",
+        "navigation": {
+          "slot": "organization.navigation",
+          "label": "Preview sample"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "id": "sample-action",
+        "slot": "task.actions",
+        "title": "Sample action",
+        "handler": "sample-action"
+      },
+      {
+        "id": "sample-command",
+        "slot": "commandPalette",
+        "title": "Sample command",
+        "handler": "sample-action"
+      }
+    ],
+    "taskFields": [
+      {
+        "id": "sample-score",
+        "label": "Sample score",
+        "type": "number",
+        "placements": ["task.details.fields", "task.card.badges"]
+      }
+    ]
+  }
+}

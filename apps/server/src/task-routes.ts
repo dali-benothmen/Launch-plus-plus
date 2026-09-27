@@ -35,16 +35,19 @@ import {
   type TaskView,
 } from "@launchpp/core";
 import {
+  type PluginFieldValueRecord,
   SqliteAuditWriter,
   type SqliteDatabase,
   SqliteIdempotencyRepository,
   SqliteInstallationRepository,
   SqliteOrganizationMembershipRepository,
   SqliteOutboxRepository,
+  SqlitePluginFieldValueRepository,
   SqliteProjectRepository,
   SqliteTaskRepository,
   SqliteTeamRepository,
 } from "@launchpp/database";
+import { stableContributionId } from "@launchpp/plugin-platform";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 import { cursorPage, executeIdempotent } from "./http-contract.js";
@@ -100,7 +103,10 @@ function labelSummary(label: Label) {
   };
 }
 
-function taskSummary(task: TaskView) {
+function taskSummary(
+  task: TaskView,
+  extensionFields: Readonly<Record<string, number | string>> = {},
+) {
   return {
     ...(task.archivedAt === undefined ? {} : { archivedAt: task.archivedAt }),
     assigneeUserIds: task.assigneeUserIds,
@@ -110,6 +116,7 @@ function taskSummary(task: TaskView) {
     createdByUserId: task.createdByUserId,
     description: task.description,
     ...(task.dueDate === undefined ? {} : { dueDate: task.dueDate }),
+    extensionFields,
     id: task.id,
     labels: task.labels.map(labelSummary),
     number: task.number,
@@ -128,15 +135,28 @@ function taskSummary(task: TaskView) {
   };
 }
 
-function taskDetailSummary(detail: TaskDetail) {
+function taskDetailSummary(
+  detail: TaskDetail,
+  valuesByTask: ReadonlyMap<string, Readonly<Record<string, number | string>>>,
+) {
   return {
     activity: detail.activity,
     attachments: detail.attachments,
     availableLabels: detail.availableLabels.map(labelSummary),
     comments: detail.comments.map(commentSummary),
-    subtasks: detail.subtasks.map(taskSummary),
-    task: taskSummary(detail.task),
+    subtasks: detail.subtasks.map((task) => taskSummary(task, valuesByTask.get(task.id))),
+    task: taskSummary(detail.task, valuesByTask.get(detail.task.id)),
   };
+}
+
+function extensionFieldsByTask(records: readonly PluginFieldValueRecord[]) {
+  const values = new Map<string, Record<string, number | string>>();
+  for (const record of records) {
+    const taskValues = values.get(record.taskId) ?? {};
+    taskValues[stableContributionId(record.pluginId, "field", record.fieldId)] = record.value;
+    values.set(record.taskId, taskValues);
+  }
+  return values;
 }
 
 function decodeBase64(value: string) {
@@ -175,6 +195,7 @@ export async function registerTaskRoutes(
 ): Promise<void> {
   const installations = new SqliteInstallationRepository();
   const idempotency = new SqliteIdempotencyRepository(input.database);
+  const pluginFields = new SqlitePluginFieldValueRepository();
   const service = new TaskService({
     audit: new SqliteAuditWriter(),
     clock: Date.now,
@@ -207,6 +228,20 @@ export async function registerTaskRoutes(
     }
     return { installationId: installation.id, userId: session.identity.id };
   };
+
+  const projectFieldValues = (organizationId: string, projectId: string) =>
+    extensionFieldsByTask(
+      input.database.read((context) =>
+        pluginFields.listForProject(context, organizationId, projectId),
+      ),
+    );
+  const summarizeTask = (task: TaskView) =>
+    taskSummary(task, projectFieldValues(task.organizationId, task.projectId).get(task.id));
+  const summarizeDetail = (detail: TaskDetail) =>
+    taskDetailSummary(
+      detail,
+      projectFieldValues(detail.task.organizationId, detail.task.projectId),
+    );
 
   const sendDomainError = (error: unknown, request: FastifyRequest, reply: FastifyReply) => {
     if (error instanceof TaskAccessDeniedError) {
@@ -285,8 +320,12 @@ export async function registerTaskRoutes(
           { ...request.query, scope: `tasks:${request.params.projectId}` },
           (task) => task.id,
         );
+        const valuesByTask = projectFieldValues(
+          request.params.organizationId,
+          request.params.projectId,
+        );
         return {
-          items: page.items.map(taskSummary),
+          items: page.items.map((task) => taskSummary(task, valuesByTask.get(task.id))),
           labels: catalog.labels.map(labelSummary),
           ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
         };
@@ -318,7 +357,7 @@ export async function registerTaskRoutes(
           userId: context.userId,
           organizationId: request.params.organizationId,
         });
-        return taskDetailSummary(detail);
+        return summarizeDetail(detail);
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;
@@ -355,7 +394,7 @@ export async function registerTaskRoutes(
           organizationId: request.params.organizationId,
         });
         reply.code(201);
-        return taskDetailSummary(detail);
+        return summarizeDetail(detail);
       } catch (error) {
         if (sendDomainError(error, request, reply)) return;
         throw error;
@@ -378,7 +417,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskDetailSummary(
+        return summarizeDetail(
           await service.deleteAttachment({
             ...context,
             attachmentId: request.params.attachmentId,
@@ -490,7 +529,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskDetailSummary(
+        return summarizeDetail(
           await service.setCommentReaction({
             ...context,
             ...request.body,
@@ -524,7 +563,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskDetailSummary(
+        return summarizeDetail(
           await service.updateComment({
             ...context,
             ...request.body,
@@ -558,7 +597,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskDetailSummary(
+        return summarizeDetail(
           await service.deleteComment({
             ...context,
             commentId: request.params.commentId,
@@ -611,7 +650,7 @@ export async function registerTaskRoutes(
               projectId: request.params.projectId,
               organizationId: request.params.organizationId,
             });
-            return { body: taskSummary(task), status: 201 };
+            return { body: summarizeTask(task), status: 201 };
           },
         );
       } catch (error) {
@@ -637,7 +676,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskSummary(
+        return summarizeTask(
           await service.updateTask({
             ...context,
             ...request.body,
@@ -670,7 +709,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskSummary(
+        return summarizeTask(
           await service.moveTask({
             ...context,
             ...request.body,
@@ -703,7 +742,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskSummary(
+        return summarizeTask(
           await service.setAssignees({
             ...context,
             ...request.body,
@@ -736,7 +775,7 @@ export async function registerTaskRoutes(
       const context = await contextFor(request, reply);
       if (!context) return;
       try {
-        return taskSummary(
+        return summarizeTask(
           await service.setLabels({
             ...context,
             ...request.body,
@@ -782,7 +821,7 @@ export async function registerTaskRoutes(
             action === "archive"
               ? await service.archiveTask(command)
               : await service.restoreTask(command);
-          return taskSummary(task);
+          return summarizeTask(task);
         } catch (error) {
           if (sendDomainError(error, request, reply)) return;
           throw error;

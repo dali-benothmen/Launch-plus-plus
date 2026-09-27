@@ -69,6 +69,13 @@ export function PluginSurfaceProofPage() {
           source={isolatedSurfaceUrl("/plugin-fixtures/vanilla/index.html")}
           title="Packed vanilla surface"
         />
+        <PluginSurface
+          context={{ ...context, pluginId: "launchpp.failure-proof" }}
+          handshakeTimeoutMs={3_000}
+          slowThresholdMs={1_000}
+          source={isolatedSurfaceUrl("/plugin-fixtures/unavailable/index.html")}
+          title="Unavailable surface proof"
+        />
       </div>
     </section>
   );

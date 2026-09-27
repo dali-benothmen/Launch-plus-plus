@@ -1,6 +1,6 @@
 # Launch++ plugin UI system
 
-Status: accepted v1 product and architecture direction. No UI package, plugin template, or runtime has been implemented.
+Status: accepted v1 product and architecture direction. The framework-neutral SDK, React bindings, public React UI/provider contract, supported React/vanilla templates, disposable development host, connected control plane, and surface failure containment are implemented; connected artifact delivery and production custom-surface hosting remain later work.
 
 This document owns the supported plugin authoring stacks and the relationship between React, vanilla browser code, Ant Design, Launch++ themes, and packaged plugin surfaces. The [plugin system](./plugin-system-design.md) owns runtime capabilities and isolation; the [plugin CLI](./plugin-cli-design.md) owns scaffolding and builds; the [theme system](./theme-system-design.md) owns the public visual-token contract.
 
@@ -26,6 +26,8 @@ This scope is intentional. Launch++ should spend its early engineering budget on
 
 The core SDK must never require React. `@launchpp/ui` is intentionally React-only. `@launchpp/ui-tokens` does not turn native HTML into Ant Design components; it gives custom elements the same visual vocabulary.
 
+The preview SDK promotes the Phase 0 browser bridge into its public transport. `createClient` performs the origin-checked, nonce-bound handshake and exposes host-provided context/theme data, project/task/comment capabilities, navigation, commands, cancellation, and structured errors. `@launchpp/sdk/react` supplies `LaunchppProvider`, context/theme/project hooks, cancellable capability queries, and mutation helpers over that same client. It does not introduce a React-specific wire contract. The public React UI package now supplies the provider and bootstrap composition; production surface hosting remains a later development-runtime task.
+
 ```mermaid
 flowchart TB
   ReactPlugin["React + TypeScript plugin"] --> ReactSDK["@launchpp/sdk/react"]
@@ -33,6 +35,7 @@ flowchart TB
   VanillaPlugin["Vanilla browser plugin"] --> SDK["@launchpp/sdk"]
   VanillaPlugin --> Tokens["@launchpp/ui-tokens"]
   ReactSDK --> SDK
+  UI --> ReactSDK
   UI --> Ant["Ant Design"]
   UI --> Tokens
   ReactPlugin --> Pack["launchpp pack"]
@@ -73,6 +76,22 @@ Official templates and documentation do not import `antd` directly, target `.ant
 
 The public package should expose the useful Ant catalogue without adding ceremonial wrappers around every component. Launch++ wraps or replaces a component only when it needs stable product semantics, safer plugin behavior, different defaults, or a deliberate API boundary.
 
+## React surface contract
+
+React plugin entry points use the public bootstrap rather than configuring SDK or theme providers themselves:
+
+```tsx
+import { mountPluginSurface } from "@launchpp/ui";
+
+import { PluginPage } from "./plugin-page.js";
+
+void mountPluginSurface({ component: PluginPage });
+```
+
+`mountPluginSurface` performs the SDK handshake, applies `PluginProvider` and the shared `LaunchProvider`, catches render failures, and returns an explicit `unmount` operation that also closes the SDK client. `PluginProvider` remains public for hosts and advanced adapters that already own the client and React root.
+
+The stable surface compositions are `PluginPageLayout`, `PluginPanelLayout`, `PluginSettingsLayout`, and `PluginSurfaceSection`. They provide responsive page structure while leaving controls and content to the plugin. `PluginAsyncState` chooses the standard loading, empty, error, forbidden, and unavailable presentation; each state is also exported separately. Plugins should use the semantic icon aliases from `@launchpp/ui` or the supported `@launchpp/ui/icons` entry point.
+
 ## Host-rendered and plugin-rendered UI
 
 Small contributions are declarative and host-rendered:
@@ -97,7 +116,7 @@ validated Launch++ theme
 └── Ant Design theme configuration used by ConfigProvider
 ```
 
-The React build adapter generates the surface bootstrap that mounts the author's component inside the Launch++ provider. That provider applies the current Ant configuration and exposes the SDK context; authors only export their page or panel component. Vanilla and custom components receive the same resolved `--launch-*` variables. Theme changes are forwarded to active surfaces without a full application reload.
+The React build adapter calls `mountPluginSurface`, which mounts the author's component inside the Launch++ SDK and theme providers. Those providers apply the current Ant configuration and expose the SDK context; authors only export their page or panel component. Vanilla and custom components receive the same resolved `--launch-*` variables. Theme changes are forwarded to active surfaces without a full application reload.
 
 Plugin authors do not configure the application theme provider themselves. They may build completely custom React components and style them with the public variables:
 
@@ -112,6 +131,12 @@ Plugin authors do not configure the application theme provider themselves. They 
 ```
 
 Ant's internal tokens and generated class names are implementation details. Only the Launch++ theme schema and `--launch-*` variables are stable plugin contracts.
+
+## Custom components
+
+Plugins should compose public `@launchpp/ui` controls before creating custom controls. A custom component may use scoped CSS and the stable `--launch-*` variables; TypeScript authors can import the typed names from `semanticThemeTokens` in `@launchpp/ui-tokens`. It must not target `.ant-*` selectors, generated class names, private DOM structure, or application-private imports. Public component props such as `className`, `styles`, and documented semantic slots remain supported.
+
+Custom components own their keyboard behavior, focus visibility, accessible name and state, responsive layout, and reduced-motion behavior. They remain inside the sandboxed plugin surface and cannot style or inspect the host shell. These rules allow a distinct plugin experience without turning host internals into a compatibility promise.
 
 ## Scaffolding
 
@@ -177,7 +202,7 @@ They do not receive React hooks or React/Ant components. A vanilla author uses n
 - [ ] A vanilla author renders a matching custom page using only `@launchpp/sdk` and `@launchpp/ui-tokens`.
 - [ ] React and vanilla projects pack to the same normalized runtime contract.
 - [ ] Theme switching updates host, React-plugin, and vanilla-plugin surfaces coherently.
-- [ ] Direct application imports and dependencies on Ant class names fail `launchpp check` or produce an explicit unsupported-usage diagnostic.
+- [x] Direct application imports and dependencies on Ant class names fail `launchpp check` or produce an explicit unsupported-usage diagnostic.
 - [ ] Unused Ant components are not included in a packed plugin surface.
 - [ ] A supported older packed React plugin continues to run after a host UI-library upgrade.
 - [ ] Host-rendered contributions always use the host's current components.

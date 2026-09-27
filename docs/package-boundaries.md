@@ -19,6 +19,7 @@ Launch++ keeps application composition, product policy, infrastructure, public e
 | `packages/ui` | Design system | Public | Supported React component contract for core and plugin UI |
 | `packages/ui-tokens` | Design system | Public | Framework-neutral tokens, CSS variables, icons, and base styles |
 | `packages/plugin-protocol` | Plugin platform | Public | Versioned manifests, messages, permissions, and contribution schemas |
+| `packages/plugin-package` | Plugin platform | Public | Deterministic archive writing and non-executing package inspection |
 | `packages/plugin-runtime` | Plugin platform | Internal | Isolated server execution and supervision |
 | `packages/plugin-testkit` | Plugin platform | Internal | Protocol, broker, isolation, and adversarial fixtures |
 

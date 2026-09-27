@@ -1,6 +1,6 @@
 # Launch++ plugin CLI and project workflow
 
-Status: proposed developer tooling contract. No CLI package, scaffolder, templates, or development host has been implemented.
+Status: active preview contract. The project scaffolder, supported React/vanilla templates, disposable and connected development modes, contribution and deterministic client/fixture generation, validation, test orchestration, packaging, and non-executing archive inspection are implemented.
 
 This document owns plugin project creation, local development, validation, code generation, testing, packaging, and SDK upgrades. It complements the [plugin system](./plugin-system-design.md) and [plugin storage design](./plugin-storage-design.md).
 
@@ -45,7 +45,7 @@ A project-local development dependency providing the `launchpp` binary:
     "pack": "launchpp pack"
   },
   "devDependencies": {
-    "@launchpp/cli": "^1.0.0"
+    "@launchpp/cli": "0.0.0"
   }
 }
 ```
@@ -64,38 +64,28 @@ Plugin ID: acme.sprint-planner
 
 Choose starting capabilities:
   ◉ Project page
-  ◉ Plugin data
-  ◉ Task action
   ○ Task panel
+  ○ Task action
   ○ Settings
-  ○ Background events/jobs
-  ○ External API access
+  ○ Task field
 
 Framework:
   ◉ React + TypeScript (recommended)
   ○ Vanilla HTML + TypeScript
   ○ Vanilla HTML + JavaScript
 
-UI:
-  ◉ @launchpp/ui
-  ○ Custom React components + @launchpp/ui-tokens
-
-Package manager:
-  ◉ pnpm
-
-Create example tests? Yes
+Create example test? Yes
 ```
 
-Prompts explain impact. `@launchpp/ui` is the recommended React choice and supplies Launch++-configured Ant Design components; custom React and vanilla templates receive `@launchpp/ui-tokens` or may use fully custom scoped CSS. Selecting external API access asks for destinations and adds the corresponding manifest permission; selecting no capability generates the minimal valid package.
+Prompts explain impact. React surfaces use `@launchpp/ui`; vanilla surfaces use `@launchpp/ui-tokens` and scoped CSS. The selected schema-backed contributions determine source entries and the exact preview permissions. Selecting no capability generates the minimal valid package.
 
 Non-interactive flags support automation:
 
 ```text
 pnpm create launchpp-plugin sprint-planner \
   --id acme.sprint-planner \
-  --template page \
-  --data \
-  --package-manager pnpm \
+  --framework react-typescript \
+  --capabilities project-page,task-action \
   --yes
 ```
 
@@ -103,59 +93,40 @@ The command validates destination path, package/plugin IDs, framework/adapter co
 
 ## Generated project
 
-For the recommended React page/action/data plugin:
+For a React project page and task action:
 
 ```text
 sprint-planner/
 ├── launchpp.plugin.json
-├── data/
-│   └── schema.ts
 ├── src/
-│   ├── actions/
-│   │   └── createSprint.ts
-│   ├── components/
-│   │   └── SprintCard.tsx
-│   ├── pages/
-│   │   └── SprintsPage.tsx
-│   ├── generated/
-│   │   └── data.ts
-│   └── styles.css
-├── .launchpp/
-│   └── released-schema.json
-├── tests/
-│   ├── actions.test.ts
-│   └── plugin.test.tsx
+│   ├── actions/task-action.ts
+│   ├── generated/launchpp.ts
+│   └── PluginSurface.tsx
+├── tests/manifest.test.ts
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
-├── vitest.config.ts
 ├── .gitignore
 └── README.md
 ```
 
-Generated code must run immediately. The README explains the exact selected capabilities rather than including a generic wall of documentation.
-
-A vanilla page template replaces React components and React tests with `src/pages/sprints/index.html`, `src/pages/sprints/main.ts`, scoped CSS, and DOM-level tests. Both templates use the same root manifest, framework-neutral SDK, permissions, server-handler format, storage model and normalized distribution package.
+The README names the exact selected capabilities rather than including a generic wall of documentation. A vanilla surface replaces the React component with `src/index.html`, `src/main.ts` or `src/main.js`, and scoped CSS. Every framework produces the same authoritative manifest and scripts. The scaffolder installs nothing and refuses to overwrite a non-empty directory.
 
 `launchpp.plugin.json` remains authoritative. It records an allowlisted authoring adapter such as `react-vite` or `vanilla-typescript-vite`; `pack` removes that author-only field from the distribution manifest. Files and component names are conventions for humans; the CLI writes explicit manifest entries. Renaming a file without updating the manifest produces a precise `check` error.
 
 ## Templates
 
-Initial templates should be composable capabilities with a separately selected framework adapter:
+Starting capabilities are composable and independent of the selected framework adapter:
 
-| Template | Generated surface |
+| Capability | Generated contract |
 | --- | --- |
-| `minimal` | Manifest, scripts, test harness |
-| `page` | Custom project page in the selected framework |
-| `task-field` | Declaration and optional data schema, no custom UI required |
-| `task-action` | Native input form plus server handler |
-| `task-panel` | Custom task panel in the selected framework |
-| `integration` | Settings, brokered HTTP handler, secret reference |
-| `background` | Event/job handler and retry-safe example |
-| `full-feature` | Page, action, data, settings, and representative tests |
-| `theme` | `launchpp.theme.json` and theme preview workflow |
+| `project-page` | Project-scoped custom surface with `projects:read` |
+| `task-panel` | Task-detail custom panel with `tasks:read` |
+| `task-action` | Host-rendered action, handler, and `tasks:write` |
+| `settings` | Native organization settings field with no data permission |
+| `task-field` | Native task field placements with no data permission |
 
-A template adds only the permissions it actually needs. The `full-feature` template is for learning and qualification, not the default recommendation. V1 ships official `react-typescript`, `vanilla-typescript` and `vanilla-javascript` adapters. Vue, Svelte, Angular and other component-framework templates are outside the planned v1 scope and are not shown as experimental choices.
+Selecting no capability produces a minimal manifest, scripts, and optional test. V1 ships official `react-typescript`, `vanilla-typescript`, and `vanilla-javascript` adapters. Vue, Svelte, Angular, and other component-framework templates remain out of scope.
 
 ## Command surface
 
@@ -212,13 +183,15 @@ By default, plugin data lives in an isolated disposable profile under the projec
 
 ### Connecting to an existing installation
 
-An installation operator can enable **Settings → Developer → Developer Mode**, which is disabled by default and displays a persistent warning while active. The author then runs:
+An organization owner can enable connected Developer Mode from global Settings, which is disabled by default and displays a persistent warning while active. The author then runs:
 
 ```text
 pnpm dev --connect https://launch.example
 ```
 
 The CLI requests a short-lived one-time pairing code and opens the installation in a browser for confirmation. After the user confirms the plugin ID, requested permissions and development organization, the CLI opens an outbound authenticated TLS/WebSocket session. For a remote VPS, it streams compiled incremental browser/server artifacts; the server never reads the developer's filesystem or connects to localhost. A local installation may use an exact loopback dev origin when its content policy and mixed-content rules permit it.
+
+The current preview implements the authenticated HTTPS control plane: pairing, owner approval, author-scoped registration, manifest refresh, permission reapproval, expiry, revocation, and teardown. It exposes host-rendered contributions immediately. Compiled custom-surface and server artifacts join this channel after the deterministic build adapter is implemented; the host never reads source files or connects back to the author machine.
 
 The host registers the session as `dev:<session-id>:<plugin-id>` rather than replacing the installed package. It is visible only to the paired developer by default, is scoped to a dedicated development organization, expires automatically and may be revoked from either the CLI or Settings. Allowing selected test users is a later, explicit option; production-wide preview is not a v1 default.
 
@@ -573,7 +546,7 @@ Registry/marketplace commands naturally transmit packages and identity only afte
 - The manifest remains authoritative; file naming is convention, not registration.
 - Templates are small composable capability starters.
 - Development includes a disposable sandbox, fixtures, inspection, and hot reload.
-- An operator-controlled Developer Mode can pair an existing installation with the CLI through a temporary authenticated channel; it never replaces an installed release or disables security boundaries.
+- An owner-controlled Developer Mode can pair an existing installation with the CLI through a temporary authenticated channel; it never replaces an installed release or disables security boundaries.
 - Data generation and compatibility checks are first-class CLI responsibilities.
 - Plugins contain no SQL or author-maintained migrations.
 - Packaging occurs on the author's machine/CI and produces a static uploadable archive.

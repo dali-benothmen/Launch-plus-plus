@@ -9,6 +9,11 @@ export function createOriginGuard(config: ServerConfig): onRequestHookHandler {
     if (!mutationMethods.has(request.method)) return;
 
     const origin = request.headers.origin;
+    const cliRequest =
+      origin === undefined &&
+      request.headers["x-launchpp-cli"] === "1" &&
+      request.url.startsWith("/api/v1/developer-mode/");
+    if (cliRequest) return;
     let requestOrigin: string | undefined;
     try {
       requestOrigin = origin ? new URL(origin).origin : undefined;

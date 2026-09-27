@@ -8,6 +8,30 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { App, appRoutes } from "./app.js";
 
 const apiClient: ApiClient = {
+  developerMode: {
+    approvePairing: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    approvePermissions: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    reviewPairing: vi.fn(async () => {
+      throw new Error("Developer Mode is not used by this shell fixture.");
+    }),
+    revoke: vi.fn(async () => undefined),
+    setEnabled: vi.fn(async (_organizationId, enabled) => ({
+      enabled,
+      pairingTtlSeconds: 300,
+      sessionTtlSeconds: 1_800,
+      sessions: [],
+    })),
+    status: vi.fn(async () => ({
+      enabled: false,
+      pairingTtlSeconds: 300,
+      sessionTtlSeconds: 1800,
+      sessions: [],
+    })),
+  },
   auth: {
     recoveryCapabilities: vi.fn(async () => ({ email: false, operatorRecovery: true })),
     session: vi.fn(async () => ({
@@ -18,6 +42,18 @@ const apiClient: ApiClient = {
     signIn: vi.fn(async () => undefined),
     signOut: vi.fn(async () => undefined),
   },
+  extensionRegistry: {
+    disableProject: vi.fn(async () => undefined),
+    enableProject: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+    getOrganization: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+    getProject: vi.fn(async () => {
+      throw new Error("Extension registries are not used by this shell fixture.");
+    }),
+  },
   organizationDirectory: {
     resolve: vi.fn(async (slug) => ({ exists: true, name: "My Organization", slug })),
   },
@@ -27,6 +63,15 @@ const apiClient: ApiClient = {
     }),
   },
   health: { readiness: vi.fn(async () => ({ status: "ready" as const })) },
+  pluginPackages: {
+    enable: vi.fn(async () => {
+      throw new Error("Plugin packages are not used by this shell fixture.");
+    }),
+    list: vi.fn(async () => []),
+    stage: vi.fn(async () => {
+      throw new Error("Plugin packages are not used by this shell fixture.");
+    }),
+  },
   search: vi.fn(async () => ({ items: [] })),
   projects: {
     archive: vi.fn(async () => ({
@@ -166,6 +211,9 @@ const apiClient: ApiClient = {
       throw new Error("Task API is not used by this shell fixture.");
     }),
     restore: vi.fn(async () => {
+      throw new Error("Task API is not used by this shell fixture.");
+    }),
+    setExtensionField: vi.fn(async () => {
       throw new Error("Task API is not used by this shell fixture.");
     }),
     setCommentReaction: vi.fn(async () => {

@@ -1,0 +1,14 @@
+{
+  "formatVersion": "1-preview",
+  "algorithm": "sha256",
+  "files": {
+    "manifest.json": {
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sizeBytes": 812
+    },
+    "browser/surfaces/sprints/index.html": {
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sizeBytes": 421
+    }
+  }
+}

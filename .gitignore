@@ -9,10 +9,12 @@ data/
 playwright-report/
 test-results/
 blob-report/
+examples/
 
 .env
 .env.*
 !.env.example
+*.launch-plugin
 
 *.log
 *.tsbuildinfo

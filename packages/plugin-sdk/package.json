@@ -1,0 +1,38 @@
+{
+  "name": "@launchpp/sdk",
+  "version": "0.0.0",
+  "description": "Framework-neutral Launch++ plugin SDK with optional React bindings.",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@launchpp/plugin-protocol": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0 <20"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

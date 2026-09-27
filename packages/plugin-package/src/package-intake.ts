@@ -5,10 +5,14 @@ import path from "node:path";
 import {
   type InstalledPluginManifest,
   type PluginIntegrity,
+  type PluginPackageIntegrity,
+  type PluginPackageManifest,
   validateInstalledPluginManifest,
   validatePluginIntegrity,
+  validatePluginPackageIntegrity,
+  validatePluginPackageManifest,
 } from "@launchpp/plugin-protocol";
-import { unzipSync, type UnzipFileInfo } from "fflate";
+import { type UnzipFileInfo, unzipSync } from "fflate";
 
 export const PLUGIN_ARCHIVE_ERROR_CODES = {
   archiveTooLarge: "ARCHIVE_TOO_LARGE",
@@ -304,6 +308,179 @@ export async function installPluginArchive(
       return {
         alreadyInstalled: true,
         directory: targetDirectory,
+        manifest: inspected.manifest,
+        packageHash: inspected.packageHash,
+      };
+    }
+  } finally {
+    await rm(stagingDirectory, { force: true, recursive: true });
+  }
+}
+
+function previewPackagePath(reference: string): string {
+  return reference.startsWith("./") ? reference.slice(2) : reference;
+}
+
+function assertPreviewManifestFiles(
+  manifest: PluginPackageManifest,
+  files: Readonly<Record<string, Uint8Array>>,
+): void {
+  const references = [
+    ...Object.values(manifest.browser?.surfaces ?? {}).map((surface) => surface.document),
+    ...Object.values(manifest.server?.handlers ?? {}).map((handler) => handler.module),
+    ...(manifest.contributes?.actions ?? []).flatMap((action) =>
+      action.inputSchema === undefined ? [] : [action.inputSchema],
+    ),
+  ];
+  for (const reference of references) {
+    const filePath = previewPackagePath(reference);
+    if (files[filePath] === undefined) {
+      throw new PluginArchiveError(
+        PLUGIN_ARCHIVE_ERROR_CODES.invalidManifest,
+        `Manifest package file '${reference}' is missing from the archive.`,
+      );
+    }
+  }
+}
+
+export interface InspectedPreviewPluginArchive {
+  readonly files: Readonly<Record<string, Uint8Array>>;
+  readonly integrity: PluginPackageIntegrity;
+  readonly manifest: PluginPackageManifest;
+  readonly packageHash: string;
+}
+
+export function inspectPreviewPluginArchive(
+  archive: Uint8Array,
+  overrides: Partial<PluginArchiveLimits> = {},
+): InspectedPreviewPluginArchive {
+  const limits = { ...DEFAULT_PLUGIN_ARCHIVE_LIMITS, ...overrides };
+  if (archive.byteLength > limits.maxArchiveBytes) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.archiveTooLarge,
+      "Plugin archive exceeds the compressed size limit.",
+    );
+  }
+
+  const files = inspectEntries(archive, limits);
+  const manifestDocument = files["manifest.json"];
+  const integrityDocument = files["integrity.json"];
+  if (manifestDocument === undefined) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.invalidManifest,
+      "Plugin archive is missing manifest.json.",
+    );
+  }
+  if (integrityDocument === undefined) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.invalidIntegrity,
+      "Plugin archive is missing integrity.json.",
+    );
+  }
+
+  const manifestResult = validatePluginPackageManifest(
+    decodeJson(manifestDocument, "manifest.json"),
+  );
+  if (!manifestResult.ok) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.invalidManifest,
+      validationMessage("manifest.json", manifestResult.issues),
+    );
+  }
+  assertPreviewManifestFiles(manifestResult.value, files);
+
+  const integrityResult = validatePluginPackageIntegrity(
+    decodeJson(integrityDocument, "integrity.json"),
+  );
+  if (!integrityResult.ok) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.invalidIntegrity,
+      validationMessage("integrity.json", integrityResult.issues),
+    );
+  }
+
+  const expectedPaths = Object.keys(files)
+    .filter((filePath) => filePath !== "integrity.json")
+    .sort();
+  const declaredPaths = Object.keys(integrityResult.value.files).sort();
+  if (JSON.stringify(expectedPaths) !== JSON.stringify(declaredPaths)) {
+    throw new PluginArchiveError(
+      PLUGIN_ARCHIVE_ERROR_CODES.integrityMismatch,
+      "integrity.json must cover every package file exactly once.",
+    );
+  }
+  for (const filePath of expectedPaths) {
+    const contents = files[filePath];
+    const declared = integrityResult.value.files[filePath];
+    if (
+      contents === undefined ||
+      declared === undefined ||
+      contents.byteLength !== declared.sizeBytes ||
+      sha256(contents) !== declared.sha256
+    ) {
+      throw new PluginArchiveError(
+        PLUGIN_ARCHIVE_ERROR_CODES.integrityMismatch,
+        `Integrity check failed for '${filePath}'.`,
+      );
+    }
+  }
+
+  return {
+    files,
+    integrity: integrityResult.value,
+    manifest: manifestResult.value,
+    packageHash: sha256(archive),
+  };
+}
+
+export interface StagedPreviewPluginPackage {
+  readonly alreadyStaged: boolean;
+  readonly directory: string;
+  readonly integrity: PluginPackageIntegrity;
+  readonly manifest: PluginPackageManifest;
+  readonly packageHash: string;
+}
+
+export async function stagePreviewPluginArchive(
+  archive: Uint8Array,
+  installationRoot: string,
+  limits: Partial<PluginArchiveLimits> = {},
+): Promise<StagedPreviewPluginPackage> {
+  const inspected = inspectPreviewPluginArchive(archive, limits);
+  await mkdir(installationRoot, { mode: 0o700, recursive: true });
+  const stagingDirectory = await mkdtemp(path.join(installationRoot, ".staging-"));
+  const targetDirectory = path.join(
+    installationRoot,
+    inspected.manifest.id,
+    inspected.manifest.version,
+    inspected.packageHash,
+  );
+
+  try {
+    for (const filePath of Object.keys(inspected.files).sort()) {
+      const contents = inspected.files[filePath];
+      if (contents === undefined) continue;
+      const destination = path.join(stagingDirectory, ...filePath.split("/"));
+      await mkdir(path.dirname(destination), { mode: 0o700, recursive: true });
+      await writeFile(destination, contents, { flag: "wx", mode: 0o600 });
+    }
+    await mkdir(path.dirname(targetDirectory), { mode: 0o700, recursive: true });
+    try {
+      await rename(stagingDirectory, targetDirectory);
+      return {
+        alreadyStaged: false,
+        directory: targetDirectory,
+        integrity: inspected.integrity,
+        manifest: inspected.manifest,
+        packageHash: inspected.packageHash,
+      };
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "EEXIST" && code !== "ENOTEMPTY") throw error;
+      return {
+        alreadyStaged: true,
+        directory: targetDirectory,
+        integrity: inspected.integrity,
         manifest: inspected.manifest,
         packageHash: inspected.packageHash,
       };

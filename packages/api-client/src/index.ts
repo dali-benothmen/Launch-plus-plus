@@ -4,6 +4,10 @@ import { type CoreApiClient, createCoreApiClient } from "./generated.js";
 
 export type {
   CursorPageQuery,
+  ExtensionFieldValue,
+  ExtensionRegistry,
+  ExtensionRegistryDiagnostic,
+  ExtensionRegistryPackage,
   InvalidationEvent,
   LabelSummary,
   OrganizationContext,
@@ -11,13 +15,15 @@ export type {
   OrganizationRegistrationInput,
   OrganizationRegistrationResult,
   OrganizationSummary,
-  PublicOrganizationResolution,
+  PluginContributionPreview,
+  PluginPackageSummary,
   ProblemDetails,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusOrderInput,
   ProjectStatusSummary,
   ProjectSummary,
+  PublicOrganizationResolution,
   SearchQuery,
   SearchResponse,
   SearchResult,
@@ -26,11 +32,13 @@ export type {
   TaskAttachmentSummary,
   TaskComment,
   TaskDetail,
+  TaskExtensionFieldValues,
   TaskPage,
   TaskPriority,
   TaskView,
   TeamInput,
   TeamSummary,
+  UpdateTaskExtensionFieldInput,
 } from "@launchpp/api-contracts";
 export type { CoreApiClient, RequestOptions } from "./generated.js";
 
@@ -48,6 +56,38 @@ export interface SessionState {
   readonly expiresAt: number;
   readonly id: string;
   readonly identity: SessionIdentity;
+}
+
+export type DeveloperSessionState = "active" | "awaiting_permission_review" | "expired" | "revoked";
+
+export interface DeveloperModeSession {
+  readonly actorUserId: string;
+  readonly createdAt: number;
+  readonly expiresAt: number;
+  readonly grantedPermissions: readonly string[];
+  readonly id: string;
+  readonly name: string;
+  readonly organizationId: string;
+  readonly pluginId: string;
+  readonly projectId?: string;
+  readonly requestedPermissions: readonly string[];
+  readonly state: DeveloperSessionState;
+}
+
+export interface DeveloperModeStatus {
+  readonly enabled: boolean;
+  readonly pairingTtlSeconds: number;
+  readonly sessionTtlSeconds: number;
+  readonly sessions: readonly DeveloperModeSession[];
+}
+
+export interface DeveloperModePairingReview {
+  readonly expiresAt: number;
+  readonly id: string;
+  readonly name: string;
+  readonly pluginId: string;
+  readonly requestedPermissions: readonly string[];
+  readonly version: string;
 }
 
 export interface OwnerSetupInput {
@@ -82,6 +122,21 @@ export class ApiError extends Error {
 }
 
 export interface ApiClient extends Omit<CoreApiClient, "tasks"> {
+  readonly developerMode: {
+    approvePairing(
+      pairingId: string,
+      input: Readonly<{
+        code: string;
+        organizationId: string;
+        projectId?: string;
+      }>,
+    ): Promise<DeveloperModeSession>;
+    approvePermissions(sessionId: string): Promise<DeveloperModeSession>;
+    reviewPairing(pairingId: string, code: string): Promise<DeveloperModePairingReview>;
+    revoke(sessionId: string): Promise<void>;
+    setEnabled(organizationId: string, enabled: boolean): Promise<DeveloperModeStatus>;
+    status(organizationId?: string): Promise<DeveloperModeStatus>;
+  };
   readonly tasks: CoreApiClient["tasks"] & {
     downloadAttachment(
       organizationId: string,
@@ -165,6 +220,46 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
 
   const core = createCoreApiClient(json);
   return Object.freeze({
+    developerMode: Object.freeze({
+      approvePairing: (
+        pairingId: string,
+        input: Readonly<{ code: string; organizationId: string; projectId?: string }>,
+      ) =>
+        json<DeveloperModeSession>(
+          `/api/v1/developer-mode/pairings/${encodeURIComponent(pairingId)}/approve`,
+          {
+            body: JSON.stringify(input),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          },
+        ),
+      approvePermissions: (sessionId: string) =>
+        json<DeveloperModeSession>(
+          `/api/v1/developer-mode/sessions/${encodeURIComponent(sessionId)}/approve-permissions`,
+          { method: "POST" },
+        ),
+      reviewPairing: (pairingId: string, code: string) =>
+        json<DeveloperModePairingReview>(
+          `/api/v1/developer-mode/pairings/${encodeURIComponent(pairingId)}/review?code=${encodeURIComponent(code)}`,
+        ),
+      async revoke(sessionId: string): Promise<void> {
+        await json(`/api/v1/developer-mode/sessions/${encodeURIComponent(sessionId)}`, {
+          method: "DELETE",
+        });
+      },
+      setEnabled: (organizationId: string, enabled: boolean) =>
+        json<DeveloperModeStatus>("/api/v1/developer-mode/status", {
+          body: JSON.stringify({ enabled, organizationId }),
+          headers: { "content-type": "application/json" },
+          method: "PATCH",
+        }),
+      status: (organizationId?: string) =>
+        json<DeveloperModeStatus>(
+          `/api/v1/developer-mode/status${
+            organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : ""
+          }`,
+        ),
+    }),
     auth: Object.freeze({
       recoveryCapabilities: () =>
         json<{ readonly email: boolean; readonly operatorRecovery: boolean }>(
@@ -194,6 +289,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         await json("/api/auth/sign-out", { method: "POST" });
       },
     }),
+    extensionRegistry: core.extensionRegistry,
     organizationDirectory: core.organizationDirectory,
     organizationRegistrations: core.organizationRegistrations,
     health: Object.freeze({
@@ -216,6 +312,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): ApiClient
         return { status: payload.status };
       },
     }),
+    pluginPackages: core.pluginPackages,
     projects: core.projects,
     search: core.search,
     setup: Object.freeze({

@@ -10,9 +10,16 @@ import {
 } from "@launchpp/database";
 import type { FastifyInstance } from "fastify";
 
+import { registerCapabilityBrokerRoutes } from "./capability-broker-routes.js";
+import { DeveloperModeCoordinator } from "./developer-mode.js";
+import { registerDeveloperModeRoutes } from "./developer-mode-routes.js";
 import { registerEventRoutes } from "./event-routes.js";
+import { registerExtensionRegistryRoutes } from "./extension-registry-routes.js";
 import { InvalidationHub } from "./invalidation-hub.js";
+import { registerOrganizationRoutes } from "./organization-routes.js";
 import { createOutboxDispatcher } from "./outbox-dispatcher.js";
+import { registerPluginFieldRoutes } from "./plugin-field-routes.js";
+import { registerPluginPackageRoutes } from "./plugin-package-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { registerSearchRoutes } from "./search-routes.js";
 import { type BuildServerOptions, buildServer } from "./server.js";
@@ -20,7 +27,6 @@ import { createSetupCoordinator } from "./setup-routes.js";
 import { registerStaticWeb } from "./static-web.js";
 import { registerTaskRoutes } from "./task-routes.js";
 import { registerTeamRoutes } from "./team-routes.js";
-import { registerOrganizationRoutes } from "./organization-routes.js";
 
 export interface ApplicationResources {
   readonly database: SqliteDatabase;
@@ -43,6 +49,7 @@ export async function buildApplicationServer(
   let identity: ReturnType<typeof openBetterAuthIdentityAdapter> | undefined;
   let dispatcher: ReturnType<typeof createOutboxDispatcher> | undefined;
   const hub = new InvalidationHub();
+  const developerMode = new DeveloperModeCoordinator({ enabled: false });
 
   try {
     try {
@@ -101,6 +108,32 @@ export async function buildApplicationServer(
     await registerOrganizationRoutes(app, {
       config: options.config,
       database,
+      identity: identity.adapter,
+    });
+    await registerPluginPackageRoutes(app, {
+      database,
+      databasePath: options.config.databasePath,
+      identity: identity.adapter,
+    });
+    await registerDeveloperModeRoutes(app, {
+      config: options.config,
+      coordinator: developerMode,
+      database,
+      identity: identity.adapter,
+    });
+    await registerExtensionRegistryRoutes(app, {
+      database,
+      developerMode,
+      identity: identity.adapter,
+    });
+    await registerCapabilityBrokerRoutes(app, {
+      database,
+      developerMode,
+      identity: identity.adapter,
+    });
+    await registerPluginFieldRoutes(app, {
+      database,
+      developerMode,
       identity: identity.adapter,
     });
     await registerProjectRoutes(app, { database, identity: identity.adapter });

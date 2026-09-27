@@ -9,6 +9,7 @@ import type {
   CreateTaskInput,
   CursorPageQuery,
   DeleteTaskCommentInput,
+  ExtensionRegistry,
   LabelSummary,
   MoveTaskInput,
   OrganizationContext,
@@ -16,13 +17,14 @@ import type {
   OrganizationRegistrationInput,
   OrganizationRegistrationResult,
   OrganizationSummary,
-  PublicOrganizationResolution,
+  PluginPackageSummary,
   ProjectCatalog,
   ProjectFolderSummary,
   ProjectStatusInput,
   ProjectStatusOrderInput,
   ProjectStatusSummary,
   ProjectSummary,
+  PublicOrganizationResolution,
   ReplaceTaskAssigneesInput,
   ReplaceTaskLabelsInput,
   SearchQuery,
@@ -30,12 +32,14 @@ import type {
   SetTaskCommentReactionInput,
   TaskComment,
   TaskDetail,
+  TaskExtensionFieldValues,
   TaskPage,
   TaskView,
   TeamInput,
   TeamSummary,
   UpdateProjectInput,
   UpdateTaskCommentInput,
+  UpdateTaskExtensionFieldInput,
   UpdateTaskInput,
 } from "@launchpp/api-contracts";
 
@@ -94,6 +98,16 @@ function commentPath(
 }
 
 export interface CoreApiClient {
+  readonly extensionRegistry: {
+    disableProject(organizationId: string, projectId: string, packageId: string): Promise<void>;
+    enableProject(
+      organizationId: string,
+      projectId: string,
+      packageId: string,
+    ): Promise<ExtensionRegistry>;
+    getOrganization(organizationId: string): Promise<ExtensionRegistry>;
+    getProject(organizationId: string, projectId: string): Promise<ExtensionRegistry>;
+  };
   readonly organizationDirectory: {
     resolve(slug: string): Promise<PublicOrganizationResolution>;
   };
@@ -102,6 +116,11 @@ export interface CoreApiClient {
       input: OrganizationRegistrationInput,
       options?: RequestOptions,
     ): Promise<OrganizationRegistrationResult>;
+  };
+  readonly pluginPackages: {
+    enable(organizationId: string, packageId: string): Promise<PluginPackageSummary>;
+    list(organizationId: string): Promise<readonly PluginPackageSummary[]>;
+    stage(organizationId: string, file: File): Promise<PluginPackageSummary>;
   };
   readonly search: (query: SearchQuery) => Promise<SearchResponse>;
   readonly projects: {
@@ -236,6 +255,14 @@ export interface CoreApiClient {
       taskId: string,
       input: ArchiveTaskInput,
     ): Promise<TaskView>;
+    setExtensionField(
+      organizationId: string,
+      projectId: string,
+      taskId: string,
+      pluginId: string,
+      fieldId: string,
+      input: UpdateTaskExtensionFieldInput,
+    ): Promise<TaskExtensionFieldValues>;
     update(
       organizationId: string,
       projectId: string,
@@ -258,6 +285,25 @@ export interface CoreApiClient {
 
 export function createCoreApiClient(json: RequestJson): CoreApiClient {
   return Object.freeze({
+    extensionRegistry: Object.freeze({
+      async disableProject(organizationId: string, projectId: string, packageId: string) {
+        await json(
+          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "DELETE" },
+        );
+      },
+      enableProject: (organizationId: string, projectId: string, packageId: string) =>
+        json<ExtensionRegistry>(
+          `${projectPath(organizationId, projectId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "POST" },
+        ),
+      getOrganization: (organizationId: string) =>
+        json<ExtensionRegistry>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/extensions/registry`,
+        ),
+      getProject: (organizationId: string, projectId: string) =>
+        json<ExtensionRegistry>(`${projectPath(organizationId, projectId)}/extensions/registry`),
+    }),
     organizationDirectory: Object.freeze({
       resolve: (slug: string) =>
         json<PublicOrganizationResolution>(
@@ -271,6 +317,29 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: idempotencyHeaders(options),
           method: "POST",
         }),
+    }),
+    pluginPackages: Object.freeze({
+      enable: (organizationId: string, packageId: string) =>
+        json<PluginPackageSummary>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages/${encodeURIComponent(packageId)}/enable`,
+          { method: "POST" },
+        ),
+      list: (organizationId: string) =>
+        json<readonly PluginPackageSummary[]>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
+        ),
+      stage: (organizationId: string, file: File) =>
+        json<PluginPackageSummary>(
+          `/api/v1/organizations/${encodeURIComponent(organizationId)}/plugin-packages`,
+          {
+            body: file,
+            headers: {
+              "content-type": "application/vnd.launchpp.plugin",
+              "x-launchpp-file-name": encodeURIComponent(file.name),
+            },
+            method: "POST",
+          },
+        ),
     }),
     search: (query: SearchQuery) => {
       const parameters = new URLSearchParams({ q: query.q });
@@ -539,6 +608,22 @@ export function createCoreApiClient(json: RequestJson): CoreApiClient {
           headers: { "content-type": "application/json" },
           method: "POST",
         }),
+      setExtensionField: (
+        organizationId: string,
+        projectId: string,
+        taskId: string,
+        pluginId: string,
+        fieldId: string,
+        input: UpdateTaskExtensionFieldInput,
+      ) =>
+        json<TaskExtensionFieldValues>(
+          `${taskPath(organizationId, projectId, taskId)}/extension-fields/${encodeURIComponent(pluginId)}/${encodeURIComponent(fieldId)}`,
+          {
+            body: JSON.stringify(input),
+            headers: { "content-type": "application/json" },
+            method: "PUT",
+          },
+        ),
       update: (organizationId: string, projectId: string, taskId: string, input: UpdateTaskInput) =>
         json<TaskView>(taskPath(organizationId, projectId, taskId), {
           body: JSON.stringify(input),

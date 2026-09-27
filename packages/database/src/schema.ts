@@ -8,6 +8,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -22,6 +23,9 @@ const authDate = customType<{ data: Date; driverData: string }>({
 export const installations = sqliteTable("installations", {
   id: text("id").primaryKey(),
   createdAt: integer("created_at").notNull(),
+  developerModeEnabled: integer("developer_mode_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
 });
 
 export const outboxMessages = sqliteTable(
@@ -734,6 +738,152 @@ export const idempotencyRecords = sqliteTable(
   ],
 );
 
+export const pluginPackages = sqliteTable(
+  "plugin_packages",
+  {
+    id: text("id").primaryKey(),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => installations.id, { onDelete: "restrict" }),
+    pluginId: text("plugin_id").notNull(),
+    version: text("version").notNull(),
+    packageHash: text("package_hash").notNull(),
+    manifestJson: text("manifest_json").notNull(),
+    integrityJson: text("integrity_json").notNull(),
+    provenanceKind: text("provenance_kind", { enum: ["unsigned-local"] }).notNull(),
+    sourceFileName: text("source_file_name").notNull(),
+    archiveSizeBytes: integer("archive_size_bytes").notNull(),
+    uploadedByUserId: text("uploaded_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    uploadedAt: integer("uploaded_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("plugin_packages_installation_identity_unique").on(
+      table.installationId,
+      table.pluginId,
+      table.version,
+    ),
+    uniqueIndex("plugin_packages_installation_hash_unique").on(
+      table.installationId,
+      table.packageHash,
+    ),
+    index("plugin_packages_installation_uploaded_idx").on(table.installationId, table.uploadedAt),
+    check("plugin_packages_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+    check("plugin_packages_version_not_blank", sql`length(trim(${table.version})) > 0`),
+    check("plugin_packages_hash_valid", sql`length(${table.packageHash}) = 64`),
+    check("plugin_packages_archive_size_positive", sql`${table.archiveSizeBytes} > 0`),
+    check("plugin_packages_provenance_valid", sql`${table.provenanceKind} = 'unsigned-local'`),
+  ],
+);
+
+export const organizationPlugins = sqliteTable(
+  "organization_plugins",
+  {
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    pluginId: text("plugin_id").notNull(),
+    pluginPackageId: text("plugin_package_id")
+      .notNull()
+      .references(() => pluginPackages.id, { onDelete: "restrict" }),
+    acceptedPermissionsJson: text("accepted_permissions_json").notNull(),
+    enabledByUserId: text("enabled_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    enabledAt: integer("enabled_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.organizationId, table.pluginId] }),
+    index("organization_plugins_package_idx").on(table.pluginPackageId),
+    check("organization_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+  ],
+);
+
+export const projectPlugins = sqliteTable(
+  "project_plugins",
+  {
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    projectId: text("project_id").notNull(),
+    pluginId: text("plugin_id").notNull(),
+    pluginPackageId: text("plugin_package_id")
+      .notNull()
+      .references(() => pluginPackages.id, { onDelete: "restrict" }),
+    enabledByUserId: text("enabled_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    enabledAt: integer("enabled_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.pluginId] }),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "project_plugins_organization_project_fk",
+    }).onDelete("cascade"),
+    index("project_plugins_organization_project_idx").on(table.organizationId, table.projectId),
+    index("project_plugins_package_idx").on(table.pluginPackageId),
+    check("project_plugins_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+  ],
+);
+
+export const pluginFieldValues = sqliteTable(
+  "plugin_field_values",
+  {
+    organizationId: text("organization_id").notNull(),
+    projectId: text("project_id").notNull(),
+    taskId: text("task_id").notNull(),
+    pluginId: text("plugin_id").notNull(),
+    fieldId: text("field_id").notNull(),
+    valueType: text("value_type", { enum: ["number", "text"] }).notNull(),
+    numberValue: real("number_value"),
+    textValue: text("text_value"),
+    updatedByUserId: text("updated_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    updatedAt: integer("updated_at").notNull(),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.pluginId, table.fieldId] }),
+    foreignKey({
+      columns: [table.organizationId, table.taskId],
+      foreignColumns: [tasks.organizationId, tasks.id],
+      name: "plugin_field_values_organization_task_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projects.organizationId, projects.id],
+      name: "plugin_field_values_organization_project_fk",
+    }).onDelete("cascade"),
+    index("plugin_field_values_project_field_idx").on(
+      table.organizationId,
+      table.projectId,
+      table.pluginId,
+      table.fieldId,
+    ),
+    index("plugin_field_values_number_idx").on(
+      table.organizationId,
+      table.projectId,
+      table.pluginId,
+      table.fieldId,
+      table.numberValue,
+    ),
+    check("plugin_field_values_plugin_id_not_blank", sql`length(trim(${table.pluginId})) > 0`),
+    check("plugin_field_values_field_id_not_blank", sql`length(trim(${table.fieldId})) > 0`),
+    check("plugin_field_values_revision_positive", sql`${table.revision} > 0`),
+    check(
+      "plugin_field_values_value_valid",
+      sql`(${table.valueType} = 'number' and ${table.numberValue} is not null and ${table.textValue} is null)
+          or (${table.valueType} = 'text' and ${table.textValue} is not null and ${table.numberValue} is null)`,
+    ),
+  ],
+);
+
 export const auditEntries = sqliteTable(
   "audit_entries",
   {
@@ -777,6 +927,7 @@ export const databaseSchema = {
   labels,
   outboxMessages,
   projectFolders,
+  projectPlugins,
   projectPreferences,
   projectStatuses,
   projects,
@@ -789,4 +940,7 @@ export const databaseSchema = {
   userProfiles,
   organizationMembers,
   organizations,
+  organizationPlugins,
+  pluginFieldValues,
+  pluginPackages,
 };

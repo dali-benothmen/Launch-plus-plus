@@ -12,6 +12,7 @@ Launch++ is a minimal, open-source project manager that grows through plugins an
 | [UI information architecture](./ui-information-architecture.md) | Application shell, page inventory, navigation hierarchy, project tree, settings scopes, and plugin placements |
 | [System architecture](./system-architecture.md) | System context, module boundaries, technology stack, runtime topology, and major request flows |
 | [Data and API architecture](./data-and-api-architecture.md) | Domain model, persistence, HTTP API, real-time invalidation, events, search, migrations, and portability |
+| [Plugin author preview](./plugin-author-preview.md) | Implemented author quick start, manifest, React/vanilla SDK/UI contracts, permissions, development, packaging, upload, troubleshooting, compatibility, and limitations |
 | [Plugin system](./plugin-system-design.md) | Browser-standard runtime contract, React/vanilla SDK tooling, contributions, permissions, isolation, packages, events, jobs, and marketplace readiness |
 | [Plugin UI system](./plugin-ui-system.md) | Supported authoring stacks, Ant Design integration, public UI packages, theming, packaging, and compatibility policy |
 | [Plugin storage](./plugin-storage-design.md) | `data/schema.ts`, typed collections, generated clients, automatic safe schema evolution, and data lifecycle |

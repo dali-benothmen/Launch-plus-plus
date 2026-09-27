@@ -46,6 +46,7 @@ import {
   CaretDownOutlined,
   CaretRightOutlined,
   CommentOutlined,
+  DownloadOutlined,
   HolderOutlined,
   PaperClipOutlined,
   UploadOutlined,
@@ -54,8 +55,9 @@ import {
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { fileToBase64, maximumAttachmentBytes } from "./attachments.js";
 import { useApiClient } from "./api-client-context.js";
+import { downloadBlob, fileToBase64, maximumAttachmentBytes } from "./attachments.js";
+import { useExtensionRegistries } from "./extensions.js";
 import { invalidationEventName } from "./invalidation.js";
 import { projectNavigationChangedEvent } from "./project-navigation.js";
 import { TaskDetailPanel } from "./task-detail.js";
@@ -110,6 +112,22 @@ interface SortableListSectionProps extends Omit<SortableShellProps, "children"> 
 }
 
 const taskPageSize = 50;
+const unsetExtensionFieldFilter = "__launchpp_unset__";
+
+function compareExtensionValues(
+  left: number | string | undefined,
+  right: number | string | undefined,
+) {
+  if (left === undefined) return right === undefined ? 0 : 1;
+  if (right === undefined) return -1;
+  if (typeof left === "number" && typeof right === "number") return left - right;
+  return String(left).localeCompare(String(right), undefined, { numeric: true });
+}
+
+function csvCell(value: unknown) {
+  const text = value === undefined || value === null ? "" : String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
 const shortDate = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 const taskCardDescriptionStyle = { color: "rgb(0 0 0 / 45%)", fontSize: 13 } as const;
 const taskPriorityOptions = [
@@ -263,13 +281,7 @@ function SortableColumnShell({ children, disabled, id, index, label }: SortableS
   );
 }
 
-function SortableListSection({
-  children,
-  disabled,
-  id,
-  index,
-  label,
-}: SortableListSectionProps) {
+function SortableListSection({ children, disabled, id, index, label }: SortableListSectionProps) {
   const sortable = useSortable({
     accept: "column",
     data: { kind: "column", label, statusId: id },
@@ -413,6 +425,7 @@ export function ProjectTaskOrganization({
 }: ProjectTaskOrganizationProps) {
   const api = useApiClient();
   const navigate = useNavigate();
+  const { project: projectExtensions } = useExtensionRegistries();
   const [searchParams] = useSearchParams();
   const [messageApi, messageHolder] = message.useMessage();
   const [tasks, setTasks] = useState<readonly TaskView[]>([]);
@@ -483,16 +496,10 @@ export function ProjectTaskOrganization({
         if (!cursor && loadedProjectIdRef.current !== projectId) {
           loadedProjectIdRef.current = projectId;
           const currentStatuses = statusesRef.current;
-          initializedStatusIdsRef.current = new Set(
-            currentStatuses.map((status) => status.id),
-          );
+          initializedStatusIdsRef.current = new Set(currentStatuses.map((status) => status.id));
           const populatedStatusIds = new Set(
             page.items
-              .filter(
-                (task) =>
-                  task.archivedAt === undefined &&
-                  task.parentTaskId === undefined,
-              )
+              .filter((task) => task.archivedAt === undefined && task.parentTaskId === undefined)
               .map((task) => task.statusId),
           );
           setCollapsedStatusIds(
@@ -829,44 +836,63 @@ export function ProjectTaskOrganization({
     window.setTimeout(() => openTask(pendingTask), 250);
   };
 
-  const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => [
-    {
-      key: "edit",
-      label: "Edit task",
-      onClick: ({ domEvent }) => {
-        domEvent.stopPropagation();
-        suppressTaskCardOpen();
-        pendingTaskMenuOpenRef.current = task;
+  const taskMenu = (task: TaskView): readonly DropdownMenuItem[] => {
+    const extensionItems: readonly DropdownMenuItem[] = projectExtensions.actions
+      .filter(
+        (action) => action.slot === "task.card.actions" || action.slot === "board.card.actions",
+      )
+      .map((action) => ({
+        key: action.id,
+        label: action.title,
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          messageApi.info(
+            `${action.title} is registered for ${task.reference}, but its handler is not available yet.`,
+          );
+        },
+      }));
+    return [
+      {
+        key: "edit",
+        label: "Edit task",
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          pendingTaskMenuOpenRef.current = task;
+        },
       },
-    },
-    {
-      children: displayStatuses
-        .filter((status) => status.id !== task.statusId)
-        .map((status) => ({
-          key: `move-${status.id}`,
-          label: status.name,
-          onClick: ({ domEvent }) => {
-            domEvent.stopPropagation();
-            suppressTaskCardOpen();
-            void moveTask(task, status.id);
-          },
-        })),
-      key: "move",
-      label: "Move to",
-    },
-    { type: "divider" },
-    {
-      danger: true,
-      key: "delete",
-      label: "Delete task",
-      onClick: ({ domEvent }) => {
-        domEvent.stopPropagation();
-        suppressTaskCardOpen();
-        setDeleteError(undefined);
-        setDeleteTarget({ kind: "task", task });
+      {
+        children: displayStatuses
+          .filter((status) => status.id !== task.statusId)
+          .map((status) => ({
+            key: `move-${status.id}`,
+            label: status.name,
+            onClick: ({ domEvent }) => {
+              domEvent.stopPropagation();
+              suppressTaskCardOpen();
+              void moveTask(task, status.id);
+            },
+          })),
+        key: "move",
+        label: "Move to",
       },
-    },
-  ];
+      { type: "divider" },
+      ...extensionItems,
+      ...(extensionItems.length > 0 ? [{ type: "divider" as const }] : []),
+      {
+        danger: true,
+        key: "delete",
+        label: "Delete task",
+        onClick: ({ domEvent }) => {
+          domEvent.stopPropagation();
+          suppressTaskCardOpen();
+          setDeleteError(undefined);
+          setDeleteTarget({ kind: "task", task });
+        },
+      },
+    ];
+  };
   const saveTask = async () => {
     const currentDraft = draftRef.current;
     if (!editor || saving || !currentDraft.statusId) return;
@@ -1145,6 +1171,18 @@ export function ProjectTaskOrganization({
                               {taskPriorityPresentation[task.priority].label}
                             </Tag>
                             {renderTeamTag(teams, task.teamId)}
+                            {projectExtensions.fields
+                              .filter((field) => field.placements.includes("task.card.badges"))
+                              .flatMap((field) => {
+                                const value = task.extensionFields[field.id];
+                                return value === undefined
+                                  ? []
+                                  : [
+                                      <Tag color="blue" key={field.id}>
+                                        {field.label}: {value}
+                                      </Tag>,
+                                    ];
+                              })}
                           </div>
                           <div className="task-card-summary">
                             <div className="task-card-metrics">
@@ -1218,6 +1256,51 @@ export function ProjectTaskOrganization({
     medium: 1,
     low: 2,
   };
+  const extensionListColumns = useMemo<ReadonlyArray<TableColumn<TaskView>>>(
+    () =>
+      projectExtensions.fields
+        .filter((field) => field.placements.includes("task.list.columns"))
+        .map((field) => {
+          const values = [
+            ...new Set(
+              tasks.flatMap((task) => {
+                const value = task.extensionFields[field.id];
+                return value === undefined ? [] : [value];
+              }),
+            ),
+          ].toSorted(compareExtensionValues);
+          return {
+            filterMultiple: false,
+            filters: [
+              { text: "Not set", value: unsetExtensionFieldFilter },
+              ...values.map((value) => ({ text: String(value), value: String(value) })),
+            ],
+            key: field.id,
+            onFilter: (selected, task) => {
+              const value = task.extensionFields[field.id];
+              return selected === unsetExtensionFieldFilter
+                ? value === undefined
+                : String(value) === String(selected);
+            },
+            render: (_value: unknown, task: TaskView) => {
+              const value = task.extensionFields[field.id];
+              return value === undefined ? (
+                <span className="task-list-empty-value">{"\u2014"}</span>
+              ) : (
+                <Tag color="blue">{value}</Tag>
+              );
+            },
+            sorter: (first: TaskView, second: TaskView) =>
+              compareExtensionValues(
+                first.extensionFields[field.id],
+                second.extensionFields[field.id],
+              ),
+            title: field.label,
+            width: 120,
+          };
+        }),
+    [projectExtensions.fields, tasks],
+  );
   const columns: ReadonlyArray<TableColumn<TaskView>> = [
     {
       key: "name",
@@ -1228,21 +1311,13 @@ export function ProjectTaskOrganization({
             {task.title}
           </span>
           {task.commentCount > 0 ? (
-            <span
-              aria-label={`${task.commentCount} comments`}
-              className="task-list-metric"
-              title={`${task.commentCount} comments`}
-            >
+            <span className="task-list-metric" title={`${task.commentCount} comments`}>
               <CommentOutlined aria-hidden />
               {task.commentCount}
             </span>
           ) : null}
           {task.attachmentCount > 0 ? (
-            <span
-              aria-label={`${task.attachmentCount} attachments`}
-              className="task-list-metric"
-              title={`${task.attachmentCount} attachments`}
-            >
+            <span className="task-list-metric" title={`${task.attachmentCount} attachments`}>
               <PaperClipOutlined aria-hidden />
               {task.attachmentCount}
             </span>
@@ -1260,17 +1335,14 @@ export function ProjectTaskOrganization({
           {taskPriorityPresentation[task.priority].label}
         </Tag>
       ),
-      sorter: (first, second) =>
-        priorityOrder[first.priority] - priorityOrder[second.priority],
+      sorter: (first, second) => priorityOrder[first.priority] - priorityOrder[second.priority],
       title: "Priority",
       width: 110,
     },
     {
       key: "team",
       render: (_value, task) =>
-        renderTeamTag(teams, task.teamId) ?? (
-          <span className="task-list-empty-value">No team</span>
-        ),
+        renderTeamTag(teams, task.teamId) ?? <span className="task-list-empty-value">No team</span>,
       sorter: (first, second) => {
         const firstName = teams.find((team) => team.id === first.teamId)?.name ?? "";
         const secondName = teams.find((team) => team.id === second.teamId)?.name ?? "";
@@ -1292,6 +1364,7 @@ export function ProjectTaskOrganization({
       title: "Due date",
       width: 130,
     },
+    ...extensionListColumns,
     {
       key: "assignee",
       render: (_value, task) =>
@@ -1302,17 +1375,14 @@ export function ProjectTaskOrganization({
                 key={userId}
                 title={userId === currentUserId ? currentUserName : "Organization member"}
               >
-                {userId === currentUserId
-                  ? avatarInitials(currentUserName)
-                  : "M"}
+                {userId === currentUserId ? avatarInitials(currentUserName) : "M"}
               </Avatar>
             ))}
           </Avatar.Group>
         ) : (
           <span className="task-list-empty-value">Unassigned</span>
         ),
-      sorter: (first, second) =>
-        first.assigneeUserIds.length - second.assigneeUserIds.length,
+      sorter: (first, second) => first.assigneeUserIds.length - second.assigneeUserIds.length,
       title: "Assignee",
       width: 120,
     },
@@ -1525,8 +1595,61 @@ export function ProjectTaskOrganization({
     );
   };
 
+  const toolbarExtensionActions = projectExtensions.actions.filter(
+    (action) =>
+      action.slot === "project.toolbar" || (view === "board" && action.slot === "board.toolbar"),
+  );
+  const exportTasks = () => {
+    const fields = projectExtensions.fields.filter((field) =>
+      field.placements.includes("task.list.columns"),
+    );
+    const header = [
+      "Task",
+      "Title",
+      "Status",
+      "Priority",
+      "Team",
+      "Due date",
+      ...fields.map((field) => field.label),
+    ];
+    const rows = visibleTasks.map((task) => [
+      task.reference,
+      task.title,
+      statusById.get(task.statusId)?.name ?? "",
+      task.priority,
+      teams.find((team) => team.id === task.teamId)?.name ?? "",
+      task.dueDate ?? "",
+      ...fields.map((field) => task.extensionFields[field.id]),
+    ]);
+    const document = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+    downloadBlob(
+      new Blob([document], { type: "text/csv;charset=utf-8" }),
+      `${
+        projectName
+          .trim()
+          .toLocaleLowerCase()
+          .replace(/[^a-z0-9]+/g, "-") || "project"
+      }-tasks.csv`,
+    );
+  };
   const actionButtons = (
     <div className="task-header-actions">
+      {toolbarExtensionActions.map((action) => (
+        <Button
+          key={action.id}
+          onClick={() =>
+            messageApi.info(`${action.title} is registered, but its handler is not available yet.`)
+          }
+          size="small"
+        >
+          {action.title}
+        </Button>
+      ))}
+      {view === "list" && projectExtensions.fields.length > 0 ? (
+        <Button icon={<DownloadOutlined />} onClick={exportTasks} size="small">
+          Export
+        </Button>
+      ) : null}
       <Button onClick={openColumnEditor} size="small">
         + Add column
       </Button>

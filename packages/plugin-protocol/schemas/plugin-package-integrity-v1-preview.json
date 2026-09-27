@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["algorithm", "files", "formatVersion"],
+  "properties": {
+    "algorithm": {
+      "type": "string",
+      "const": "sha256"
+    },
+    "files": {
+      "type": "object",
+      "patternProperties": {
+        "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$": {
+          "type": "object",
+          "required": ["sha256", "sizeBytes"],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "description": "Lowercase SHA-256 digest of the exact packaged file bytes.",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sizeBytes": {
+              "type": "integer",
+              "description": "Expanded file size used for package review and bounded intake.",
+              "maximum": 10485760,
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "formatVersion": {
+      "type": "string",
+      "const": "1-preview"
+    }
+  },
+  "$id": "https://launchpp.dev/schemas/plugin-package-integrity-v1-preview.json",
+  "description": "Generated integrity.json contract covering every package file except integrity.json itself.",
+  "title": "Launch++ package integrity v1-preview",
+  "additionalProperties": false
+}

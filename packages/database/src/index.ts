@@ -11,6 +11,7 @@ export {
   installationLockPath,
 } from "./installation-lock.js";
 export { SqliteInstallationRepository } from "./installation-repository.js";
+export { SqliteInstallationSettingsRepository } from "./installation-settings-repository.js";
 export {
   createInstallationBackup,
   type DatabaseVerification,
@@ -24,9 +25,22 @@ export {
 } from "./local-operations.js";
 export { defaultMigrationsFolder, runMigrations } from "./migrations.js";
 export { SqliteOrganizationMembershipRepository } from "./organization-membership-repository.js";
-export { SqliteOrganizationRepository } from "./organization-repository.js";
 export { SqliteOrganizationRegistrationRepository } from "./organization-registration-repository.js";
+export { SqliteOrganizationRepository } from "./organization-repository.js";
 export { type LeasedOutboxMessage, SqliteOutboxRepository } from "./outbox-repository.js";
+export {
+  type PluginFieldValue,
+  type PluginFieldValueRecord,
+  SqlitePluginFieldValueRepository,
+} from "./plugin-field-value-repository.js";
+export {
+  type EnabledOrganizationPluginPackageRecord,
+  type OrganizationPluginPackageRecord,
+  type OrganizationPluginRecord,
+  type PluginPackageRecord,
+  type ProjectPluginRecord,
+  SqlitePluginPackageRepository,
+} from "./plugin-package-repository.js";
 export { SqliteProjectRepository } from "./project-repository.js";
 export {
   type InvalidationEvent,
@@ -45,10 +59,14 @@ export {
   invalidationEvents,
   labels,
   organizationMembers,
-  organizations,
+  organizationPlugins,
   organizationRegistrationCommands,
+  organizations,
   outboxMessages,
+  pluginFieldValues,
+  pluginPackages,
   projectFolders,
+  projectPlugins,
   projectPreferences,
   projectStatuses,
   projects,

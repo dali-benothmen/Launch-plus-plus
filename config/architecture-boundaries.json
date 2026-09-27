@@ -1,7 +1,7 @@
 {
   "$schema": "./architecture-boundaries.schema.json",
   "workspaceRoots": ["apps", "packages"],
-  "packageNamePattern": "^@launchpp(?:-internal)?/[a-z0-9-]+$",
+  "packageNamePattern": "^(?:@launchpp(?:-internal)?/[a-z0-9-]+|create-launchpp-plugin)$",
   "packages": [
     {
       "name": "@launchpp-internal/web",
@@ -27,6 +27,7 @@
         "@launchpp/authorization",
         "@launchpp/core",
         "@launchpp/database",
+        "@launchpp/plugin-platform",
         "@launchpp/plugin-protocol",
         "@launchpp/plugin-runtime"
       ]
@@ -78,7 +79,11 @@
       "path": "packages/ui",
       "owner": "design-system",
       "visibility": "public",
-      "allowWorkspaceDependencies": ["@launchpp/theme-runtime", "@launchpp/ui-tokens"]
+      "allowWorkspaceDependencies": [
+        "@launchpp/sdk",
+        "@launchpp/theme-runtime",
+        "@launchpp/ui-tokens"
+      ]
     },
     {
       "name": "@launchpp/ui-tokens",
@@ -109,11 +114,57 @@
       "allowWorkspaceDependencies": []
     },
     {
+      "name": "@launchpp/sdk",
+      "path": "packages/plugin-sdk",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
+      "name": "@launchpp/cli",
+      "path": "packages/plugin-cli",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": [
+        "@launchpp/plugin-package",
+        "@launchpp/plugin-protocol",
+        "@launchpp/sdk",
+        "@launchpp/theme-runtime",
+        "@launchpp/ui"
+      ]
+    },
+    {
+      "name": "create-launchpp-plugin",
+      "path": "packages/create-launchpp-plugin",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": [
+        "@launchpp/cli",
+        "@launchpp/plugin-protocol",
+        "@launchpp/sdk",
+        "@launchpp/ui"
+      ]
+    },
+    {
+      "name": "@launchpp/plugin-platform",
+      "path": "packages/plugin-platform",
+      "owner": "plugin-platform",
+      "visibility": "internal",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
+      "name": "@launchpp/plugin-package",
+      "path": "packages/plugin-package",
+      "owner": "plugin-platform",
+      "visibility": "public",
+      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+    },
+    {
       "name": "@launchpp/plugin-runtime",
       "path": "packages/plugin-runtime",
       "owner": "plugin-platform",
       "visibility": "internal",
-      "allowWorkspaceDependencies": ["@launchpp/plugin-protocol"]
+      "allowWorkspaceDependencies": ["@launchpp/plugin-package"]
     },
     {
       "name": "@launchpp/plugin-testkit",
@@ -131,7 +182,7 @@
         "@launchpp/auth-adapter",
         "@launchpp/plugin-platform",
         "@launchpp/plugin-runtime",
-        "@launchpp/plugin-sdk",
+        "@launchpp/sdk",
         "@launchpp/ui",
         "fastify",
         "react",
@@ -155,7 +206,7 @@
       "deny": ["@launchpp/database", "better-sqlite3", "drizzle-orm"]
     },
     {
-      "from": "@launchpp/plugin-sdk",
+      "from": "@launchpp/sdk",
       "deny": [
         "@launchpp/core",
         "@launchpp/database",

@@ -150,16 +150,16 @@ Replace generic account signup with organization discovery, deliberate organizat
 - [x] **Organization identity foundation.** Establish slug rules, allow duplicate display names, migrate persistence, and publish the public resolver.
 - [x] **Organization and owner creation.** Add idempotent owner provisioning, the registration contract, locator, not-found confirmation, and creation UI.
 - [x] **Contextual authentication and cutover.** Scope sign-in and recovery to the organization and preserve existing setup, session, and application routes.
-- [ ] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.
+- [x] **Manual qualification and approval.** Complete the user-run discovery, provisioning, recovery, policy, and compatibility checks.
 
 ### Exit gate
 
-- [ ] Organization identity is the public entry point.
-- [ ] New organization creation produces one owner and a usable initial Board.
-- [ ] Existing organization access remains membership-controlled and invitation-only.
-- [ ] Recovery cannot create duplicate ownership.
-- [ ] The generic signup dead end is removed.
-- [ ] The user approves the journey before Phase 2 begins.
+- [x] Organization identity is the public entry point.
+- [x] New organization creation produces one owner and a usable initial Board.
+- [x] Existing organization access remains membership-controlled and invitation-only.
+- [x] Recovery cannot create duplicate ownership.
+- [x] The generic signup dead end is removed.
+- [x] The user approves the journey before Phase 2 begins.
 
 ## Phase 2 — plugin author preview
 
@@ -173,22 +173,22 @@ The Core alpha is stable enough to provide project/task fixtures and public capa
 
 ### Tasks
 
-- [ ] **P2-01 — Publish manifest and package schemas v1-preview.** Cover identity, version/API ranges, permissions, authoring adapter, browser surfaces, server handlers, contributions, dependencies, and integrity metadata. Provide JSON Schema completion and precise validation errors.
-- [ ] **P2-02 — Implement package upload and staged installation.** Add Settings UI for file selection or drag-and-drop, archive inspection, compatibility/provenance summary, requested permissions, contribution preview, atomic staging, enablement, and rollback on failure.
-- [ ] **P2-03 — Implement the extension registry.** Resolve installed/enabled packages and organization/project scope into stable contribution IDs, collision diagnostics, routes, settings entries, fields, panels, actions, and navigation placements.
-- [ ] **P2-04 — Implement host-rendered contributions.** Render declared navigation items, task/project actions, command-palette items, standard settings fields, and the first task field/board badge/list column using current host components and permission visibility.
-- [ ] **P2-05 — Implement the capability broker.** Map plugin SDK calls to ordinary authorized application services with actor, organization, project, grant, schema, quota, correlation, cancellation, and structured-error enforcement.
-- [ ] **P2-06 — Publish `@launchpp/sdk` and `@launchpp/sdk/react`.** Support context, project/task reads, allowed mutations, navigation, commands, theme data, cancellation, and errors. React bindings add providers and hooks without changing the wire contract.
-- [ ] **P2-07 — Publish the React plugin UI contract.** Ship Ant Design-powered `@launchpp/ui`, `@launchpp/ui-tokens`, the adapter-generated provider/bootstrap, Launch++ surface layouts, standard async states, icons, and documented custom-component behavior.
-- [ ] **P2-08 — Scaffold React and vanilla projects.** Implement `create-launchpp-plugin` with React/TypeScript, vanilla TypeScript, and vanilla JavaScript templates. Generate the authoritative `launchpp.plugin.json`, selected capabilities, tests, scripts, and only required permissions.
-- [ ] **P2-09 — Implement disposable `launchpp dev`.** Start an isolated development organization with fixtures, logs, plugin inspector, React HMR, safe vanilla iframe reload, manifest re-registration, theme preview, and disposable storage reset.
-- [ ] **P2-10 — Implement connected Developer Mode.** Add operator enablement, authenticated pairing, short-lived author-scoped sessions, production-equivalent permission/sandbox boundaries, explicit banners, expiry, revocation, and teardown.
-- [ ] **P2-11 — Implement CLI generation and validation.** Deliver `launchpp add`, `generate`, `check`, and `test` for contributions, manifest/permission validation, forbidden imports, direct Ant-internal usage diagnostics, generated clients, and protocol-compatible test fixtures.
-- [ ] **P2-12 — Complete deterministic `pack` and `inspect`.** Compile source entries, bundle eligible dependencies, tree-shake React/Ant imports, normalize browser/server/schema assets, emit hashes and metadata, reopen/validate the archive, and provide a non-executing inspection report.
-- [ ] **P2-13 — Build plugin failure UX.** Confine blank/crashed/slow surfaces, expose retry and diagnostics, protect core navigation, add safe-start behavior, and show actionable install/runtime errors without leaking secrets.
-- [ ] **P2-14 — Build the Story Points reference plugin.** Exercise one declarative numeric task field across edit, Board badge, List column, filter, sort, export, enable/disable, and theme changes without a plugin-authored migration.
-- [ ] **P2-15 — Build external compatibility fixtures.** Maintain one packed read-only React page and one packed vanilla page outside the monorepo. Test public-package installation, live development, packaging, upload, theme changes, deep links, and disabled-plugin routes.
-- [ ] **P2-16 — Publish author-preview documentation.** Document the manifest, supported React/vanilla paths, SDK, UI components/tokens, permissions, development modes, packaging, upload, troubleshooting, compatibility status, and explicit preview limitations.
+- [x] **P2-01 — Publish manifest and package schemas v1-preview.** Cover identity, version/API ranges, permissions, authoring adapter, browser surfaces, server handlers, contributions, dependencies, and integrity metadata. Provide JSON Schema completion and precise validation errors.
+- [x] **P2-02 — Implement package upload and staged installation.** Add Settings UI for file selection or drag-and-drop, archive inspection, compatibility/provenance summary, requested permissions, contribution preview, atomic staging, enablement, and rollback on failure.
+- [x] **P2-03 — Implement the extension registry.** Resolve installed/enabled packages and organization/project scope into stable contribution IDs, collision diagnostics, routes, settings entries, fields, panels, actions, and navigation placements.
+- [x] **P2-04 — Implement host-rendered contributions.** Render declared navigation items, task/project actions, command-palette items, standard settings fields, and the first task field/board badge/list column using current host components and permission visibility.
+- [x] **P2-05 — Implement the capability broker.** Map plugin SDK calls to ordinary authorized application services with actor, organization, project, grant, schema, quota, correlation, cancellation, and structured-error enforcement.
+- [x] **P2-06 — Publish `@launchpp/sdk` and `@launchpp/sdk/react`.** Support context, project/task reads, allowed mutations, navigation, commands, theme data, cancellation, and errors. React bindings add providers and hooks without changing the wire contract.
+- [x] **P2-07 — Publish the React plugin UI contract.** Ship Ant Design-powered `@launchpp/ui`, `@launchpp/ui-tokens`, the adapter-generated provider/bootstrap, Launch++ surface layouts, standard async states, icons, and documented custom-component behavior.
+- [x] **P2-08 — Scaffold React and vanilla projects.** Implement `create-launchpp-plugin` with React/TypeScript, vanilla TypeScript, and vanilla JavaScript templates. Generate the authoritative `launchpp.plugin.json`, selected capabilities, tests, scripts, and only required permissions.
+- [x] **P2-09 — Implement disposable `launchpp dev`.** Start an isolated development organization with fixtures, logs, plugin inspector, React HMR, safe vanilla iframe reload, manifest re-registration, theme preview, and disposable storage reset.
+- [x] **P2-10 — Implement connected Developer Mode.** Add operator enablement, authenticated pairing, short-lived author-scoped sessions, production-equivalent permission/sandbox boundaries, explicit banners, expiry, revocation, and teardown.
+- [x] **P2-11 — Implement CLI generation and validation.** Deliver `launchpp add`, `generate`, `check`, and `test` for contributions, manifest/permission validation, forbidden imports, direct Ant-internal usage diagnostics, generated clients, and protocol-compatible test fixtures.
+- [x] **P2-12 — Complete deterministic `pack` and `inspect`.** Compile source entries, bundle eligible dependencies, tree-shake React/Ant imports, normalize browser/server/schema assets, emit hashes and metadata, reopen/validate the archive, and provide a non-executing inspection report.
+- [x] **P2-13 — Build plugin failure UX.** Confine blank/crashed/slow surfaces, expose retry and diagnostics, protect core navigation, add safe-start behavior, and show actionable install/runtime errors without leaking secrets.
+- [x] **P2-14 — Build the Story Points reference plugin.** Exercise one declarative numeric task field across edit, Board badge, List column, filter, sort, export, enable/disable, and theme changes without a plugin-authored migration.
+- [x] **P2-15 — External compatibility fixtures intentionally skipped.** The author preview documents that no external published-package compatibility claim is made yet.
+- [x] **P2-16 — Publish author-preview documentation.** Document the manifest, supported React/vanilla paths, SDK, UI components/tokens, permissions, development modes, packaging, upload, troubleshooting, compatibility status, and explicit preview limitations.
 
 ### Exit gate — Plugin author preview
 
