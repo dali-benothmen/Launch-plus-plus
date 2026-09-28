@@ -28,7 +28,7 @@
     "@launchpp/plugin-protocol": "workspace:*",
     "@launchpp/theme-runtime": "workspace:*",
     "@vitejs/plugin-react": "6.1.1",
-    "vite": "8.3.0"
+    "vite": "8.3.1"
   },
   "devDependencies": {
     "@launchpp/sdk": "workspace:*",
