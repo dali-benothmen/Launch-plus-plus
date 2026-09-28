@@ -233,11 +233,15 @@ export function AppShell() {
     setProjectExtensions(emptyExtensionRegistry());
     load();
     window.addEventListener(extensionRegistryChangedEvent, load);
+    window.addEventListener(invalidationEventName, load);
+    const interval = developerModeEnabled ? window.setInterval(load, 1_500) : undefined;
     return () => {
       current = false;
       window.removeEventListener(extensionRegistryChangedEvent, load);
+      window.removeEventListener(invalidationEventName, load);
+      if (interval !== undefined) window.clearInterval(interval);
     };
-  }, [activeProjectId, api, organizationId, pluginSafeStart]);
+  }, [activeProjectId, api, developerModeEnabled, organizationId, pluginSafeStart]);
 
   const extensionRegistries = useMemo(
     () => ({

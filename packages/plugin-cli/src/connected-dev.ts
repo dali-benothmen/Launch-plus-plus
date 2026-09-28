@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { type FSWatcher, watch } from "node:fs";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import process from "node:process";
 import { type PluginSourceManifest, validatePluginSourceManifest } from "@launchpp/plugin-protocol";
 
@@ -191,7 +192,10 @@ export async function connectDeveloperMode(
     }
   };
 
-  watcher = watch(input.manifestPath, () => {
+  const manifestDirectory = path.dirname(input.manifestPath);
+  const manifestFilename = path.basename(input.manifestPath);
+  watcher = watch(manifestDirectory, (_eventType, filename) => {
+    if (filename !== null && filename.toString() !== manifestFilename) return;
     if (reloadTimer) clearTimeout(reloadTimer);
     reloadTimer = setTimeout(() => void register(), 150);
   });
