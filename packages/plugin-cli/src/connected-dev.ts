@@ -7,9 +7,9 @@ import { type PluginSourceManifest, validatePluginSourceManifest } from "@launch
 
 export interface ConnectedDeveloperSession {
   readonly expiresAt: number;
-  readonly id: string;
   readonly organizationId: string;
   readonly projectId?: string;
+  readonly sessionId: string;
   readonly token: string;
 }
 
@@ -174,7 +174,7 @@ export async function connectDeveloperMode(
       const next = await sourceManifest(input.manifestPath);
       const response = await authenticated(
         "PUT",
-        `/api/v1/developer-mode/sessions/${encodeURIComponent(session.id)}/manifest`,
+        `/api/v1/developer-mode/sessions/${encodeURIComponent(session.sessionId)}/manifest`,
         { manifest: next },
       );
       const result = await responseJson<{ readonly state: string }>(response);
@@ -202,7 +202,7 @@ export async function connectDeveloperMode(
   const heartbeat = setInterval(() => {
     void authenticated(
       "POST",
-      `/api/v1/developer-mode/sessions/${encodeURIComponent(session.id)}/heartbeat`,
+      `/api/v1/developer-mode/sessions/${encodeURIComponent(session.sessionId)}/heartbeat`,
     ).then((response) => {
       if (!response.ok) process.stderr.write("[launchpp:connect] Session heartbeat failed.\n");
     });
@@ -219,7 +219,7 @@ export async function connectDeveloperMode(
       clearInterval(heartbeat);
       const response = await authenticated(
         "DELETE",
-        `/api/v1/developer-mode/sessions/${encodeURIComponent(session.id)}`,
+        `/api/v1/developer-mode/sessions/${encodeURIComponent(session.sessionId)}`,
       );
       if (!response.ok && response.status !== 404 && response.status !== 410) {
         throw new Error(`Connected session teardown failed with status ${response.status}.`);
