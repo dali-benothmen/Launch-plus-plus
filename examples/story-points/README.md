@@ -7,17 +7,23 @@ Story Points is the declaration-only Launch++ reference plugin. Its manifest con
 host-managed numeric task field without a browser surface, server handler, private import, plugin
 database schema, or migration.
 
-When enabled for a project, Launch++ renders and persists the same field in task details, Board
-badges, List columns, List filters and sorting, and CSV export. Disabling the plugin hides those
-contributions while retaining values; re-enabling it restores them. All controls use the active
-Launch++ theme.
+When activated, Launch++ renders and persists the same field in every project's task details,
+Board badges, List columns, List filters and sorting, and CSV export. Deactivating the plugin hides
+those contributions while retaining values; reactivating it restores them. All controls use the
+active Launch++ theme.
 
-From this directory, after building the monorepo tools:
+From this directory, after installing and building the monorepo tools:
 
 ```bash
-node ../../packages/plugin-cli/dist/cli.js check
-node ../../packages/plugin-cli/dist/cli.js pack
+pnpm check
+pnpm pack
 ```
 
-Upload the generated `.launch-plugin` archive from **Plugins**, enable it for the organization, then
-enable it for a project.
+To connect the development plugin to a running local Launch++ app, enable Developer Mode on the
+**Plugins** page and run:
+
+```bash
+pnpm dev --connect http://localhost:5173
+```
+
+Upload the generated `.launch-plugin` archive from **Plugins**, then activate it for the app.

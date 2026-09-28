@@ -1,0 +1,14 @@
+{
+  "name": "@launchpp-example/story-points",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "launchpp check",
+    "dev": "launchpp dev",
+    "pack": "launchpp pack"
+  },
+  "devDependencies": {
+    "@launchpp/cli": "workspace:*"
+  }
+}

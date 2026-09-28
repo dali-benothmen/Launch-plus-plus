@@ -133,6 +133,12 @@ importers:
         specifier: 8.3.0
         version: 8.3.0(@types/node@24.13.5)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1)
 
+  examples/story-points:
+    devDependencies:
+      '@launchpp/cli':
+        specifier: workspace:*
+        version: link:../../packages/plugin-cli
+
   packages/api-client:
     dependencies:
       '@launchpp/api-contracts':
