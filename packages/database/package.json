@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@launchpp/core": "workspace:*",
-    "better-sqlite3": "13.0.3",
-    "drizzle-orm": "0.45.2"
+    "better-sqlite3": "13.1.1",
+    "drizzle-orm": "0.45.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",
